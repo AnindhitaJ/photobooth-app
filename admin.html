@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Template Manager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .header p { font-size: 13px; color: #a0a0b0; margin-top: 2px; }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #e94560; color: white; }
+    .btn-primary:hover { background: #c73652; }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
+    .btn-secondary:hover { color: white; border-color: white; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #219a52; }
+    .btn-danger { background: transparent; color: #e94560; border: 2px solid #e94560; font-size: 12px; padding: 6px 14px; }
+    .btn-danger:hover { background: #e94560; color: white; }
+    .btn-sm { padding: 7px 14px; font-size: 12px; }
+
+    /* Layout dua kolom */
+    .layout {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* Panel kiri — upload & editor */
+    .editor-panel {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .upload-area {
+      border: 2px dashed #0f3460;
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+      background: #16213e;
+    }
+    .upload-area:hover { border-color: #e94560; }
+    .upload-area.dragover { border-color: #e94560; background: #1f1f4e; }
+    .upload-area p { color: #a0a0b0; font-size: 14px; margin-top: 8px; }
+    .upload-icon { font-size: 40px; }
+    #fileInput { display: none; }
+
+    .template-name-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 2px solid #0f3460;
+      background: #16213e;
+      color: white;
+      font-size: 14px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .template-name-input:focus { border-color: #e94560; }
+
+    /* Canvas editor */
+    .canvas-wrapper {
+      position: relative;
+      display: none;
+      background: #16213e;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid #0f3460;
+      margin-bottom: 16px;
+      user-select: none;
+    }
+    #editorCanvas { display: block; }
+
+    /* Slot boxes overlay */
+    .slot-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .slot-box {
+      position: absolute;
+      border: 2px solid #e94560;
+      background: rgba(233,69,96,0.15);
+      pointer-events: all;
+      cursor: move;
+      border-radius: 4px;
+    }
+    .slot-box .slot-label {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e94560;
+      background: rgba(0,0,0,0.6);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .slot-box .slot-delete {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 14px;
+      height: 14px;
+      background: #e94560;
+      cursor: se-resize;
+      border-radius: 2px 0 4px 0;
+    }
+
+    .editor-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .slot-info {
+      background: #16213e;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #a0a0b0;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .slot-info span { color: white; font-weight: 600; }
+
+    /* Panel kanan — daftar template tersimpan */
+    .templates-panel {
+      width: 300px;
+      flex-shrink: 0;
+    }
+    .templates-panel h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .template-item {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      border: 2px solid #0f3460;
+    }
+    .template-thumb {
+      width: 48px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+      background: #0f3460;
+    }
+    .template-info { flex: 1; min-width: 0; }
+    .template-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .template-info p { font-size: 12px; color: #a0a0b0; }
+    .template-actions { display: flex; flex-direction: column; gap: 6px; }
+
+    .empty-state {
+      text-align: center;
+      color: #a0a0b0;
+      font-size: 13px;
+      padding: 32px 16px;
+      border: 2px dashed #0f3460;
+      border-radius: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #27ae60;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚙️ Template Manager</h1>
+    <p>Upload dan kelola template photobooth</p>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-secondary" onclick="window.location.href='template.html'">← Kembali ke App</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Panel Kiri: Editor -->
+  <div class="editor-panel">
+
+    <input type="text" class="template-name-input" id="templateName" placeholder="Nama template (contoh: Vintage Floral)">
+
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">🖼️</div>
+      <strong>Klik atau drag & drop PNG template</strong>
+      <p>Format PNG, transparan di area slot foto</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/png">
+
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <canvas id="editorCanvas"></canvas>
+      <div class="slot-overlay" id="slotOverlay"></div>
+    </div>
+
+    <div class="slot-info" id="slotInfo">
+      <span id="slotCount">0</span> slot terdeteksi otomatis.
+      Geser dan resize untuk menyesuaikan posisi.
+    </div>
+
+    <div class="editor-controls" id="editorControls" style="display:none">
+      <button class="btn btn-secondary btn-sm" onclick="addSlotManual()">➕ Tambah Slot</button>
+      <button class="btn btn-secondary btn-sm" onclick="autoDetect()">🔍 Auto Detect Ulang</button>
+      <button class="btn btn-danger btn-sm" onclick="clearSlots()">🗑 Hapus Semua Slot</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;" id="saveRow" style="display:none">
+      <button class="btn btn-success" id="btnSave" onclick="saveTemplate()" style="display:none;flex:1">
+        💾 Simpan Template
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Panel Kanan: Daftar Template -->
+  <div class="templates-panel">
+    <h3>Template Tersimpan</h3>
+    <div id="templateList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── State ───
+  let templateImg = null;
+  let templateDataURL = null;
+  let slots = [];
+  let scale = 1;
+  const DISPLAY_MAX_W = 340;
+
+  const canvas = document.getElementById('editorCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('slotOverlay');
+  const wrapper = document.getElementById('canvasWrapper');
+
+  // ─── Upload ───
+  const fileInput = document.getElementById('fileInput');
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) loadTemplate(e.target.files[0]);
+  });
+
+  const uploadArea = document.getElementById('uploadArea');
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) loadTemplate(e.dataTransfer.files[0]);
+  });
+
+  function loadTemplate(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      templateDataURL = e.target.result;
+      templateImg = new Image();
+      templateImg.onload = () => {
+        // Hitung scale
+        scale = Math.min(1, DISPLAY_MAX_W / templateImg.width);
+        const dw = Math.round(templateImg.width * scale);
+        const dh = Math.round(templateImg.height * scale);
+
+        canvas.width = dw;
+        canvas.height = dh;
+        canvas.style.width = dw + 'px';
+        canvas.style.height = dh + 'px';
+        overlay.style.width = dw + 'px';
+        overlay.style.height = dh + 'px';
+
+        ctx.drawImage(templateImg, 0, 0, dw, dh);
+
+        document.getElementById('canvasWrapper').style.display = 'block';
+        document.getElementById('editorControls').style.display = 'flex';
+        document.getElementById('btnSave').style.display = 'block';
+        document.getElementById('slotInfo').style.display = 'block';
+
+        slots = [];
+        autoDetect();
+      };
+      templateImg.src = templateDataURL;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ─── Auto Detect Slot ───
+  function autoDetect() {
+    if (!templateImg) return;
+    const W = canvas.width, H = canvas.height;
+
+    // Render ke offscreen untuk baca pixel
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const octx = off.getContext('2d');
+    octx.drawImage(templateImg, 0, 0, W, H);
+    const data = octx.getImageData(0, 0, W, H).data;
+
+    // Deteksi pixel transparan (a < 30) atau hitam (r,g,b < 30)
+    const mask = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      const r = data[i*4], g = data[i*4+1], b = data[i*4+2], a = data[i*4+3];
+      if (a < 30 || (r < 40 && g < 40 && b < 40 && a > 100)) {
+        mask[i] = 1;
+      }
+    }
+
+    // Scan baris
+    const rowSums = new Array(H).fill(0);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        rowSums[y] += mask[y * W + x];
+
+    const threshold = W * 0.15;
+    let inBlock = false, blockStart = 0;
+    const blocks = [];
+
+    for (let y = 0; y < H; y++) {
+      if (rowSums[y] > threshold && !inBlock) { inBlock = true; blockStart = y; }
+      else if (rowSums[y] <= threshold && inBlock) {
+        inBlock = false;
+        if (y - blockStart > H * 0.04) blocks.push([blockStart, y - 1]);
+      }
+    }
+    if (inBlock) blocks.push([blockStart, H - 1]);
+
+    slots = [];
+    for (const [y1, y2] of blocks) {
+      // Scan kolom
+      const colSums = new Array(W).fill(0);
+      for (let y = y1; y <= y2; y++)
+        for (let x = 0; x < W; x++)
+          colSums[x] += mask[y * W + x];
+
+      const cThreshold = (y2 - y1) * 0.1;
+      const xCols = colSums.map((v,i) => v > cThreshold ? i : -1).filter(v => v >= 0);
+      if (xCols.length === 0) continue;
+
+      const x1 = xCols[0], x2 = xCols[xCols.length-1];
+      const w = x2 - x1, h = y2 - y1;
+      if (w < W * 0.1 || h < H * 0.02) continue;
+
+      slots.push({ x: x1, y: y1, w, h });
+    }
+
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+    showToast(`${slots.length} slot terdeteksi`);
+  }
+
+  // ─── Render Slot Boxes ───
+  function renderSlots() {
+    overlay.innerHTML = '';
+    slots.forEach((slot, idx) => {
+      const box = document.createElement('div');
+      box.className = 'slot-box';
+      box.style.left   = slot.x + 'px';
+      box.style.top    = slot.y + 'px';
+      box.style.width  = slot.w + 'px';
+      box.style.height = slot.h + 'px';
+
+      box.innerHTML = `
+        <div class="slot-label">Foto ${idx + 1}</div>
+        <button class="slot-delete" onclick="deleteSlot(${idx})">×</button>
+        <div class="resize-handle" data-idx="${idx}"></div>
+      `;
+
+      // Drag
+      makeDraggable(box, idx);
+
+      // Resize
+      const handle = box.querySelector('.resize-handle');
+      makeResizable(handle, box, idx);
+
+      overlay.appendChild(box);
+    });
+  }
+
+  function makeDraggable(box, idx) {
+    let startX, startY, startLeft, startTop;
+    box.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
+      e.preventDefault();
+      startX = e.clientX; startY = e.clientY;
+      startLeft = slots[idx].x; startTop = slots[idx].y;
+      const onMove = e => {
+        slots[idx].x = Math.max(0, Math.min(canvas.width  - slots[idx].w, startLeft + e.clientX - startX));
+        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, startTop  + e.clientY - startY));
+        box.style.left = slots[idx].x + 'px';
+        box.style.top  = slots[idx].y + 'px';
+      };
+      const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // Touch support
+    box.addEventListener('touchstart', e => {
+      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      startLeft = slots[idx].x; startTop = slots[idx].y;
+      const onMove = e => {
+        const t = e.touches[0];
+        slots[idx].x = Math.max(0, Math.min(canvas.width  - slots[idx].w, startLeft + t.clientX - startX));
+        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, startTop  + t.clientY - startY));
+        box.style.left = slots[idx].x + 'px';
+        box.style.top  = slots[idx].y + 'px';
+      };
+      const onUp = () => { document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); };
+      document.addEventListener('touchmove', onMove);
+      document.addEventListener('touchend', onUp);
+    }, { passive: true });
+  }
+
+  function makeResizable(handle, box, idx) {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      const startX = e.clientX, startY = e.clientY;
+      const startW = slots[idx].w, startH = slots[idx].h;
+      const onMove = e => {
+        slots[idx].w = Math.max(40, Math.min(canvas.width  - slots[idx].x, startW + e.clientX - startX));
+        slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, startH + e.clientY - startY));
+        box.style.width  = slots[idx].w + 'px';
+        box.style.height = slots[idx].h + 'px';
+      };
+      const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function addSlotManual() {
+    const W = canvas.width, H = canvas.height;
+    slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.1), w: Math.round(W*0.8), h: Math.round(H*0.2) });
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+  }
+
+  function deleteSlot(idx) {
+    slots.splice(idx, 1);
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+  }
+
+  function clearSlots() {
+    slots = [];
+    document.getElementById('slotCount').textContent = 0;
+    renderSlots();
+  }
+
+  // ─── Save Template ───
+  function saveTemplate() {
+    const name = document.getElementById('templateName').value.trim();
+    if (!name) { showToast('Isi nama template dulu!', true); return; }
+    if (!templateDataURL) { showToast('Upload PNG template dulu!', true); return; }
+    if (slots.length === 0) { showToast('Tambahkan minimal 1 slot!', true); return; }
+
+    // Convert slot koordinat ke ukuran asli
+    const realSlots = slots.map(s => ({
+      x: Math.round(s.x / scale),
+      y: Math.round(s.y / scale),
+      w: Math.round(s.w / scale),
+      h: Math.round(s.h / scale),
+    }));
+
+    const tmpl = {
+      id: Date.now(),
+      name,
+      src: templateDataURL,
+      slots: realSlots,
+      createdAt: new Date().toISOString()
+    };
+
+    const saved = getSavedTemplates();
+    saved.push(tmpl);
+    localStorage.setItem('pb_templates', JSON.stringify(saved));
+
+    showToast('Template tersimpan! ✓');
+    renderTemplateList();
+
+    // Reset form
+    document.getElementById('templateName').value = '';
+    document.getElementById('canvasWrapper').style.display = 'none';
+    document.getElementById('editorControls').style.display = 'none';
+    document.getElementById('btnSave').style.display = 'none';
+    document.getElementById('slotInfo').style.display = 'none';
+    templateDataURL = null; templateImg = null; slots = [];
+    fileInput.value = '';
+  }
+
+  // ─── Template List ───
+  function getSavedTemplates() {
+    try { return JSON.parse(localStorage.getItem('pb_templates') || '[]'); }
+    catch { return []; }
+  }
+
+  function renderTemplateList() {
+    const list = document.getElementById('templateList');
+    const templates = getSavedTemplates();
+
+    if (templates.length === 0) {
+      list.innerHTML = '<div class="empty-state">Belum ada template tersimpan.<br>Upload template pertama kamu!</div>';
+      return;
+    }
+
+    list.innerHTML = templates.map((t, i) => `
+      <div class="template-item">
+        <img class="template-thumb" src="${t.src}" alt="${t.name}">
+        <div class="template-info">
+          <h4>${t.name}</h4>
+          <p>${t.slots.length} slot foto</p>
+          <p style="font-size:11px;color:#555;margin-top:2px">${new Date(t.createdAt).toLocaleDateString('id-ID')}</p>
+        </div>
+        <div class="template-actions">
+          <button class="btn btn-danger" onclick="deleteTemplate(${i})">Hapus</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function deleteTemplate(idx) {
+    const saved = getSavedTemplates();
+    saved.splice(idx, 1);
+    localStorage.setItem('pb_templates', JSON.stringify(saved));
+    renderTemplateList();
+    showToast('Template dihapus');
+  }
+
+  // ─── Toast ───
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#e94560' : '#27ae60';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // Init
+  renderTemplateList();
+</script>
+
+</body>
+</html>

@@ -30,7 +30,6 @@
     }
     h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
     p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 28px; text-align: center; }
-
     .template-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -39,7 +38,6 @@
       max-width: 860px;
       margin-bottom: 32px;
     }
-
     .template-card {
       cursor: pointer;
       border-radius: 12px;
@@ -53,13 +51,7 @@
     }
     .template-card:hover { border-color: #e94560; transform: translateY(-4px); }
     .template-card.selected { border-color: #e94560; box-shadow: 0 0 0 2px #e94560; }
-
-    .template-card img {
-      width: 100%;
-      display: block;
-      object-fit: cover;
-    }
-
+    .template-card img { width: 100%; display: block; object-fit: cover; }
     .template-name {
       font-size: 12px;
       font-weight: 600;
@@ -68,7 +60,6 @@
       text-align: center;
     }
     .template-card.selected .template-name { color: #e94560; }
-
     .selected-badge {
       display: none;
       font-size: 10px;
@@ -80,14 +71,17 @@
       font-weight: 700;
     }
     .template-card.selected .selected-badge { display: inline-block; }
-
-    .loading-state {
-      text-align: center;
+    .info-box {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 13px;
       color: #a0a0b0;
-      font-size: 14px;
-      padding: 40px;
+      margin-bottom: 24px;
+      text-align: center;
+      display: none;
     }
-
+    .info-box span { color: #e94560; font-weight: 700; }
     .btn-row {
       display: flex;
       gap: 12px;
@@ -103,20 +97,10 @@
       border: none;
       transition: all 0.2s;
     }
-    .btn-primary {
-      background: #e94560;
-      color: white;
-      min-width: 200px;
-      opacity: 0.4;
-      pointer-events: none;
-    }
+    .btn-primary { background: #e94560; color: white; min-width: 200px; opacity: 0.4; pointer-events: none; }
     .btn-primary.aktif { opacity: 1; pointer-events: all; }
     .btn-primary.aktif:hover { background: #c73652; transform: scale(1.03); }
-    .btn-secondary {
-      background: transparent;
-      color: #a0a0b0;
-      border: 2px solid #a0a0b0;
-    }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
     .btn-secondary:hover { color: white; border-color: white; }
   </style>
 </head>
@@ -125,70 +109,84 @@
   <div style="text-align:center; margin-bottom: 20px;">
     <div class="paket-badge" id="paketBadge">Paket</div>
     <h2>Pilih Template</h2>
-    <p class="sub" id="subText">Pilih template untuk hasil fotomu</p>
+    <p class="sub">Pilih dulu, nanti kita foto sesuai jumlah slot-nya</p>
   </div>
 
-  <div class="template-grid" id="templateGrid">
-    <div class="loading-state">Memuat template...</div>
+  <div class="template-grid" id="templateGrid"></div>
+
+  <div class="info-box" id="infoBox">
+    Template ini punya <span id="slotCount">-</span> slot foto —
+    kamu akan ambil foto sebanyak itu
   </div>
 
   <div class="btn-row">
     <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
-    <button class="btn btn-primary" id="btnLanjut" onclick="lanjut()">Lanjut ke Hasil →</button>
+    <button class="btn btn-primary" id="btnLanjut" onclick="lanjut()">Mulai Foto →</button>
   </div>
 
 <script>
   const paket = localStorage.getItem('paket') || '5k';
   document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
 
-  const specs = {
-    '5k':  { folder: 'assets/templates/5k',  count: 10, label: '5 × 15 cm',  w: 591,  h: 1772 },
-    '10k': { folder: 'assets/templates/10k', count: 10, label: '10 × 15 cm', w: 1181, h: 1772 }
-  };
-
-  const spec = specs[paket];
-  document.getElementById('subText').textContent = `Template ukuran ${spec.label}`;
+  // Koordinat slot hasil deteksi greenscreen
+  // Nanti tinggal tambah template 2-10 di sini
+  const TEMPLATES = [
+    {
+      id: 1,
+      name: 'Template 1',
+      src: 'assets/templates/5k/1.png',
+      slots: [
+        { x: 88,  y: 123,  w: 426, h: 281 },
+        { x: 85,  y: 462,  w: 430, h: 274 },
+        { x: 84,  y: 789,  w: 437, h: 282 },
+        { x: 70,  y: 1123, w: 449, h: 284 },
+      ]
+    },
+    // Template 2-10 menyusul setelah semua greenscreen di-scan
+  ];
 
   let selectedTemplate = null;
 
-  function renderTemplates() {
-    const grid = document.getElementById('templateGrid');
-    grid.innerHTML = '';
+  const grid = document.getElementById('templateGrid');
 
-    for (let i = 1; i <= spec.count; i++) {
-      const src = `${spec.folder}/${i}.png`;
+  TEMPLATES.forEach((tmpl) => {
+    const card = document.createElement('div');
+    card.className = 'template-card';
+    card.innerHTML = `
+      <span class="selected-badge">✓ Dipilih</span>
+      <img src="${tmpl.src}" alt="${tmpl.name}" loading="lazy">
+      <div class="template-name">${tmpl.name} (${tmpl.slots.length} foto)</div>
+    `;
 
-      const card = document.createElement('div');
-      card.className = 'template-card';
-      card.innerHTML = `
-        <span class="selected-badge">✓ Dipilih</span>
-        <img src="${src}" alt="Template ${i}" loading="lazy" onerror="this.parentElement.style.display='none'">
-        <div class="template-name">Template ${i}</div>
-      `;
+    card.onclick = () => {
+      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedTemplate = tmpl;
 
-      card.onclick = () => {
-        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedTemplate = src;
-        localStorage.setItem('templateSrc', src);
-        localStorage.setItem('templateW', spec.w);
-        localStorage.setItem('templateH', spec.h);
-        document.getElementById('btnLanjut').classList.add('aktif');
-      };
+      // Simpan ke localStorage
+      localStorage.setItem('templateSrc', tmpl.src);
+      localStorage.setItem('templateSlots', JSON.stringify(tmpl.slots));
+      localStorage.setItem('templateName', tmpl.name);
+      localStorage.setItem('slotCount', tmpl.slots.length);
 
-      grid.appendChild(card);
-    }
-  }
+      // Tampilkan info
+      document.getElementById('slotCount').textContent = tmpl.slots.length;
+      document.getElementById('infoBox').style.display = 'block';
+      document.getElementById('btnLanjut').classList.add('aktif');
+    };
 
-  renderTemplates();
+    grid.appendChild(card);
+  });
 
   function lanjut() {
     if (!selectedTemplate) return;
-    window.location.href = 'result.html';
+    // Reset foto-foto sebelumnya
+    localStorage.removeItem('photos');
+    window.location.href = 'camera.html';
   }
 
   function kembali() {
-    window.location.href = 'filter.html';
+    window.location.href = 'index.html';
   }
 </script>
 

@@ -4,9 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beauty Filter - Photobooth</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js"
+      }
+    }
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #1a1a2e;
@@ -17,7 +23,6 @@
       align-items: center;
       padding: 24px;
     }
-
     .paket-badge {
       display: inline-block;
       background: #e94560;
@@ -30,63 +35,55 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-
-    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 20px; }
-
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align:center; }
+    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 20px; text-align:center; }
     .main-layout {
       display: flex;
       gap: 24px;
       width: 100%;
-      max-width: 900px;
+      max-width: 960px;
       align-items: flex-start;
       flex-wrap: wrap;
       justify-content: center;
     }
-
     .foto-wrapper {
       position: relative;
-      width: 280px;
+      width: 300px;
       flex-shrink: 0;
       border-radius: 16px;
       overflow: hidden;
       border: 3px solid #0f3460;
+      background: #000;
     }
-
-    #previewCanvas {
-      width: 100%;
-      display: block;
+    #previewCanvas { width: 100%; display: block; }
+    .status-bar {
+      font-size: 12px;
+      color: #a0a0b0;
+      text-align: center;
+      margin-top: 8px;
+      min-height: 18px;
     }
-
     .filter-panel {
       flex: 1;
       min-width: 260px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
-
     .filter-group {
       background: #16213e;
       border-radius: 14px;
       padding: 14px 16px;
     }
-
     .filter-label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: #a0a0b0;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 10px;
     }
-
-    .pill-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .pill {
       padding: 7px 14px;
       border-radius: 50px;
@@ -98,151 +95,111 @@
       color: #a0a0b0;
       transition: all 0.15s;
     }
-
     .pill:hover { border-color: #e94560; color: white; }
-
-    .pill.active {
-      background: #e94560;
-      border-color: #e94560;
-      color: white;
-    }
-
-    .color-swatch {
-      width: 32px;
-      height: 32px;
+    .pill.active { background: #e94560; border-color: #e94560; color: white; }
+    .swatch-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .swatch {
+      width: 30px; height: 30px;
       border-radius: 50%;
       cursor: pointer;
       border: 3px solid transparent;
       transition: all 0.15s;
+      flex-shrink: 0;
     }
-
-    .color-swatch:hover { transform: scale(1.15); }
-    .color-swatch.active { border-color: white; transform: scale(1.2); }
-
-    .swatch-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { border-color: white; transform: scale(1.2); }
     .swatch-off {
-      width: 32px;
-      height: 32px;
+      width: 30px; height: 30px;
       border-radius: 50%;
       cursor: pointer;
       border: 2px solid #a0a0b0;
       background: transparent;
-      font-size: 10px;
+      font-size: 9px;
       color: #a0a0b0;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       transition: all 0.15s;
+      flex-shrink: 0;
     }
-
     .swatch-off.active { border-color: white; color: white; }
-
-    .btn-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
     .btn {
-      padding: 13px 24px;
+      padding: 12px 22px;
       border-radius: 50px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       border: none;
       transition: all 0.2s;
     }
-
     .btn-primary { background: #e94560; color: white; flex: 1; }
-    .btn-primary:hover { background: #c73652; transform: scale(1.03); }
-
-    .btn-secondary {
-      background: transparent;
-      color: #a0a0b0;
-      border: 2px solid #a0a0b0;
-    }
-
+    .btn-primary:hover { background: #c73652; }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
     .btn-secondary:hover { color: white; border-color: white; }
-
-    .btn-ghost {
-      background: transparent;
-      color: #a0a0b0;
-      border: 2px solid #0f3460;
-      font-size: 13px;
-      padding: 10px 18px;
-    }
-
+    .btn-ghost { background: transparent; color: #a0a0b0; border: 2px solid #0f3460; font-size: 13px; padding: 10px 16px; }
     .btn-ghost:hover { border-color: #a0a0b0; color: white; }
-
-    @media (max-width: 600px) {
-      .foto-wrapper { width: 100%; max-width: 340px; }
-    }
   </style>
 </head>
 <body>
 
-  <div style="text-align:center; margin-bottom: 20px;">
+  <div style="text-align:center; margin-bottom:20px;">
     <div class="paket-badge" id="paketBadge">Paket</div>
     <h2>Beauty Filter</h2>
     <p class="sub">Atur tampilan sesuai keinginan kamu</p>
   </div>
 
   <div class="main-layout">
-
-    <div class="foto-wrapper">
-      <canvas id="previewCanvas"></canvas>
+    <div>
+      <div class="foto-wrapper">
+        <canvas id="previewCanvas"></canvas>
+      </div>
+      <p class="status-bar" id="statusBar">Mendeteksi wajah...</p>
     </div>
 
     <div class="filter-panel">
 
       <div class="filter-group">
         <div class="filter-label">Cerahkan Wajah</div>
-        <div class="pill-row">
-          <button class="pill active" onclick="setFilter('brightness','off',this)">Off</button>
-          <button class="pill" onclick="setFilter('brightness','natural',this)">Natural</button>
-          <button class="pill" onclick="setFilter('brightness','medium',this)">Medium</button>
-          <button class="pill" onclick="setFilter('brightness','bright',this)">Bright</button>
+        <div class="pill-row" id="grpBrightness">
+          <button class="pill active" data-val="0"     onclick="setPill('brightness',this)">Off</button>
+          <button class="pill"        data-val="15"    onclick="setPill('brightness',this)">Natural</button>
+          <button class="pill"        data-val="30"    onclick="setPill('brightness',this)">Medium</button>
+          <button class="pill"        data-val="50"    onclick="setPill('brightness',this)">Bright</button>
         </div>
       </div>
 
       <div class="filter-group">
         <div class="filter-label">Haluskan Kulit</div>
-        <div class="pill-row">
-          <button class="pill active" onclick="setFilter('smooth','off',this)">Off</button>
-          <button class="pill" onclick="setFilter('smooth','soft',this)">Soft</button>
-          <button class="pill" onclick="setFilter('smooth','medium',this)">Medium</button>
-          <button class="pill" onclick="setFilter('smooth','smooth',this)">Smooth</button>
+        <div class="pill-row" id="grpSmooth">
+          <button class="pill active" data-val="0"   onclick="setPill('smooth',this)">Off</button>
+          <button class="pill"        data-val="1"   onclick="setPill('smooth',this)">Soft</button>
+          <button class="pill"        data-val="2"   onclick="setPill('smooth',this)">Medium</button>
+          <button class="pill"        data-val="3"   onclick="setPill('smooth',this)">Smooth</button>
         </div>
       </div>
 
       <div class="filter-group">
         <div class="filter-label">Warna Bibir</div>
-        <div class="swatch-row">
-          <div class="swatch-off active" id="lipOff" onclick="setLip('off')">Off</div>
-          <div class="color-swatch" style="background:#f4a0b0;" onclick="setLip('pink')" title="Pink Natural"></div>
-          <div class="color-swatch" style="background:#c0392b;" onclick="setLip('red')" title="Soft Red"></div>
-          <div class="color-swatch" style="background:#e8836a;" onclick="setLip('coral')" title="Coral"></div>
-          <div class="color-swatch" style="background:#f5c5a3;" onclick="setLip('peach')" title="Peach"></div>
-          <div class="color-swatch" style="background:#c06080;" onclick="setLip('rose')" title="Rose"></div>
+        <div class="swatch-row" id="grpLip">
+          <div class="swatch-off active" data-val="off" onclick="setSwatch('lip',this)">Off</div>
+          <div class="swatch" style="background:#f4a0b0" data-val="255,160,176,0.45" onclick="setSwatch('lip',this)" title="Pink Natural"></div>
+          <div class="swatch" style="background:#c0392b" data-val="192,57,43,0.50"   onclick="setSwatch('lip',this)" title="Soft Red"></div>
+          <div class="swatch" style="background:#e8836a" data-val="232,131,106,0.48" onclick="setSwatch('lip',this)" title="Coral"></div>
+          <div class="swatch" style="background:#f5c5a3" data-val="245,197,163,0.42" onclick="setSwatch('lip',this)" title="Peach"></div>
+          <div class="swatch" style="background:#c06080" data-val="192,96,128,0.48"  onclick="setSwatch('lip',this)" title="Rose"></div>
         </div>
       </div>
 
       <div class="filter-group">
         <div class="filter-label">Blush</div>
-        <div class="swatch-row">
-          <div class="swatch-off active" id="blushOff" onclick="setBlush('off')">Off</div>
-          <div class="color-swatch" style="background:#f9c0c8;" onclick="setBlush('softpink')" title="Soft Pink"></div>
-          <div class="color-swatch" style="background:#f5b89a;" onclick="setBlush('peach')" title="Peach"></div>
-          <div class="color-swatch" style="background:#d4708a;" onclick="setBlush('rose')" title="Rose"></div>
-          <div class="color-swatch" style="background:#e8909a;" onclick="setBlush('medium')" title="Medium Blush"></div>
+        <div class="swatch-row" id="grpBlush">
+          <div class="swatch-off active" data-val="off" onclick="setSwatch('blush',this)">Off</div>
+          <div class="swatch" style="background:#f9c0c8" data-val="249,192,200,0.35" onclick="setSwatch('blush',this)" title="Soft Pink"></div>
+          <div class="swatch" style="background:#f5b89a" data-val="245,184,154,0.32" onclick="setSwatch('blush',this)" title="Peach"></div>
+          <div class="swatch" style="background:#d4708a" data-val="212,112,138,0.30" onclick="setSwatch('blush',this)" title="Rose"></div>
+          <div class="swatch" style="background:#e8909a" data-val="232,144,154,0.33" onclick="setSwatch('blush',this)" title="Medium"></div>
         </div>
       </div>
 
@@ -255,137 +212,188 @@
     </div>
   </div>
 
-  <script>
-    const paket = localStorage.getItem('paket') || '5k';
-    document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
+<script type="module">
+  import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
-    const canvas = document.getElementById('previewCanvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
+  const paket = localStorage.getItem('paket') || '5k';
+  document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
 
-    let state = {
-      brightness: 'off',
-      smooth: 'off',
-      lip: 'off',
-      blush: 'off'
-    };
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  const statusBar = document.getElementById('statusBar');
 
-    const brightnessMap = { off: 100, natural: 112, medium: 125, bright: 140 };
-    const smoothMap = { off: 0, soft: 1, medium: 2, smooth: 3 };
+  let landmarks = null;
+  let faceLandmarker = null;
 
-    const lipColors = {
-      pink:  { r: 244, g: 160, b: 176, a: 0.35 },
-      red:   { r: 192, g: 57,  b: 43,  a: 0.40 },
-      coral: { r: 232, g: 131, b: 106, a: 0.38 },
-      peach: { r: 245, g: 197, b: 163, a: 0.35 },
-      rose:  { r: 192, g: 96,  b: 128, a: 0.38 }
-    };
+  let state = { brightness: 0, smooth: 0, lip: 'off', blush: 'off' };
 
-    const blushColors = {
-      softpink: { r: 249, g: 192, b: 200, a: 0.30 },
-      peach:    { r: 245, g: 184, b: 154, a: 0.28 },
-      rose:     { r: 212, g: 112, b: 138, a: 0.28 },
-      medium:   { r: 232, g: 144, b: 154, a: 0.32 }
-    };
+  const img = new Image();
+  img.onload = async () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    await initMediaPipe();
+    detectAndDraw();
+  };
+  const fotoData = localStorage.getItem('foto');
+  if (fotoData) img.src = fotoData;
 
-    img.onload = function() {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      applyFilter();
-    };
-
-    const fotoData = localStorage.getItem('foto');
-    if (fotoData) {
-      img.src = fotoData;
-    }
-
-    function applyFilter() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const bright = brightnessMap[state.brightness];
-      const blur = smoothMap[state.smooth];
-
-      ctx.filter = `brightness(${bright}%) ${blur > 0 ? 'blur(' + blur + 'px)' : ''}`;
-      ctx.drawImage(img, 0, 0);
-      ctx.filter = 'none';
-
-      const w = canvas.width;
-      const h = canvas.height;
-
-      if (state.blush !== 'off' && blushColors[state.blush]) {
-        const c = blushColors[state.blush];
-        const color = `rgba(${c.r},${c.g},${c.b},${c.a})`;
-        const leftX = w * 0.22, rightX = w * 0.78, blushY = h * 0.42;
-        const rx = w * 0.14, ry = h * 0.08;
-        ctx.save();
-        ctx.scale(1, ry / rx);
-        ctx.beginPath();
-        ctx.arc(leftX, blushY * (rx / ry), rx, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(rightX, blushY * (rx / ry), rx, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      if (state.lip !== 'off' && lipColors[state.lip]) {
-        const c = lipColors[state.lip];
-        const color = `rgba(${c.r},${c.g},${c.b},${c.a})`;
-        const lipX = w * 0.5, lipY = h * 0.72;
-        const lipW = w * 0.18, lipH = h * 0.05;
-        ctx.beginPath();
-        ctx.ellipse(lipX, lipY, lipW, lipH, 0, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      }
-    }
-
-    function setFilter(type, val, btn) {
-      state[type] = val;
-      btn.closest('.pill-row').querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilter();
-    }
-
-    function setLip(val) {
-      state.lip = val;
-      document.querySelectorAll('.color-swatch, .swatch-off').forEach(s => s.classList.remove('active'));
-      if (val === 'off') document.getElementById('lipOff').classList.add('active');
-      else event.target.classList.add('active');
-      applyFilter();
-    }
-
-    function setBlush(val) {
-      state.blush = val;
-      document.querySelectorAll('.color-swatch, .swatch-off').forEach(s => s.classList.remove('active'));
-      if (val === 'off') document.getElementById('blushOff').classList.add('active');
-      else event.target.classList.add('active');
-      applyFilter();
-    }
-
-    function resetFilter() {
-      state = { brightness: 'off', smooth: 'off', lip: 'off', blush: 'off' };
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.pill-row').forEach(row => {
-        row.querySelector('.pill').classList.add('active');
+  async function initMediaPipe() {
+    try {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+      );
+      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+          delegate: "GPU"
+        },
+        runningMode: "IMAGE",
+        numFaces: 1
       });
-      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-      document.getElementById('lipOff').classList.add('active');
-      document.getElementById('blushOff').classList.add('active');
-      applyFilter();
+    } catch(e) {
+      statusBar.textContent = 'Face detection tidak tersedia, filter tetap jalan.';
+    }
+  }
+
+  function detectAndDraw() {
+    if (faceLandmarker) {
+      try {
+        const result = faceLandmarker.detect(img);
+        landmarks = result.faceLandmarks?.[0] || null;
+        statusBar.textContent = landmarks ? 'Wajah terdeteksi ✓' : 'Wajah tidak terdeteksi — posisikan wajah lebih jelas';
+      } catch(e) {
+        landmarks = null;
+        statusBar.textContent = 'Filter aktif tanpa face detection.';
+      }
+    }
+    applyFilter();
+  }
+
+  function applyFilter() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Smooth + draw base
+    if (state.smooth > 0) {
+      ctx.filter = `blur(${state.smooth}px)`;
+    }
+    ctx.drawImage(img, 0, 0);
+    ctx.filter = 'none';
+
+    // Brightness hanya di area wajah (oval covering face)
+    if (state.brightness > 0 && landmarks) {
+      const xs = landmarks.map(p => p.x * W);
+      const ys = landmarks.map(p => p.y * H);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      const rx = (maxX - minX) / 2 * 1.1, ry = (maxY - minY) / 2 * 1.1;
+
+      // Ambil pixel area wajah, brighten
+      const offscreen = document.createElement('canvas');
+      offscreen.width = W; offscreen.height = H;
+      const octx = offscreen.getContext('2d');
+      octx.filter = `brightness(${100 + state.brightness}%)`;
+      octx.drawImage(img, 0, 0);
+      octx.filter = 'none';
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(offscreen, 0, 0);
+      ctx.restore();
+    } else if (state.brightness > 0) {
+      // Fallback tanpa landmark: brightness seluruh foto tapi subtle
+      const offscreen = document.createElement('canvas');
+      offscreen.width = W; offscreen.height = H;
+      const octx = offscreen.getContext('2d');
+      octx.filter = `brightness(${100 + state.brightness * 0.5}%)`;
+      octx.drawImage(img, 0, 0);
+      ctx.globalAlpha = 0.6;
+      ctx.drawImage(offscreen, 0, 0);
+      ctx.globalAlpha = 1;
     }
 
-    function lanjut() {
-      const hasil = canvas.toDataURL('image/jpeg', 0.95);
-      localStorage.setItem('fotoFiltered', hasil);
-      window.location.href = 'template.html';
+    // Blush — ikut titik pipi landmark
+    if (state.blush !== 'off' && landmarks) {
+      const [r,g,b,a] = state.blush.split(',').map(Number);
+      // Landmark pipi kiri ~234, pipi kanan ~454
+      const leftCheek  = landmarks[234];
+      const rightCheek = landmarks[454];
+      if (leftCheek && rightCheek) {
+        const blushR = W * 0.09;
+        [[leftCheek.x * W, leftCheek.y * H], [rightCheek.x * W, rightCheek.y * H]].forEach(([bx, by]) => {
+          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
+          grad.addColorStop(0,   `rgba(${r},${g},${b},${a})`);
+          grad.addColorStop(0.5, `rgba(${r},${g},${b},${a * 0.5})`);
+          grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+          ctx.beginPath();
+          ctx.arc(bx, by, blushR, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        });
+      }
     }
 
-    function kembali() {
-      window.location.href = 'preview.html';
+    // Lip color — ikut kontur bibir landmark
+    if (state.lip !== 'off' && landmarks) {
+      const [r,g,b,a] = state.lip.split(',').map(Number);
+      // Indeks kontur bibir luar atas + bawah MediaPipe
+      const lipOuter = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146,61];
+      ctx.save();
+      ctx.beginPath();
+      lipOuter.forEach((idx, i) => {
+        const pt = landmarks[idx];
+        if (!pt) return;
+        i === 0 ? ctx.moveTo(pt.x * W, pt.y * H) : ctx.lineTo(pt.x * W, pt.y * H);
+      });
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+      ctx.fill();
+      ctx.restore();
     }
-  </script>
+  }
+
+  // Expose ke global untuk onclick
+  window.setPill = function(type, btn) {
+    state[type] = parseFloat(btn.dataset.val);
+    btn.closest('.pill-row').querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilter();
+  };
+
+  window.setSwatch = function(type, el) {
+    state[type] = el.dataset.val;
+    document.getElementById('grp' + type.charAt(0).toUpperCase() + type.slice(1))
+      .querySelectorAll('.swatch, .swatch-off').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    applyFilter();
+  };
+
+  window.resetFilter = function() {
+    state = { brightness: 0, smooth: 0, lip: 'off', blush: 'off' };
+    document.querySelectorAll('.pill-row').forEach(row => {
+      row.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      row.querySelector('.pill').classList.add('active');
+    });
+    ['grpLip','grpBlush'].forEach(id => {
+      document.getElementById(id).querySelectorAll('.swatch,.swatch-off').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).querySelector('.swatch-off').classList.add('active');
+    });
+    applyFilter();
+  };
+
+  window.lanjut = function() {
+    const hasil = canvas.toDataURL('image/jpeg', 0.95);
+    localStorage.setItem('fotoFiltered', hasil);
+    window.location.href = 'template.html';
+  };
+
+  window.kembali = function() {
+    window.location.href = 'preview.html';
+  };
+</script>
 
 </body>
 </html>

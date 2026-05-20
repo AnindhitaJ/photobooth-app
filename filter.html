@@ -4,13 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beauty Filter - Photobooth</title>
-  <script type="importmap">
-    {
-      "imports": {
-        "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js"
-      }
-    }
-  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -47,7 +40,6 @@
       justify-content: center;
     }
     .foto-wrapper {
-      position: relative;
       width: 300px;
       flex-shrink: 0;
       border-radius: 16px;
@@ -104,7 +96,6 @@
       cursor: pointer;
       border: 3px solid transparent;
       transition: all 0.15s;
-      flex-shrink: 0;
     }
     .swatch:hover { transform: scale(1.15); }
     .swatch.active { border-color: white; transform: scale(1.2); }
@@ -121,7 +112,6 @@
       justify-content: center;
       font-weight: 700;
       transition: all 0.15s;
-      flex-shrink: 0;
     }
     .swatch-off.active { border-color: white; color: white; }
     .btn-row { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
@@ -155,7 +145,7 @@
       <div class="foto-wrapper">
         <canvas id="previewCanvas"></canvas>
       </div>
-      <p class="status-bar" id="statusBar">Mendeteksi wajah...</p>
+      <p class="status-bar" id="statusBar">Memuat...</p>
     </div>
 
     <div class="filter-panel">
@@ -163,20 +153,20 @@
       <div class="filter-group">
         <div class="filter-label">Cerahkan Wajah</div>
         <div class="pill-row" id="grpBrightness">
-          <button class="pill active" data-val="0"     onclick="setPill('brightness',this)">Off</button>
-          <button class="pill"        data-val="15"    onclick="setPill('brightness',this)">Natural</button>
-          <button class="pill"        data-val="30"    onclick="setPill('brightness',this)">Medium</button>
-          <button class="pill"        data-val="50"    onclick="setPill('brightness',this)">Bright</button>
+          <button class="pill active" data-val="0"  onclick="setPill('brightness',this)">Off</button>
+          <button class="pill"        data-val="15" onclick="setPill('brightness',this)">Natural</button>
+          <button class="pill"        data-val="30" onclick="setPill('brightness',this)">Medium</button>
+          <button class="pill"        data-val="50" onclick="setPill('brightness',this)">Bright</button>
         </div>
       </div>
 
       <div class="filter-group">
         <div class="filter-label">Haluskan Kulit</div>
         <div class="pill-row" id="grpSmooth">
-          <button class="pill active" data-val="0"   onclick="setPill('smooth',this)">Off</button>
-          <button class="pill"        data-val="1"   onclick="setPill('smooth',this)">Soft</button>
-          <button class="pill"        data-val="2"   onclick="setPill('smooth',this)">Medium</button>
-          <button class="pill"        data-val="3"   onclick="setPill('smooth',this)">Smooth</button>
+          <button class="pill active" data-val="0" onclick="setPill('smooth',this)">Off</button>
+          <button class="pill"        data-val="1" onclick="setPill('smooth',this)">Soft</button>
+          <button class="pill"        data-val="2" onclick="setPill('smooth',this)">Medium</button>
+          <button class="pill"        data-val="3" onclick="setPill('smooth',this)">Smooth</button>
         </div>
       </div>
 
@@ -212,9 +202,7 @@
     </div>
   </div>
 
-<script type="module">
-  import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-
+<script>
   const paket = localStorage.getItem('paket') || '5k';
   document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
 
@@ -223,48 +211,47 @@
   const statusBar = document.getElementById('statusBar');
 
   let landmarks = null;
-  let faceLandmarker = null;
-
   let state = { brightness: 0, smooth: 0, lip: 'off', blush: 'off' };
 
   const img = new Image();
-  img.onload = async () => {
+  img.onload = () => {
     canvas.width = img.width;
     canvas.height = img.height;
-    await initMediaPipe();
-    detectAndDraw();
+    loadMediaPipe();
   };
-  const fotoData = localStorage.getItem('foto');
-  if (fotoData) img.src = fotoData;
 
-  async function initMediaPipe() {
-    try {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-      );
-      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate: "GPU"
-        },
-        runningMode: "IMAGE",
-        numFaces: 1
-      });
-    } catch(e) {
-      statusBar.textContent = 'Face detection tidak tersedia, filter tetap jalan.';
-    }
+  const fotoData = localStorage.getItem('foto');
+  if (fotoData) {
+    img.src = fotoData;
+  } else {
+    statusBar.textContent = 'Foto tidak ditemukan.';
   }
 
-  function detectAndDraw() {
-    if (faceLandmarker) {
-      try {
-        const result = faceLandmarker.detect(img);
-        landmarks = result.faceLandmarks?.[0] || null;
-        statusBar.textContent = landmarks ? 'Wajah terdeteksi ✓' : 'Wajah tidak terdeteksi — posisikan wajah lebih jelas';
-      } catch(e) {
-        landmarks = null;
-        statusBar.textContent = 'Filter aktif tanpa face detection.';
-      }
+  async function loadMediaPipe() {
+    statusBar.textContent = 'Memuat face detection...';
+    try {
+      const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
+      const { FaceLandmarker, FilesetResolver } = vision;
+
+      const filesetResolver = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+
+      const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate: 'CPU'
+        },
+        runningMode: 'IMAGE',
+        numFaces: 1
+      });
+
+      const result = faceLandmarker.detect(img);
+      landmarks = result.faceLandmarks?.[0] || null;
+      statusBar.textContent = landmarks ? 'Wajah terdeteksi ✓' : 'Wajah tidak terdeteksi — coba foto ulang dengan pencahayaan lebih terang';
+    } catch(e) {
+      console.error(e);
+      statusBar.textContent = 'Face detection gagal dimuat — filter tetap aktif';
     }
     applyFilter();
   }
@@ -273,60 +260,70 @@
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Smooth + draw base
+    // Base foto dengan smooth
     if (state.smooth > 0) {
       ctx.filter = `blur(${state.smooth}px)`;
     }
     ctx.drawImage(img, 0, 0);
     ctx.filter = 'none';
 
-    // Brightness hanya di area wajah (oval covering face)
-    if (state.brightness > 0 && landmarks) {
-      const xs = landmarks.map(p => p.x * W);
-      const ys = landmarks.map(p => p.y * H);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
-      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-      const rx = (maxX - minX) / 2 * 1.1, ry = (maxY - minY) / 2 * 1.1;
+    // Brightness di area wajah
+    if (state.brightness > 0) {
+      if (landmarks) {
+        const xs = landmarks.map(p => p.x * W);
+        const ys = landmarks.map(p => p.y * H);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+        const rx = (maxX - minX) / 2 * 1.15;
+        const ry = (maxY - minY) / 2 * 1.15;
 
-      // Ambil pixel area wajah, brighten
-      const offscreen = document.createElement('canvas');
-      offscreen.width = W; offscreen.height = H;
-      const octx = offscreen.getContext('2d');
-      octx.filter = `brightness(${100 + state.brightness}%)`;
-      octx.drawImage(img, 0, 0);
-      octx.filter = 'none';
+        const off = document.createElement('canvas');
+        off.width = W; off.height = H;
+        const octx = off.getContext('2d');
+        octx.filter = `brightness(${100 + state.brightness}%)`;
+        octx.drawImage(img, 0, 0);
+        octx.filter = 'none';
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.drawImage(offscreen, 0, 0);
-      ctx.restore();
-    } else if (state.brightness > 0) {
-      // Fallback tanpa landmark: brightness seluruh foto tapi subtle
-      const offscreen = document.createElement('canvas');
-      offscreen.width = W; offscreen.height = H;
-      const octx = offscreen.getContext('2d');
-      octx.filter = `brightness(${100 + state.brightness * 0.5}%)`;
-      octx.drawImage(img, 0, 0);
-      ctx.globalAlpha = 0.6;
-      ctx.drawImage(offscreen, 0, 0);
-      ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(off, 0, 0);
+        ctx.restore();
+      } else {
+        // Fallback tanpa landmark
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = `rgba(255,255,255,${state.brightness * 0.003})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
     }
 
-    // Blush — ikut titik pipi landmark
-    if (state.blush !== 'off' && landmarks) {
+    // Blush — pakai landmark pipi
+    if (state.blush !== 'off') {
       const [r,g,b,a] = state.blush.split(',').map(Number);
-      // Landmark pipi kiri ~234, pipi kanan ~454
-      const leftCheek  = landmarks[234];
-      const rightCheek = landmarks[454];
-      if (leftCheek && rightCheek) {
-        const blushR = W * 0.09;
+      if (landmarks) {
+        const leftCheek  = landmarks[234];
+        const rightCheek = landmarks[454];
+        const blushR = W * 0.10;
         [[leftCheek.x * W, leftCheek.y * H], [rightCheek.x * W, rightCheek.y * H]].forEach(([bx, by]) => {
           const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
           grad.addColorStop(0,   `rgba(${r},${g},${b},${a})`);
-          grad.addColorStop(0.5, `rgba(${r},${g},${b},${a * 0.5})`);
+          grad.addColorStop(0.6, `rgba(${r},${g},${b},${a * 0.4})`);
+          grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+          ctx.beginPath();
+          ctx.arc(bx, by, blushR, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        });
+      } else {
+        // Fallback tanpa landmark — posisi kira-kira
+        const blushR = W * 0.10;
+        [[W * 0.25, H * 0.45], [W * 0.75, H * 0.45]].forEach(([bx, by]) => {
+          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
+          grad.addColorStop(0,   `rgba(${r},${g},${b},${a})`);
           grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
           ctx.beginPath();
           ctx.arc(bx, by, blushR, 0, Math.PI * 2);
@@ -336,26 +333,34 @@
       }
     }
 
-    // Lip color — ikut kontur bibir landmark
-    if (state.lip !== 'off' && landmarks) {
+    // Lip color — pakai kontur bibir landmark
+    if (state.lip !== 'off') {
       const [r,g,b,a] = state.lip.split(',').map(Number);
-      // Indeks kontur bibir luar atas + bawah MediaPipe
-      const lipOuter = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146,61];
-      ctx.save();
-      ctx.beginPath();
-      lipOuter.forEach((idx, i) => {
-        const pt = landmarks[idx];
-        if (!pt) return;
-        i === 0 ? ctx.moveTo(pt.x * W, pt.y * H) : ctx.lineTo(pt.x * W, pt.y * H);
-      });
-      ctx.closePath();
-      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-      ctx.fill();
-      ctx.restore();
+      if (landmarks) {
+        const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+        ctx.save();
+        ctx.beginPath();
+        lipIdx.forEach((idx, i) => {
+          const pt = landmarks[idx];
+          if (!pt) return;
+          i === 0 ? ctx.moveTo(pt.x * W, pt.y * H) : ctx.lineTo(pt.x * W, pt.y * H);
+        });
+        ctx.closePath();
+        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // Fallback tanpa landmark
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(W * 0.5, H * 0.72, W * 0.10, H * 0.035, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.fill();
+        ctx.restore();
+      }
     }
   }
 
-  // Expose ke global untuk onclick
   window.setPill = function(type, btn) {
     state[type] = parseFloat(btn.dataset.val);
     btn.closest('.pill-row').querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
@@ -365,8 +370,8 @@
 
   window.setSwatch = function(type, el) {
     state[type] = el.dataset.val;
-    document.getElementById('grp' + type.charAt(0).toUpperCase() + type.slice(1))
-      .querySelectorAll('.swatch, .swatch-off').forEach(s => s.classList.remove('active'));
+    const grpId = 'grp' + type.charAt(0).toUpperCase() + type.slice(1);
+    document.getElementById(grpId).querySelectorAll('.swatch,.swatch-off').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
     applyFilter();
   };
@@ -385,7 +390,7 @@
   };
 
   window.lanjut = function() {
-    const hasil = canvas.toDataURL('image/jpeg', 0.95);
+    const hasil = canvas.toDataURL('image/jpeg', 0.92);
     localStorage.setItem('fotoFiltered', hasil);
     window.location.href = 'template.html';
   };

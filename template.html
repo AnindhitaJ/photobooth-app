@@ -6,6 +6,7 @@
   <title>Pilih Template - Photobooth</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #1a1a2e;
@@ -16,6 +17,7 @@
       align-items: center;
       padding: 24px;
     }
+
     .top-bar {
       width: 100%;
       max-width: 860px;
@@ -24,6 +26,7 @@
       justify-content: space-between;
       margin-bottom: 24px;
     }
+
     .paket-badge {
       display: inline-block;
       background: #e94560;
@@ -35,6 +38,7 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+
     .admin-btn {
       background: transparent;
       border: none;
@@ -45,10 +49,25 @@
       border-radius: 8px;
       transition: all 0.2s;
     }
-    .admin-btn:hover { color: white; background: #16213e; }
 
-    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
-    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 28px; text-align: center; }
+    .admin-btn:hover {
+      color: white;
+      background: #16213e;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    p.sub {
+      font-size: 14px;
+      color: #a0a0b0;
+      margin-bottom: 28px;
+      text-align: center;
+    }
 
     .template-grid {
       display: grid;
@@ -58,6 +77,7 @@
       max-width: 860px;
       margin-bottom: 32px;
     }
+
     .template-card {
       cursor: pointer;
       border-radius: 12px;
@@ -69,9 +89,24 @@
       flex-direction: column;
       align-items: center;
     }
-    .template-card:hover { border-color: #e94560; transform: translateY(-4px); }
-    .template-card.selected { border-color: #e94560; box-shadow: 0 0 0 2px #e94560; }
-    .template-card img { width: 100%; display: block; object-fit: cover; aspect-ratio: 1/2; }
+
+    .template-card:hover {
+      border-color: #e94560;
+      transform: translateY(-4px);
+    }
+
+    .template-card.selected {
+      border-color: #e94560;
+      box-shadow: 0 0 0 2px #e94560;
+    }
+
+    .template-card img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+      aspect-ratio: 1/2;
+    }
+
     .template-name {
       font-size: 12px;
       font-weight: 600;
@@ -79,7 +114,11 @@
       padding: 8px 10px;
       text-align: center;
     }
-    .template-card.selected .template-name { color: #e94560; }
+
+    .template-card.selected .template-name {
+      color: #e94560;
+    }
+
     .selected-badge {
       display: none;
       font-size: 10px;
@@ -90,7 +129,10 @@
       margin: 6px 0 0;
       font-weight: 700;
     }
-    .template-card.selected .selected-badge { display: inline-block; }
+
+    .template-card.selected .selected-badge {
+      display: inline-block;
+    }
 
     .empty-state {
       text-align: center;
@@ -98,8 +140,17 @@
       padding: 48px 24px;
       width: 100%;
     }
-    .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: white; }
-    .empty-state p { font-size: 14px; margin-bottom: 16px; }
+
+    .empty-state h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: white;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
 
     .info-box {
       background: #16213e;
@@ -113,9 +164,19 @@
       max-width: 860px;
       width: 100%;
     }
-    .info-box span { color: #e94560; font-weight: 700; }
 
-    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .info-box span {
+      color: #e94560;
+      font-weight: 700;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
     .btn {
       padding: 14px 28px;
       border-radius: 50px;
@@ -125,24 +186,52 @@
       border: none;
       transition: all 0.2s;
     }
-    .btn-primary { background: #e94560; color: white; min-width: 200px; opacity: 0.4; pointer-events: none; }
-    .btn-primary.aktif { opacity: 1; pointer-events: all; }
-    .btn-primary.aktif:hover { background: #c73652; transform: scale(1.03); }
-    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
-    .btn-secondary:hover { color: white; border-color: white; }
 
-    /* Password modal */
+    .btn-primary {
+      background: #e94560;
+      color: white;
+      min-width: 200px;
+      opacity: 0.4;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    .btn-primary.aktif {
+      opacity: 1;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .btn-primary.aktif:hover {
+      background: #c73652;
+      transform: scale(1.03);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #a0a0b0;
+      border: 2px solid #a0a0b0;
+    }
+
+    .btn-secondary:hover {
+      color: white;
+      border-color: white;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.7);
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       z-index: 999;
-      display: none;
     }
-    .modal-overlay.show { display: flex; }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
     .modal {
       background: #16213e;
       border-radius: 20px;
@@ -151,8 +240,18 @@
       text-align: center;
       border: 2px solid #0f3460;
     }
-    .modal h3 { font-size: 18px; margin-bottom: 8px; }
-    .modal p { font-size: 13px; color: #a0a0b0; margin-bottom: 20px; }
+
+    .modal h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size: 13px;
+      color: #a0a0b0;
+      margin-bottom: 20px;
+    }
+
     .modal input {
       width: 100%;
       padding: 12px 16px;
@@ -166,8 +265,16 @@
       margin-bottom: 12px;
       outline: none;
     }
-    .modal input:focus { border-color: #e94560; }
-    .modal-btns { display: flex; gap: 10px; }
+
+    .modal input:focus {
+      border-color: #e94560;
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+    }
+
     .modal-btns button {
       flex: 1;
       padding: 12px;
@@ -178,11 +285,34 @@
       border: none;
       transition: all 0.2s;
     }
-    .modal-confirm { background: #e94560; color: white; }
-    .modal-confirm:hover { background: #c73652; }
-    .modal-cancel { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
-    .modal-cancel:hover { color: white; border-color: white; }
-    .modal-error { color: #e94560; font-size: 12px; margin-top: 8px; min-height: 16px; }
+
+    .modal-confirm {
+      background: #e94560;
+      color: white;
+    }
+
+    .modal-confirm:hover {
+      background: #c73652;
+    }
+
+    .modal-cancel {
+      background: transparent;
+      color: #a0a0b0;
+      border: 2px solid #a0a0b0 !important;
+    }
+
+    .modal-cancel:hover {
+      color: white;
+      border-color: white !important;
+    }
+
+    .modal-error {
+      color: #e94560 !important;
+      font-size: 12px !important;
+      margin-top: 8px;
+      min-height: 16px;
+      margin-bottom: 0 !important;
+    }
   </style>
 </head>
 <body>
@@ -207,13 +337,17 @@
     <button class="btn btn-primary" id="btnLanjut" onclick="lanjut()">Mulai Foto →</button>
   </div>
 
-  <!-- Password Modal -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <h3>🔐 Admin Access</h3>
       <p>Masukkan password untuk masuk ke Template Manager</p>
-      <input type="password" id="passwordInput" placeholder="••••••" maxlength="10"
-        onkeydown="if(event.key==='Enter') cekPassword()">
+      <input
+        type="password"
+        id="passwordInput"
+        placeholder="••••••"
+        maxlength="10"
+        onkeydown="if(event.key === 'Enter') cekPassword()"
+      >
       <div class="modal-btns">
         <button class="modal-cancel" onclick="tutupModal()">Batal</button>
         <button class="modal-confirm" onclick="cekPassword()">Masuk</button>
@@ -229,8 +363,30 @@
   let selectedTemplate = null;
 
   function getSavedTemplates() {
-    try { return JSON.parse(localStorage.getItem('pb_templates') || '[]'); }
-    catch { return []; }
+    try {
+      const data = JSON.parse(localStorage.getItem('pb_templates') || '[]');
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function selectTemplate(tmpl, card) {
+    document.querySelectorAll('.template-card').forEach(c => {
+      c.classList.remove('selected');
+    });
+
+    card.classList.add('selected');
+    selectedTemplate = tmpl;
+
+    localStorage.setItem('templateSrc', tmpl.src);
+    localStorage.setItem('templateSlots', JSON.stringify(tmpl.slots || []));
+    localStorage.setItem('templateName', tmpl.name || 'Template');
+    localStorage.setItem('slotCount', (tmpl.slots || []).length);
+
+    document.getElementById('slotCount').textContent = (tmpl.slots || []).length;
+    document.getElementById('infoBox').style.display = 'block';
+    document.getElementById('btnLanjut').classList.add('aktif');
   }
 
   function renderTemplates() {
@@ -242,39 +398,66 @@
         <div class="empty-state" style="grid-column:1/-1">
           <h3>Belum ada template</h3>
           <p>Admin perlu upload template dulu lewat menu ⚙️</p>
-        </div>`;
+        </div>
+      `;
+
+      selectedTemplate = null;
+      document.getElementById('infoBox').style.display = 'none';
+      document.getElementById('btnLanjut').classList.remove('aktif');
       return;
     }
 
     grid.innerHTML = '';
-    templates.forEach((tmpl) => {
+
+    templates.forEach((tmpl, index) => {
       const card = document.createElement('div');
       card.className = 'template-card';
+
+      const safeName = tmpl.name || `Template ${index + 1}`;
+      const slotLength = Array.isArray(tmpl.slots) ? tmpl.slots.length : 0;
+
       card.innerHTML = `
         <span class="selected-badge">✓ Dipilih</span>
-        <img src="${tmpl.src}" alt="${tmpl.name}">
-        <div class="template-name">${tmpl.name}<br><span style="color:#555;font-size:10px">${tmpl.slots.length} foto</span></div>
+        <img src="${tmpl.src}" alt="${safeName}">
+        <div class="template-name">
+          ${safeName}<br>
+          <span style="color:#555;font-size:10px">${slotLength} foto</span>
+        </div>
       `;
+
       card.onclick = () => {
-        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        selectedTemplate = tmpl;
-        localStorage.setItem('templateSrc', tmpl.src);
-        localStorage.setItem('templateSlots', JSON.stringify(tmpl.slots));
-        localStorage.setItem('templateName', tmpl.name);
-        localStorage.setItem('slotCount', tmpl.slots.length);
-        document.getElementById('slotCount').textContent = tmpl.slots.length;
-        document.getElementById('infoBox').style.display = 'block';
-        document.getElementById('btnLanjut').classList.add('aktif');
+        selectTemplate(tmpl, card);
       };
+
       grid.appendChild(card);
     });
+
+    setTimeout(() => {
+      const firstCard = document.querySelector('.template-card');
+      if (firstCard && templates[0]) {
+        selectTemplate(templates[0], firstCard);
+      }
+    }, 0);
   }
 
   function lanjut() {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate) {
+      alert('Pilih template dulu.');
+      return;
+    }
+
+    const slots = selectedTemplate.slots || [];
+
+    if (slots.length === 0) {
+      alert('Template ini belum punya slot foto. Edit dulu di admin.');
+      return;
+    }
+
     localStorage.removeItem('photos');
     localStorage.removeItem('filteredPhotos');
+    localStorage.removeItem('foto');
+    localStorage.removeItem('filteredPhoto');
+
     window.location.href = 'camera.html';
   }
 
@@ -282,12 +465,14 @@
     window.location.href = 'index.html';
   }
 
-  // Admin modal
   function bukaAdmin() {
     document.getElementById('modalOverlay').classList.add('show');
     document.getElementById('passwordInput').value = '';
     document.getElementById('modalError').textContent = '';
-    setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+
+    setTimeout(() => {
+      document.getElementById('passwordInput').focus();
+    }, 100);
   }
 
   function tutupModal() {
@@ -296,6 +481,7 @@
 
   function cekPassword() {
     const pw = document.getElementById('passwordInput').value;
+
     if (pw === '123456') {
       tutupModal();
       window.location.href = 'admin.html';
@@ -306,9 +492,10 @@
     }
   }
 
-  // Tutup modal klik luar
   document.getElementById('modalOverlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('modalOverlay')) tutupModal();
+    if (e.target === document.getElementById('modalOverlay')) {
+      tutupModal();
+    }
   });
 
   renderTemplates();

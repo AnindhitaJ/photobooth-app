@@ -1,12 +1,20 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hasil - Photobooth</title>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #1a1a2e;
@@ -17,6 +25,7 @@
       align-items: center;
       padding: 24px;
     }
+
     .paket-badge {
       display: inline-block;
       background: #e94560;
@@ -24,13 +33,25 @@
       font-size: 12px;
       font-weight: 700;
       padding: 4px 12px;
-      border-radius: 50px;
+      border-radius: 999px;
       margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
-    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 24px; text-align: center; }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    p.sub {
+      font-size: 14px;
+      color: #a0a0b0;
+      margin-bottom: 24px;
+      text-align: center;
+    }
 
     .main-layout {
       display: flex;
@@ -51,7 +72,9 @@
       background: #000;
     }
 
-    #resultCanvas { display: block; }
+    #resultCanvas {
+      display: block;
+    }
 
     .loading-overlay {
       position: absolute;
@@ -74,7 +97,12 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     .action-panel {
       flex: 1;
@@ -96,21 +124,30 @@
       cursor: pointer;
       border: none;
       transition: all 0.2s;
-      text-decoration: none;
     }
-    .btn-icon { font-size: 20px; }
 
-    .btn-download { background: #e94560; color: white; }
-    .btn-download:hover { background: #c73652; transform: scale(1.02); }
+    .btn-download {
+      background: #e94560;
+      color: white;
+    }
 
-    .btn-wa { background: #25d366; color: white; }
-    .btn-wa:hover { background: #1fb855; transform: scale(1.02); }
+    .btn-wa {
+      background: #25d366;
+      color: white;
+    }
 
-    .btn-share { background: #0f3460; color: white; border: 2px solid #1a5090; }
-    .btn-share:hover { background: #1a5090; transform: scale(1.02); }
+    .btn-share {
+      background: #0f3460;
+      color: white;
+      border: 2px solid #1a5090;
+    }
 
-    .btn-ulang { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; justify-content: center; }
-    .btn-ulang:hover { color: white; border-color: white; }
+    .btn-ulang {
+      background: transparent;
+      color: #a0a0b0;
+      border: 2px solid #a0a0b0;
+      justify-content: center;
+    }
 
     .qr-box {
       background: #16213e;
@@ -120,15 +157,6 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-    }
-    .qr-box p {
-      font-size: 12px;
-      color: #a0a0b0;
-      text-align: center;
-      line-height: 1.5;
-    }
-    #qrcode canvas, #qrcode img {
-      border-radius: 8px;
     }
 
     .divider {
@@ -143,6 +171,21 @@
       text-align: center;
       min-height: 20px;
     }
+
+    #debugBox {
+      background: black;
+      color: lime;
+      padding: 12px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 960px;
+      border-radius: 12px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      overflow-wrap: break-word;
+    }
+
   </style>
 </head>
 <body>
@@ -156,28 +199,28 @@
   <div class="main-layout">
 
     <div class="result-wrapper" id="resultWrapper">
+
       <canvas id="resultCanvas"></canvas>
+
       <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
         <span>Menggabungkan foto...</span>
       </div>
+
     </div>
 
     <div class="action-panel">
 
       <button class="btn btn-download" id="btnDownload" onclick="downloadFoto()" disabled>
-        <span class="btn-icon">⬇️</span>
-        <span>Download Soft File</span>
+        ⬇️ Download Soft File
       </button>
 
       <button class="btn btn-wa" id="btnWa" onclick="shareWa()" disabled>
-        <span class="btn-icon">💬</span>
-        <span>Kirim ke WhatsApp</span>
+        💬 Kirim ke WhatsApp
       </button>
 
       <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
-        <span class="btn-icon">📤</span>
-        <span>Share ke Aplikasi Lain</span>
+        📤 Share ke Aplikasi Lain
       </button>
 
       <div class="divider"></div>
@@ -185,200 +228,425 @@
       <div class="qr-box">
         <p>Scan QR ini dari HP untuk download foto</p>
         <div id="qrcode"></div>
-        <p id="qrStatus" style="color:#e94560">Menunggu foto selesai...</p>
+        <p id="qrStatus" style="color:#e94560">
+          Menunggu foto selesai...
+        </p>
       </div>
 
       <div class="divider"></div>
 
       <p id="statusMsg"></p>
 
-      <button class="btn btn-ulang" onclick="fotoLagi()">📷 Foto Lagi</button>
-      <div id="debugBox" style="
-  background:black;
-  color:lime;
-  padding:10px;
-  margin-top:20px;
-  width:100%;
-  max-width:500px;
-  font-size:12px;
-  white-space:pre-wrap;
-  border-radius:10px;
-"></div>
+      <button class="btn btn-ulang" onclick="fotoLagi()">
+        📷 Foto Lagi
+      </button>
 
     </div>
+
   </div>
 
+  <div id="debugBox"></div>
+
 <script>
+
+  // =========================
+  // DEBUG FUNCTION
+  // =========================
+
+  function debug(msg) {
+
+    console.log(msg);
+
+    const box = document.getElementById('debugBox');
+
+    if (box) {
+      box.innerText += msg + '\n';
+    }
+  }
+
+  // =========================
+  // LOAD STORAGE
+  // =========================
+
   const paket = localStorage.getItem('paket') || '5k';
-  document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
 
-  const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
-  const templateSrc    = localStorage.getItem('templateSrc');
-  const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
-  debug('FILTERED: ' + JSON.stringify(filteredPhotos));
-debug('SLOTS: ' + JSON.stringify(slots));
-debug('TEMPLATE: ' + templateSrc);
+  document.getElementById('paketBadge').textContent =
+    'Paket ' + paket.toUpperCase();
 
-  const canvas  = document.getElementById('resultCanvas');
-  const ctx     = canvas.getContext('2d');
+  const filteredPhotos =
+    JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
 
-  // Ukuran output sesuai paket
+  const templateSrc =
+    localStorage.getItem('templateSrc');
+
+  const slots =
+    JSON.parse(localStorage.getItem('templateSlots') || '[]');
+
+  debug('========== START ==========');
+  debug('PAKET: ' + paket);
+  debug('PHOTO COUNT: ' + filteredPhotos.length);
+  debug('SLOT COUNT: ' + slots.length);
+  debug('TEMPLATE: ' + templateSrc);
+
+  // =========================
+  // CANVAS
+  // =========================
+
+  const canvas = document.getElementById('resultCanvas');
+  const ctx = canvas.getContext('2d');
+
   const OUTPUT = paket === '5k'
-    ? { w: 591,  h: 1772 }
+    ? { w: 591, h: 1772 }
     : { w: 1181, h: 1772 };
 
-  // Tampilan max 320px lebar
   const displayW = 280;
-  const displayH = Math.round(OUTPUT.h * displayW / OUTPUT.w);
-  canvas.style.width  = displayW + 'px';
+  const displayH = Math.round(
+    OUTPUT.h * displayW / OUTPUT.w
+  );
+
+  canvas.style.width = displayW + 'px';
   canvas.style.height = displayH + 'px';
-  canvas.width  = OUTPUT.w;
+
+  canvas.width = OUTPUT.w;
   canvas.height = OUTPUT.h;
 
   let finalDataURL = null;
-  function debug(msg) {
-  document.getElementById('debugBox').innerText += msg + '\n';
-  }
+
+  // =========================
+  // LOAD IMAGE
+  // =========================
 
   async function loadImage(src) {
+
     return new Promise((resolve, reject) => {
+
       const img = new Image();
+
       img.crossOrigin = 'anonymous';
-      img.onload  = () => resolve(img);
-      img.onerror = reject;
+
+      img.onload = () => {
+        debug('IMAGE LOADED');
+        resolve(img);
+      };
+
+      img.onerror = (e) => {
+        debug('IMAGE FAILED');
+        console.error(e);
+        reject(e);
+      };
+
       img.src = src;
+
     });
+
   }
 
+  // =========================
+  // GENERATE RESULT
+  // =========================
+
   async function generateResult() {
+
     try {
-      // 1. Gambar foto-foto ke slot masing-masing
+
+      debug('GENERATE START');
+
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, OUTPUT.w, OUTPUT.h);
 
+      // =========================
+      // LOOP FOTO
+      // =========================
+
       for (let i = 0; i < slots.length; i++) {
+
+        debug('----------------');
+        debug('LOOP: ' + i);
+
         const slot = slots[i];
-        const photoSrc = filteredPhotos[i] || filteredPhotos[0];
-        debug('PHOTO SRC EXISTS: ' + !!photoSrc);
 
-const photo = await loadImage(photoSrc);
+        debug('SLOT: ' + JSON.stringify(slot));
 
-debug('PHOTO WIDTH: ' + photo.width);
-debug('PHOTO HEIGHT: ' + photo.height);
+        const photoSrc =
+          filteredPhotos[i] || filteredPhotos[0];
 
-ctx.strokeStyle = 'red';
-ctx.lineWidth = 5;
-ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+        debug('PHOTO EXISTS: ' + !!photoSrc);
 
-debug('DRAWING...');
-        if (!photoSrc) continue;
+        if (!photoSrc) {
+          debug('PHOTO EMPTY');
+          continue;
+        }
+
+        debug('PHOTO LENGTH: ' + photoSrc.length);
+
+        // LOAD FOTO
+        debug('LOADING PHOTO...');
 
         const photo = await loadImage(photoSrc);
 
-        // Cover fit: isi slot tanpa distorsi
+        debug('PHOTO WIDTH: ' + photo.width);
+        debug('PHOTO HEIGHT: ' + photo.height);
+
+        // DEBUG SLOT
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 5;
+
+        ctx.strokeRect(
+          slot.x,
+          slot.y,
+          slot.w,
+          slot.h
+        );
+
+        // COVER FIT
         const scaleX = slot.w / photo.width;
         const scaleY = slot.h / photo.height;
-        const scale  = Math.max(scaleX, scaleY);
+
+        const scale = Math.max(scaleX, scaleY);
+
         const sw = slot.w / scale;
         const sh = slot.h / scale;
-        const sx = (photo.width  - sw) / 2;
+
+        const sx = (photo.width - sw) / 2;
         const sy = (photo.height - sh) / 2;
 
-        ctx.drawImage(photo, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+        debug('DRAWING PHOTO');
+
+        ctx.drawImage(
+          photo,
+          sx,
+          sy,
+          sw,
+          sh,
+          slot.x,
+          slot.y,
+          slot.w,
+          slot.h
+        );
+
       }
 
-      // 2. Overlay template di atas foto
-      const tmpl = await loadImage(templateSrc);
-      ctx.drawImage(tmpl, 0, 0, OUTPUT.w, OUTPUT.h);
+      // =========================
+      // TEMPLATE
+      // =========================
 
-      // 3. Selesai
-      finalDataURL = canvas.toDataURL('image/jpeg', 0.95);
+      debug('LOADING TEMPLATE...');
 
-      // Sembunyikan loading
-      document.getElementById('loadingOverlay').style.display = 'none';
+      try {
 
-      // Aktifkan tombol
-      ['btnDownload','btnWa','btnShare'].forEach(id => {
+        const tmpl = await loadImage(templateSrc);
+
+        debug('TEMPLATE LOADED');
+
+        ctx.drawImage(
+          tmpl,
+          0,
+          0,
+          OUTPUT.w,
+          OUTPUT.h
+        );
+
+        debug('TEMPLATE DRAWN');
+
+      } catch(e) {
+
+        debug('TEMPLATE ERROR');
+
+        console.error(e);
+
+      }
+
+      // =========================
+      // EXPORT
+      // =========================
+
+      debug('EXPORTING JPG...');
+
+      finalDataURL =
+        canvas.toDataURL('image/jpeg', 0.7);
+
+      debug('EXPORT DONE');
+
+      // HIDE LOADING
+      document.getElementById('loadingOverlay').style.display =
+        'none';
+
+      // ENABLE BUTTONS
+      ['btnDownload','btnWa','btnShare']
+      .forEach(id => {
         document.getElementById(id).disabled = false;
       });
 
-      // Generate QR
+      // QR
       generateQR();
 
+      debug('========== FINISHED ==========');
+
     } catch(e) {
+
       console.error(e);
+
+      debug('========== ERROR ==========');
+      debug(e.message);
+
       document.getElementById('loadingOverlay').innerHTML =
-        '<span style="color:#e94560">Gagal generate foto. Coba ulangi.</span>';
+        '<span style="color:#e94560">Gagal generate foto</span>';
+
     }
+
   }
+
+  // =========================
+  // QR
+  // =========================
 
   function generateQR() {
+
     if (!finalDataURL) return;
 
-    // Simpan foto ke localStorage, buat link "download page"
-    localStorage.setItem('finalPhoto', finalDataURL);
+    localStorage.setItem(
+      'finalPhoto',
+      finalDataURL
+    );
 
-    // QR mengarah ke halaman download sederhana
-    const downloadURL = window.location.origin + '/download.html';
+    const downloadURL =
+      window.location.origin + '/download.html';
 
     document.getElementById('qrStatus').textContent = '';
-    new QRCode(document.getElementById('qrcode'), {
-      text: downloadURL,
-      width: 160,
-      height: 160,
-      colorDark: '#ffffff',
-      colorLight: '#16213e',
-    });
+
+    new QRCode(
+      document.getElementById('qrcode'),
+      {
+        text: downloadURL,
+        width: 160,
+        height: 160,
+        colorDark: '#ffffff',
+        colorLight: '#16213e',
+      }
+    );
+
+    debug('QR GENERATED');
+
   }
+
+  // =========================
+  // DOWNLOAD
+  // =========================
 
   function downloadFoto() {
+
     if (!finalDataURL) return;
+
     const a = document.createElement('a');
+
     a.href = finalDataURL;
-    a.download = `photobooth-${Date.now()}.jpg`;
+
+    a.download =
+      `photobooth-${Date.now()}.jpg`;
+
     a.click();
-    document.getElementById('statusMsg').textContent = 'Download dimulai ✓';
-    setTimeout(() => document.getElementById('statusMsg').textContent = '', 2000);
+
+    document.getElementById('statusMsg').textContent =
+      'Download dimulai ✓';
+
+    setTimeout(() => {
+
+      document.getElementById('statusMsg').textContent = '';
+
+    }, 2000);
+
   }
+
+  // =========================
+  // SHARE WA
+  // =========================
 
   function shareWa() {
+
     if (!finalDataURL) return;
-    // WhatsApp share via link download
-    const msg = encodeURIComponent('Halo! Ini hasil foto photobooth kamu 📸\nDownload di: ' + window.location.origin + '/download.html');
-    window.open('https://wa.me/?text=' + msg, '_blank');
+
+    const msg = encodeURIComponent(
+      'Halo! Ini hasil photobooth kamu 📸\n' +
+      window.location.origin + '/download.html'
+    );
+
+    window.open(
+      'https://wa.me/?text=' + msg,
+      '_blank'
+    );
+
   }
 
-  async function shareNative() {
-    if (!finalDataURL) return;
-    try {
-      // Convert dataURL ke blob
-      const res  = await fetch(finalDataURL);
-      const blob = await res.blob();
-      const file = new File([blob], 'photobooth.jpg', { type: 'image/jpeg' });
+  // =========================
+  // SHARE NATIVE
+  // =========================
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Hasil Photobooth' });
+  async function shareNative() {
+
+    if (!finalDataURL) return;
+
+    try {
+
+      const res = await fetch(finalDataURL);
+
+      const blob = await res.blob();
+
+      const file = new File(
+        [blob],
+        'photobooth.jpg',
+        {
+          type: 'image/jpeg'
+        }
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({
+          files: [file]
+        })
+      ) {
+
+        await navigator.share({
+          files: [file],
+          title: 'Hasil Photobooth'
+        });
+
       } else {
-        // Fallback: download
+
         downloadFoto();
-        document.getElementById('statusMsg').textContent = 'Share tidak didukung browser ini — file didownload';
+
       }
+
     } catch(e) {
+
       if (e.name !== 'AbortError') {
         downloadFoto();
       }
+
     }
+
   }
 
+  // =========================
+  // RESET
+  // =========================
+
   function fotoLagi() {
+
     localStorage.removeItem('photos');
     localStorage.removeItem('filteredPhotos');
     localStorage.removeItem('finalPhoto');
+
     window.location.href = 'index.html';
+
   }
 
-  // Mulai generate
+  // =========================
+  // START
+  // =========================
+
   generateResult();
+
 </script>
 
 </body>

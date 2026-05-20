@@ -43,9 +43,23 @@
     .btn-sm { padding: 7px 14px; font-size: 12px; }
 
     .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
-
-    /* Panel kiri */
     .editor-panel { flex: 1; min-width: 300px; }
+
+    /* Debug panel */
+    .debug-panel {
+      background: #0d0d1a;
+      border: 1px solid #e94560;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .debug-panel h4 { color: #e94560; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .debug-line { color: #a0a0b0; margin: 3px 0; }
+    .debug-line.ok { color: #27ae60; }
+    .debug-line.err { color: #e94560; }
+    .debug-line.warn { color: #f5a623; }
 
     .form-group { margin-bottom: 14px; }
     .form-label { font-size: 12px; font-weight: 700; color: #a0a0b0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
@@ -62,15 +76,9 @@
     }
     .form-input:focus { border-color: #e94560; }
 
-    /* Kategori input dengan tambah */
     .category-row { display: flex; gap: 8px; }
     .category-row .form-input { flex: 1; }
-    .category-tags {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
+    .category-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
     .category-tag {
       background: #0f3460;
       border-radius: 50px;
@@ -156,24 +164,14 @@
       display: none;
     }
     .slot-info span { color: white; font-weight: 600; }
-
     .editor-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 
-    /* Panel kanan */
     .templates-panel { width: 300px; flex-shrink: 0; }
-
-    /* Kategori tabs di panel kanan */
-    .cat-tabs {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
+    .cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
     .cat-tab {
       padding: 5px 12px;
       border-radius: 50px;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 12px; font-weight: 600;
       cursor: pointer;
       border: 2px solid #0f3460;
       background: transparent;
@@ -211,7 +209,6 @@
       border-radius: 50px;
       margin-top: 4px;
     }
-
     .empty-state {
       text-align: center;
       color: #a0a0b0;
@@ -220,7 +217,6 @@
       border: 2px dashed #0f3460;
       border-radius: 12px;
     }
-
     .manage-cats {
       background: #16213e;
       border-radius: 12px;
@@ -252,6 +248,7 @@
       transition: opacity 0.3s;
       pointer-events: none;
       z-index: 999;
+      white-space: nowrap;
     }
     .toast.show { opacity: 1; }
   </style>
@@ -267,9 +264,15 @@
 </div>
 
 <div class="layout">
-
-  <!-- Panel Kiri: Editor -->
   <div class="editor-panel">
+
+    <!-- DEBUG PANEL -->
+    <div class="debug-panel">
+      <h4>🔍 Debug Info</h4>
+      <div id="debugLines">
+        <div class="debug-line">Menunggu aksi...</div>
+      </div>
+    </div>
 
     <div class="form-group">
       <label class="form-label">Nama Template</label>
@@ -279,10 +282,13 @@
     <div class="form-group">
       <label class="form-label">Kategori / Menu</label>
       <div class="category-row">
-        <input type="text" class="form-input" id="newCatInput" placeholder="Nama kategori baru...">
+        <input type="text" class="form-input" id="newCatInput" placeholder="Nama kategori baru..."
+          onkeydown="if(event.key==='Enter') tambahKategori()">
         <button class="btn btn-primary btn-sm" onclick="tambahKategori()">+ Tambah</button>
       </div>
-      <div class="category-tags" id="categoryTags"></div>
+      <div class="category-tags" id="categoryTags">
+        <div style="font-size:12px;color:#555;margin-top:4px">Belum ada kategori — tambah dulu</div>
+      </div>
       <input type="hidden" id="selectedCategory">
     </div>
 
@@ -291,7 +297,7 @@
       <strong>Klik atau drag & drop PNG template</strong>
       <p>Area slot foto: transparan atau hitam</p>
     </div>
-    <input type="file" id="fileInput" accept="image/png">
+    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp">
 
     <div class="canvas-wrapper" id="canvasWrapper">
       <canvas id="editorCanvas"></canvas>
@@ -308,7 +314,8 @@
       <button class="btn btn-danger btn-sm" onclick="clearSlots()">🗑 Hapus Semua</button>
     </div>
 
-    <button class="btn btn-success" id="btnSave" onclick="saveTemplate()" style="display:none;width:100%;margin-top:8px">
+    <button class="btn btn-success" id="btnSave" onclick="saveTemplate()"
+      style="display:none;width:100%;margin-top:8px;padding:14px">
       💾 Simpan Template
     </button>
 
@@ -316,17 +323,13 @@
 
   <!-- Panel Kanan -->
   <div class="templates-panel">
-
     <div class="manage-cats" id="manageCats" style="display:none">
       <h4>Kelola Kategori</h4>
       <div id="catListManage"></div>
     </div>
-
     <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Template Tersimpan</h3>
-
     <div class="cat-tabs" id="catTabs"></div>
     <div id="templateList"></div>
-
   </div>
 </div>
 
@@ -343,9 +346,21 @@
   const ctx = canvas.getContext('2d');
   const overlay = document.getElementById('slotOverlay');
 
+  // ─── Debug ───
+  function debug(msg, type = '') {
+    const el = document.getElementById('debugLines');
+    const line = document.createElement('div');
+    line.className = 'debug-line ' + type;
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+    if (el.children.length > 20) el.removeChild(el.firstChild);
+  }
+
   // ─── Kategori ───
   function getCategories() {
-    return JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    try { return JSON.parse(localStorage.getItem('pb_categories') || '[]'); }
+    catch { return []; }
   }
   function saveCategories(cats) {
     localStorage.setItem('pb_categories', JSON.stringify(cats));
@@ -353,12 +368,13 @@
 
   function tambahKategori() {
     const val = document.getElementById('newCatInput').value.trim();
-    if (!val) return;
+    if (!val) { showToast('Isi nama kategori dulu!', true); return; }
     const cats = getCategories();
     if (cats.includes(val)) { showToast('Kategori sudah ada', true); return; }
     cats.push(val);
     saveCategories(cats);
     document.getElementById('newCatInput').value = '';
+    debug(`Kategori "${val}" ditambahkan`, 'ok');
     renderCategoryTags();
     renderCatTabs();
     renderManageCats();
@@ -368,6 +384,10 @@
   function renderCategoryTags() {
     const cats = getCategories();
     const el = document.getElementById('categoryTags');
+    if (!cats.length) {
+      el.innerHTML = '<div style="font-size:12px;color:#555;margin-top:4px">Belum ada kategori — tambah dulu</div>';
+      return;
+    }
     el.innerHTML = cats.map(c => `
       <div class="category-tag ${selectedCategory === c ? 'active' : ''}"
            onclick="selectCategory('${c}')">
@@ -379,6 +399,7 @@
   function selectCategory(cat) {
     selectedCategory = cat;
     document.getElementById('selectedCategory').value = cat;
+    debug(`Kategori dipilih: "${cat}"`, 'ok');
     renderCategoryTags();
   }
 
@@ -389,8 +410,6 @@
     el.innerHTML += cats.map(c => `
       <button class="cat-tab ${filterCategory===c?'active':''}" onclick="filterCat('${c}')">${c}</button>
     `).join('');
-
-    // Tampilkan manage cats kalau ada
     document.getElementById('manageCats').style.display = cats.length ? 'block' : 'none';
   }
 
@@ -423,45 +442,126 @@
 
   // ─── Upload ───
   document.getElementById('fileInput').addEventListener('change', e => {
-    if (e.target.files[0]) loadTemplate(e.target.files[0]);
+    if (e.target.files[0]) {
+      debug(`File dipilih: ${e.target.files[0].name} (${Math.round(e.target.files[0].size/1024)} KB)`);
+      loadTemplate(e.target.files[0]);
+    }
   });
+
   const uploadArea = document.getElementById('uploadArea');
   uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
   uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
   uploadArea.addEventListener('drop', e => {
     e.preventDefault();
     uploadArea.classList.remove('dragover');
-    if (e.dataTransfer.files[0]) loadTemplate(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files[0]) {
+      debug(`File di-drop: ${e.dataTransfer.files[0].name} (${Math.round(e.dataTransfer.files[0].size/1024)} KB)`);
+      loadTemplate(e.dataTransfer.files[0]);
+    }
   });
 
   function loadTemplate(file) {
+    debug('Membaca file...', 'warn');
     const reader = new FileReader();
-    reader.onload = e => {
-      templateDataURL = e.target.result;
-      templateImg = new Image();
-      templateImg.onload = () => {
-        scale = Math.min(1, DISPLAY_MAX_W / templateImg.width);
-        const dw = Math.round(templateImg.width * scale);
-        const dh = Math.round(templateImg.height * scale);
-        canvas.width = dw; canvas.height = dh;
-        canvas.style.width = dw + 'px'; canvas.style.height = dh + 'px';
-        overlay.style.width = dw + 'px'; overlay.style.height = dh + 'px';
-        ctx.drawImage(templateImg, 0, 0, dw, dh);
-        document.getElementById('canvasWrapper').style.display = 'block';
-        document.getElementById('editorControls').style.display = 'flex';
-        document.getElementById('btnSave').style.display = 'block';
-        document.getElementById('slotInfo').style.display = 'block';
-        slots = [];
-        autoDetect();
-      };
-      templateImg.src = templateDataURL;
+
+    reader.onprogress = e => {
+      if (e.lengthComputable) {
+        debug(`Loading: ${Math.round(e.loaded/e.total*100)}%`);
+      }
     };
+
+    reader.onload = e => {
+      debug('File berhasil dibaca', 'ok');
+      templateDataURL = e.target.result;
+      const sizeKB = Math.round(templateDataURL.length / 1024);
+      debug(`Ukuran data URL: ${sizeKB} KB`, sizeKB > 3000 ? 'warn' : 'ok');
+
+      if (sizeKB > 4000) {
+        debug('⚠️ File terlalu besar! Akan dikompres...', 'warn');
+        kompresTemplate(templateDataURL, file.type);
+        return;
+      }
+
+      loadImageToCanvas(templateDataURL);
+    };
+
+    reader.onerror = e => {
+      debug(`Error baca file: ${e.target.error}`, 'err');
+      showToast('Gagal membaca file!', true);
+    };
+
     reader.readAsDataURL(file);
+  }
+
+  function kompresTemplate(dataURL, type) {
+    const img = new Image();
+    img.onload = () => {
+      debug(`Ukuran asli: ${img.width}x${img.height}px`, 'warn');
+
+      // Kompres ke max 1000px lebar
+      const maxW = 1000;
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+
+      const off = document.createElement('canvas');
+      off.width = w; off.height = h;
+      const octx = off.getContext('2d');
+      octx.drawImage(img, 0, 0, w, h);
+
+      templateDataURL = off.toDataURL('image/jpeg', 0.75);
+      const newSize = Math.round(templateDataURL.length / 1024);
+      debug(`Setelah kompres: ${w}x${h}px, ${newSize} KB`, 'ok');
+
+      loadImageToCanvas(templateDataURL);
+    };
+    img.src = dataURL;
+  }
+
+  function loadImageToCanvas(dataURL) {
+    debug('Memuat ke canvas...', 'warn');
+    templateImg = new Image();
+
+    templateImg.onload = () => {
+      debug(`Gambar loaded: ${templateImg.width}x${templateImg.height}px`, 'ok');
+
+      scale = Math.min(1, DISPLAY_MAX_W / templateImg.width);
+      const dw = Math.round(templateImg.width * scale);
+      const dh = Math.round(templateImg.height * scale);
+
+      debug(`Display size: ${dw}x${dh}px (scale: ${scale.toFixed(2)})`);
+
+      canvas.width = dw; canvas.height = dh;
+      canvas.style.width = dw + 'px'; canvas.style.height = dh + 'px';
+      overlay.style.width = dw + 'px'; overlay.style.height = dh + 'px';
+
+      ctx.clearRect(0, 0, dw, dh);
+      ctx.drawImage(templateImg, 0, 0, dw, dh);
+
+      debug('Canvas berhasil dirender', 'ok');
+
+      document.getElementById('canvasWrapper').style.display = 'block';
+      document.getElementById('editorControls').style.display = 'flex';
+      document.getElementById('btnSave').style.display = 'block';
+      document.getElementById('slotInfo').style.display = 'block';
+
+      slots = [];
+      autoDetect();
+    };
+
+    templateImg.onerror = () => {
+      debug('ERROR: Gagal load gambar ke canvas!', 'err');
+      showToast('Gagal memuat gambar!', true);
+    };
+
+    templateImg.src = dataURL;
   }
 
   // ─── Auto Detect ───
   function autoDetect() {
-    if (!templateImg) return;
+    if (!templateImg) { debug('autoDetect: templateImg null!', 'err'); return; }
+    debug('Mendeteksi slot...', 'warn');
+
     const W = canvas.width, H = canvas.height;
     const off = document.createElement('canvas');
     off.width = W; off.height = H;
@@ -474,6 +574,9 @@
       const r = data[i*4], g = data[i*4+1], b = data[i*4+2], a = data[i*4+3];
       if (a < 30 || (r < 40 && g < 40 && b < 40 && a > 100)) mask[i] = 1;
     }
+
+    const totalMask = mask.reduce((a,b) => a+b, 0);
+    debug(`Pixel slot (transparan/hitam): ${totalMask} dari ${W*H}`);
 
     const rowSums = new Array(H).fill(0);
     for (let y = 0; y < H; y++)
@@ -492,6 +595,8 @@
     }
     if (inBlock) blocks.push([blockStart, H - 1]);
 
+    debug(`Blok terdeteksi: ${blocks.length}`);
+
     slots = [];
     for (const [y1, y2] of blocks) {
       const colSums = new Array(W).fill(0);
@@ -503,104 +608,4 @@
       if (!xCols.length) continue;
       const x1 = xCols[0], x2 = xCols[xCols.length-1];
       if ((x2-x1) < W*0.1 || (y2-y1) < H*0.02) continue;
-      slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1 });
-    }
-
-    document.getElementById('slotCount').textContent = slots.length;
-    renderSlots();
-    showToast(`${slots.length} slot terdeteksi`);
-  }
-
-  function renderSlots() {
-    overlay.innerHTML = '';
-    slots.forEach((slot, idx) => {
-      const box = document.createElement('div');
-      box.className = 'slot-box';
-      box.style.cssText = `left:${slot.x}px;top:${slot.y}px;width:${slot.w}px;height:${slot.h}px`;
-      box.innerHTML = `
-        <div class="slot-label">Foto ${idx+1}</div>
-        <button class="slot-delete" onclick="deleteSlot(${idx})">×</button>
-        <div class="resize-handle" data-idx="${idx}"></div>
-      `;
-      makeDraggable(box, idx);
-      makeResizable(box.querySelector('.resize-handle'), box, idx);
-      overlay.appendChild(box);
-    });
-  }
-
-  function makeDraggable(box, idx) {
-    let sx, sy, sl, st;
-    box.addEventListener('mousedown', e => {
-      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
-      e.preventDefault();
-      sx = e.clientX; sy = e.clientY; sl = slots[idx].x; st = slots[idx].y;
-      const mv = e => {
-        slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + e.clientX - sx));
-        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + e.clientY - sy));
-        box.style.left = slots[idx].x + 'px'; box.style.top = slots[idx].y + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    });
-  }
-
-  function makeResizable(handle, box, idx) {
-    handle.addEventListener('mousedown', e => {
-      e.preventDefault(); e.stopPropagation();
-      const sx = e.clientX, sy = e.clientY, sw = slots[idx].w, sh = slots[idx].h;
-      const mv = e => {
-        slots[idx].w = Math.max(40, Math.min(canvas.width - slots[idx].x, sw + e.clientX - sx));
-        slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, sh + e.clientY - sy));
-        box.style.width = slots[idx].w + 'px'; box.style.height = slots[idx].h + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    });
-  }
-
-  function addSlotManual() {
-    const W = canvas.width, H = canvas.height;
-    slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18) });
-    document.getElementById('slotCount').textContent = slots.length;
-    renderSlots();
-  }
-
-  function deleteSlot(idx) {
-    slots.splice(idx, 1);
-    document.getElementById('slotCount').textContent = slots.length;
-    renderSlots();
-  }
-
-  function clearSlots() {
-    slots = [];
-    document.getElementById('slotCount').textContent = 0;
-    renderSlots();
-  }
-
-  // ─── Save ───
-  function saveTemplate() {
-    const name = document.getElementById('templateName').value.trim();
-    if (!name) { showToast('Isi nama template dulu!', true); return; }
-    if (!selectedCategory) { showToast('Pilih kategori dulu!', true); return; }
-    if (!templateDataURL) { showToast('Upload PNG dulu!', true); return; }
-    if (!slots.length) { showToast('Tambahkan minimal 1 slot!', true); return; }
-
-    const realSlots = slots.map(s => ({
-      x: Math.round(s.x / scale), y: Math.round(s.y / scale),
-      w: Math.round(s.w / scale), h: Math.round(s.h / scale),
-    }));
-
-    const tmpl = {
-      id: Date.now(),
-      name,
-      category: selectedCategory,
-      src: templateDataURL,
-      slots: realSlots,
-      createdAt: new Date().toISOString()
-    };
-
-    const saved = getTemplates();
-    saved.push(tmpl);
-    localStorage.setItem('pb_templates', JSON.stringify(saved));
-    showToast('Template tersimpan! ✓');
-  
+      slots.push({ x: x1, y: y1

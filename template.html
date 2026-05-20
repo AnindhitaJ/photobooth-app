@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilih Template - Photobooth</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+    .paket-badge {
+      display: inline-block;
+      background: #e94560;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 50px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
+    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 28px; text-align: center; }
+
+    .template-grid {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .template-card {
+      cursor: pointer;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 3px solid #0f3460;
+      transition: all 0.2s;
+      background: #16213e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .template-card:hover { border-color: #e94560; transform: translateY(-4px); }
+    .template-card.selected { border-color: #e94560; box-shadow: 0 0 0 2px #e94560; }
+
+    .template-card canvas {
+      display: block;
+    }
+
+    .template-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #a0a0b0;
+      padding: 10px 14px;
+      text-align: center;
+    }
+
+    .template-card.selected .template-name { color: #e94560; }
+
+    .selected-badge {
+      display: none;
+      font-size: 11px;
+      background: #e94560;
+      color: white;
+      padding: 2px 10px;
+      border-radius: 50px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .template-card.selected .selected-badge { display: inline-block; }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #e94560; color: white; min-width: 200px; opacity: 0.4; pointer-events: none; }
+    .btn-primary.aktif { opacity: 1; pointer-events: all; }
+    .btn-primary.aktif:hover { background: #c73652; transform: scale(1.03); }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
+    .btn-secondary:hover { color: white; border-color: white; }
+  </style>
+</head>
+<body>
+
+  <div style="text-align:center; margin-bottom: 20px;">
+    <div class="paket-badge" id="paketBadge">Paket</div>
+    <h2>Pilih Template</h2>
+    <p class="sub" id="subText">Pilih template untuk hasil fotomu</p>
+  </div>
+
+  <div class="template-grid" id="templateGrid"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
+    <button class="btn btn-primary" id="btnLanjut" onclick="lanjut()">Lanjut ke Hasil →</button>
+  </div>
+
+<script>
+  const paket = localStorage.getItem('paket') || '5k';
+  document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
+
+  // Spesifikasi output per paket
+  const specs = {
+    '5k':  { w: 591,  h: 1772, label: '5 × 15 cm' },
+    '10k': { w: 1181, h: 1772, label: '10 × 15 cm' }
+  };
+
+  const spec = specs[paket];
+  document.getElementById('subText').textContent = `Template ukuran ${spec.label}`;
+
+  // Template definitions — warna & nama
+  // Nanti bisa diganti dengan file PNG asli
+  const templates5k = [
+    { name: 'Klasik Putih',  bg: '#ffffff', accent: '#222222', pattern: 'lines' },
+    { name: 'Floral Pink',   bg: '#ffe0ec', accent: '#c0395a', pattern: 'dots'  },
+    { name: 'Vintage Cream', bg: '#f5e6c8', accent: '#8b5e3c', pattern: 'corner'},
+    { name: 'Modern Dark',   bg: '#1a1a2e', accent: '#e94560', pattern: 'grid'  },
+  ];
+
+  const templates10k = [
+    { name: 'Klasik Putih',  bg: '#ffffff', accent: '#222222', pattern: 'lines' },
+    { name: 'Floral Pink',   bg: '#ffe0ec', accent: '#c0395a', pattern: 'dots'  },
+    { name: 'Vintage Cream', bg: '#f5e6c8', accent: '#8b5e3c', pattern: 'corner'},
+    { name: 'Modern Dark',   bg: '#1a1a2e', accent: '#e94560', pattern: 'grid'  },
+  ];
+
+  const templateList = paket === '5k' ? templates5k : templates10k;
+
+  // Ukuran thumbnail di layar
+  const thumbH = 200;
+  const thumbW = Math.round(thumbH * spec.w / spec.h);
+
+  let selectedIdx = null;
+
+  function drawTemplate(canvas, tmpl, w, h) {
+    const ctx = canvas.getContext('2d');
+    canvas.width = w;
+    canvas.height = h;
+
+    // Background
+    ctx.fillStyle = tmpl.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Area foto — kotak di tengah atas
+    const fotoArea = {
+      x: w * 0.08,
+      y: h * 0.06,
+      w: w * 0.84,
+      h: h * 0.72
+    };
+    ctx.fillStyle = '#cccccc';
+    ctx.beginPath();
+    ctx.roundRect(fotoArea.x, fotoArea.y, fotoArea.w, fotoArea.h, 4);
+    ctx.fill();
+
+    // Label area foto
+    ctx.fillStyle = '#999';
+    ctx.font = `${Math.round(h * 0.018)}px Segoe UI`;
+    ctx.textAlign = 'center';
+    ctx.fillText('FOTO', w / 2, fotoArea.y + fotoArea.h / 2);
+
+    // Pattern dekorasi bawah
+    const bottomY = fotoArea.y + fotoArea.h + h * 0.03;
+    const bottomH = h - bottomY - h * 0.02;
+
+    if (tmpl.pattern === 'dots') {
+      ctx.fillStyle = tmpl.accent;
+      const dotR = Math.max(2, w * 0.04);
+      const cols = 5;
+      for (let i = 0; i < cols; i++) {
+        const dx = w * 0.1 + (i * (w * 0.8 / (cols - 1)));
+        ctx.globalAlpha = 0.3 + (i % 2) * 0.2;
+        ctx.beginPath();
+        ctx.arc(dx, bottomY + bottomH / 2, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (tmpl.pattern === 'lines') {
+      ctx.strokeStyle = tmpl.accent;
+      ctx.lineWidth = Math.max(1, h * 0.003);
+      ctx.globalAlpha = 0.25;
+      for (let i = 0; i < 4; i++) {
+        const ly = bottomY + (i + 0.5) * (bottomH / 4);
+        ctx.beginPath();
+        ctx.moveTo(w * 0.08, ly);
+        ctx.lineTo(w * 0.92, ly);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (tmpl.pattern === 'corner') {
+      ctx.strokeStyle = tmpl.accent;
+      ctx.lineWidth = Math.max(1, h * 0.004);
+      ctx.globalAlpha = 0.5;
+      const m = w * 0.06, len = w * 0.12;
+      // Sudut kiri atas area bawah
+      ctx.beginPath(); ctx.moveTo(m, bottomY + m); ctx.lineTo(m, bottomY); ctx.lineTo(m + len, bottomY); ctx.stroke();
+      // Sudut kanan
+      ctx.beginPath(); ctx.moveTo(w - m, bottomY + m); ctx.lineTo(w - m, bottomY); ctx.lineTo(w - m - len, bottomY); ctx.stroke();
+      ctx.globalAlpha = 1;
+    } else if (tmpl.pattern === 'grid') {
+      ctx.strokeStyle = tmpl.accent;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.15;
+      const step = w * 0.12;
+      for (let x = 0; x < w; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, bottomY); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = bottomY; y < h; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Nama template di bawah
+    ctx.fillStyle = tmpl.accent;
+    ctx.globalAlpha = 0.7;
+    ctx.font = `bold ${Math.round(h * 0.02)}px Segoe UI`;
+    ctx.textAlign = 'center';
+    ctx.fillText(tmpl.name, w / 2, h - h * 0.02);
+    ctx.globalAlpha = 1;
+  }
+
+  // Render kartu template
+  const grid = document.getElementById('templateGrid');
+  templateList.forEach((tmpl, idx) => {
+    const card = document.createElement('div');
+    card.className = 'template-card';
+    card.innerHTML = `<span class="selected-badge">✓ Dipilih</span>`;
+
+    const cvs = document.createElement('canvas');
+    cvs.style.width = thumbW + 'px';
+    cvs.style.height = thumbH + 'px';
+    drawTemplate(cvs, tmpl, thumbW * 2, thumbH * 2); // retina
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'template-name';
+    nameEl.textContent = tmpl.name;
+
+    card.appendChild(cvs);
+    card.appendChild(nameEl);
+
+    card.onclick = () => {
+      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedIdx = idx;
+      document.getElementById('btnLanjut').classList.add('aktif');
+
+      // Simpan template yang dipilih
+      const fullCvs = document.createElement('canvas');
+      drawTemplate(fullCvs, tmpl, spec.w, spec.h);
+      localStorage.setItem('templateData', fullCvs.toDataURL('image/png'));
+      localStorage.setItem('templateName', tmpl.name);
+    };
+
+    grid.appendChild(card);
+  });
+
+  function lanjut() {
+    if (selectedIdx === null) return;
+    window.location.href = 'result.html';
+  }
+
+  function kembali() {
+    window.location.href = 'filter.html';
+  }
+</script>
+
+</body>
+</html>

@@ -1,193 +1,444 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pilih Template - Photobooth</title>
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 24px;
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
     }
-    .paket-badge {
-      display: inline-block;
-      background: #e94560;
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 50px;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:#1a1a2e;
+      color:white;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:24px;
     }
-    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
-    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 28px; text-align: center; }
-    .template-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 14px;
-      width: 100%;
-      max-width: 860px;
-      margin-bottom: 32px;
+
+    .paket-badge{
+      display:inline-block;
+      background:#e94560;
+      color:white;
+      font-size:12px;
+      font-weight:700;
+      padding:4px 12px;
+      border-radius:50px;
+      margin-bottom:12px;
+      text-transform:uppercase;
+      letter-spacing:1px;
     }
-    .template-card {
-      cursor: pointer;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 3px solid #0f3460;
-      transition: all 0.2s;
-      background: #16213e;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+
+    h2{
+      font-size:22px;
+      font-weight:700;
+      margin-bottom:4px;
+      text-align:center;
     }
-    .template-card:hover { border-color: #e94560; transform: translateY(-4px); }
-    .template-card.selected { border-color: #e94560; box-shadow: 0 0 0 2px #e94560; }
-    .template-card img { width: 100%; display: block; object-fit: cover; }
-    .template-name {
-      font-size: 12px;
-      font-weight: 600;
-      color: #a0a0b0;
-      padding: 8px 10px;
-      text-align: center;
+
+    p.sub{
+      font-size:14px;
+      color:#a0a0b0;
+      margin-bottom:28px;
+      text-align:center;
     }
-    .template-card.selected .template-name { color: #e94560; }
-    .selected-badge {
-      display: none;
-      font-size: 10px;
-      background: #e94560;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 50px;
-      margin: 6px 0 0;
-      font-weight: 700;
+
+    .template-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+      gap:14px;
+      width:100%;
+      max-width:860px;
+      margin-bottom:32px;
     }
-    .template-card.selected .selected-badge { display: inline-block; }
-    .info-box {
-      background: #16213e;
-      border-radius: 12px;
-      padding: 12px 20px;
-      font-size: 13px;
-      color: #a0a0b0;
-      margin-bottom: 24px;
-      text-align: center;
-      display: none;
+
+    .template-card{
+      cursor:pointer;
+      border-radius:12px;
+      overflow:hidden;
+      border:3px solid #0f3460;
+      transition:all 0.2s;
+      background:#16213e;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
     }
-    .info-box span { color: #e94560; font-weight: 700; }
-    .btn-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
+
+    .template-card:hover{
+      border-color:#e94560;
+      transform:translateY(-4px);
     }
-    .btn {
-      padding: 14px 28px;
-      border-radius: 50px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
+
+    .template-card.selected{
+      border-color:#e94560;
+      box-shadow:0 0 0 2px #e94560;
     }
-    .btn-primary { background: #e94560; color: white; min-width: 200px; opacity: 0.4; pointer-events: none; }
-    .btn-primary.aktif { opacity: 1; pointer-events: all; }
-    .btn-primary.aktif:hover { background: #c73652; transform: scale(1.03); }
-    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
-    .btn-secondary:hover { color: white; border-color: white; }
+
+    .template-card img{
+      width:100%;
+      display:block;
+      object-fit:cover;
+    }
+
+    .template-name{
+      font-size:12px;
+      font-weight:600;
+      color:#a0a0b0;
+      padding:8px 10px;
+      text-align:center;
+    }
+
+    .template-card.selected .template-name{
+      color:#e94560;
+    }
+
+    .selected-badge{
+      display:none;
+      font-size:10px;
+      background:#e94560;
+      color:white;
+      padding:2px 8px;
+      border-radius:50px;
+      margin:6px 0 0;
+      font-weight:700;
+    }
+
+    .template-card.selected .selected-badge{
+      display:inline-block;
+    }
+
+    .info-box{
+      background:#16213e;
+      border-radius:12px;
+      padding:12px 20px;
+      font-size:13px;
+      color:#a0a0b0;
+      margin-bottom:24px;
+      text-align:center;
+      display:none;
+    }
+
+    .info-box span{
+      color:#e94560;
+      font-weight:700;
+    }
+
+    .btn-row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+
+    .btn{
+      padding:14px 28px;
+      border-radius:50px;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      border:none;
+      transition:all 0.2s;
+    }
+
+    .btn-primary{
+      background:#e94560;
+      color:white;
+      min-width:200px;
+      opacity:0.4;
+      pointer-events:none;
+    }
+
+    .btn-primary.aktif{
+      opacity:1;
+      pointer-events:all;
+    }
+
+    .btn-primary.aktif:hover{
+      background:#c73652;
+      transform:scale(1.03);
+    }
+
+    .btn-secondary{
+      background:transparent;
+      color:#a0a0b0;
+      border:2px solid #a0a0b0;
+    }
+
+    .btn-secondary:hover{
+      color:white;
+      border-color:white;
+    }
   </style>
 </head>
+
 <body>
 
-  <div style="text-align:center; margin-bottom: 20px;">
-    <div class="paket-badge" id="paketBadge">Paket</div>
+  <div style="text-align:center; margin-bottom:20px;">
+    <div class="paket-badge" id="paketBadge">
+      Paket
+    </div>
+
     <h2>Pilih Template</h2>
-    <p class="sub">Pilih dulu, nanti kita foto sesuai jumlah slot-nya</p>
+
+    <p class="sub">
+      Pilih dulu, nanti kita foto sesuai jumlah slot-nya
+    </p>
   </div>
 
   <div class="template-grid" id="templateGrid"></div>
 
   <div class="info-box" id="infoBox">
-    Template ini punya <span id="slotCount">-</span> slot foto —
+    Template ini punya
+    <span id="slotCount">-</span>
+    slot foto —
     kamu akan ambil foto sebanyak itu
   </div>
 
   <div class="btn-row">
-    <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
-    <button class="btn btn-primary" id="btnLanjut" onclick="lanjut()">Mulai Foto →</button>
+    <button
+      class="btn btn-secondary"
+      onclick="kembali()"
+    >
+      ← Balik
+    </button>
+
+    <button
+      class="btn btn-primary"
+      id="btnLanjut"
+      onclick="lanjut()"
+    >
+      Mulai Foto →
+    </button>
   </div>
 
 <script>
-  const paket = localStorage.getItem('paket') || '5k';
-  document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
 
-  // Koordinat slot hasil deteksi greenscreen
-  // Nanti tinggal tambah template 2-10 di sini
+  const paket =
+    localStorage.getItem('paket') || '5k';
+
+  document.getElementById(
+    'paketBadge'
+  ).textContent =
+    'Paket ' + paket.toUpperCase();
+
+  // =========================
+  // TEMPLATE CONFIG
+  // =========================
+
   const TEMPLATES = [
+
+    // TEMPLATE 1
     {
       id: 1,
+
       name: 'Template 1',
+
       src: 'assets/templates/5k/1.png',
+
       slots: [
-        { x: 88,  y: 123,  w: 426, h: 281 },
-        { x: 85,  y: 462,  w: 430, h: 274 },
-        { x: 84,  y: 789,  w: 437, h: 282 },
-        { x: 70,  y: 1123, w: 449, h: 284 },
+
+        {
+          x: 88,
+          y: 123,
+          w: 426,
+          h: 281
+        },
+
+        {
+          x: 85,
+          y: 462,
+          w: 430,
+          h: 274
+        },
+
+        {
+          x: 84,
+          y: 789,
+          w: 437,
+          h: 282
+        },
+
+        {
+          x: 70,
+          y: 1123,
+          w: 449,
+          h: 284
+        },
+
       ]
     },
-    // Template 2-10 menyusul setelah semua greenscreen di-scan
+
+    // TEMPLATE 2
+    {
+      id: 2,
+
+      name: 'Vintage Scrapbook',
+
+      src: 'assets/templates/5k/2.png',
+
+      slots: [
+
+        // atas rounded
+        {
+          x: 77,
+          y: 48,
+          w: 358,
+          h: 207
+        },
+
+        // tengah blob
+        {
+          x: 48,
+          y: 292,
+          w: 411,
+          h: 257
+        },
+
+        // kotak tengah
+        {
+          x: 74,
+          y: 605,
+          w: 365,
+          h: 246
+        },
+
+        // bawah blob
+        {
+          x: 43,
+          y: 922,
+          w: 417,
+          h: 261
+        },
+
+      ]
+    }
+
   ];
 
   let selectedTemplate = null;
 
-  const grid = document.getElementById('templateGrid');
+  const grid =
+    document.getElementById(
+      'templateGrid'
+    );
+
+  // =========================
+  // RENDER TEMPLATE
+  // =========================
 
   TEMPLATES.forEach((tmpl) => {
-    const card = document.createElement('div');
-    card.className = 'template-card';
+
+    const card =
+      document.createElement('div');
+
+    card.className =
+      'template-card';
+
     card.innerHTML = `
-      <span class="selected-badge">✓ Dipilih</span>
-      <img src="${tmpl.src}" alt="${tmpl.name}" loading="lazy">
-      <div class="template-name">${tmpl.name} (${tmpl.slots.length} foto)</div>
+      <span class="selected-badge">
+        ✓ Dipilih
+      </span>
+
+      <img
+        src="${tmpl.src}"
+        alt="${tmpl.name}"
+        loading="lazy"
+      >
+
+      <div class="template-name">
+        ${tmpl.name}
+        (${tmpl.slots.length} foto)
+      </div>
     `;
 
     card.onclick = () => {
-      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+
+      // remove selected lama
+      document
+        .querySelectorAll('.template-card')
+        .forEach(c => {
+          c.classList.remove('selected');
+        });
+
+      // add selected baru
       card.classList.add('selected');
+
       selectedTemplate = tmpl;
 
-      // Simpan ke localStorage
-      localStorage.setItem('templateSrc', tmpl.src);
-      localStorage.setItem('templateSlots', JSON.stringify(tmpl.slots));
-      localStorage.setItem('templateName', tmpl.name);
-      localStorage.setItem('slotCount', tmpl.slots.length);
+      // save ke localStorage
+      localStorage.setItem(
+        'templateSrc',
+        tmpl.src
+      );
 
-      // Tampilkan info
-      document.getElementById('slotCount').textContent = tmpl.slots.length;
-      document.getElementById('infoBox').style.display = 'block';
-      document.getElementById('btnLanjut').classList.add('aktif');
+      localStorage.setItem(
+        'templateSlots',
+        JSON.stringify(tmpl.slots)
+      );
+
+      localStorage.setItem(
+        'templateName',
+        tmpl.name
+      );
+
+      localStorage.setItem(
+        'slotCount',
+        tmpl.slots.length
+      );
+
+      // tampilkan info
+      document.getElementById(
+        'slotCount'
+      ).textContent =
+        tmpl.slots.length;
+
+      document.getElementById(
+        'infoBox'
+      ).style.display =
+        'block';
+
+      document.getElementById(
+        'btnLanjut'
+      ).classList.add('aktif');
+
     };
 
     grid.appendChild(card);
+
   });
 
-  function lanjut() {
-    if (!selectedTemplate) return;
-    // Reset foto-foto sebelumnya
+  // =========================
+  // FUNCTIONS
+  // =========================
+
+  function lanjut(){
+
+    if(!selectedTemplate) return;
+
+    // reset foto sebelumnya
     localStorage.removeItem('photos');
-    window.location.href = 'camera.html';
+    localStorage.removeItem('filteredPhotos');
+    localStorage.removeItem('finalPhoto');
+
+    window.location.href =
+      'camera.html';
+
   }
 
-  function kembali() {
-    window.location.href = 'index.html';
+  function kembali(){
+
+    window.location.href =
+      'index.html';
+
   }
+
 </script>
 
 </body>

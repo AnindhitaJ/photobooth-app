@@ -6,12 +6,11 @@
   <title>Kamera - Photobooth</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #1a1a2e;
       color: white;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -19,22 +18,54 @@
       padding: 24px;
       text-align: center;
     }
-
-    .header {
-      margin-bottom: 20px;
+    .top-bar {
+      margin-bottom: 16px;
     }
-
-    .header h2 {
-      font-size: 22px;
+    .paket-badge {
+      display: inline-block;
+      background: #e94560;
+      color: white;
+      font-size: 12px;
       font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
     }
-
-    .header p {
-      font-size: 14px;
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .slot-indicator {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 12px 0;
+      flex-wrap: wrap;
+    }
+    .slot-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #0f3460;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
       color: #a0a0b0;
-      margin-top: 4px;
+      transition: all 0.3s;
     }
-
+    .slot-dot.done {
+      background: #27ae60;
+      border-color: #27ae60;
+      color: white;
+    }
+    .slot-dot.active {
+      background: #e94560;
+      border-color: #e94560;
+      color: white;
+      transform: scale(1.2);
+    }
     .camera-wrapper {
       position: relative;
       width: 100%;
@@ -42,19 +73,16 @@
       border-radius: 20px;
       overflow: hidden;
       background: #000;
-      aspect-ratio: 3/4;
-      margin-bottom: 24px;
+      aspect-ratio: 4/3;
+      margin-bottom: 20px;
     }
-
     #video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transform: scaleX(-1);
     }
-
     #canvas { display: none; }
-
     .countdown-overlay {
       position: absolute;
       inset: 0;
@@ -66,12 +94,10 @@
       color: white;
       text-shadow: 0 0 40px rgba(233,69,96,0.8);
       opacity: 0;
-      transition: opacity 0.2s;
       pointer-events: none;
+      transition: opacity 0.2s;
     }
-
     .countdown-overlay.show { opacity: 1; }
-
     .flash-overlay {
       position: absolute;
       inset: 0;
@@ -80,17 +106,42 @@
       pointer-events: none;
       transition: opacity 0.1s;
     }
-
     .flash-overlay.show { opacity: 1; }
+
+    /* Strip preview foto yang udah diambil */
+    .photos-strip {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .photo-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid #27ae60;
+    }
+    .photo-thumb-empty {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      border: 2px dashed #0f3460;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f3460;
+      font-size: 20px;
+    }
 
     .controls {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       align-items: center;
       justify-content: center;
       flex-wrap: wrap;
     }
-
     .btn {
       padding: 14px 28px;
       border-radius: 50px;
@@ -100,57 +151,27 @@
       border: none;
       transition: all 0.2s;
     }
-
-    .btn-primary {
-      background: #e94560;
-      color: white;
-      padding: 18px 40px;
-      font-size: 18px;
-    }
-
+    .btn-primary { background: #e94560; color: white; padding: 18px 40px; font-size: 18px; }
     .btn-primary:hover { background: #c73652; transform: scale(1.04); }
-
-    .btn-secondary {
-      background: transparent;
-      color: #a0a0b0;
-      border: 2px solid #a0a0b0;
-    }
-
+    .btn-primary:disabled { opacity: 0.4; pointer-events: none; }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
     .btn-secondary:hover { color: white; border-color: white; }
-
-    .btn:disabled {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .paket-badge {
-      display: inline-block;
-      background: #e94560;
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 50px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    #statusMsg {
-      font-size: 13px;
-      color: #a0a0b0;
-      margin-top: 12px;
-      min-height: 20px;
-    }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #219a52; }
+    #statusMsg { font-size: 13px; color: #a0a0b0; margin-top: 12px; min-height: 20px; }
   </style>
 </head>
 <body>
 
-  <div class="header">
+  <div class="top-bar">
     <div class="paket-badge" id="paketBadge">Paket</div>
-    <h2>Ambil Foto</h2>
-    <p>Posisikan wajah di tengah frame</p>
+    <h2 id="titleText">Ambil Foto</h2>
+    <p style="font-size:13px; color:#a0a0b0;" id="subText"></p>
   </div>
+
+  <div class="slot-indicator" id="slotIndicator"></div>
+
+  <div class="photos-strip" id="photosStrip"></div>
 
   <div class="camera-wrapper">
     <video id="video" autoplay playsinline></video>
@@ -160,89 +181,163 @@
   </div>
 
   <div class="controls">
-    <button class="btn btn-secondary" onclick="kembali()">← Kembali</button>
+    <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
     <button class="btn btn-primary" id="btnAmbil" onclick="mulaiCountdown()">📷 Ambil Foto</button>
+    <button class="btn btn-success" id="btnLanjut" onclick="lanjutFilter()" style="display:none">Lanjut ke Filter →</button>
   </div>
 
   <p id="statusMsg"></p>
 
-  <script>
-    const paket = localStorage.getItem('paket') || '5k';
-    document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
+<script>
+  const paket = localStorage.getItem('paket') || '5k';
+  const slotCount = parseInt(localStorage.getItem('slotCount') || '1');
+  const templateName = localStorage.getItem('templateName') || 'Template';
 
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const countdownEl = document.getElementById('countdown');
-    const flashEl = document.getElementById('flash');
-    const btnAmbil = document.getElementById('btnAmbil');
-    const statusMsg = document.getElementById('statusMsg');
+  document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
+  document.getElementById('subText').textContent = `${templateName} · ${slotCount} foto`;
 
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
-          audio: false
-        });
-        video.srcObject = stream;
-        statusMsg.textContent = '';
-      } catch (err) {
-        statusMsg.textContent = 'Kamera tidak bisa diakses. Pastikan izin kamera sudah diberikan.';
-        btnAmbil.disabled = true;
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const countdownEl = document.getElementById('countdown');
+  const flashEl = document.getElementById('flash');
+  const btnAmbil = document.getElementById('btnAmbil');
+  const btnLanjut = document.getElementById('btnLanjut');
+  const statusMsg = document.getElementById('statusMsg');
+
+  let photos = []; // array of dataURL
+  let currentSlot = 0;
+
+  // Render slot indicators
+  function renderIndicators() {
+    const ind = document.getElementById('slotIndicator');
+    ind.innerHTML = '';
+    for (let i = 0; i < slotCount; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'slot-dot' + (i < currentSlot ? ' done' : i === currentSlot ? ' active' : '');
+      dot.textContent = i + 1;
+      ind.appendChild(dot);
+    }
+  }
+
+  // Render strip foto yang udah diambil
+  function renderStrip() {
+    const strip = document.getElementById('photosStrip');
+    strip.innerHTML = '';
+    for (let i = 0; i < slotCount; i++) {
+      if (photos[i]) {
+        const img = document.createElement('img');
+        img.className = 'photo-thumb';
+        img.src = photos[i];
+        strip.appendChild(img);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'photo-thumb-empty';
+        empty.textContent = i + 1;
+        strip.appendChild(empty);
       }
     }
+  }
 
-    function mulaiCountdown() {
+  function updateTitle() {
+    if (currentSlot < slotCount) {
+      document.getElementById('titleText').textContent = `Foto ${currentSlot + 1} dari ${slotCount}`;
+      btnAmbil.style.display = '';
+      btnLanjut.style.display = 'none';
+    } else {
+      document.getElementById('titleText').textContent = 'Semua foto selesai!';
+      btnAmbil.style.display = 'none';
+      btnLanjut.style.display = '';
+    }
+  }
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+        audio: false
+      });
+      video.srcObject = stream;
+    } catch(err) {
+      statusMsg.textContent = 'Kamera tidak bisa diakses.';
       btnAmbil.disabled = true;
-      let angka = 3;
-      countdownEl.textContent = angka;
-      countdownEl.classList.add('show');
-
-      const interval = setInterval(() => {
-        angka--;
-        if (angka > 0) {
-          countdownEl.textContent = angka;
-        } else {
-          clearInterval(interval);
-          countdownEl.classList.remove('show');
-          ambilFoto();
-        }
-      }, 1000);
     }
+  }
 
-    function ambilFoto() {
-      flashEl.classList.add('show');
-      setTimeout(() => flashEl.classList.remove('show'), 200);
+  function mulaiCountdown() {
+    btnAmbil.disabled = true;
+    let angka = 3;
+    countdownEl.textContent = angka;
+    countdownEl.classList.add('show');
 
-      const w = video.videoWidth;
-      const h = video.videoHeight;
-      canvas.width = w;
-      canvas.height = h;
+    const interval = setInterval(() => {
+      angka--;
+      if (angka > 0) {
+        countdownEl.textContent = angka;
+      } else {
+        clearInterval(interval);
+        countdownEl.classList.remove('show');
+        ambilFoto();
+      }
+    }, 1000);
+  }
 
-      const ctx = canvas.getContext('2d');
-      ctx.save();
-      ctx.translate(w, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, w, h);
-      ctx.restore();
+  function ambilFoto() {
+    // Flash
+    flashEl.classList.add('show');
+    setTimeout(() => flashEl.classList.remove('show'), 200);
 
-      const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-      localStorage.setItem('foto', dataURL);
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    canvas.width = w;
+    canvas.height = h;
 
-      statusMsg.textContent = 'Foto berhasil diambil! Menuju preview...';
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    ctx.restore();
+
+    const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+    photos[currentSlot] = dataURL;
+    currentSlot++;
+
+    renderStrip();
+    renderIndicators();
+    updateTitle();
+
+    if (currentSlot < slotCount) {
+      statusMsg.textContent = `Bagus! Sekarang foto ${currentSlot + 1} dari ${slotCount}`;
       setTimeout(() => {
-        window.location.href = 'preview.html';
-      }, 800);
-    }
-
-    function kembali() {
+        statusMsg.textContent = '';
+        btnAmbil.disabled = false;
+      }, 1000);
+    } else {
+      statusMsg.textContent = 'Semua foto udah diambil!';
+      // Stop kamera
       if (video.srcObject) {
         video.srcObject.getTracks().forEach(t => t.stop());
       }
-      window.location.href = 'index.html';
     }
+  }
 
-    startCamera();
-  </script>
+  function lanjutFilter() {
+    localStorage.setItem('photos', JSON.stringify(photos));
+    // Simpan foto pertama juga sebagai 'foto' buat kompatibilitas filter
+    localStorage.setItem('foto', photos[0]);
+    window.location.href = 'filter.html';
+  }
+
+  function kembali() {
+    if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+    window.location.href = 'template.html';
+  }
+
+  renderIndicators();
+  renderStrip();
+  updateTitle();
+  startCamera();
+</script>
 
 </body>
 </html>

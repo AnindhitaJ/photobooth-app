@@ -1,444 +1,317 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pilih Template - Photobooth</title>
-
   <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
     }
+    .top-bar {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .paket-badge {
+      display: inline-block;
+      background: #e94560;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .admin-btn {
+      background: transparent;
+      border: none;
+      color: #a0a0b0;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .admin-btn:hover { color: white; background: #16213e; }
 
-    body{
-      font-family:'Segoe UI',sans-serif;
-      background:#1a1a2e;
-      color:white;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      padding:24px;
-    }
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
+    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 28px; text-align: center; }
 
-    .paket-badge{
-      display:inline-block;
-      background:#e94560;
-      color:white;
-      font-size:12px;
-      font-weight:700;
-      padding:4px 12px;
-      border-radius:50px;
-      margin-bottom:12px;
-      text-transform:uppercase;
-      letter-spacing:1px;
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 14px;
+      width: 100%;
+      max-width: 860px;
+      margin-bottom: 32px;
     }
+    .template-card {
+      cursor: pointer;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid #0f3460;
+      transition: all 0.2s;
+      background: #16213e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .template-card:hover { border-color: #e94560; transform: translateY(-4px); }
+    .template-card.selected { border-color: #e94560; box-shadow: 0 0 0 2px #e94560; }
+    .template-card img { width: 100%; display: block; object-fit: cover; aspect-ratio: 1/2; }
+    .template-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #a0a0b0;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .template-card.selected .template-name { color: #e94560; }
+    .selected-badge {
+      display: none;
+      font-size: 10px;
+      background: #e94560;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 50px;
+      margin: 6px 0 0;
+      font-weight: 700;
+    }
+    .template-card.selected .selected-badge { display: inline-block; }
 
-    h2{
-      font-size:22px;
-      font-weight:700;
-      margin-bottom:4px;
-      text-align:center;
+    .empty-state {
+      text-align: center;
+      color: #a0a0b0;
+      padding: 48px 24px;
+      width: 100%;
     }
+    .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: white; }
+    .empty-state p { font-size: 14px; margin-bottom: 16px; }
 
-    p.sub{
-      font-size:14px;
-      color:#a0a0b0;
-      margin-bottom:28px;
-      text-align:center;
+    .info-box {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: #a0a0b0;
+      margin-bottom: 24px;
+      text-align: center;
+      display: none;
+      max-width: 860px;
+      width: 100%;
     }
+    .info-box span { color: #e94560; font-weight: 700; }
 
-    .template-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
-      gap:14px;
-      width:100%;
-      max-width:860px;
-      margin-bottom:32px;
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
     }
+    .btn-primary { background: #e94560; color: white; min-width: 200px; opacity: 0.4; pointer-events: none; }
+    .btn-primary.aktif { opacity: 1; pointer-events: all; }
+    .btn-primary.aktif:hover { background: #c73652; transform: scale(1.03); }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
+    .btn-secondary:hover { color: white; border-color: white; }
 
-    .template-card{
-      cursor:pointer;
-      border-radius:12px;
-      overflow:hidden;
-      border:3px solid #0f3460;
-      transition:all 0.2s;
-      background:#16213e;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+    /* Password modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      display: none;
     }
-
-    .template-card:hover{
-      border-color:#e94560;
-      transform:translateY(-4px);
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 32px;
+      width: 300px;
+      text-align: center;
+      border: 2px solid #0f3460;
     }
-
-    .template-card.selected{
-      border-color:#e94560;
-      box-shadow:0 0 0 2px #e94560;
+    .modal h3 { font-size: 18px; margin-bottom: 8px; }
+    .modal p { font-size: 13px; color: #a0a0b0; margin-bottom: 20px; }
+    .modal input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 2px solid #0f3460;
+      background: #1a1a2e;
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+      outline: none;
     }
-
-    .template-card img{
-      width:100%;
-      display:block;
-      object-fit:cover;
+    .modal input:focus { border-color: #e94560; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
     }
-
-    .template-name{
-      font-size:12px;
-      font-weight:600;
-      color:#a0a0b0;
-      padding:8px 10px;
-      text-align:center;
-    }
-
-    .template-card.selected .template-name{
-      color:#e94560;
-    }
-
-    .selected-badge{
-      display:none;
-      font-size:10px;
-      background:#e94560;
-      color:white;
-      padding:2px 8px;
-      border-radius:50px;
-      margin:6px 0 0;
-      font-weight:700;
-    }
-
-    .template-card.selected .selected-badge{
-      display:inline-block;
-    }
-
-    .info-box{
-      background:#16213e;
-      border-radius:12px;
-      padding:12px 20px;
-      font-size:13px;
-      color:#a0a0b0;
-      margin-bottom:24px;
-      text-align:center;
-      display:none;
-    }
-
-    .info-box span{
-      color:#e94560;
-      font-weight:700;
-    }
-
-    .btn-row{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      justify-content:center;
-    }
-
-    .btn{
-      padding:14px 28px;
-      border-radius:50px;
-      font-size:15px;
-      font-weight:600;
-      cursor:pointer;
-      border:none;
-      transition:all 0.2s;
-    }
-
-    .btn-primary{
-      background:#e94560;
-      color:white;
-      min-width:200px;
-      opacity:0.4;
-      pointer-events:none;
-    }
-
-    .btn-primary.aktif{
-      opacity:1;
-      pointer-events:all;
-    }
-
-    .btn-primary.aktif:hover{
-      background:#c73652;
-      transform:scale(1.03);
-    }
-
-    .btn-secondary{
-      background:transparent;
-      color:#a0a0b0;
-      border:2px solid #a0a0b0;
-    }
-
-    .btn-secondary:hover{
-      color:white;
-      border-color:white;
-    }
+    .modal-confirm { background: #e94560; color: white; }
+    .modal-confirm:hover { background: #c73652; }
+    .modal-cancel { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
+    .modal-cancel:hover { color: white; border-color: white; }
+    .modal-error { color: #e94560; font-size: 12px; margin-top: 8px; min-height: 16px; }
   </style>
 </head>
-
 <body>
 
-  <div style="text-align:center; margin-bottom:20px;">
-    <div class="paket-badge" id="paketBadge">
-      Paket
-    </div>
-
-    <h2>Pilih Template</h2>
-
-    <p class="sub">
-      Pilih dulu, nanti kita foto sesuai jumlah slot-nya
-    </p>
+  <div class="top-bar">
+    <div class="paket-badge" id="paketBadge">Paket</div>
+    <button class="admin-btn" onclick="bukaAdmin()" title="Admin">⚙️</button>
   </div>
+
+  <h2>Pilih Template</h2>
+  <p class="sub">Pilih dulu, nanti kita foto sesuai jumlah slot-nya</p>
 
   <div class="template-grid" id="templateGrid"></div>
 
   <div class="info-box" id="infoBox">
-    Template ini punya
-    <span id="slotCount">-</span>
-    slot foto —
+    Template ini punya <span id="slotCount">-</span> slot foto —
     kamu akan ambil foto sebanyak itu
   </div>
 
   <div class="btn-row">
-    <button
-      class="btn btn-secondary"
-      onclick="kembali()"
-    >
-      ← Balik
-    </button>
+    <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
+    <button class="btn btn-primary" id="btnLanjut" onclick="lanjut()">Mulai Foto →</button>
+  </div>
 
-    <button
-      class="btn btn-primary"
-      id="btnLanjut"
-      onclick="lanjut()"
-    >
-      Mulai Foto →
-    </button>
+  <!-- Password Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3>🔐 Admin Access</h3>
+      <p>Masukkan password untuk masuk ke Template Manager</p>
+      <input type="password" id="passwordInput" placeholder="••••••" maxlength="10"
+        onkeydown="if(event.key==='Enter') cekPassword()">
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="tutupModal()">Batal</button>
+        <button class="modal-confirm" onclick="cekPassword()">Masuk</button>
+      </div>
+      <p class="modal-error" id="modalError"></p>
+    </div>
   </div>
 
 <script>
-
-  const paket =
-    localStorage.getItem('paket') || '5k';
-
-  document.getElementById(
-    'paketBadge'
-  ).textContent =
-    'Paket ' + paket.toUpperCase();
-
-  // =========================
-  // TEMPLATE CONFIG
-  // =========================
-
-  const TEMPLATES = [
-
-    // TEMPLATE 1
-    {
-      id: 1,
-
-      name: 'Template 1',
-
-      src: 'assets/templates/5k/1.png',
-
-      slots: [
-
-        {
-          x: 88,
-          y: 123,
-          w: 426,
-          h: 281
-        },
-
-        {
-          x: 85,
-          y: 462,
-          w: 430,
-          h: 274
-        },
-
-        {
-          x: 84,
-          y: 789,
-          w: 437,
-          h: 282
-        },
-
-        {
-          x: 70,
-          y: 1123,
-          w: 449,
-          h: 284
-        },
-
-      ]
-    },
-
-    // TEMPLATE 2
-    {
-      id: 2,
-
-      name: 'Vintage Scrapbook',
-
-      src: 'assets/templates/5k/2.png',
-
-      slots: [
-
-        // atas rounded
-        {
-          x: 71,
-      y: 51,
-      w: 364,
-      h: 210
-        },
-
-        // tengah blob
-        {
-          x: 36,
-      y: 294,
-      w: 427,
-      h: 264
-        },
-
-        // kotak tengah
-        {
-          x: 58,
-      y: 604,
-      w: 386,
-      h: 249
-        },
-
-        // bawah blob
-        {
-           x: 34,
-      y: 923,
-      w: 431,
-      h: 272
-        },
-
-      ]
-    }
-
-  ];
+  const paket = localStorage.getItem('paket') || '5k';
+  document.getElementById('paketBadge').textContent = 'Paket ' + paket.toUpperCase();
 
   let selectedTemplate = null;
 
-  const grid =
-    document.getElementById(
-      'templateGrid'
-    );
+  function getSavedTemplates() {
+    try { return JSON.parse(localStorage.getItem('pb_templates') || '[]'); }
+    catch { return []; }
+  }
 
-  // =========================
-  // RENDER TEMPLATE
-  // =========================
+  function renderTemplates() {
+    const grid = document.getElementById('templateGrid');
+    const templates = getSavedTemplates();
 
-  TEMPLATES.forEach((tmpl) => {
+    if (templates.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <h3>Belum ada template</h3>
+          <p>Admin perlu upload template dulu lewat menu ⚙️</p>
+        </div>`;
+      return;
+    }
 
-    const card =
-      document.createElement('div');
+    grid.innerHTML = '';
+    templates.forEach((tmpl) => {
+      const card = document.createElement('div');
+      card.className = 'template-card';
+      card.innerHTML = `
+        <span class="selected-badge">✓ Dipilih</span>
+        <img src="${tmpl.src}" alt="${tmpl.name}">
+        <div class="template-name">${tmpl.name}<br><span style="color:#555;font-size:10px">${tmpl.slots.length} foto</span></div>
+      `;
+      card.onclick = () => {
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedTemplate = tmpl;
+        localStorage.setItem('templateSrc', tmpl.src);
+        localStorage.setItem('templateSlots', JSON.stringify(tmpl.slots));
+        localStorage.setItem('templateName', tmpl.name);
+        localStorage.setItem('slotCount', tmpl.slots.length);
+        document.getElementById('slotCount').textContent = tmpl.slots.length;
+        document.getElementById('infoBox').style.display = 'block';
+        document.getElementById('btnLanjut').classList.add('aktif');
+      };
+      grid.appendChild(card);
+    });
+  }
 
-    card.className =
-      'template-card';
-
-    card.innerHTML = `
-      <span class="selected-badge">
-        ✓ Dipilih
-      </span>
-
-      <img
-        src="${tmpl.src}"
-        alt="${tmpl.name}"
-        loading="lazy"
-      >
-
-      <div class="template-name">
-        ${tmpl.name}
-        (${tmpl.slots.length} foto)
-      </div>
-    `;
-
-    card.onclick = () => {
-
-      // remove selected lama
-      document
-        .querySelectorAll('.template-card')
-        .forEach(c => {
-          c.classList.remove('selected');
-        });
-
-      // add selected baru
-      card.classList.add('selected');
-
-      selectedTemplate = tmpl;
-
-      // save ke localStorage
-      localStorage.setItem(
-        'templateSrc',
-        tmpl.src
-      );
-
-      localStorage.setItem(
-        'templateSlots',
-        JSON.stringify(tmpl.slots)
-      );
-
-      localStorage.setItem(
-        'templateName',
-        tmpl.name
-      );
-
-      localStorage.setItem(
-        'slotCount',
-        tmpl.slots.length
-      );
-
-      // tampilkan info
-      document.getElementById(
-        'slotCount'
-      ).textContent =
-        tmpl.slots.length;
-
-      document.getElementById(
-        'infoBox'
-      ).style.display =
-        'block';
-
-      document.getElementById(
-        'btnLanjut'
-      ).classList.add('aktif');
-
-    };
-
-    grid.appendChild(card);
-
-  });
-
-  // =========================
-  // FUNCTIONS
-  // =========================
-
-  function lanjut(){
-
-    if(!selectedTemplate) return;
-
-    // reset foto sebelumnya
+  function lanjut() {
+    if (!selectedTemplate) return;
     localStorage.removeItem('photos');
     localStorage.removeItem('filteredPhotos');
-    localStorage.removeItem('finalPhoto');
-
-    window.location.href =
-      'camera.html';
-
+    window.location.href = 'camera.html';
   }
 
-  function kembali(){
-
-    window.location.href =
-      'index.html';
-
+  function kembali() {
+    window.location.href = 'index.html';
   }
 
+  // Admin modal
+  function bukaAdmin() {
+    document.getElementById('modalOverlay').classList.add('show');
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('modalError').textContent = '';
+    setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+  }
+
+  function tutupModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+  }
+
+  function cekPassword() {
+    const pw = document.getElementById('passwordInput').value;
+    if (pw === '123456') {
+      tutupModal();
+      window.location.href = 'admin.html';
+    } else {
+      document.getElementById('modalError').textContent = 'Password salah. Coba lagi.';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').focus();
+    }
+  }
+
+  // Tutup modal klik luar
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalOverlay')) tutupModal();
+  });
+
+  renderTemplates();
 </script>
 
 </body>

@@ -340,9 +340,12 @@ function applyFilter() {
         grad2.addColorStop(0.55, 'rgba(0,0,0,1)');
         grad2.addColorStop(1,    'rgba(0,0,0,0)');
         mctx2.save();
-        mctx2.scale(1, ry / rx);
+        mctx2.translate(cx, cy);
+        mctx2.scale(rx / maxR, ry / maxR);
         mctx2.fillStyle = grad2;
-        mctx2.fillRect(0, 0, W, H * (rx / ry));
+        mctx2.beginPath();
+        mctx2.arc(0, 0, maxR, 0, Math.PI * 2);
+        mctx2.fill();
         mctx2.restore();
 
         bctx2.globalCompositeOperation = 'destination-in';
@@ -366,7 +369,7 @@ function applyFilter() {
       const pts = landmarks
         ? [[landmarks[234].x * W, landmarks[234].y * H], [landmarks[454].x * W, landmarks[454].y * H]]
         : [[W * 0.25, H * 0.45], [W * 0.75, H * 0.45]];
-      const blushR = W * 0.13;
+     const blushR = W * 0.07;
       pts.forEach(([bx, by]) => {
         const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
         grad.addColorStop(0,    `rgba(${r},${g},${b},${baseA})`);

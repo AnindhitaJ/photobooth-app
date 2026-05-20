@@ -256,18 +256,62 @@
     applyFilter();
   }
 
-  function applyFilter() {
+function applyFilter() {
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Base foto dengan smooth
-    if (state.smooth > 0) {
-      ctx.filter = `blur(${state.smooth}px)`;
-    }
+    // Base foto
     ctx.drawImage(img, 0, 0);
-    ctx.filter = 'none';
 
-    // Brightness di area wajah
+    // Haluskan kulit — blur hanya area wajah dengan feather edge
+    if (state.smooth > 0 && landmarks) {
+      const xs = landmarks.map(p => p.x * W);
+      const ys = landmarks.map(p => p.y * H);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      const rx = (maxX - minX) / 2 * 1.2;
+      const ry = (maxY - minY) / 2 * 1.2;
+
+      // Buat blurred version
+      const blurOff = document.createElement('canvas');
+      blurOff.width = W; blurOff.height = H;
+      const bctx = blurOff.getContext('2d');
+      bctx.filter = `blur(${state.smooth * 1.5}px)`;
+      bctx.drawImage(img, 0, 0);
+      bctx.filter = 'none';
+
+      // Masker radial gradient — tengah opak, pinggir transparan
+      const maskOff = document.createElement('canvas');
+      maskOff.width = W; maskOff.height = H;
+      const mctx = maskOff.getContext('2d');
+      const grad = mctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
+      grad.addColorStop(0,    'rgba(0,0,0,1)');
+      grad.addColorStop(0.65, 'rgba(0,0,0,1)');
+      grad.addColorStop(1,    'rgba(0,0,0,0)');
+      mctx.fillStyle = grad;
+      mctx.fillRect(0, 0, W, H);
+
+      // Gabungkan: blurred image dipotong pakai mask
+      bctx.globalCompositeOperation = 'destination-in';
+      bctx.drawImage(maskOff, 0, 0);
+      bctx.globalCompositeOperation = 'source-over';
+
+      ctx.drawImage(blurOff, 0, 0);
+
+    } else if (state.smooth > 0) {
+      // Fallback tanpa landmark
+      const off = document.createElement('canvas');
+      off.width = W; off.height = H;
+      const octx = off.getContext('2d');
+      octx.filter = `blur(${state.smooth}px)`;
+      octx.drawImage(img, 0, 0);
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(off, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+
+    // Cerahkan wajah — brightness area wajah dengan feather edge
     if (state.brightness > 0) {
       if (landmarks) {
         const xs = landmarks.map(p => p.x * W);
@@ -278,21 +322,35 @@
         const rx = (maxX - minX) / 2 * 1.15;
         const ry = (maxY - minY) / 2 * 1.15;
 
-        const off = document.createElement('canvas');
-        off.width = W; off.height = H;
-        const octx = off.getContext('2d');
-        octx.filter = `brightness(${100 + state.brightness}%)`;
-        octx.drawImage(img, 0, 0);
-        octx.filter = 'none';
+        // Bright version
+        const brightOff = document.createElement('canvas');
+        brightOff.width = W; brightOff.height = H;
+        const bctx2 = brightOff.getContext('2d');
+        bctx2.filter = `brightness(${100 + state.brightness}%)`;
+        bctx2.drawImage(img, 0, 0);
+        bctx2.filter = 'none';
 
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(off, 0, 0);
-        ctx.restore();
+        // Feather mask — oval dengan pinggir soft
+        const maskOff2 = document.createElement('canvas');
+        maskOff2.width = W; maskOff2.height = H;
+        const mctx2 = maskOff2.getContext('2d');
+        const maxR = Math.max(rx, ry);
+        const grad2 = mctx2.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+        grad2.addColorStop(0,    'rgba(0,0,0,1)');
+        grad2.addColorStop(0.55, 'rgba(0,0,0,1)');
+        grad2.addColorStop(1,    'rgba(0,0,0,0)');
+        mctx2.save();
+        mctx2.scale(1, ry / rx);
+        mctx2.fillStyle = grad2;
+        mctx2.fillRect(0, 0, W, H * (rx / ry));
+        mctx2.restore();
+
+        bctx2.globalCompositeOperation = 'destination-in';
+        bctx2.drawImage(maskOff2, 0, 0);
+        bctx2.globalCompositeOperation = 'source-over';
+
+        ctx.drawImage(brightOff, 0, 0);
       } else {
-        // Fallback tanpa landmark
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = `rgba(255,255,255,${state.brightness * 0.003})`;
@@ -301,62 +359,75 @@
       }
     }
 
-    // Blush — pakai landmark pipi
+    // Blush — radial gradient soft, opacity 30%
     if (state.blush !== 'off') {
-      const [r,g,b,a] = state.blush.split(',').map(Number);
-      if (landmarks) {
-        const leftCheek  = landmarks[234];
-        const rightCheek = landmarks[454];
-        const blushR = W * 0.10;
-        [[leftCheek.x * W, leftCheek.y * H], [rightCheek.x * W, rightCheek.y * H]].forEach(([bx, by]) => {
-          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
-          grad.addColorStop(0,   `rgba(${r},${g},${b},${a})`);
-          grad.addColorStop(0.6, `rgba(${r},${g},${b},${a * 0.4})`);
-          grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
-          ctx.beginPath();
-          ctx.arc(bx, by, blushR, 0, Math.PI * 2);
-          ctx.fillStyle = grad;
-          ctx.fill();
-        });
-      } else {
-        // Fallback tanpa landmark — posisi kira-kira
-        const blushR = W * 0.10;
-        [[W * 0.25, H * 0.45], [W * 0.75, H * 0.45]].forEach(([bx, by]) => {
-          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
-          grad.addColorStop(0,   `rgba(${r},${g},${b},${a})`);
-          grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
-          ctx.beginPath();
-          ctx.arc(bx, by, blushR, 0, Math.PI * 2);
-          ctx.fillStyle = grad;
-          ctx.fill();
-        });
-      }
+      const [r,g,b] = state.blush.split(',').map(Number);
+      const baseA = 0.30;
+      const pts = landmarks
+        ? [[landmarks[234].x * W, landmarks[234].y * H], [landmarks[454].x * W, landmarks[454].y * H]]
+        : [[W * 0.25, H * 0.45], [W * 0.75, H * 0.45]];
+      const blushR = W * 0.13;
+      pts.forEach(([bx, by]) => {
+        const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
+        grad.addColorStop(0,    `rgba(${r},${g},${b},${baseA})`);
+        grad.addColorStop(0.4,  `rgba(${r},${g},${b},${baseA * 0.6})`);
+        grad.addColorStop(0.75, `rgba(${r},${g},${b},${baseA * 0.2})`);
+        grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(bx, by, blushR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      });
     }
 
-    // Lip color — pakai kontur bibir landmark
+    // Lip color — kontur bibir dengan feather soft, opacity 30%
     if (state.lip !== 'off') {
-      const [r,g,b,a] = state.lip.split(',').map(Number);
+      const [r,g,b] = state.lip.split(',').map(Number);
+
+      const lipOff = document.createElement('canvas');
+      lipOff.width = W; lipOff.height = H;
+      const lctx = lipOff.getContext('2d');
+
       if (landmarks) {
         const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
-        ctx.save();
-        ctx.beginPath();
+        lctx.beginPath();
         lipIdx.forEach((idx, i) => {
           const pt = landmarks[idx];
           if (!pt) return;
-          i === 0 ? ctx.moveTo(pt.x * W, pt.y * H) : ctx.lineTo(pt.x * W, pt.y * H);
+          i === 0 ? lctx.moveTo(pt.x * W, pt.y * H) : lctx.lineTo(pt.x * W, pt.y * H);
         });
-        ctx.closePath();
-        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-        ctx.fill();
-        ctx.restore();
+        lctx.closePath();
+        lctx.fillStyle = `rgba(${r},${g},${b},1)`;
+        lctx.fill();
+
+        // Blur tepi bibir biar soft
+        const lipBlur = document.createElement('canvas');
+        lipBlur.width = W; lipBlur.height = H;
+        const lblur = lipBlur.getContext('2d');
+        lblur.filter = 'blur(3px)';
+        lblur.drawImage(lipOff, 0, 0);
+        lblur.filter = 'none';
+
+        ctx.globalAlpha = 0.30;
+        ctx.drawImage(lipBlur, 0, 0);
+        ctx.globalAlpha = 1;
       } else {
-        // Fallback tanpa landmark
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(W * 0.5, H * 0.72, W * 0.10, H * 0.035, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-        ctx.fill();
-        ctx.restore();
+        // Fallback
+        lctx.beginPath();
+        lctx.ellipse(W * 0.5, H * 0.72, W * 0.10, H * 0.035, 0, 0, Math.PI * 2);
+        lctx.fillStyle = `rgba(${r},${g},${b},1)`;
+        lctx.fill();
+
+        const lipBlur = document.createElement('canvas');
+        lipBlur.width = W; lipBlur.height = H;
+        const lblur = lipBlur.getContext('2d');
+        lblur.filter = 'blur(4px)';
+        lblur.drawImage(lipOff, 0, 0);
+        lblur.filter = 'none';
+
+        ctx.globalAlpha = 0.30;
+        ctx.drawImage(lipBlur, 0, 0);
+        ctx.globalAlpha = 1;
       }
     }
   }

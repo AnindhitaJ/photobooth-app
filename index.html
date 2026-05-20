@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photobooth</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #a0a0b0;
+      margin-bottom: 48px;
+      max-width: 340px;
+      line-height: 1.6;
+    }
+
+    .paket-wrapper {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .paket-card {
+      background: #16213e;
+      border: 2px solid #0f3460;
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 180px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .paket-card:hover {
+      border-color: #e94560;
+      transform: translateY(-4px);
+    }
+
+    .paket-card.selected {
+      border-color: #e94560;
+      background: #1f1f4e;
+    }
+
+    .paket-icon { font-size: 32px; margin-bottom: 10px; }
+
+    .paket-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .paket-size {
+      font-size: 13px;
+      color: #a0a0b0;
+      margin-bottom: 10px;
+    }
+
+    .paket-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e94560;
+    }
+
+    .btn-mulai {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 18px 56px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .btn-mulai.aktif {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .btn-mulai.aktif:hover {
+      background: #c73652;
+      transform: scale(1.04);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">📸</div>
+  <h1>Photobooth</h1>
+  <p class="subtitle">Pilih paket, ambil foto, gunakan filter, lalu download atau share hasil fotomu.</p>
+
+  <div class="paket-wrapper">
+    <div class="paket-card" id="card5k" onclick="pilihPaket('5k')">
+      <div class="paket-icon">🖼️</div>
+      <div class="paket-name">Paket 5K</div>
+      <div class="paket-size">Hasil 5 × 15 cm</div>
+      <div class="paket-price">Rp 5.000</div>
+    </div>
+    <div class="paket-card" id="card10k" onclick="pilihPaket('10k')">
+      <div class="paket-icon">🖼️</div>
+      <div class="paket-name">Paket 10K</div>
+      <div class="paket-size">Hasil 10 × 15 cm</div>
+      <div class="paket-price">Rp 10.000</div>
+    </div>
+  </div>
+
+  <button class="btn-mulai" id="btnMulai" onclick="mulai()">Mulai Foto</button>
+
+  <script>
+    let paketDipilih = null;
+
+    function pilihPaket(paket) {
+      paketDipilih = paket;
+      document.getElementById('card5k').classList.remove('selected');
+      document.getElementById('card10k').classList.remove('selected');
+      document.getElementById('card' + paket).classList.add('selected');
+      document.getElementById('btnMulai').classList.add('aktif');
+    }
+
+    function mulai() {
+      if (!paketDipilih) return;
+      localStorage.setItem('paket', paketDipilih);
+      alert('Paket ' + paketDipilih.toUpperCase() + ' dipilih! Halaman kamera coming soon.');
+    }
+  </script>
+
+</body>
+</html>

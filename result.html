@@ -9,181 +9,173 @@
 
   <style>
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
     }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 24px;
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:#1a1a2e;
+      color:white;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:24px;
     }
 
-    .paket-badge {
-      display: inline-block;
-      background: #e94560;
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 999px;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .paket-badge{
+      display:inline-block;
+      background:#e94560;
+      color:white;
+      font-size:12px;
+      font-weight:700;
+      padding:4px 12px;
+      border-radius:999px;
+      margin-bottom:12px;
+      text-transform:uppercase;
+      letter-spacing:1px;
     }
 
-    h2 {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 4px;
-      text-align: center;
+    h2{
+      font-size:22px;
+      margin-bottom:4px;
+      text-align:center;
     }
 
-    p.sub {
-      font-size: 14px;
-      color: #a0a0b0;
-      margin-bottom: 24px;
-      text-align: center;
+    p.sub{
+      font-size:14px;
+      color:#a0a0b0;
+      margin-bottom:24px;
+      text-align:center;
     }
 
-    .main-layout {
-      display: flex;
-      gap: 32px;
-      width: 100%;
-      max-width: 960px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      justify-content: center;
+    .main-layout{
+      display:flex;
+      gap:32px;
+      width:100%;
+      max-width:960px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      justify-content:center;
     }
 
-    .result-wrapper {
-      position: relative;
-      flex-shrink: 0;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 3px solid #0f3460;
-      background: #000;
+    .result-wrapper{
+      position:relative;
+      border-radius:16px;
+      overflow:hidden;
+      border:3px solid #0f3460;
+      background:black;
     }
 
-    #resultCanvas {
-      display: block;
+    #resultCanvas{
+      display:block;
     }
 
-    .loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      font-size: 14px;
-      color: white;
+    .loading-overlay{
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,0.7);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      font-size:14px;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #0f3460;
-      border-top-color: #e94560;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .spinner{
+      width:40px;
+      height:40px;
+      border:4px solid #0f3460;
+      border-top-color:#e94560;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
     }
 
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
+    @keyframes spin{
+      to{
+        transform:rotate(360deg);
       }
     }
 
-    .action-panel {
-      flex: 1;
-      min-width: 260px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .action-panel{
+      flex:1;
+      min-width:260px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
 
-    .btn {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      padding: 14px 20px;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
+    .btn{
+      width:100%;
+      padding:14px 20px;
+      border-radius:14px;
+      border:none;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
     }
 
-    .btn-download {
-      background: #e94560;
-      color: white;
+    .btn-download{
+      background:#e94560;
+      color:white;
     }
 
-    .btn-wa {
-      background: #25d366;
-      color: white;
+    .btn-wa{
+      background:#25d366;
+      color:white;
     }
 
-    .btn-share {
-      background: #0f3460;
-      color: white;
-      border: 2px solid #1a5090;
+    .btn-share{
+      background:#0f3460;
+      color:white;
+      border:2px solid #1a5090;
     }
 
-    .btn-ulang {
-      background: transparent;
-      color: #a0a0b0;
-      border: 2px solid #a0a0b0;
-      justify-content: center;
+    .btn-ulang{
+      background:transparent;
+      color:#a0a0b0;
+      border:2px solid #a0a0b0;
     }
 
-    .qr-box {
-      background: #16213e;
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
+    .qr-box{
+      background:#16213e;
+      border-radius:14px;
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
     }
 
-    .divider {
-      height: 1px;
-      background: #0f3460;
-      margin: 4px 0;
+    .divider{
+      height:1px;
+      background:#0f3460;
+      margin:4px 0;
     }
 
-    #statusMsg {
-      font-size: 13px;
-      color: #27ae60;
-      text-align: center;
-      min-height: 20px;
+    #statusMsg{
+      font-size:13px;
+      color:#27ae60;
+      text-align:center;
+      min-height:20px;
     }
 
-    #debugBox {
-      background: black;
-      color: lime;
-      padding: 12px;
-      margin-top: 20px;
-      width: 100%;
-      max-width: 960px;
-      border-radius: 12px;
-      font-size: 12px;
-      white-space: pre-wrap;
-      line-height: 1.5;
-      overflow-wrap: break-word;
+    #debugBox{
+      background:black;
+      color:lime;
+      padding:12px;
+      margin-top:20px;
+      width:100%;
+      max-width:960px;
+      border-radius:12px;
+      font-size:12px;
+      white-space:pre-wrap;
+      line-height:1.5;
+      overflow-wrap:break-word;
     }
 
   </style>
@@ -193,12 +185,14 @@
   <div style="text-align:center; margin-bottom:20px;">
     <div class="paket-badge" id="paketBadge">Paket</div>
     <h2>Hasil Fotomu 🎉</h2>
-    <p class="sub">Download, share, atau scan QR buat ambil di HP</p>
+    <p class="sub">
+      Download, share, atau scan QR buat ambil di HP
+    </p>
   </div>
 
   <div class="main-layout">
 
-    <div class="result-wrapper" id="resultWrapper">
+    <div class="result-wrapper">
 
       <canvas id="resultCanvas"></canvas>
 
@@ -211,15 +205,30 @@
 
     <div class="action-panel">
 
-      <button class="btn btn-download" id="btnDownload" onclick="downloadFoto()" disabled>
+      <button
+        class="btn btn-download"
+        id="btnDownload"
+        onclick="downloadFoto()"
+        disabled
+      >
         ⬇️ Download Soft File
       </button>
 
-      <button class="btn btn-wa" id="btnWa" onclick="shareWa()" disabled>
+      <button
+        class="btn btn-wa"
+        id="btnWa"
+        onclick="shareWa()"
+        disabled
+      >
         💬 Kirim ke WhatsApp
       </button>
 
-      <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
+      <button
+        class="btn btn-share"
+        id="btnShare"
+        onclick="shareNative()"
+        disabled
+      >
         📤 Share ke Aplikasi Lain
       </button>
 
@@ -227,7 +236,9 @@
 
       <div class="qr-box">
         <p>Scan QR ini dari HP untuk download foto</p>
+
         <div id="qrcode"></div>
+
         <p id="qrStatus" style="color:#e94560">
           Menunggu foto selesai...
         </p>
@@ -237,7 +248,10 @@
 
       <p id="statusMsg"></p>
 
-      <button class="btn btn-ulang" onclick="fotoLagi()">
+      <button
+        class="btn btn-ulang"
+        onclick="fotoLagi()"
+      >
         📷 Foto Lagi
       </button>
 
@@ -250,37 +264,43 @@
 <script>
 
   // =========================
-  // DEBUG FUNCTION
+  // DEBUG
   // =========================
 
-  function debug(msg) {
+  function debug(msg){
 
     console.log(msg);
 
     const box = document.getElementById('debugBox');
 
-    if (box) {
+    if(box){
       box.innerText += msg + '\n';
     }
+
   }
 
   // =========================
-  // LOAD STORAGE
+  // STORAGE
   // =========================
 
-  const paket = localStorage.getItem('paket') || '5k';
+  const paket =
+    localStorage.getItem('paket') || '5k';
 
   document.getElementById('paketBadge').textContent =
     'Paket ' + paket.toUpperCase();
 
   const filteredPhotos =
-    JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
+    JSON.parse(
+      localStorage.getItem('filteredPhotos') || '[]'
+    );
 
   const templateSrc =
     localStorage.getItem('templateSrc');
 
   const slots =
-    JSON.parse(localStorage.getItem('templateSlots') || '[]');
+    JSON.parse(
+      localStorage.getItem('templateSlots') || '[]'
+    );
 
   debug('========== START ==========');
   debug('PAKET: ' + paket);
@@ -292,23 +312,35 @@
   // CANVAS
   // =========================
 
-  const canvas = document.getElementById('resultCanvas');
-  const ctx = canvas.getContext('2d');
+  const canvas =
+    document.getElementById('resultCanvas');
 
-  const OUTPUT = paket === '5k'
-    ? { w: 591, h: 1772 }
-    : { w: 1181, h: 1772 };
+  const ctx =
+    canvas.getContext('2d');
+
+  const OUTPUT =
+    paket === '5k'
+      ? { w:591, h:1772 }
+      : { w:1181, h:1772 };
 
   const displayW = 280;
-  const displayH = Math.round(
-    OUTPUT.h * displayW / OUTPUT.w
-  );
 
-  canvas.style.width = displayW + 'px';
-  canvas.style.height = displayH + 'px';
+  const displayH =
+    Math.round(
+      OUTPUT.h * displayW / OUTPUT.w
+    );
 
-  canvas.width = OUTPUT.w;
-  canvas.height = OUTPUT.h;
+  canvas.style.width =
+    displayW + 'px';
+
+  canvas.style.height =
+    displayH + 'px';
+
+  canvas.width =
+    OUTPUT.w;
+
+  canvas.height =
+    OUTPUT.h;
 
   let finalDataURL = null;
 
@@ -316,23 +348,30 @@
   // LOAD IMAGE
   // =========================
 
-  async function loadImage(src) {
+  async function loadImage(src){
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve,reject)=>{
 
       const img = new Image();
 
       img.crossOrigin = 'anonymous';
 
-      img.onload = () => {
+      img.onload = ()=>{
+
         debug('IMAGE LOADED');
+
         resolve(img);
+
       };
 
-      img.onerror = (e) => {
-        debug('IMAGE FAILED');
+      img.onerror = (e)=>{
+
+        debug('IMAGE ERROR');
+
         console.error(e);
+
         reject(e);
+
       };
 
       img.src = src;
@@ -345,47 +384,73 @@
   // GENERATE RESULT
   // =========================
 
-  async function generateResult() {
+  async function generateResult(){
 
-    try {
+    try{
 
       debug('GENERATE START');
 
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, OUTPUT.w, OUTPUT.h);
 
-      // =========================
-      // LOOP FOTO
-      // =========================
+      ctx.fillRect(
+        0,
+        0,
+        OUTPUT.w,
+        OUTPUT.h
+      );
 
-      for (let i = 0; i < slots.length; i++) {
+      // =====================
+      // FOTO
+      // =====================
+
+      for(let i=0; i<slots.length; i++){
 
         debug('----------------');
         debug('LOOP: ' + i);
 
         const slot = slots[i];
 
-        debug('SLOT: ' + JSON.stringify(slot));
+        debug(
+          'SLOT: ' +
+          JSON.stringify(slot)
+        );
 
         const photoSrc =
-          filteredPhotos[i] || filteredPhotos[0];
+          filteredPhotos[i] ||
+          filteredPhotos[0];
 
-        debug('PHOTO EXISTS: ' + !!photoSrc);
+        debug(
+          'PHOTO EXISTS: ' +
+          !!photoSrc
+        );
 
-        if (!photoSrc) {
+        if(!photoSrc){
+
           debug('PHOTO EMPTY');
+
           continue;
+
         }
 
-        debug('PHOTO LENGTH: ' + photoSrc.length);
+        debug(
+          'PHOTO LENGTH: ' +
+          photoSrc.length
+        );
 
-        // LOAD FOTO
         debug('LOADING PHOTO...');
 
-        const photo = await loadImage(photoSrc);
+        const photo =
+          await loadImage(photoSrc);
 
-        debug('PHOTO WIDTH: ' + photo.width);
-        debug('PHOTO HEIGHT: ' + photo.height);
+        debug(
+          'PHOTO WIDTH: ' +
+          photo.width
+        );
+
+        debug(
+          'PHOTO HEIGHT: ' +
+          photo.height
+        );
 
         // DEBUG SLOT
         ctx.strokeStyle = 'red';
@@ -399,16 +464,26 @@
         );
 
         // COVER FIT
-        const scaleX = slot.w / photo.width;
-        const scaleY = slot.h / photo.height;
+        const scaleX =
+          slot.w / photo.width;
 
-        const scale = Math.max(scaleX, scaleY);
+        const scaleY =
+          slot.h / photo.height;
 
-        const sw = slot.w / scale;
-        const sh = slot.h / scale;
+        const scale =
+          Math.max(scaleX, scaleY);
 
-        const sx = (photo.width - sw) / 2;
-        const sy = (photo.height - sh) / 2;
+        const sw =
+          slot.w / scale;
+
+        const sh =
+          slot.h / scale;
+
+        const sx =
+          (photo.width - sw) / 2;
+
+        const sy =
+          (photo.height - sh) / 2;
 
         debug('DRAWING PHOTO');
 
@@ -426,70 +501,138 @@
 
       }
 
-      // =========================
+      // =====================
       // TEMPLATE
-      // =========================
+      // =====================
 
       debug('LOADING TEMPLATE...');
 
-      try {
+      const tmpl =
+        await loadImage(templateSrc);
 
-        const tmpl = await loadImage(templateSrc);
+      debug('TEMPLATE LOADED');
 
-        debug('TEMPLATE LOADED');
+      // canvas sementara
+      const tempCanvas =
+        document.createElement('canvas');
 
-        ctx.drawImage(
-          tmpl,
+      const tempCtx =
+        tempCanvas.getContext('2d');
+
+      tempCanvas.width =
+        OUTPUT.w;
+
+      tempCanvas.height =
+        OUTPUT.h;
+
+      // gambar template
+      tempCtx.drawImage(
+        tmpl,
+        0,
+        0,
+        OUTPUT.w,
+        OUTPUT.h
+      );
+
+      // ambil pixel
+      const imageData =
+        tempCtx.getImageData(
           0,
           0,
           OUTPUT.w,
           OUTPUT.h
         );
 
-        debug('TEMPLATE DRAWN');
+      const data =
+        imageData.data;
 
-      } catch(e) {
+      debug('REMOVING GREEN...');
 
-        debug('TEMPLATE ERROR');
+      // chroma key
+      for(let i=0; i<data.length; i+=4){
 
-        console.error(e);
+        const r = data[i];
+        const g = data[i+1];
+        const b = data[i+2];
+
+        // DETEKSI HIJAU
+        if(
+          g > 180 &&
+          r < 120 &&
+          b < 120
+        ){
+
+          // transparency
+          data[i+3] = 0;
+
+        }
 
       }
 
-      // =========================
+      // apply perubahan
+      tempCtx.putImageData(
+        imageData,
+        0,
+        0
+      );
+
+      // gambar ke canvas utama
+      ctx.drawImage(
+        tempCanvas,
+        0,
+        0
+      );
+
+      debug('GREEN REMOVED');
+      debug('TEMPLATE DRAWN');
+
+      // =====================
       // EXPORT
-      // =========================
+      // =====================
 
       debug('EXPORTING JPG...');
 
       finalDataURL =
-        canvas.toDataURL('image/jpeg', 0.7);
+        canvas.toDataURL(
+          'image/jpeg',
+          0.7
+        );
 
       debug('EXPORT DONE');
 
       // HIDE LOADING
-      document.getElementById('loadingOverlay').style.display =
-        'none';
+      document.getElementById(
+        'loadingOverlay'
+      ).style.display = 'none';
 
       // ENABLE BUTTONS
-      ['btnDownload','btnWa','btnShare']
-      .forEach(id => {
-        document.getElementById(id).disabled = false;
+      [
+        'btnDownload',
+        'btnWa',
+        'btnShare'
+      ].forEach(id=>{
+
+        document.getElementById(id)
+          .disabled = false;
+
       });
 
       // QR
       generateQR();
 
+      debug('QR GENERATED');
       debug('========== FINISHED ==========');
 
-    } catch(e) {
+    }catch(e){
 
       console.error(e);
 
       debug('========== ERROR ==========');
       debug(e.message);
 
-      document.getElementById('loadingOverlay').innerHTML =
+      document.getElementById(
+        'loadingOverlay'
+      ).innerHTML =
         '<span style="color:#e94560">Gagal generate foto</span>';
 
     }
@@ -500,9 +643,9 @@
   // QR
   // =========================
 
-  function generateQR() {
+  function generateQR(){
 
-    if (!finalDataURL) return;
+    if(!finalDataURL) return;
 
     localStorage.setItem(
       'finalPhoto',
@@ -510,22 +653,23 @@
     );
 
     const downloadURL =
-      window.location.origin + '/download.html';
+      window.location.origin +
+      '/download.html';
 
-    document.getElementById('qrStatus').textContent = '';
+    document.getElementById(
+      'qrStatus'
+    ).textContent = '';
 
     new QRCode(
       document.getElementById('qrcode'),
       {
-        text: downloadURL,
-        width: 160,
-        height: 160,
-        colorDark: '#ffffff',
-        colorLight: '#16213e',
+        text:downloadURL,
+        width:160,
+        height:160,
+        colorDark:'#ffffff',
+        colorLight:'#16213e'
       }
     );
-
-    debug('QR GENERATED');
 
   }
 
@@ -533,11 +677,12 @@
   // DOWNLOAD
   // =========================
 
-  function downloadFoto() {
+  function downloadFoto(){
 
-    if (!finalDataURL) return;
+    if(!finalDataURL) return;
 
-    const a = document.createElement('a');
+    const a =
+      document.createElement('a');
 
     a.href = finalDataURL;
 
@@ -546,14 +691,18 @@
 
     a.click();
 
-    document.getElementById('statusMsg').textContent =
+    document.getElementById(
+      'statusMsg'
+    ).textContent =
       'Download dimulai ✓';
 
-    setTimeout(() => {
+    setTimeout(()=>{
 
-      document.getElementById('statusMsg').textContent = '';
+      document.getElementById(
+        'statusMsg'
+      ).textContent = '';
 
-    }, 2000);
+    },2000);
 
   }
 
@@ -561,14 +710,16 @@
   // SHARE WA
   // =========================
 
-  function shareWa() {
+  function shareWa(){
 
-    if (!finalDataURL) return;
+    if(!finalDataURL) return;
 
-    const msg = encodeURIComponent(
-      'Halo! Ini hasil photobooth kamu 📸\n' +
-      window.location.origin + '/download.html'
-    );
+    const msg =
+      encodeURIComponent(
+        'Halo! Ini hasil photobooth kamu 📸\n' +
+        window.location.origin +
+        '/download.html'
+      );
 
     window.open(
       'https://wa.me/?text=' + msg,
@@ -581,45 +732,48 @@
   // SHARE NATIVE
   // =========================
 
-  async function shareNative() {
+  async function shareNative(){
 
-    if (!finalDataURL) return;
+    if(!finalDataURL) return;
 
-    try {
+    try{
 
-      const res = await fetch(finalDataURL);
+      const res =
+        await fetch(finalDataURL);
 
-      const blob = await res.blob();
+      const blob =
+        await res.blob();
 
-      const file = new File(
-        [blob],
-        'photobooth.jpg',
-        {
-          type: 'image/jpeg'
-        }
-      );
+      const file =
+        new File(
+          [blob],
+          'photobooth.jpg',
+          {
+            type:'image/jpeg'
+          }
+        );
 
-      if (
+      if(
         navigator.canShare &&
         navigator.canShare({
-          files: [file]
+          files:[file]
         })
-      ) {
+      ){
 
         await navigator.share({
-          files: [file],
-          title: 'Hasil Photobooth'
+          files:[file],
+          title:'Hasil Photobooth'
         });
 
-      } else {
+      }else{
 
         downloadFoto();
 
       }
 
-    } catch(e) {
+    }catch(e){
 
-      if (e.name !== 'AbortError') {
+      if(e.name !== 'AbortError'){
         downloadFoto();
       }
 
@@ -631,13 +785,14 @@
   // RESET
   // =========================
 
-  function fotoLagi() {
+  function fotoLagi(){
 
     localStorage.removeItem('photos');
     localStorage.removeItem('filteredPhotos');
     localStorage.removeItem('finalPhoto');
 
-    window.location.href = 'index.html';
+    window.location.href =
+      'index.html';
 
   }
 

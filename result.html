@@ -215,6 +215,9 @@
   const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
   const templateSrc    = localStorage.getItem('templateSrc');
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
+  debug('FILTERED: ' + JSON.stringify(filteredPhotos));
+debug('SLOTS: ' + JSON.stringify(slots));
+debug('TEMPLATE: ' + templateSrc);
 
   const canvas  = document.getElementById('resultCanvas');
   const ctx     = canvas.getContext('2d');
@@ -233,6 +236,9 @@
   canvas.height = OUTPUT.h;
 
   let finalDataURL = null;
+  function debug(msg) {
+  document.getElementById('debugBox').innerText += msg + '\n';
+  }
 
   async function loadImage(src) {
     return new Promise((resolve, reject) => {

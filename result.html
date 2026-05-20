@@ -50,13 +50,12 @@
       border: 3px solid #0f3460;
       background: #000;
     }
-
     #resultCanvas { display: block; }
 
     .loading-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -65,10 +64,8 @@
       font-size: 14px;
       color: white;
     }
-
     .spinner {
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       border: 4px solid #0f3460;
       border-top-color: #e94560;
       border-radius: 50%;
@@ -98,16 +95,17 @@
       transition: all 0.2s;
       text-decoration: none;
     }
+    .btn:disabled { opacity: 0.4; pointer-events: none; }
     .btn-icon { font-size: 20px; }
 
     .btn-download { background: #e94560; color: white; }
     .btn-download:hover { background: #c73652; transform: scale(1.02); }
 
-    .btn-wa { background: #25d366; color: white; }
-    .btn-wa:hover { background: #1fb855; transform: scale(1.02); }
-
     .btn-share { background: #0f3460; color: white; border: 2px solid #1a5090; }
     .btn-share:hover { background: #1a5090; transform: scale(1.02); }
+
+    .btn-print { background: #8e44ad; color: white; }
+    .btn-print:hover { background: #7d3c98; transform: scale(1.02); }
 
     .btn-ulang { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; justify-content: center; }
     .btn-ulang:hover { color: white; border-color: white; }
@@ -121,28 +119,11 @@
       align-items: center;
       gap: 10px;
     }
-    .qr-box p {
-      font-size: 12px;
-      color: #a0a0b0;
-      text-align: center;
-      line-height: 1.5;
-    }
-    #qrcode canvas, #qrcode img {
-      border-radius: 8px;
-    }
+    .qr-box p { font-size: 12px; color: #a0a0b0; text-align: center; line-height: 1.5; }
+    #qrcode canvas, #qrcode img { border-radius: 8px; }
 
-    .divider {
-      height: 1px;
-      background: #0f3460;
-      margin: 4px 0;
-    }
-
-    #statusMsg {
-      font-size: 13px;
-      color: #27ae60;
-      text-align: center;
-      min-height: 20px;
-    }
+    .divider { height: 1px; background: #0f3460; margin: 4px 0; }
+    #statusMsg { font-size: 13px; color: #27ae60; text-align: center; min-height: 20px; }
   </style>
 </head>
 <body>
@@ -150,7 +131,7 @@
   <div style="text-align:center; margin-bottom:20px;">
     <div class="paket-badge" id="paketBadge">Paket</div>
     <h2>Hasil Fotomu 🎉</h2>
-    <p class="sub">Download, share, atau scan QR buat ambil di HP</p>
+    <p class="sub">Download atau scan QR untuk ambil di HP</p>
   </div>
 
   <div class="main-layout">
@@ -170,20 +151,20 @@
         <span>Download Soft File</span>
       </button>
 
-      <button class="btn btn-wa" id="btnWa" onclick="shareWa()" disabled>
-        <span class="btn-icon">💬</span>
-        <span>Kirim ke WhatsApp</span>
-      </button>
-
       <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
         <span class="btn-icon">📤</span>
         <span>Share ke Aplikasi Lain</span>
       </button>
 
+      <button class="btn btn-print" id="btnPrint" onclick="printFoto()" disabled>
+        <span class="btn-icon">🖨️</span>
+        <span>Kirim ke Printer</span>
+      </button>
+
       <div class="divider"></div>
 
       <div class="qr-box">
-        <p>Scan QR ini dari HP untuk download foto</p>
+        <p>Scan QR dari HP untuk download foto</p>
         <div id="qrcode"></div>
         <p id="qrStatus" style="color:#e94560">Menunggu foto selesai...</p>
       </div>
@@ -205,25 +186,24 @@
   const templateSrc    = localStorage.getItem('templateSrc');
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
 
-  const canvas  = document.getElementById('resultCanvas');
-  const ctx     = canvas.getContext('2d');
+  const canvas = document.getElementById('resultCanvas');
+  const ctx    = canvas.getContext('2d');
 
-  // Ukuran output sesuai paket
-  const OUTPUT = paket === '5k'
-    ? { w: 591,  h: 1772 }
-    : { w: 1181, h: 1772 };
+  // Ukuran output dari template asli
+  const tmplW = parseInt(localStorage.getItem('templateW') || '591');
+  const tmplH = parseInt(localStorage.getItem('templateH') || '1772');
 
-  // Tampilan max 320px lebar
+  // Tampilan di layar — max 280px lebar
   const displayW = 280;
-  const displayH = Math.round(OUTPUT.h * displayW / OUTPUT.w);
+  const displayH = Math.round(tmplH * displayW / tmplW);
   canvas.style.width  = displayW + 'px';
   canvas.style.height = displayH + 'px';
-  canvas.width  = OUTPUT.w;
-  canvas.height = OUTPUT.h;
+  canvas.width  = tmplW;
+  canvas.height = tmplH;
 
   let finalDataURL = null;
 
-  async function loadImage(src) {
+  function loadImage(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -235,18 +215,19 @@
 
   async function generateResult() {
     try {
-      // 1. Gambar foto-foto ke slot masing-masing
+      // 1. Background putih
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, OUTPUT.w, OUTPUT.h);
+      ctx.fillRect(0, 0, tmplW, tmplH);
 
+      // 2. Tempel foto di tiap slot
       for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i];
-        const photoSrc = filteredPhotos[i] || filteredPhotos[0];
+        const slot     = slots[i];
+        const photoSrc = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
         if (!photoSrc) continue;
 
         const photo = await loadImage(photoSrc);
 
-        // Cover fit: isi slot tanpa distorsi
+        // Cover fit — isi slot tanpa distorsi
         const scaleX = slot.w / photo.width;
         const scaleY = slot.h / photo.height;
         const scale  = Math.max(scaleX, scaleY);
@@ -255,44 +236,39 @@
         const sx = (photo.width  - sw) / 2;
         const sy = (photo.height - sh) / 2;
 
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(slot.x, slot.y, slot.w, slot.h);
+        ctx.clip();
         ctx.drawImage(photo, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+        ctx.restore();
       }
 
-      // 2. Overlay template di atas foto
+      // 3. Overlay template PNG di atas foto
       const tmpl = await loadImage(templateSrc);
-      ctx.drawImage(tmpl, 0, 0, OUTPUT.w, OUTPUT.h);
+      ctx.drawImage(tmpl, 0, 0, tmplW, tmplH);
 
-      // 3. Selesai
+      // 4. Selesai
       finalDataURL = canvas.toDataURL('image/jpeg', 0.95);
+      localStorage.setItem('finalPhoto', finalDataURL);
 
-      // Sembunyikan loading
       document.getElementById('loadingOverlay').style.display = 'none';
-
-      // Aktifkan tombol
-      ['btnDownload','btnWa','btnShare'].forEach(id => {
+      ['btnDownload','btnShare','btnPrint'].forEach(id => {
         document.getElementById(id).disabled = false;
       });
 
-      // Generate QR
       generateQR();
 
     } catch(e) {
       console.error(e);
       document.getElementById('loadingOverlay').innerHTML =
-        '<span style="color:#e94560">Gagal generate foto. Coba ulangi.</span>';
+        '<span style="color:#e94560;padding:16px;text-align:center">Gagal generate foto.<br>Coba ulangi dari awal.</span>';
     }
   }
 
   function generateQR() {
-    if (!finalDataURL) return;
-
-    // Simpan foto ke localStorage, buat link "download page"
-    localStorage.setItem('finalPhoto', finalDataURL);
-
-    // QR mengarah ke halaman download sederhana
-    const downloadURL = window.location.origin + '/download.html';
-
     document.getElementById('qrStatus').textContent = '';
+    const downloadURL = window.location.origin + '/download.html';
     new QRCode(document.getElementById('qrcode'), {
       text: downloadURL,
       width: 160,
@@ -312,33 +288,33 @@
     setTimeout(() => document.getElementById('statusMsg').textContent = '', 2000);
   }
 
-  function shareWa() {
-    if (!finalDataURL) return;
-    // WhatsApp share via link download
-    const msg = encodeURIComponent('Halo! Ini hasil foto photobooth kamu 📸\nDownload di: ' + window.location.origin + '/download.html');
-    window.open('https://wa.me/?text=' + msg, '_blank');
-  }
-
   async function shareNative() {
     if (!finalDataURL) return;
     try {
-      // Convert dataURL ke blob
       const res  = await fetch(finalDataURL);
       const blob = await res.blob();
       const file = new File([blob], 'photobooth.jpg', { type: 'image/jpeg' });
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Hasil Photobooth' });
       } else {
-        // Fallback: download
         downloadFoto();
-        document.getElementById('statusMsg').textContent = 'Share tidak didukung browser ini — file didownload';
+        document.getElementById('statusMsg').textContent = 'Share tidak didukung — file didownload';
       }
     } catch(e) {
-      if (e.name !== 'AbortError') {
-        downloadFoto();
-      }
+      if (e.name !== 'AbortError') downloadFoto();
     }
+  }
+
+  function printFoto() {
+    if (!finalDataURL) return;
+    const w = window.open('');
+    w.document.write(`
+      <html><body style="margin:0">
+      <img src="${finalDataURL}" style="width:100%;max-width:100%">
+      <script>window.onload=()=>{window.print();window.close()}<\/script>
+      </body></html>
+    `);
+    w.document.close();
   }
 
   function fotoLagi() {
@@ -348,7 +324,6 @@
     window.location.href = 'index.html';
   }
 
-  // Mulai generate
   generateResult();
 </script>
 

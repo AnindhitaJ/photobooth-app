@@ -259,6 +259,18 @@ debug('TEMPLATE: ' + templateSrc);
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         const photoSrc = filteredPhotos[i] || filteredPhotos[0];
+        debug('PHOTO SRC EXISTS: ' + !!photoSrc);
+
+const photo = await loadImage(photoSrc);
+
+debug('PHOTO WIDTH: ' + photo.width);
+debug('PHOTO HEIGHT: ' + photo.height);
+
+ctx.strokeStyle = 'red';
+ctx.lineWidth = 5;
+ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+
+debug('DRAWING...');
         if (!photoSrc) continue;
 
         const photo = await loadImage(photoSrc);

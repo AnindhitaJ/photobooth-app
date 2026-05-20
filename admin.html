@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -45,7 +46,6 @@
     .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
     .editor-panel { flex: 1; min-width: 300px; }
 
-    /* Debug panel */
     .debug-panel {
       background: #0d0d1a;
       border: 1px solid #e94560;
@@ -54,6 +54,8 @@
       margin-bottom: 16px;
       font-family: monospace;
       font-size: 12px;
+      max-height: 180px;
+      overflow-y: auto;
     }
     .debug-panel h4 { color: #e94560; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
     .debug-line { color: #a0a0b0; margin: 3px 0; }
@@ -91,7 +93,8 @@
     .category-tag:hover { border-color: #e94560; }
     .category-tag.active { background: #e94560; border-color: #e94560; }
 
-    .upload-area {
+    .upload-label {
+      display: block;
       border: 2px dashed #0f3460;
       border-radius: 16px;
       padding: 28px;
@@ -101,11 +104,10 @@
       margin-bottom: 16px;
       background: #16213e;
     }
-    .upload-area:hover { border-color: #e94560; }
-    .upload-area.dragover { border-color: #e94560; background: #1f1f4e; }
-    .upload-area p { color: #a0a0b0; font-size: 13px; margin-top: 6px; }
+    .upload-label:hover { border-color: #e94560; background: #1a1a3e; }
+    .upload-label.dragover { border-color: #e94560; background: #1f1f4e; }
+    .upload-label p { color: #a0a0b0; font-size: 13px; margin-top: 6px; }
     .upload-icon { font-size: 36px; }
-    #fileInput { display: none; }
 
     .canvas-wrapper {
       position: relative;
@@ -135,6 +137,7 @@
       background: rgba(0,0,0,0.6);
       padding: 2px 6px;
       border-radius: 4px;
+      pointer-events: none;
     }
     .slot-delete {
       position: absolute;
@@ -142,8 +145,9 @@
       background: #e94560; color: white;
       border: none; border-radius: 50%;
       width: 20px; height: 20px;
-      font-size: 12px; cursor: pointer;
+      font-size: 14px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
+      line-height: 1;
     }
     .resize-handle {
       position: absolute;
@@ -266,12 +270,9 @@
 <div class="layout">
   <div class="editor-panel">
 
-    <!-- DEBUG PANEL -->
     <div class="debug-panel">
       <h4>🔍 Debug Info</h4>
-      <div id="debugLines">
-        <div class="debug-line">Menunggu aksi...</div>
-      </div>
+      <div id="debugLines"><div class="debug-line">Siap...</div></div>
     </div>
 
     <div class="form-group">
@@ -287,17 +288,19 @@
         <button class="btn btn-primary btn-sm" onclick="tambahKategori()">+ Tambah</button>
       </div>
       <div class="category-tags" id="categoryTags">
-        <div style="font-size:12px;color:#555;margin-top:4px">Belum ada kategori — tambah dulu</div>
+        <div style="font-size:12px;color:#555;margin-top:4px">Belum ada kategori</div>
       </div>
-      <input type="hidden" id="selectedCategory">
     </div>
 
-    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">🖼️</div>
-      <strong>Klik atau drag & drop PNG template</strong>
-      <p>Area slot foto: transparan atau hitam</p>
+    <div class="form-group">
+      <label class="form-label">Upload Template PNG</label>
+      <label class="upload-label" id="uploadLabel">
+        <input type="file" id="fileInput" accept="image/png,image/jpeg" style="display:none">
+        <div class="upload-icon">🖼️</div>
+        <strong>Klik di sini untuk pilih file</strong>
+        <p>Format PNG transparan atau dengan area hitam</p>
+      </label>
     </div>
-    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp">
 
     <div class="canvas-wrapper" id="canvasWrapper">
       <canvas id="editorCanvas"></canvas>
@@ -315,13 +318,12 @@
     </div>
 
     <button class="btn btn-success" id="btnSave" onclick="saveTemplate()"
-      style="display:none;width:100%;margin-top:8px;padding:14px">
+      style="display:none;width:100%;margin-top:8px;padding:14px;font-size:16px">
       💾 Simpan Template
     </button>
 
   </div>
 
-  <!-- Panel Kanan -->
   <div class="templates-panel">
     <div class="manage-cats" id="manageCats" style="display:none">
       <h4>Kelola Kategori</h4>
@@ -351,194 +353,124 @@
     const el = document.getElementById('debugLines');
     const line = document.createElement('div');
     line.className = 'debug-line ' + type;
-    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    const t = new Date().toLocaleTimeString('id-ID');
+    line.textContent = `[${t}] ${msg}`;
     el.appendChild(line);
     el.scrollTop = el.scrollHeight;
-    if (el.children.length > 20) el.removeChild(el.firstChild);
+    if (el.children.length > 30) el.removeChild(el.firstChild);
   }
 
-  // ─── Kategori ───
-  function getCategories() {
-    try { return JSON.parse(localStorage.getItem('pb_categories') || '[]'); }
-    catch { return []; }
-  }
-  function saveCategories(cats) {
-    localStorage.setItem('pb_categories', JSON.stringify(cats));
-  }
-
-  function tambahKategori() {
-    const val = document.getElementById('newCatInput').value.trim();
-    if (!val) { showToast('Isi nama kategori dulu!', true); return; }
-    const cats = getCategories();
-    if (cats.includes(val)) { showToast('Kategori sudah ada', true); return; }
-    cats.push(val);
-    saveCategories(cats);
-    document.getElementById('newCatInput').value = '';
-    debug(`Kategori "${val}" ditambahkan`, 'ok');
-    renderCategoryTags();
-    renderCatTabs();
-    renderManageCats();
-    showToast(`Kategori "${val}" ditambahkan`);
+  // ─── Init check ───
+  debug('Panel loaded ✓', 'ok');
+  try {
+    localStorage.setItem('_test', '1');
+    localStorage.removeItem('_test');
+    debug('localStorage OK ✓', 'ok');
+  } catch(e) {
+    debug('localStorage ERROR: ' + e.message, 'err');
   }
 
-  function renderCategoryTags() {
-    const cats = getCategories();
-    const el = document.getElementById('categoryTags');
-    if (!cats.length) {
-      el.innerHTML = '<div style="font-size:12px;color:#555;margin-top:4px">Belum ada kategori — tambah dulu</div>';
-      return;
-    }
-    el.innerHTML = cats.map(c => `
-      <div class="category-tag ${selectedCategory === c ? 'active' : ''}"
-           onclick="selectCategory('${c}')">
-        ${c}
-      </div>
-    `).join('');
-  }
+  // ─── File Input ───
+  const fileInput = document.getElementById('fileInput');
 
-  function selectCategory(cat) {
-    selectedCategory = cat;
-    document.getElementById('selectedCategory').value = cat;
-    debug(`Kategori dipilih: "${cat}"`, 'ok');
-    renderCategoryTags();
-  }
-
-  function renderCatTabs() {
-    const cats = getCategories();
-    const el = document.getElementById('catTabs');
-    el.innerHTML = `<button class="cat-tab ${filterCategory==='all'?'active':''}" onclick="filterCat('all')">Semua</button>`;
-    el.innerHTML += cats.map(c => `
-      <button class="cat-tab ${filterCategory===c?'active':''}" onclick="filterCat('${c}')">${c}</button>
-    `).join('');
-    document.getElementById('manageCats').style.display = cats.length ? 'block' : 'none';
-  }
-
-  function filterCat(cat) {
-    filterCategory = cat;
-    renderCatTabs();
-    renderTemplateList();
-  }
-
-  function renderManageCats() {
-    const cats = getCategories();
-    document.getElementById('catListManage').innerHTML = cats.length
-      ? cats.map((c, i) => `
-          <div class="cat-list-item">
-            <span>${c}</span>
-            <button class="btn-cat-del" onclick="hapusKategori(${i})">×</button>
-          </div>`).join('')
-      : '<p style="font-size:12px;color:#555">Belum ada kategori</p>';
-  }
-
-  function hapusKategori(idx) {
-    const cats = getCategories();
-    cats.splice(idx, 1);
-    saveCategories(cats);
-    renderCategoryTags();
-    renderCatTabs();
-    renderManageCats();
-    renderTemplateList();
-  }
-
-  // ─── Upload ───
-  document.getElementById('fileInput').addEventListener('change', e => {
-    if (e.target.files[0]) {
-      debug(`File dipilih: ${e.target.files[0].name} (${Math.round(e.target.files[0].size/1024)} KB)`);
-      loadTemplate(e.target.files[0]);
+  fileInput.addEventListener('change', function() {
+    debug('fileInput change event fired ✓', 'ok');
+    if (this.files && this.files[0]) {
+      const f = this.files[0];
+      debug(`File: ${f.name} | ${Math.round(f.size/1024)} KB | ${f.type}`, 'ok');
+      loadTemplate(f);
+    } else {
+      debug('Tidak ada file dipilih', 'warn');
     }
   });
 
-  const uploadArea = document.getElementById('uploadArea');
-  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-  uploadArea.addEventListener('drop', e => {
+  // Drag & drop
+  const uploadLabel = document.getElementById('uploadLabel');
+  uploadLabel.addEventListener('dragover', e => {
     e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    if (e.dataTransfer.files[0]) {
-      debug(`File di-drop: ${e.dataTransfer.files[0].name} (${Math.round(e.dataTransfer.files[0].size/1024)} KB)`);
-      loadTemplate(e.dataTransfer.files[0]);
+    uploadLabel.classList.add('dragover');
+  });
+  uploadLabel.addEventListener('dragleave', () => {
+    uploadLabel.classList.remove('dragover');
+  });
+  uploadLabel.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadLabel.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      debug(`Drop: ${f.name} | ${Math.round(f.size/1024)} KB`, 'ok');
+      loadTemplate(f);
     }
   });
 
+  // ─── Load Template ───
   function loadTemplate(file) {
-    debug('Membaca file...', 'warn');
+    debug('Membaca file dengan FileReader...', 'warn');
     const reader = new FileReader();
 
-    reader.onprogress = e => {
-      if (e.lengthComputable) {
-        debug(`Loading: ${Math.round(e.loaded/e.total*100)}%`);
+    reader.onload = function(e) {
+      debug('FileReader onload fired ✓', 'ok');
+      const dataURL = e.target.result;
+      const sizeKB = Math.round(dataURL.length / 1024);
+      debug(`Data URL: ${sizeKB} KB`, sizeKB > 3000 ? 'warn' : 'ok');
+
+      if (sizeKB > 3500) {
+        debug('File besar, kompres dulu...', 'warn');
+        kompresGambar(dataURL, sizeKB);
+      } else {
+        templateDataURL = dataURL;
+        tampilkanDiCanvas(dataURL);
       }
     };
 
-    reader.onload = e => {
-      debug('File berhasil dibaca', 'ok');
-      templateDataURL = e.target.result;
-      const sizeKB = Math.round(templateDataURL.length / 1024);
-      debug(`Ukuran data URL: ${sizeKB} KB`, sizeKB > 3000 ? 'warn' : 'ok');
-
-      if (sizeKB > 4000) {
-        debug('⚠️ File terlalu besar! Akan dikompres...', 'warn');
-        kompresTemplate(templateDataURL, file.type);
-        return;
-      }
-
-      loadImageToCanvas(templateDataURL);
-    };
-
-    reader.onerror = e => {
-      debug(`Error baca file: ${e.target.error}`, 'err');
-      showToast('Gagal membaca file!', true);
+    reader.onerror = function() {
+      debug('FileReader ERROR!', 'err');
+      showToast('Gagal baca file!', true);
     };
 
     reader.readAsDataURL(file);
+    debug('readAsDataURL dipanggil...', 'warn');
   }
 
-  function kompresTemplate(dataURL, type) {
+  function kompresGambar(dataURL, originalKB) {
     const img = new Image();
     img.onload = () => {
-      debug(`Ukuran asli: ${img.width}x${img.height}px`, 'warn');
-
-      // Kompres ke max 1000px lebar
-      const maxW = 1000;
-      const scale = Math.min(1, maxW / img.width);
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-
+      const maxW = 800;
+      const s = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * s);
+      const h = Math.round(img.height * s);
       const off = document.createElement('canvas');
       off.width = w; off.height = h;
-      const octx = off.getContext('2d');
-      octx.drawImage(img, 0, 0, w, h);
-
-      templateDataURL = off.toDataURL('image/jpeg', 0.75);
-      const newSize = Math.round(templateDataURL.length / 1024);
-      debug(`Setelah kompres: ${w}x${h}px, ${newSize} KB`, 'ok');
-
-      loadImageToCanvas(templateDataURL);
+      off.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = off.toDataURL('image/jpeg', 0.7);
+      const newKB = Math.round(compressed.length / 1024);
+      debug(`Kompres: ${originalKB}KB → ${newKB}KB (${w}x${h})`, 'ok');
+      templateDataURL = compressed;
+      tampilkanDiCanvas(compressed);
     };
     img.src = dataURL;
   }
 
-  function loadImageToCanvas(dataURL) {
-    debug('Memuat ke canvas...', 'warn');
+  function tampilkanDiCanvas(dataURL) {
+    debug('Load ke canvas...', 'warn');
     templateImg = new Image();
 
     templateImg.onload = () => {
-      debug(`Gambar loaded: ${templateImg.width}x${templateImg.height}px`, 'ok');
-
+      debug(`Gambar: ${templateImg.width}x${templateImg.height}px ✓`, 'ok');
       scale = Math.min(1, DISPLAY_MAX_W / templateImg.width);
       const dw = Math.round(templateImg.width * scale);
       const dh = Math.round(templateImg.height * scale);
-
-      debug(`Display size: ${dw}x${dh}px (scale: ${scale.toFixed(2)})`);
+      debug(`Canvas: ${dw}x${dh}px (scale ${scale.toFixed(2)})`);
 
       canvas.width = dw; canvas.height = dh;
-      canvas.style.width = dw + 'px'; canvas.style.height = dh + 'px';
-      overlay.style.width = dw + 'px'; overlay.style.height = dh + 'px';
+      canvas.style.width = dw + 'px';
+      canvas.style.height = dh + 'px';
+      overlay.style.width = dw + 'px';
+      overlay.style.height = dh + 'px';
 
       ctx.clearRect(0, 0, dw, dh);
       ctx.drawImage(templateImg, 0, 0, dw, dh);
-
-      debug('Canvas berhasil dirender', 'ok');
+      debug('Canvas rendered ✓', 'ok');
 
       document.getElementById('canvasWrapper').style.display = 'block';
       document.getElementById('editorControls').style.display = 'flex';
@@ -550,17 +482,17 @@
     };
 
     templateImg.onerror = () => {
-      debug('ERROR: Gagal load gambar ke canvas!', 'err');
-      showToast('Gagal memuat gambar!', true);
+      debug('ERROR load image ke canvas!', 'err');
+      showToast('Gagal tampilkan gambar!', true);
     };
 
     templateImg.src = dataURL;
   }
 
-  // ─── Auto Detect ───
+  // ─── Auto Detect Slot ───
   function autoDetect() {
     if (!templateImg) { debug('autoDetect: templateImg null!', 'err'); return; }
-    debug('Mendeteksi slot...', 'warn');
+    debug('Deteksi slot...', 'warn');
 
     const W = canvas.width, H = canvas.height;
     const off = document.createElement('canvas');
@@ -570,13 +502,14 @@
     const data = octx.getImageData(0, 0, W, H).data;
 
     const mask = new Uint8Array(W * H);
+    let maskCount = 0;
     for (let i = 0; i < W * H; i++) {
       const r = data[i*4], g = data[i*4+1], b = data[i*4+2], a = data[i*4+3];
-      if (a < 30 || (r < 40 && g < 40 && b < 40 && a > 100)) mask[i] = 1;
+      if (a < 30 || (r < 40 && g < 40 && b < 40 && a > 100)) {
+        mask[i] = 1; maskCount++;
+      }
     }
-
-    const totalMask = mask.reduce((a,b) => a+b, 0);
-    debug(`Pixel slot (transparan/hitam): ${totalMask} dari ${W*H}`);
+    debug(`Pixel slot: ${maskCount} dari ${W*H} (${Math.round(maskCount/W/H*100)}%)`, maskCount > 100 ? 'ok' : 'warn');
 
     const rowSums = new Array(H).fill(0);
     for (let y = 0; y < H; y++)
@@ -594,8 +527,7 @@
       }
     }
     if (inBlock) blocks.push([blockStart, H - 1]);
-
-    debug(`Blok terdeteksi: ${blocks.length}`);
+    debug(`Blok row: ${blocks.length}`);
 
     slots = [];
     for (const [y1, y2] of blocks) {
@@ -608,4 +540,74 @@
       if (!xCols.length) continue;
       const x1 = xCols[0], x2 = xCols[xCols.length-1];
       if ((x2-x1) < W*0.1 || (y2-y1) < H*0.02) continue;
-      slots.push({ x: x1, y: y1
+      slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1 });
+    }
+
+    debug(`Slot valid: ${slots.length}`, slots.length > 0 ? 'ok' : 'warn');
+    if (slots.length === 0) debug('Coba tambah slot manual pakai tombol ➕', 'warn');
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+    showToast(slots.length > 0 ? `${slots.length} slot terdeteksi ✓` : 'Tidak ada slot — tambah manual');
+  }
+
+  // ─── Render Slots ───
+  function renderSlots() {
+    overlay.innerHTML = '';
+    slots.forEach((slot, idx) => {
+      const box = document.createElement('div');
+      box.className = 'slot-box';
+      box.style.left = slot.x + 'px';
+      box.style.top = slot.y + 'px';
+      box.style.width = slot.w + 'px';
+      box.style.height = slot.h + 'px';
+
+      const label = document.createElement('div');
+      label.className = 'slot-label';
+      label.textContent = `Foto ${idx+1}`;
+
+      const del = document.createElement('button');
+      del.className = 'slot-delete';
+      del.textContent = '×';
+      del.onclick = (e) => { e.stopPropagation(); deleteSlot(idx); };
+
+      const resize = document.createElement('div');
+      resize.className = 'resize-handle';
+
+      box.appendChild(label);
+      box.appendChild(del);
+      box.appendChild(resize);
+
+      makeDraggable(box, idx);
+      makeResizable(resize, box, idx);
+      overlay.appendChild(box);
+    });
+  }
+
+  function makeDraggable(box, idx) {
+    let sx, sy, sl, st, dragging = false;
+
+    box.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
+      e.preventDefault();
+      dragging = true;
+      sx = e.clientX; sy = e.clientY;
+      sl = slots[idx].x; st = slots[idx].y;
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + e.clientX - sx));
+      slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + e.clientY - sy));
+      box.style.left = slots[idx].x + 'px';
+      box.style.top = slots[idx].y + 'px';
+    });
+
+    document.addEventListener('mouseup', () => { dragging = false; });
+  }
+
+  function makeResizable(handle, box, idx) {
+    let sx, sy, sw, sh, resizing = false;
+
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+     

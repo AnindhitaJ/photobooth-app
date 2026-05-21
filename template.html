@@ -366,20 +366,42 @@
     };
   }
 
+  // ─── Supabase config ───
+  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+
   // ─── State ───
   let selectedTemplate = null;
   let currentCat = 'all';
+  let _dbTemplates = [];
+
+  async function loadTemplatesFromSupabase() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?select=*&order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      // Pastikan slots selalu array (Supabase jsonb kadang return string)
+      _dbTemplates = data.map(t => ({
+        ...t,
+        slots: Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]')
+      }));
+      console.log('[template] loaded', _dbTemplates.length, 'templates from Supabase');
+    } catch(e) {
+      console.error('[template] Load error:', e);
+      _dbTemplates = [];
+    }
+  }
 
   function getSavedTemplates() {
-    try {
-      const data = JSON.parse(localStorage.getItem('pb_templates') || '[]');
-      return Array.isArray(data) ? data : [];
-    } catch { return []; }
+    return _dbTemplates;
   }
 
   function getCategories() {
-    try { return JSON.parse(localStorage.getItem('pb_categories') || '[]'); }
-    catch { return []; }
+    const fromDB = [...new Set(_dbTemplates.map(t => t.category))];
+    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    return [...new Set([...fromDB, ...fromLS])];
   }
 
   // ─── Render category tabs ───
@@ -546,8 +568,15 @@
     if (e.target === document.getElementById('modalOverlay')) tutupModal();
   });
 
-  renderCatTabs();
-  renderTemplates();
+  // Init: load dari Supabase dulu
+  (async () => {
+    const grid = document.getElementById('templateGrid');
+    if (grid) grid.innerHTML = '<div style="color:#a0a0b0;text-align:center;padding:32px;width:100%">⏳ Memuat template...</div>';
+    await loadTemplatesFromSupabase();
+    renderCatTabs();
+    renderColorSwatches();
+    renderTemplates();
+  })();
 </script>
 </body>
 </html>

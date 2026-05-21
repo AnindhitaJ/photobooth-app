@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download - LUX Photobooth</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e; color: white;
+      min-height: 100vh; display: flex;
+      flex-direction: column; align-items: center;
+      justify-content: center; padding: 24px; text-align: center;
+    }
+    .logo {
+      font-size: 15px; font-weight: 800;
+      background: linear-gradient(135deg, #e94560, #f5a623);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: #16213e; border-radius: 20px;
+      padding: 32px 24px; max-width: 360px; width: 100%;
+      border: 2px solid #0f3460;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    p { font-size: 14px; color: #a0a0b0; margin-bottom: 24px; line-height: 1.6; }
+
+    .preview {
+      width: 100%; border-radius: 12px;
+      margin-bottom: 20px; display: none;
+      border: 2px solid #0f3460;
+    }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; width: 100%; padding: 14px 20px;
+      border-radius: 14px; font-size: 15px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+      margin-bottom: 10px; text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.4; pointer-events: none; }
+    .btn-download { background: #e94560; color: white; }
+    .btn-download:hover { background: #c73652; transform: scale(1.02); }
+    .btn-zip { background: #f5a623; color: #1a1a2e; }
+    .btn-zip:hover { background: #e09015; transform: scale(1.02); }
+
+    .progress-wrap {
+      background: #0f3460; border-radius: 50px;
+      height: 6px; overflow: hidden;
+      margin: -4px 0 12px; display: none;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e94560, #f5a623);
+      border-radius: 50px; width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-wrap.show { display: block; }
+
+    #statusMsg {
+      font-size: 13px; color: #27ae60;
+      min-height: 20px; margin-top: 8px;
+    }
+    #errMsg { font-size: 13px; color: #e94560; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <div class="logo">📸 LUX PHOTOBOOTH</div>
+
+  <div class="card">
+    <div class="icon" id="icon">⏳</div>
+    <h2 id="title">Memuat foto...</h2>
+    <p id="desc">Sebentar ya, lagi menyiapkan file kamu.</p>
+
+    <img id="preview" class="preview" alt="Hasil foto">
+
+    <button class="btn btn-download" id="btnDownload" onclick="downloadJpg()" disabled>
+      <span>⬇️</span> Download Foto (JPG)
+    </button>
+
+    <button class="btn btn-zip" id="btnZip" onclick="downloadZip()" disabled>
+      <span>📦</span> Download Semua (ZIP)
+    </button>
+    <div class="progress-wrap" id="zipProgress">
+      <div class="progress-fill" id="zipProgressFill"></div>
+    </div>
+
+    <p id="statusMsg"></p>
+    <p id="errMsg"></p>
+  </div>
+
+<script>
+  const params   = new URLSearchParams(window.location.search);
+  const photoURL = params.get('photo');
+
+  if (!photoURL) {
+    document.getElementById('icon').textContent = '❌';
+    document.getElementById('title').textContent = 'Link tidak valid';
+    document.getElementById('desc').textContent = 'Scan ulang QR dari halaman photobooth.';
+  } else {
+    init();
+  }
+
+  async function init() {
+    try {
+      // Tampilkan preview
+      const preview = document.getElementById('preview');
+      preview.src = photoURL;
+      preview.style.display = 'block';
+      preview.onload = () => {
+        document.getElementById('icon').textContent = '🎉';
+        document.getElementById('title').textContent = 'Foto siap didownload!';
+        document.getElementById('desc').textContent = 'Download foto kamu atau semua file sekaligus dalam ZIP.';
+        document.getElementById('btnDownload').disabled = false;
+        document.getElementById('btnZip').disabled = false;
+      };
+      preview.onerror = () => {
+        document.getElementById('icon').textContent = '⚠️';
+        document.getElementById('title').textContent = 'Foto tidak bisa dimuat';
+        document.getElementById('desc').textContent = 'Link mungkin sudah expired. Minta foto baru dari photobooth.';
+        document.getElementById('errMsg').textContent = 'Error: tidak bisa load foto dari server.';
+      };
+    } catch(e) {
+      document.getElementById('errMsg').textContent = 'Error: ' + e.message;
+    }
+  }
+
+  function downloadJpg() {
+    const a = document.createElement('a');
+    a.href = photoURL;
+    a.download = `lux-photobooth-${Date.now()}.jpg`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    document.getElementById('statusMsg').textContent = 'Download dimulai ✓';
+  }
+
+  async function downloadZip() {
+    const btn = document.getElementById('btnZip');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Menyiapkan ZIP...';
+
+    const progressWrap = document.getElementById('zipProgress');
+    const progressFill = document.getElementById('zipProgressFill');
+    progressWrap.classList.add('show');
+
+    try {
+      // Load JSZip
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+      progressFill.style.width = '20%';
+
+      const zip = new JSZip();
+      const ts  = Date.now();
+
+      // Download foto dari Supabase
+      btn.innerHTML = '<span>⏳</span> Mengunduh foto...';
+      const photoBlob = await fetch(photoURL).then(r => r.blob());
+      zip.file(`lux-foto-${ts}.jpg`, photoBlob);
+      progressFill.style.width = '60%';
+
+      // Generate ZIP
+      btn.innerHTML = '<span>⏳</span> Membungkus ZIP...';
+      const content = await zip.generateAsync({ type: 'blob' }, meta => {
+        progressFill.style.width = 60 + Math.round(meta.percent * 0.4) + '%';
+      });
+
+      progressFill.style.width = '100%';
+      setTimeout(() => progressWrap.classList.remove('show'), 500);
+
+      const url = URL.createObjectURL(content);
+      const a   = document.createElement('a');
+      a.href = url; a.download = `lux-photobooth-${ts}.zip`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      btn.disabled = false;
+      btn.innerHTML = '<span>📦</span> Download Semua (ZIP)';
+      document.getElementById('statusMsg').textContent = 'ZIP berhasil didownload ✓';
+
+    } catch(e) {
+      progressWrap.classList.remove('show');
+      btn.disabled = false;
+      btn.innerHTML = '<span>📦</span> Download Semua (ZIP)';
+      document.getElementById('errMsg').textContent = 'Gagal: ' + e.message;
+    }
+  }
+
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+</script>
+
+</body>
+</html>

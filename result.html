@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil - LUX Photobooth</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- omggif: pure JS GIF encoder, no web worker needed (avoids CORS issues) -->
+  <script src="https://cdn.jsdelivr.net/npm/omggif@1.0.10/omggif.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; padding: 24px;
+    }
+    .logo-text {
+      font-size: 15px; font-weight: 800;
+      background: linear-gradient(135deg, #e94560, #f5a623);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
+    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 20px; text-align: center; }
+
+    .main-layout {
+      display: flex; gap: 32px; width: 100%; max-width: 960px;
+      align-items: flex-start; flex-wrap: wrap; justify-content: center;
+    }
+
+    .result-wrapper {
+      position: relative; flex-shrink: 0;
+      border-radius: 16px; overflow: hidden;
+      border: 3px solid #0f3460; background: #000;
+    }
+    #resultCanvas { display: block; }
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; font-size: 14px; color: white;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #0f3460;
+      border-top-color: #e94560;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .action-panel {
+      flex: 1; min-width: 260px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .section-label {
+      font-size: 11px; font-weight: 700;
+      color: #a0a0b0; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 2px;
+    }
+
+    .btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 13px 18px;
+      border-radius: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn:disabled { opacity: 0.35; pointer-events: none; }
+    .btn-icon { font-size: 18px; }
+    .btn-label { flex: 1; text-align: left; }
+    .btn-badge {
+      font-size: 10px; background: rgba(255,255,255,0.15);
+      padding: 2px 8px; border-radius: 50px; white-space: nowrap;
+    }
+
+    .btn-download { background: #e94560; color: white; }
+    .btn-download:hover:not(:disabled) { background: #c73652; transform: scale(1.02); }
+
+    .btn-live { background: #8b5cf6; color: white; }
+    .btn-live:hover:not(:disabled) { background: #7c3aed; transform: scale(1.02); }
+
+    .btn-gif { background: #0f3460; color: white; border: 2px solid #1a5090; }
+    .btn-gif:hover:not(:disabled) { background: #1a5090; transform: scale(1.02); }
+
+    .btn-zip { background: #f5a623; color: #1a1a2e; }
+    .btn-zip:hover:not(:disabled) { background: #e09015; transform: scale(1.02); }
+
+    .btn-share { background: #16213e; color: white; border: 2px solid #0f3460; }
+    .btn-share:hover:not(:disabled) { background: #0f3460; transform: scale(1.02); }
+
+    .btn-print { background: transparent; color: #a0a0b0; border: 2px solid #0f3460; }
+    .btn-print:hover:not(:disabled) { background: #16213e; color: white; }
+
+    .btn-ulang { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; justify-content: center; }
+    .btn-ulang:hover { color: white; border-color: white; }
+
+    .divider { height: 1px; background: #0f3460; margin: 6px 0; }
+
+    .qr-box {
+      background: #16213e; border-radius: 14px;
+      padding: 14px; display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+    }
+    .qr-box p { font-size: 12px; color: #a0a0b0; text-align: center; line-height: 1.5; }
+
+    /* GIF progress bar */
+    .progress-bar-wrap {
+      background: #0f3460; border-radius: 50px; height: 6px;
+      width: 100%; overflow: hidden; display: none;
+    }
+    .progress-bar-fill {
+      height: 100%; background: #e94560;
+      border-radius: 50px; width: 0%;
+      transition: width 0.3s;
+    }
+
+    #statusMsg { font-size: 13px; color: #27ae60; text-align: center; min-height: 18px; }
+  </style>
+</head>
+<body>
+
+  <div style="text-align:center;margin-bottom:18px;">
+    <div class="logo-text">📸 LUX PHOTOBOOTH</div>
+    <h2>Hasil Fotomu 🎉</h2>
+    <p class="sub">Download satuan atau semua sekaligus</p>
+  </div>
+
+  <div class="main-layout">
+
+    <div class="result-wrapper" id="resultWrapper">
+      <canvas id="resultCanvas"></canvas>
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <span>Menggabungkan foto...</span>
+      </div>
+    </div>
+
+    <div class="action-panel">
+
+      <div class="section-label">Download Satuan</div>
+
+      <button class="btn btn-download" id="btnDownloadJpg" onclick="downloadJpg()" disabled>
+        <span class="btn-icon">🖼️</span>
+        <span class="btn-label">Download Foto</span>
+        <span class="btn-badge">JPG</span>
+      </button>
+
+      <button class="btn btn-live" id="btnDownloadLive" onclick="downloadLive()" disabled>
+        <span class="btn-icon">🎬</span>
+        <span class="btn-label">Download Live Photo</span>
+        <span class="btn-badge">WebM/MP4</span>
+      </button>
+
+      <button class="btn btn-gif" id="btnDownloadGif" onclick="generateAndDownloadGif()" disabled>
+        <span class="btn-icon">✨</span>
+        <span class="btn-label">Download GIF</span>
+        <span class="btn-badge">Animasi</span>
+      </button>
+
+      <div class="progress-bar-wrap" id="gifProgress">
+        <div class="progress-bar-fill" id="gifProgressFill"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-label">Download Semua</div>
+
+      <button class="btn btn-zip" id="btnZip" onclick="downloadZip()" disabled>
+        <span class="btn-icon">📦</span>
+        <span class="btn-label">Download Semua (ZIP)</span>
+        <span class="btn-badge">JPG + Video + GIF</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
+        <span class="btn-icon">📤</span>
+        <span class="btn-label">Share ke Aplikasi Lain</span>
+      </button>
+
+      <button class="btn btn-print" id="btnPrint" onclick="printFoto()" disabled>
+        <span class="btn-icon">🖨️</span>
+        <span class="btn-label">Kirim ke Printer</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <div class="qr-box">
+        <p>Scan QR untuk download dari HP</p>
+        <div id="qrcode"></div>
+        <p id="qrStatus" style="color:#e94560">Menunggu foto selesai...</p>
+      </div>
+
+      <div class="divider"></div>
+      <p id="statusMsg"></p>
+      <button class="btn btn-ulang" onclick="fotoLagi()">📷 Foto Lagi</button>
+
+    </div>
+  </div>
+
+<script>
+  const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
+  const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
+  const templateSrc    = localStorage.getItem('templateSrc');
+  const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
+  const tmplW          = parseInt(localStorage.getItem('templateW') || '591');
+  const tmplH          = parseInt(localStorage.getItem('templateH') || '1772');
+
+  const canvas = document.getElementById('resultCanvas');
+  const ctx    = canvas.getContext('2d');
+
+  // Display sizing
+  const displayW = 240;
+  const displayH = Math.round(tmplH * displayW / tmplW);
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+  canvas.width  = tmplW;
+  canvas.height = tmplH;
+
+  let finalDataURL = null;
+  let gifDataURL   = null;
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // ─── Generate final composite image ───
+  async function generateResult() {
+    try {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tmplW, tmplH);
+
+      for (let i = 0; i < slots.length; i++) {
+        const slot     = slots[i];
+        const photoSrc = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
+        if (!photoSrc) continue;
+
+        const photo = await loadImage(photoSrc);
+        const scaleX = slot.w / photo.width;
+        const scaleY = slot.h / photo.height;
+        const scale  = Math.max(scaleX, scaleY);
+        const sw = slot.w / scale;
+        const sh = slot.h / scale;
+        const sx = (photo.width  - sw) / 2;
+        const sy = (photo.height - sh) / 2;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(slot.x, slot.y, slot.w, slot.h);
+        ctx.clip();
+        ctx.drawImage(photo, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+        ctx.restore();
+      }
+
+      // Overlay template frame
+      if (templateSrc) {
+        const tmpl = await loadImage(templateSrc);
+        ctx.drawImage(tmpl, 0, 0, tmplW, tmplH);
+      }
+
+      finalDataURL = canvas.toDataURL('image/jpeg', 0.95);
+      localStorage.setItem('finalPhoto', finalDataURL);
+
+      document.getElementById('loadingOverlay').style.display = 'none';
+
+      // Enable JPG, share, print
+      ['btnDownloadJpg', 'btnShare', 'btnPrint', 'btnZip'].forEach(id => {
+        document.getElementById(id).disabled = false;
+      });
+
+      // Live photo: enable if any live video exists
+      const hasLive = livePhotos.some(Boolean);
+      document.getElementById('btnDownloadLive').disabled = !hasLive;
+
+      // GIF: enable if more than 1 photo
+      document.getElementById('btnDownloadGif').disabled = (filteredPhotos.length < 2);
+
+      generateQR();
+
+    } catch(e) {
+      console.error(e);
+      document.getElementById('loadingOverlay').innerHTML =
+        '<span style="color:#e94560;padding:16px;text-align:center">Gagal generate foto.<br>Coba ulangi dari awal.</span>';
+    }
+  }
+
+  function generateQR() {
+    document.getElementById('qrStatus').textContent = '';
+    // QR pointing to current page URL only makes sense if served from a real server.
+    // Instead, we show a "download on this device" message and hide the QR box
+    // when running locally (file:// or localhost without port 80/443).
+    const isLocal = (location.protocol === 'file:') ||
+                    (location.hostname === 'localhost') ||
+                    (location.hostname === '127.0.0.1') ||
+                    (location.hostname === '');
+    
+    const qrBox = document.getElementById('qrcode');
+    const qrStatus = document.getElementById('qrStatus');
+
+    if (isLocal) {
+      // App is running locally — QR would just be a 404 on phone
+      qrBox.innerHTML = '<div style="font-size:28px;margin:12px 0">📲</div>';
+      qrStatus.style.color = '#a0a0b0';
+      qrStatus.textContent = 'Gunakan tombol Download atau Share untuk simpan ke HP kamu.';
+    } else {
+      // Running on a real server — QR to current page works
+      qrStatus.textContent = '';
+      try {
+        new QRCode(qrBox, {
+          text: window.location.href,
+          width: 140, height: 140,
+          colorDark: '#ffffff', colorLight: '#16213e',
+        });
+      } catch(e) { qrStatus.textContent = 'QR tidak bisa dibuat.'; }
+    }
+  }
+
+  // ─── Download functions ───
+  function downloadJpg() {
+    if (!finalDataURL) return;
+    triggerDownload(finalDataURL, `lux-photobooth-${Date.now()}.jpg`);
+    showStatus('Download foto dimulai ✓');
+  }
+
+  function downloadLive() {
+    // Download first available live video
+    const liveData = livePhotos.find(Boolean);
+    if (!liveData) return;
+    const ext = liveData.startsWith('data:video/webm') ? 'webm' : 'mp4';
+    triggerDownload(liveData, `lux-live-${Date.now()}.${ext}`);
+    showStatus('Download live photo dimulai ✓');
+  }
+
+  // ─── GIF generation (pure JS, no web worker, no CORS issue) ───
+  function generateAndDownloadGif() {
+    if (filteredPhotos.length < 2) return;
+    if (gifDataURL) { triggerDownload(gifDataURL, `lux-photobooth-${Date.now()}.gif`); return; }
+
+    const btn = document.getElementById('btnDownloadGif');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
+    const progressWrap = document.getElementById('gifProgress');
+    const progressFill = document.getElementById('gifProgressFill');
+    progressWrap.style.display = 'block';
+
+    makeGifBlob().then(blob => {
+      progressWrap.style.display = 'none';
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download GIF';
+      const reader = new FileReader();
+      reader.onload = ev => {
+        gifDataURL = ev.target.result;
+        triggerDownload(gifDataURL, `lux-photobooth-${Date.now()}.gif`);
+        showStatus('GIF berhasil dibuat ✓');
+      };
+      reader.readAsDataURL(blob);
+    }).catch(e => {
+      console.error('GIF error', e);
+      progressWrap.style.display = 'none';
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download GIF';
+      showStatus('Gagal buat GIF: ' + e.message);
+    });
+  }
+
+  // ─── ZIP download (uses JSZip from CDN) ───
+  async function downloadZip() {
+    if (!finalDataURL) return;
+    const btn = document.getElementById('btnZip');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan ZIP...';
+
+    // Dynamically load JSZip
+    if (!window.JSZip) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    const zip = new JSZip();
+    const ts = Date.now();
+
+    // Add JPG
+    zip.file(`lux-photobooth-${ts}.jpg`, dataURLtoBlob(finalDataURL));
+
+    // Add live photos
+    livePhotos.forEach((lv, i) => {
+      if (!lv) return;
+      const ext = lv.startsWith('data:video/webm') ? 'webm' : 'mp4';
+      zip.file(`lux-live-foto${i+1}-${ts}.${ext}`, dataURLtoBlob(lv));
+    });
+
+    // Generate GIF if possible, then add
+    if (filteredPhotos.length >= 2) {
+      btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
+      try {
+        const gifBlob = await makeGifBlob();
+        zip.file(`lux-animated-${ts}.gif`, gifBlob);
+      } catch(e) { console.warn('GIF failed', e); }
+    }
+
+    btn.querySelector('.btn-label').textContent = 'Membungkus ZIP...';
+    const content = await zip.generateAsync({ type: 'blob' });
+    triggerDownload(URL.createObjectURL(content), `lux-photobooth-${ts}.zip`);
+    btn.disabled = false;
+    btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
+    showStatus('ZIP berhasil didownload ✓');
+  }
+
+  // Pure JS GIF encoder using omggif — no workers, no CORS
+  function makeGifBlob() {
+    return new Promise((resolve, reject) => {
+      if (typeof GifWriter === 'undefined') {
+        reject(new Error('omggif tidak ter-load. Refresh dan coba lagi.'));
+        return;
+      }
+      const GIF_W = 400;
+      const GIF_H = Math.round(GIF_W * (3 / 4));
+      const DELAY = 80; // 800ms in 10ms units
+
+      Promise.all(filteredPhotos.map(src => new Promise((res) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = () => res(null);
+        img.src = src;
+      }))).then(images => {
+        try {
+          const frames = [];
+          const tmpCanvas = document.createElement('canvas');
+          tmpCanvas.width = GIF_W; tmpCanvas.height = GIF_H;
+          const tmpCtx = tmpCanvas.getContext('2d');
+
+          images.forEach(img => {
+            if (!img) return;
+            tmpCtx.clearRect(0, 0, GIF_W, GIF_H);
+            const scale = Math.max(GIF_W / img.width, GIF_H / img.height);
+            const sw = GIF_W / scale, sh = GIF_H / scale;
+            const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+            tmpCtx.drawImage(img, sx, sy, sw, sh, 0, 0, GIF_W, GIF_H);
+            frames.push(tmpCtx.getImageData(0, 0, GIF_W, GIF_H));
+          });
+
+          if (frames.length === 0) { reject(new Error('Tidak ada foto valid')); return; }
+
+          const buf = new Uint8Array(GIF_W * GIF_H * frames.length * 5 + 1024 * 1024);
+          const gw = new GifWriter(buf, GIF_W, GIF_H, { loop: 0 });
+
+          frames.forEach(imgData => {
+            const { pixels, palette } = quantizeFrame(imgData, GIF_W, GIF_H);
+            gw.addFrame(0, 0, GIF_W, GIF_H, pixels, { palette, delay: DELAY });
+          });
+
+          const len = gw.end();
+          resolve(new Blob([buf.slice(0, len)], { type: 'image/gif' }));
+        } catch (e) { reject(e); }
+      }).catch(reject);
+    });
+  }
+
+  function quantizeFrame(imgData, w, h) {
+    const data = imgData.data;
+    const colorMap = new Map();
+    const colorList = [];
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i] & 0xF8, g = data[i + 1] & 0xF8, b = data[i + 2] & 0xF8;
+      const key = (r << 16) | (g << 8) | b;
+      if (!colorMap.has(key) && colorMap.size < 255) {
+        colorMap.set(key, colorList.length);
+        colorList.push([r, g, b]);
+      }
+    }
+    let palSize = 2;
+    while (palSize < colorList.length) palSize *= 2;
+    palSize = Math.min(palSize, 256);
+    const palette = new Array(palSize * 3).fill(0);
+    colorList.forEach(([r, g, b], i) => { palette[i * 3] = r; palette[i * 3 + 1] = g; palette[i * 3 + 2] = b; });
+    const pixels = new Uint8Array(w * h);
+    for (let i = 0; i < data.length / 4; i++) {
+      const r = data[i * 4] & 0xF8, g = data[i * 4 + 1] & 0xF8, b = data[i * 4 + 2] & 0xF8;
+      pixels[i] = colorMap.get((r << 16) | (g << 8) | b) ?? 0;
+    }
+    return { pixels, palette };
+  }
+
+  function dataURLtoBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while(n--) u8arr[n] = bstr.charCodeAt(n);
+    return new Blob([u8arr], { type: mime });
+  }
+
+  function triggerDownload(href, filename) {
+    // Convert data URL to blob URL for reliable download (data URLs can fail silently)
+    if (href.startsWith('data:')) {
+      const blob = dataURLtoBlob(href);
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 300);
+    } else {
+      // Already a blob URL or object URL
+      const a = document.createElement('a');
+      a.href = href; a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => document.body.removeChild(a), 300);
+    }
+  }
+
+  async function shareNative() {
+    if (!finalDataURL) return;
+    try {
+      const blob = dataURLtoBlob(finalDataURL);
+      const file = new File([blob], 'photobooth.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Hasil LUX Photobooth' });
+      } else {
+        downloadJpg();
+        showStatus('Share tidak didukung — file didownload');
+      }
+    } catch(e) {
+      if (e.name !== 'AbortError') downloadJpg();
+    }
+  }
+
+  function printFoto() {
+    if (!finalDataURL) return;
+    const w = window.open('');
+    w.document.write(`<html><body style="margin:0"><img src="${finalDataURL}" style="width:100%;max-width:100%"><script>window.onload=()=>{window.print();window.close()}<\/script></body></html>`);
+    w.document.close();
+  }
+
+  function fotoLagi() {
+    ['photos','filteredPhotos','finalPhoto','livePhotos'].forEach(k => localStorage.removeItem(k));
+    window.location.href = 'index.html';
+  }
+
+  function showStatus(msg) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  generateResult();
+</script>
+
+</body>
+</html>

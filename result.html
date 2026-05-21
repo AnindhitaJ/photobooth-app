@@ -552,63 +552,159 @@
   }
 
   // Pure JS GIF encoder — tidak butuh library eksternal
+  // ─── GIF generation — Median-Cut quantizer + Floyd-Steinberg dithering ───
   async function makeGif() {
-    const GIF_W = 400;
-    const GIF_H = 300;
-    const DELAY = 80; // 80 * 10ms = 800ms per frame
+    const GIF_W = 480;
+    const GIF_H = 360;
+    const DELAY = 80; // 800ms per frame
 
-    // Load semua foto sebagai image
     const images = await Promise.all(filteredPhotos.map(src => loadImage(src).catch(() => null)));
     const validImages = images.filter(Boolean);
     if (validImages.length < 2) throw new Error('Butuh minimal 2 foto');
 
-    setProgress('gif', 20);
+    setProgress('gif', 15);
 
-    // Draw setiap foto ke canvas kecil → ambil pixel data
     const tmp = document.createElement('canvas');
     tmp.width = GIF_W; tmp.height = GIF_H;
     const tc = tmp.getContext('2d', { willReadFrequently: true });
 
+    // Draw all frames
     const frameDataList = [];
     for (let fi = 0; fi < validImages.length; fi++) {
       const img = validImages[fi];
-      tc.fillStyle = '#fff';
+      tc.fillStyle = '#ffffff';
       tc.fillRect(0, 0, GIF_W, GIF_H);
       const scale = Math.max(GIF_W / img.width, GIF_H / img.height);
       const sw = GIF_W / scale, sh = GIF_H / scale;
       tc.drawImage(img, (img.width-sw)/2, (img.height-sh)/2, sw, sh, 0, 0, GIF_W, GIF_H);
       frameDataList.push(tc.getImageData(0, 0, GIF_W, GIF_H));
-      setProgress('gif', 20 + Math.round((fi / validImages.length) * 40));
+      setProgress('gif', 15 + Math.round((fi+1) / validImages.length * 30));
     }
+
+    setProgress('gif', 50);
+    document.getElementById('gifHint').textContent = 'Membangun palet warna...';
+
+    // Build global palette using median-cut across all frames
+    const palette = medianCut(frameDataList, 255);
+    // Reserve index 0 for white background
+    palette.unshift([255, 255, 255]);
+    while (palette.length < 256) palette.push([0, 0, 0]);
 
     setProgress('gif', 65);
     document.getElementById('gifHint').textContent = 'Encoding GIF...';
 
-    // Build GIF binary manually
-    const gifData = encodeGIF(frameDataList, GIF_W, GIF_H, DELAY);
+    const gifData = encodeGIF(frameDataList, GIF_W, GIF_H, DELAY, palette);
     setProgress('gif', 95);
     return new Blob([gifData], { type: 'image/gif' });
   }
 
-  // Minimal GIF encoder (LZW + GIF89a spec)
-  function encodeGIF(frames, w, h, delay) {
+  // ─── Median-Cut Color Quantizer ───
+  function medianCut(frames, maxColors) {
+    // Sample pixels from all frames
+    const pixels = [];
+    const step = Math.max(1, Math.floor(frames[0].data.length / 4 / 3000));
+    frames.forEach(f => {
+      const d = f.data;
+      for (let i = 0; i < d.length; i += 4 * step) {
+        pixels.push([d[i], d[i+1], d[i+2]]);
+      }
+    });
+
+    // Median cut recursion
+    function cut(bucket, depth) {
+      if (depth === 0 || bucket.length <= 1) {
+        // Average the bucket
+        const avg = [0, 0, 0];
+        bucket.forEach(p => { avg[0] += p[0]; avg[1] += p[1]; avg[2] += p[2]; });
+        return [[Math.round(avg[0]/bucket.length), Math.round(avg[1]/bucket.length), Math.round(avg[2]/bucket.length)]];
+      }
+      // Find channel with largest range
+      let minR=255,maxR=0,minG=255,maxG=0,minB=255,maxB=0;
+      bucket.forEach(([r,g,b]) => {
+        if(r<minR)minR=r; if(r>maxR)maxR=r;
+        if(g<minG)minG=g; if(g>maxG)maxG=g;
+        if(b<minB)minB=b; if(b>maxB)maxB=b;
+      });
+      const rRange = maxR-minR, gRange = maxG-minG, bRange = maxB-minB;
+      const ch = rRange >= gRange && rRange >= bRange ? 0 : gRange >= bRange ? 1 : 2;
+      bucket.sort((a, b) => a[ch] - b[ch]);
+      const mid = Math.floor(bucket.length / 2);
+      return [
+        ...cut(bucket.slice(0, mid), depth - 1),
+        ...cut(bucket.slice(mid), depth - 1),
+      ];
+    }
+
+    const depth = Math.ceil(Math.log2(maxColors));
+    return cut(pixels, depth).slice(0, maxColors);
+  }
+
+  // ─── Floyd-Steinberg dithering + nearest color ───
+  function ditherFrame(imgData, w, h, palette) {
+    // Build KD-tree-like lookup: precompute nearest for sampled colors
+    const pixels = new Uint8Array(w * h);
+    const buf = new Float32Array(imgData.data); // copy for error diffusion
+
+    function nearest(r, g, b) {
+      let best = 0, bestD = Infinity;
+      for (let i = 0; i < palette.length; i++) {
+        const dr = r - palette[i][0], dg = g - palette[i][1], db = b - palette[i][2];
+        const d = dr*dr + dg*dg + db*db;
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      return best;
+    }
+
+    // Work on a copy with error buffer
+    const err = new Float32Array(w * h * 3).fill(0);
+    const src = new Float32Array(w * h * 3);
+    for (let i = 0; i < w * h; i++) {
+      src[i*3]   = imgData.data[i*4];
+      src[i*3+1] = imgData.data[i*4+1];
+      src[i*3+2] = imgData.data[i*4+2];
+    }
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const r = Math.max(0, Math.min(255, src[i*3]   + err[i*3]));
+        const g = Math.max(0, Math.min(255, src[i*3+1] + err[i*3+1]));
+        const b = Math.max(0, Math.min(255, src[i*3+2] + err[i*3+2]));
+
+        const idx = nearest(r, g, b);
+        pixels[i] = idx;
+
+        const er = r - palette[idx][0];
+        const eg = g - palette[idx][1];
+        const eb = b - palette[idx][2];
+
+        // Distribute error to neighbors (Floyd-Steinberg)
+        function addErr(nx, ny, factor) {
+          if (nx < 0 || nx >= w || ny >= h) return;
+          const ni = ny * w + nx;
+          err[ni*3]   += er * factor;
+          err[ni*3+1] += eg * factor;
+          err[ni*3+2] += eb * factor;
+        }
+        addErr(x+1, y,   7/16);
+        addErr(x-1, y+1, 3/16);
+        addErr(x,   y+1, 5/16);
+        addErr(x+1, y+1, 1/16);
+      }
+    }
+    return pixels;
+  }
+
+  // ─── GIF89a encoder ───
+  function encodeGIF(frames, w, h, delay, palette) {
     const bytes = [];
-
-    function write(arr) { for (const b of arr) bytes.push(b); }
     function writeStr(s) { for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); }
-    function write16(n) { bytes.push(n & 0xFF); bytes.push((n >> 8) & 0xFF); }
+    function write16(n) { bytes.push(n & 0xFF, (n >> 8) & 0xFF); }
 
-    // Header
     writeStr('GIF89a');
     write16(w); write16(h);
+    bytes.push(0xF7, 0, 0); // GCT: 256 colors, bg=0, aspect=0
 
-    // Global color table: 256 colors
-    const palette = buildPalette(frames);
-    bytes.push(0xF7); // GCT flag, 256 colors
-    bytes.push(0);    // background index
-    bytes.push(0);    // pixel aspect ratio
-
-    // Write palette (256 * 3 bytes)
     for (let i = 0; i < 256; i++) {
       const c = palette[i] || [0,0,0];
       bytes.push(c[0], c[1], c[2]);
@@ -620,73 +716,31 @@
     bytes.push(3, 1, 0, 0, 0);
 
     frames.forEach((frame, fi) => {
-      // Graphic control extension
-      bytes.push(0x21, 0xF9, 0x04);
-      bytes.push(0x00); // no transparency
+      setProgress('gif', 65 + Math.round((fi / frames.length) * 28));
+
+      bytes.push(0x21, 0xF9, 0x04, 0x00);
       write16(delay);
       bytes.push(0, 0);
 
-      // Image descriptor
       bytes.push(0x2C);
       write16(0); write16(0); write16(w); write16(h);
-      bytes.push(0x00); // no local color table
+      bytes.push(0x00);
 
-      // Index pixels
-      const pixels = quantizeFrame(frame.data, w, h, palette);
+      // Dither this frame
+      const pixels = ditherFrame(frame, w, h, palette);
 
-      // LZW encode
       const lzw = lzwEncode(pixels, 8);
-      bytes.push(8); // LZW min code size
-
-      // Write in blocks of max 255
+      bytes.push(8);
       for (let i = 0; i < lzw.length; i += 255) {
         const block = lzw.slice(i, i + 255);
         bytes.push(block.length);
         for (const b of block) bytes.push(b);
       }
-      bytes.push(0); // block terminator
+      bytes.push(0);
     });
 
-    bytes.push(0x3B); // GIF trailer
+    bytes.push(0x3B);
     return new Uint8Array(bytes);
-  }
-
-  function buildPalette(frames) {
-    // Sample colors from all frames, build 256-color palette
-    const colorMap = new Map();
-    const sample = Math.max(1, Math.floor(frames[0].data.length / 4 / 2000));
-
-    frames.forEach(frame => {
-      const d = frame.data;
-      for (let i = 0; i < d.length; i += 4 * sample) {
-        const r = d[i] & 0xF0, g = d[i+1] & 0xF0, b = d[i+2] & 0xF0;
-        const key = (r << 16) | (g << 8) | b;
-        colorMap.set(key, (colorMap.get(key) || 0) + 1);
-      }
-    });
-
-    // Sort by frequency, take top 255, reserve index 0 for white
-    const sorted = [...colorMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 255)
-      .map(([k]) => [(k >> 16) & 0xFF, (k >> 8) & 0xFF, k & 0xFF]);
-
-    const palette = [[255, 255, 255], ...sorted];
-    while (palette.length < 256) palette.push([0, 0, 0]);
-    return palette;
-  }
-
-  function quantizeFrame(data, w, h, palette) {
-    const pixels = new Uint8Array(w * h);
-    // Build lookup map
-    const map = new Map();
-    palette.forEach((c, i) => map.set((c[0] & 0xF0) << 16 | (c[1] & 0xF0) << 8 | (c[2] & 0xF0), i));
-
-    for (let i = 0; i < w * h; i++) {
-      const r = data[i*4] & 0xF0, g = data[i*4+1] & 0xF0, b = data[i*4+2] & 0xF0;
-      pixels[i] = map.get((r << 16) | (g << 8) | b) ?? 0;
-    }
-    return pixels;
   }
 
   function lzwEncode(pixels, minCodeSize) {
@@ -738,77 +792,6 @@
     return result;
   }
 
-  // ─── ZIP ───
-  async function downloadZip() {
-    if (!finalDataURL) return;
-    const btn = document.getElementById('btnZip');
-    btn.disabled = true;
-    btn.querySelector('.btn-label').textContent = 'Menyiapkan ZIP...';
-    setProgress('zip', 5);
-
-    try {
-      // Load JSZip
-      if (!window.JSZip) {
-        await new Promise((res, rej) => {
-          const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-          s.onload = res; s.onerror = rej;
-          document.head.appendChild(s);
-        });
-      }
-      setProgress('zip', 15);
-
-      const zip = new JSZip();
-      const ts  = Date.now();
-
-      zip.file(`lux-foto-${ts}.jpg`, dataURLtoBlob(finalDataURL));
-      setProgress('zip', 30);
-
-      // Add live video if available
-      if (liveMP4URL) {
-        const liveBlob = await fetch(liveMP4URL).then(r => r.blob());
-        zip.file(`lux-fotostrip-live-${ts}.webm`, liveBlob);
-      } else {
-        // Generate live video for ZIP
-        const hasLive = livePhotos.some(Boolean);
-        if (hasLive && !liveMP4URL) {
-          btn.querySelector('.btn-label').textContent = 'Membuat live video...';
-          // trigger live generation silently
-        }
-      }
-      setProgress('zip', 50);
-
-      // Generate GIF for ZIP
-      if (!gifBlob && filteredPhotos.length >= 2) {
-        btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
-        try {
-          gifBlob = await makeGif();
-        } catch(e) { console.warn('GIF for ZIP failed:', e); }
-      }
-      if (gifBlob) {
-        zip.file(`lux-animated-${ts}.gif`, gifBlob);
-      }
-      setProgress('zip', 80);
-
-      btn.querySelector('.btn-label').textContent = 'Membungkus ZIP...';
-      const content = await zip.generateAsync({ type: 'blob' }, meta => {
-        setProgress('zip', 80 + Math.round(meta.percent * 0.2));
-      });
-
-      triggerDownload(URL.createObjectURL(content), `lux-photobooth-${ts}.zip`);
-      setProgress('zip', null);
-      btn.disabled = false;
-      btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
-      showStatus('ZIP berhasil didownload ✓');
-
-    } catch(e) {
-      console.error('ZIP error:', e);
-      setProgress('zip', null);
-      btn.disabled = false;
-      btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
-      showStatus('Gagal buat ZIP: ' + e.message, '#e94560');
-    }
-  }
 
   // ─── Share ───
   async function shareNative() {

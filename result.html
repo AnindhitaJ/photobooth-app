@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil - LUX Photobooth</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e; color: white;
+      min-height: 100vh; display: flex;
+      flex-direction: column; align-items: center; padding: 24px;
+    }
+    .logo-text {
+      font-size: 15px; font-weight: 800;
+      background: linear-gradient(135deg, #e94560, #f5a623);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
+    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 20px; text-align: center; }
+
+    .main-layout {
+      display: flex; gap: 32px; width: 100%; max-width: 960px;
+      align-items: flex-start; flex-wrap: wrap; justify-content: center;
+    }
+
+    .result-wrapper {
+      position: relative; flex-shrink: 0;
+      border-radius: 16px; overflow: hidden;
+      border: 3px solid #0f3460; background: #000;
+    }
+    #resultCanvas { display: block; }
+    .loading-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; font-size: 14px; color: white;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid #0f3460;
+      border-top-color: #e94560; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .action-panel {
+      flex: 1; min-width: 260px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .section-label {
+      font-size: 11px; font-weight: 700; color: #a0a0b0;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;
+    }
+    .btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 13px 18px;
+      border-radius: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn:disabled { opacity: 0.35; pointer-events: none; }
+    .btn-icon { font-size: 18px; flex-shrink: 0; }
+    .btn-label { flex: 1; text-align: left; }
+    .btn-badge {
+      font-size: 10px; background: rgba(255,255,255,0.15);
+      padding: 2px 8px; border-radius: 50px; white-space: nowrap;
+    }
+    .btn-download { background: #e94560; color: white; }
+    .btn-download:hover:not(:disabled) { background: #c73652; transform: scale(1.02); }
+    .btn-live { background: #8b5cf6; color: white; }
+    .btn-live:hover:not(:disabled) { background: #7c3aed; transform: scale(1.02); }
+    .btn-gif { background: #0f3460; color: white; border: 2px solid #1a5090; }
+    .btn-gif:hover:not(:disabled) { background: #1a5090; transform: scale(1.02); }
+    .btn-zip { background: #f5a623; color: #1a1a2e; }
+    .btn-zip:hover:not(:disabled) { background: #e09015; transform: scale(1.02); }
+    .btn-share { background: #16213e; color: white; border: 2px solid #0f3460; }
+    .btn-share:hover:not(:disabled) { background: #0f3460; transform: scale(1.02); }
+    .btn-print { background: transparent; color: #a0a0b0; border: 2px solid #0f3460; }
+    .btn-print:hover:not(:disabled) { background: #16213e; color: white; }
+    .btn-ulang { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; justify-content: center; }
+    .btn-ulang:hover { color: white; border-color: white; }
+
+    .divider { height: 1px; background: #0f3460; margin: 6px 0; }
+
+    .progress-wrap {
+      background: #0f3460; border-radius: 50px; height: 5px;
+      overflow: hidden; display: none; margin-top: -6px;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg,#e94560,#f5a623);
+      border-radius: 50px; width: 0%; transition: width 0.2s;
+    }
+    .progress-wrap.show { display: block; }
+
+    .hint { font-size: 11px; color: #555; text-align: center; margin-top: -4px; }
+
+    .qr-box {
+      background: #16213e; border-radius: 14px; padding: 14px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .qr-box p { font-size: 12px; color: #a0a0b0; text-align: center; line-height: 1.5; }
+    #statusMsg { font-size: 13px; color: #27ae60; text-align: center; min-height: 18px; }
+  </style>
+</head>
+<body>
+
+  <div style="text-align:center;margin-bottom:18px;">
+    <div class="logo-text">📸 LUX PHOTOBOOTH</div>
+    <h2>Hasil Fotomu 🎉</h2>
+    <p class="sub">Download satuan atau semua sekaligus</p>
+  </div>
+
+  <div class="main-layout">
+
+    <div class="result-wrapper" id="resultWrapper">
+      <canvas id="resultCanvas"></canvas>
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <span id="loadingText">Menggabungkan foto...</span>
+      </div>
+    </div>
+
+    <div class="action-panel">
+
+      <div class="section-label">Download Satuan</div>
+
+      <button class="btn btn-download" id="btnJpg" onclick="downloadJpg()" disabled>
+        <span class="btn-icon">🖼️</span>
+        <span class="btn-label">Download Foto</span>
+        <span class="btn-badge">JPG</span>
+      </button>
+
+      <button class="btn btn-live" id="btnLive" onclick="downloadLive()" disabled>
+        <span class="btn-icon">🎬</span>
+        <span class="btn-label">Download Live Fotostrip</span>
+        <span class="btn-badge">MP4</span>
+      </button>
+      <div class="progress-wrap" id="liveProgress"><div class="progress-fill" id="liveProgressFill"></div></div>
+      <p class="hint" id="liveHint"></p>
+
+      <button class="btn btn-gif" id="btnGif" onclick="downloadGif()" disabled>
+        <span class="btn-icon">✨</span>
+        <span class="btn-label">Download GIF Animasi</span>
+        <span class="btn-badge">GIF</span>
+      </button>
+      <div class="progress-wrap" id="gifProgress"><div class="progress-fill" id="gifProgressFill"></div></div>
+      <p class="hint" id="gifHint"></p>
+
+      <div class="divider"></div>
+      <div class="section-label">Download Semua</div>
+
+      <button class="btn btn-zip" id="btnZip" onclick="downloadZip()" disabled>
+        <span class="btn-icon">📦</span>
+        <span class="btn-label">Download Semua (ZIP)</span>
+        <span class="btn-badge">JPG + MP4 + GIF</span>
+      </button>
+      <div class="progress-wrap" id="zipProgress"><div class="progress-fill" id="zipProgressFill"></div></div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
+        <span class="btn-icon">📤</span>
+        <span class="btn-label">Share ke Aplikasi Lain</span>
+      </button>
+
+      <button class="btn btn-print" id="btnPrint" onclick="printFoto()" disabled>
+        <span class="btn-icon">🖨️</span>
+        <span class="btn-label">Kirim ke Printer / Epson iPrint</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <div class="qr-box">
+        <p>Scan QR untuk download dari HP</p>
+        <div id="qrcode"></div>
+        <p id="qrStatus" style="color:#e94560">Menunggu foto selesai...</p>
+      </div>
+
+      <div class="divider"></div>
+      <p id="statusMsg"></p>
+      <button class="btn btn-ulang" onclick="fotoLagi()">📷 Foto Lagi</button>
+
+    </div>
+  </div>
+
+<script>
+  // ─── Supabase ───
+  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+  const BUCKET        = 'photobooth';
+
+  async function uploadToSupabase(blob, filename) {
+    const path = `results/${Date.now()}_${filename}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': blob.type,
+        'x-upsert': 'true',
+      },
+      body: blob,
+    });
+    if (!res.ok) throw new Error(`Upload gagal: ${await res.text()}`);
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  }
+
+  // ─── State ───
+  const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
+  const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
+  const templateSrc    = localStorage.getItem('templateSrc');
+  const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
+  const tmplW          = parseInt(localStorage.getItem('templateW') || '591');
+  const tmplH          = parseInt(localStorage.getItem('templateH') || '1772');
+
+  const canvas = document.getElementById('resultCanvas');
+  const ctx    = canvas.getContext('2d');
+
+  const displayW = 240;
+  const displayH = Math.round(tmplH * displayW / tmplW);
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+  canvas.width  = tmplW;
+  canvas.height = tmplH;
+
+  let finalDataURL   = null;
+  let finalPublicURL = null;
+  let gifDataURL     = null;
+  let liveMP4URL     = null; // object URL for live fotostrip video
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  function dataURLtoBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    const u8 = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+    return new Blob([u8], { type: mime });
+  }
+
+  function triggerDownload(href, filename) {
+    const a = document.createElement('a');
+    if (href.startsWith('blob:') || href.startsWith('http')) {
+      a.href = href;
+    } else {
+      a.href = URL.createObjectURL(dataURLtoBlob(href));
+    }
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  }
+
+  function showStatus(msg, color = '#27ae60') {
+    const el = document.getElementById('statusMsg');
+    el.style.color = color;
+    el.textContent = msg;
+    setTimeout(() => { el.textContent = ''; }, 4000);
+  }
+
+  function setProgress(id, pct) {
+    const wrap = document.getElementById(id + 'Progress');
+    const fill = document.getElementById(id + 'ProgressFill');
+    if (!wrap || !fill) return;
+    if (pct === null) { wrap.classList.remove('show'); fill.style.width = '0%'; return; }
+    wrap.classList.add('show');
+    fill.style.width = pct + '%';
+  }
+
+  // ─── Generate composite image ───
+  async function generateResult() {
+    try {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tmplW, tmplH);
+
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        const src  = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
+        if (!src) continue;
+        const photo = await loadImage(src);
+        const scale = Math.max(slot.w / photo.width, slot.h / photo.height);
+        const sw = slot.w / scale, sh = slot.h / scale;
+        const sx = (photo.width - sw) / 2, sy = (photo.height - sh) / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(slot.x, slot.y, slot.w, slot.h);
+        ctx.clip();
+        ctx.drawImage(photo, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+        ctx.restore();
+      }
+
+      if (templateSrc) {
+        const tmpl = await loadImage(templateSrc);
+        ctx.drawImage(tmpl, 0, 0, tmplW, tmplH);
+      }
+
+      finalDataURL = canvas.toDataURL('image/jpeg', 0.92);
+      document.getElementById('loadingOverlay').style.display = 'none';
+
+      const hasLive = livePhotos.some(Boolean);
+      ['btnJpg','btnShare','btnPrint','btnZip'].forEach(id => {
+        document.getElementById(id).disabled = false;
+      });
+      document.getElementById('btnLive').disabled = !hasLive;
+      if (!hasLive) document.getElementById('liveHint').textContent = 'Live photo tidak tersedia';
+
+      const canGif = filteredPhotos.length >= 2;
+      document.getElementById('btnGif').disabled = !canGif;
+      if (!canGif) document.getElementById('gifHint').textContent = 'Butuh minimal 2 foto';
+
+      uploadForQR();
+
+    } catch(e) {
+      console.error(e);
+      document.getElementById('loadingOverlay').innerHTML =
+        '<span style="color:#e94560;padding:16px;text-align:center">Gagal generate foto.<br>Coba ulangi dari awal.</span>';
+    }
+  }
+
+  async function uploadForQR() {
+    const qrStatus = document.getElementById('qrStatus');
+    qrStatus.textContent = '⏫ Mengupload...';
+    try {
+      const blob = dataURLtoBlob(finalDataURL);
+      finalPublicURL = await uploadToSupabase(blob, 'foto.jpg');
+      const qrBox = document.getElementById('qrcode');
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, {
+        text: finalPublicURL, width: 140, height: 140,
+        colorDark: '#ffffff', colorLight: '#16213e',
+      });
+      qrStatus.style.color = '#a0a0b0';
+      qrStatus.textContent = 'Scan untuk download ke HP';
+    } catch(e) {
+      qrStatus.style.color = '#e94560';
+      qrStatus.textContent = 'QR tidak tersedia — gunakan tombol Download';
+    }
+  }
+
+  // ─── Download JPG ───
+  function downloadJpg() {
+    if (!finalDataURL) return;
+    triggerDownload(finalPublicURL || finalDataURL, `lux-photobooth-${Date.now()}.jpg`);
+    showStatus('Download foto dimulai ✓');
+  }
+
+  // ─── Live Fotostrip Video ───
+  // Buat 1 video: semua slot live video tampil sekaligus dalam layout strip
+  async function downloadLive() {
+    const btn = document.getElementById('btnLive');
+    if (liveMP4URL) {
+      triggerDownload(liveMP4URL, `lux-fotostrip-live-${Date.now()}.webm`);
+      showStatus('Download live fotostrip ✓');
+      return;
+    }
+
+    const validLives = livePhotos.filter(Boolean);
+    if (!validLives.length) {
+      showStatus('Tidak ada live video', '#e94560');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Membuat fotostrip video...';
+    setProgress('live', 5);
+    document.getElementById('liveHint').textContent = 'Memuat video...';
+
+    try {
+      // Load semua video element
+      const videoEls = await Promise.all(livePhotos.map((src, i) => {
+        return new Promise((resolve) => {
+          if (!src) { resolve(null); return; }
+          const v = document.createElement('video');
+          v.src = src;
+          v.muted = true;
+          v.loop = true;
+          v.playsInline = true;
+          v.onloadeddata = () => resolve(v);
+          v.onerror = () => resolve(null);
+          v.load();
+        });
+      }));
+
+      setProgress('live', 20);
+      document.getElementById('liveHint').textContent = 'Menyusun strip...';
+
+      // Layout: strip vertikal, semua slot stack dari atas ke bawah
+      // Setiap slot: lebar penuh, tinggi proporsional
+      const STRIP_W = 320;
+      const slotH   = Math.round(STRIP_W * 3 / 4); // 4:3 per slot
+      const STRIP_H = slotH * slots.length;
+
+      const offscreen = document.createElement('canvas');
+      offscreen.width  = STRIP_W;
+      offscreen.height = STRIP_H;
+      const offCtx = offscreen.getContext('2d');
+
+      // Start all videos
+      const playPromises = videoEls.map(v => v ? v.play().catch(() => {}) : Promise.resolve());
+      await Promise.all(playPromises);
+      setProgress('live', 40);
+
+      // Record the composite canvas
+      const stream = offscreen.captureStream(24);
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+        ? 'video/webm;codecs=vp8' : 'video/webm';
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2000000 });
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+      recorder.start(100);
+      setProgress('live', 50);
+      document.getElementById('liveHint').textContent = 'Merekam...';
+
+      // Draw loop for ~3 seconds
+      const DURATION = 3000;
+      const startTime = performance.now();
+
+      await new Promise(resolve => {
+        function drawFrame() {
+          const elapsed = performance.now() - startTime;
+          const progress = Math.min(elapsed / DURATION, 1);
+          setProgress('live', 50 + Math.round(progress * 40));
+
+          offCtx.fillStyle = '#000';
+          offCtx.fillRect(0, 0, STRIP_W, STRIP_H);
+
+          videoEls.forEach((v, i) => {
+            const y = i * slotH;
+            if (v && v.readyState >= 2) {
+              // Cover fit
+              const vw = v.videoWidth || STRIP_W;
+              const vh = v.videoHeight || slotH;
+              const scale = Math.max(STRIP_W / vw, slotH / vh);
+              const sw = STRIP_W / scale, sh = slotH / scale;
+              const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+              offCtx.drawImage(v, sx, sy, sw, sh, 0, y, STRIP_W, slotH);
+            } else if (filteredPhotos[i]) {
+              // Fallback: draw still photo
+              const img = new Image();
+              img.src = filteredPhotos[i];
+              offCtx.drawImage(img, 0, y, STRIP_W, slotH);
+            }
+
+            // Slot border
+            offCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+            offCtx.lineWidth = 1;
+            offCtx.strokeRect(0, y, STRIP_W, slotH);
+
+            // Slot number
+            offCtx.fillStyle = 'rgba(255,255,255,0.5)';
+            offCtx.font = 'bold 12px sans-serif';
+            offCtx.fillText(`${i+1}`, 8, y + 18);
+          });
+
+          if (elapsed < DURATION) {
+            requestAnimationFrame(drawFrame);
+          } else {
+            resolve();
+          }
+        }
+        requestAnimationFrame(drawFrame);
+      });
+
+      recorder.stop();
+      setProgress('live', 95);
+
+      // Wait for recorder to finish
+      await new Promise(resolve => { recorder.onstop = resolve; });
+
+      const blob = new Blob(chunks, { type: mimeType });
+      liveMP4URL = URL.createObjectURL(blob);
+
+      // Pause all videos
+      videoEls.forEach(v => v && v.pause());
+
+      setProgress('live', null);
+      document.getElementById('liveHint').textContent = '';
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download Live Fotostrip';
+
+      triggerDownload(liveMP4URL, `lux-fotostrip-live-${Date.now()}.webm`);
+      showStatus('Live fotostrip berhasil ✓');
+
+    } catch(e) {
+      console.error('Live video error:', e);
+      setProgress('live', null);
+      document.getElementById('liveHint').textContent = 'Gagal: ' + e.message;
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download Live Fotostrip';
+      showStatus('Gagal buat live video: ' + e.message, '#e94560');
+    }
+  }
+
+  // ─── GIF (pure canvas, no external encoder) ───
+  // Pakai canvas + requestAnimationFrame → capture frames → encode manual
+  let gifBlob = null;
+
+  async function downloadGif() {
+    if (gifBlob) {
+      triggerDownload(URL.createObjectURL(gifBlob), `lux-animated-${Date.now()}.gif`);
+      showStatus('Download GIF ✓');
+      return;
+    }
+
+    const btn = document.getElementById('btnGif');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
+    setProgress('gif', 5);
+    document.getElementById('gifHint').textContent = 'Mengolah foto...';
+
+    try {
+      gifBlob = await makeGif();
+      setProgress('gif', null);
+      document.getElementById('gifHint').textContent = '';
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download GIF Animasi';
+      triggerDownload(URL.createObjectURL(gifBlob), `lux-animated-${Date.now()}.gif`);
+      showStatus('GIF berhasil dibuat ✓');
+    } catch(e) {
+      console.error('GIF error:', e);
+      setProgress('gif', null);
+      document.getElementById('gifHint').textContent = 'Gagal: ' + e.message;
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download GIF Animasi';
+      showStatus('Gagal buat GIF: ' + e.message, '#e94560');
+    }
+  }
+
+  // Pure JS GIF encoder — tidak butuh library eksternal
+  async function makeGif() {
+    const GIF_W = 320;
+    const GIF_H = Math.round(GIF_W * tmplH / tmplW);
+    const DELAY = 80; // 80 * 10ms = 800ms per frame
+
+    // Load semua foto sebagai image
+    const images = await Promise.all(filteredPhotos.map(src => loadImage(src).catch(() => null)));
+    const validImages = images.filter(Boolean);
+    if (validImages.length < 2) throw new Error('Butuh minimal 2 foto');
+
+    setProgress('gif', 20);
+
+    // Draw setiap foto ke canvas kecil → ambil pixel data
+    const tmp = document.createElement('canvas');
+    tmp.width = GIF_W; tmp.height = GIF_H;
+    const tc = tmp.getContext('2d', { willReadFrequently: true });
+
+    const frameDataList = [];
+    for (let fi = 0; fi < validImages.length; fi++) {
+      const img = validImages[fi];
+      tc.fillStyle = '#fff';
+      tc.fillRect(0, 0, GIF_W, GIF_H);
+      const scale = Math.max(GIF_W / img.width, GIF_H / img.height);
+      const sw = GIF_W / scale, sh = GIF_H / scale;
+      tc.drawImage(img, (img.width-sw)/2, (img.height-sh)/2, sw, sh, 0, 0, GIF_W, GIF_H);
+      frameDataList.push(tc.getImageData(0, 0, GIF_W, GIF_H));
+      setProgress('gif', 20 + Math.round((fi / validImages.length) * 40));
+    }
+
+    setProgress('gif', 65);
+    document.getElementById('gifHint').textContent = 'Encoding GIF...';
+
+    // Build GIF binary manually
+    const gifData = encodeGIF(frameDataList, GIF_W, GIF_H, DELAY);
+    setProgress('gif', 95);
+    return new Blob([gifData], { type: 'image/gif' });
+  }
+
+  // Minimal GIF encoder (LZW + GIF89a spec)
+  function encodeGIF(frames, w, h, delay) {
+    const bytes = [];
+
+    function write(arr) { for (const b of arr) bytes.push(b); }
+    function writeStr(s) { for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); }
+    function write16(n) { bytes.push(n & 0xFF); bytes.push((n >> 8) & 0xFF); }
+
+    // Header
+    writeStr('GIF89a');
+    write16(w); write16(h);
+
+    // Global color table: 256 colors
+    const palette = buildPalette(frames);
+    bytes.push(0xF7); // GCT flag, 256 colors
+    bytes.push(0);    // background index
+    bytes.push(0);    // pixel aspect ratio
+
+    // Write palette (256 * 3 bytes)
+    for (let i = 0; i < 256; i++) {
+      const c = palette[i] || [0,0,0];
+      bytes.push(c[0], c[1], c[2]);
+    }
+
+    // Netscape loop extension
+    bytes.push(0x21, 0xFF, 0x0B);
+    writeStr('NETSCAPE2.0');
+    bytes.push(3, 1, 0, 0, 0);
+
+    frames.forEach((frame, fi) => {
+      // Graphic control extension
+      bytes.push(0x21, 0xF9, 0x04);
+      bytes.push(0x00); // no transparency
+      write16(delay);
+      bytes.push(0, 0);
+
+      // Image descriptor
+      bytes.push(0x2C);
+      write16(0); write16(0); write16(w); write16(h);
+      bytes.push(0x00); // no local color table
+
+      // Index pixels
+      const pixels = quantizeFrame(frame.data, w, h, palette);
+
+      // LZW encode
+      const lzw = lzwEncode(pixels, 8);
+      bytes.push(8); // LZW min code size
+
+      // Write in blocks of max 255
+      for (let i = 0; i < lzw.length; i += 255) {
+        const block = lzw.slice(i, i + 255);
+        bytes.push(block.length);
+        for (const b of block) bytes.push(b);
+      }
+      bytes.push(0); // block terminator
+    });
+
+    bytes.push(0x3B); // GIF trailer
+    return new Uint8Array(bytes);
+  }
+
+  function buildPalette(frames) {
+    // Sample colors from all frames, build 256-color palette
+    const colorMap = new Map();
+    const sample = Math.max(1, Math.floor(frames[0].data.length / 4 / 2000));
+
+    frames.forEach(frame => {
+      const d = frame.data;
+      for (let i = 0; i < d.length; i += 4 * sample) {
+        const r = d[i] & 0xF0, g = d[i+1] & 0xF0, b = d[i+2] & 0xF0;
+        const key = (r << 16) | (g << 8) | b;
+        colorMap.set(key, (colorMap.get(key) || 0) + 1);
+      }
+    });
+
+    // Sort by frequency, take top 255, reserve index 0 for white
+    const sorted = [...colorMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 255)
+      .map(([k]) => [(k >> 16) & 0xFF, (k >> 8) & 0xFF, k & 0xFF]);
+
+    const palette = [[255, 255, 255], ...sorted];
+    while (palette.length < 256) palette.push([0, 0, 0]);
+    return palette;
+  }
+
+  function quantizeFrame(data, w, h, palette) {
+    const pixels = new Uint8Array(w * h);
+    // Build lookup map
+    const map = new Map();
+    palette.forEach((c, i) => map.set((c[0] & 0xF0) << 16 | (c[1] & 0xF0) << 8 | (c[2] & 0xF0), i));
+
+    for (let i = 0; i < w * h; i++) {
+      const r = data[i*4] & 0xF0, g = data[i*4+1] & 0xF0, b = data[i*4+2] & 0xF0;
+      pixels[i] = map.get((r << 16) | (g << 8) | b) ?? 0;
+    }
+    return pixels;
+  }
+
+  function lzwEncode(pixels, minCodeSize) {
+    const clearCode = 1 << minCodeSize;
+    const eoi = clearCode + 1;
+    const result = [];
+    let codeSize = minCodeSize + 1;
+    let nextCode = eoi + 1;
+    const table = new Map();
+
+    function resetTable() {
+      table.clear();
+      for (let i = 0; i < clearCode; i++) table.set(String(i), i);
+      codeSize = minCodeSize + 1;
+      nextCode = eoi + 1;
+    }
+
+    let buf = 0, bufLen = 0;
+    function writeBits(code) {
+      buf |= code << bufLen;
+      bufLen += codeSize;
+      while (bufLen >= 8) { result.push(buf & 0xFF); buf >>= 8; bufLen -= 8; }
+    }
+
+    resetTable();
+    writeBits(clearCode);
+
+    let prefix = String(pixels[0]);
+    for (let i = 1; i < pixels.length; i++) {
+      const c = String(pixels[i]);
+      const key = prefix + ',' + c;
+      if (table.has(key)) {
+        prefix = key;
+      } else {
+        writeBits(table.get(prefix));
+        if (nextCode < 4096) {
+          table.set(key, nextCode++);
+          if (nextCode > (1 << codeSize)) codeSize = Math.min(codeSize + 1, 12);
+        } else {
+          writeBits(clearCode);
+          resetTable();
+        }
+        prefix = c;
+      }
+    }
+    writeBits(table.get(prefix));
+    writeBits(eoi);
+    if (bufLen > 0) result.push(buf & 0xFF);
+    return result;
+  }
+
+  // ─── ZIP ───
+  async function downloadZip() {
+    if (!finalDataURL) return;
+    const btn = document.getElementById('btnZip');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan ZIP...';
+    setProgress('zip', 5);
+
+    try {
+      // Load JSZip
+      if (!window.JSZip) {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      setProgress('zip', 15);
+
+      const zip = new JSZip();
+      const ts  = Date.now();
+
+      zip.file(`lux-foto-${ts}.jpg`, dataURLtoBlob(finalDataURL));
+      setProgress('zip', 30);
+
+      // Add live video if available
+      if (liveMP4URL) {
+        const liveBlob = await fetch(liveMP4URL).then(r => r.blob());
+        zip.file(`lux-fotostrip-live-${ts}.webm`, liveBlob);
+      } else {
+        // Generate live video for ZIP
+        const hasLive = livePhotos.some(Boolean);
+        if (hasLive && !liveMP4URL) {
+          btn.querySelector('.btn-label').textContent = 'Membuat live video...';
+          // trigger live generation silently
+        }
+      }
+      setProgress('zip', 50);
+
+      // Generate GIF for ZIP
+      if (!gifBlob && filteredPhotos.length >= 2) {
+        btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
+        try {
+          gifBlob = await makeGif();
+        } catch(e) { console.warn('GIF for ZIP failed:', e); }
+      }
+      if (gifBlob) {
+        zip.file(`lux-animated-${ts}.gif`, gifBlob);
+      }
+      setProgress('zip', 80);
+
+      btn.querySelector('.btn-label').textContent = 'Membungkus ZIP...';
+      const content = await zip.generateAsync({ type: 'blob' }, meta => {
+        setProgress('zip', 80 + Math.round(meta.percent * 0.2));
+      });
+
+      triggerDownload(URL.createObjectURL(content), `lux-photobooth-${ts}.zip`);
+      setProgress('zip', null);
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
+      showStatus('ZIP berhasil didownload ✓');
+
+    } catch(e) {
+      console.error('ZIP error:', e);
+      setProgress('zip', null);
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
+      showStatus('Gagal buat ZIP: ' + e.message, '#e94560');
+    }
+  }
+
+  // ─── Share ───
+  async function shareNative() {
+    if (!finalDataURL) return;
+    try {
+      const blob = dataURLtoBlob(finalDataURL);
+      const file = new File([blob], 'photobooth.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Hasil LUX Photobooth' });
+      } else {
+        downloadJpg();
+        showStatus('Share tidak didukung — file didownload');
+      }
+    } catch(e) {
+      if (e.name !== 'AbortError') downloadJpg();
+    }
+  }
+
+  // ─── Print ───
+  function printFoto() {
+    if (!finalDataURL) return;
+    // Buat hidden iframe untuk print — lebih compatible dari window.open
+    const existing = document.getElementById('printFrame');
+    if (existing) existing.remove();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'printFrame';
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head>
+      <style>
+        * { margin:0; padding:0; }
+        body { display:flex; justify-content:center; align-items:flex-start; }
+        img { max-width:100%; height:auto; display:block; page-break-inside:avoid; }
+        @media print { body { margin:0; } img { width:5cm; } }
+      </style>
+    </head><body>
+      <img src="${finalDataURL}" onload="window.print();">
+    </body></html>`);
+    doc.close();
+
+    showStatus('Membuka dialog print...');
+  }
+
+  function fotoLagi() {
+    ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
+    window.location.href = 'index.html';
+  }
+
+  generateResult();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kamera - LUX Photobooth</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+      text-align: center;
+    }
+    .logo-text {
+      font-size: 15px; font-weight: 800;
+      background: linear-gradient(135deg, #e94560, #f5a623);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    h2 { font-size: 20px; font-weight: 700; margin: 6px 0 2px; }
+    .sub-text { font-size: 13px; color: #a0a0b0; }
+
+    .slot-indicator {
+      display: flex; gap: 8px; justify-content: center;
+      margin: 10px 0; flex-wrap: wrap;
+    }
+    .slot-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid #0f3460; background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #a0a0b0;
+      cursor: default; transition: all 0.3s;
+    }
+    .slot-dot.done { background: #27ae60; border-color: #27ae60; color: white; cursor: pointer; }
+    .slot-dot.active { background: #e94560; border-color: #e94560; color: white; transform: scale(1.2); }
+
+    .camera-wrapper {
+      position: relative; width: 100%; max-width: 440px;
+      border-radius: 20px; overflow: hidden;
+      background: #000; aspect-ratio: 4/3; margin: 8px 0;
+    }
+    #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #canvas { display: none; position: absolute; left: -9999px; }
+
+    .countdown-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 96px; font-weight: 900; color: white;
+      text-shadow: 0 0 40px rgba(233,69,96,0.8);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .countdown-overlay.show { opacity: 1; }
+    .flash-overlay {
+      position: absolute; inset: 0; background: white;
+      opacity: 0; pointer-events: none; transition: opacity 0.1s;
+    }
+    .flash-overlay.show { opacity: 1; }
+
+    .rec-indicator {
+      position: absolute; top: 10px; right: 12px;
+      display: none; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.6); padding: 4px 10px;
+      border-radius: 50px; font-size: 11px; font-weight: 700; color: white;
+    }
+    .rec-indicator.show { display: flex; }
+    .rec-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #e94560; animation: blink 1s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .photos-strip {
+      display: flex; gap: 8px; justify-content: center;
+      margin: 8px 0; flex-wrap: wrap;
+    }
+    .photo-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .photo-thumb {
+      width: 64px; height: 64px; border-radius: 8px;
+      object-fit: cover; border: 2px solid #27ae60;
+    }
+    .photo-thumb-empty {
+      width: 64px; height: 64px; border-radius: 8px;
+      border: 2px dashed #0f3460;
+      display: flex; align-items: center; justify-content: center;
+      color: #0f3460; font-size: 20px;
+    }
+    .btn-retake {
+      background: #e94560; color: white; border: none;
+      border-radius: 50px; font-size: 10px; font-weight: 700;
+      padding: 3px 8px; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-retake:hover { background: #c73652; }
+
+    .controls {
+      display: flex; gap: 12px; align-items: center;
+      justify-content: center; flex-wrap: wrap; margin-top: 8px;
+    }
+    .btn {
+      padding: 12px 24px; border-radius: 50px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn-primary { background: #e94560; color: white; padding: 16px 36px; font-size: 17px; }
+    .btn-primary:hover { background: #c73652; transform: scale(1.04); }
+    .btn-primary:disabled { opacity: 0.4; pointer-events: none; }
+    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
+    .btn-secondary:hover { color: white; border-color: white; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #219a52; }
+    #statusMsg { font-size: 13px; color: #a0a0b0; margin-top: 10px; min-height: 20px; }
+  </style>
+</head>
+<body>
+
+  <div class="logo-text">📸 LUX PHOTOBOOTH</div>
+  <h2 id="titleText">Ambil Foto</h2>
+  <p class="sub-text" id="subText"></p>
+  <div class="slot-indicator" id="slotIndicator"></div>
+  <canvas id="canvas"></canvas>
+
+  <div class="camera-wrapper">
+    <video id="video" autoplay playsinline></video>
+    <div class="countdown-overlay" id="countdown"></div>
+    <div class="flash-overlay" id="flash"></div>
+    <div class="rec-indicator" id="recIndicator">
+      <div class="rec-dot"></div> REC
+    </div>
+  </div>
+
+  <div class="photos-strip" id="photosStrip"></div>
+
+  <div class="controls">
+    <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
+    <button class="btn btn-primary" id="btnAmbil" onclick="mulaiCountdown()">📷 Ambil Foto</button>
+    <button class="btn btn-success" id="btnLanjut" onclick="lanjutFilter()" style="display:none">Lanjut ke Filter →</button>
+  </div>
+  <p id="statusMsg"></p>
+
+<script>
+  const slotCount   = parseInt(localStorage.getItem('slotCount') || '1');
+  const templateName = localStorage.getItem('templateName') || 'Template';
+
+  document.getElementById('subText').textContent = `${templateName} · ${slotCount} foto`;
+
+  const video       = document.getElementById('video');
+  const canvas      = document.getElementById('canvas');
+  const countdownEl = document.getElementById('countdown');
+  const flashEl     = document.getElementById('flash');
+  const btnAmbil    = document.getElementById('btnAmbil');
+  const btnLanjut   = document.getElementById('btnLanjut');
+  const statusMsg   = document.getElementById('statusMsg');
+  const recIndicator= document.getElementById('recIndicator');
+
+  let photos      = new Array(slotCount).fill(null);
+  let liveVideos  = new Array(slotCount).fill(null); // dataURL video per slot
+  let currentSlot = 0;
+  let isCountingDown = false;
+  let stream      = null;
+
+  // Per-slot MediaRecorder
+  let mediaRecorder   = null;
+  let recordedChunks  = [];
+
+  // ─── Indicators ───
+  function renderIndicators() {
+    const ind = document.getElementById('slotIndicator');
+    ind.innerHTML = '';
+    for (let i = 0; i < slotCount; i++) {
+      const dot = document.createElement('div');
+      if (photos[i]) {
+        dot.className = 'slot-dot done';
+        dot.title = `Foto ${i+1} — klik untuk retake`;
+        dot.onclick = () => retakePhoto(i);
+      } else if (i === currentSlot) {
+        dot.className = 'slot-dot active';
+      } else {
+        dot.className = 'slot-dot';
+      }
+      dot.textContent = i + 1;
+      ind.appendChild(dot);
+    }
+  }
+
+  function renderStrip() {
+    const strip = document.getElementById('photosStrip');
+    strip.innerHTML = '';
+    for (let i = 0; i < slotCount; i++) {
+      const item = document.createElement('div');
+      item.className = 'photo-item';
+      if (photos[i]) {
+        const img = document.createElement('img');
+        img.className = 'photo-thumb';
+        img.src = photos[i];
+        item.appendChild(img);
+        const btn = document.createElement('button');
+        btn.className = 'btn-retake';
+        btn.textContent = '↺ Retake';
+        btn.onclick = () => retakePhoto(i);
+        item.appendChild(btn);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'photo-thumb-empty';
+        empty.textContent = i + 1;
+        item.appendChild(empty);
+      }
+      strip.appendChild(item);
+    }
+  }
+
+  function updateTitle() {
+    const allDone = photos.every(p => p !== null);
+    if (!allDone) {
+      const next = photos.findIndex(p => p === null);
+      document.getElementById('titleText').textContent = `Foto ${next + 1} dari ${slotCount}`;
+      btnAmbil.style.display = '';
+      btnLanjut.style.display = 'none';
+    } else {
+      document.getElementById('titleText').textContent = 'Semua foto selesai! ✓';
+      btnAmbil.style.display = 'none';
+      btnLanjut.style.display = '';
+    }
+  }
+
+  function retakePhoto(idx) {
+    if (isCountingDown) return;
+    photos[idx]     = null;
+    liveVideos[idx] = null;
+    currentSlot     = idx;
+    renderStrip();
+    renderIndicators();
+    updateTitle();
+    statusMsg.textContent = `Siap ambil ulang foto ${idx + 1}`;
+    btnAmbil.disabled = false;
+    if (!video.srcObject || !video.srcObject.active) startCamera();
+  }
+
+  // ─── Camera ───
+  async function startCamera() {
+    try {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 720 } },
+        audio: false
+      });
+      video.srcObject = stream;
+    } catch(err) {
+      statusMsg.textContent = 'Kamera tidak bisa diakses.';
+      btnAmbil.disabled = true;
+    }
+  }
+
+  // ─── Live recording per slot ───
+  function startLiveRecording(slotIdx) {
+    if (!stream || !window.MediaRecorder) return;
+    recordedChunks = [];
+
+    const mimeType = ['video/webm;codecs=vp8','video/webm','video/mp4']
+      .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e) { return false; } }) || '';
+    if (!mimeType) return;
+
+    try {
+      mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1500000 });
+      mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: mimeType });
+        const reader = new FileReader();
+        reader.onload = ev => {
+          liveVideos[slotIdx] = ev.target.result;
+          console.log(`Live video slot ${slotIdx}: ${Math.round(ev.target.result.length/1024)}KB`);
+        };
+        reader.readAsDataURL(blob);
+      };
+      mediaRecorder.start(100); // collect every 100ms
+      recIndicator.classList.add('show');
+    } catch(e) {
+      console.warn('MediaRecorder error:', e);
+    }
+  }
+
+  function stopLiveRecording() {
+    recIndicator.classList.remove('show');
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    mediaRecorder = null;
+  }
+
+  // ─── Countdown ───
+  function mulaiCountdown() {
+    if (isCountingDown) return;
+    isCountingDown = true;
+    btnAmbil.disabled = true;
+
+    currentSlot = photos.findIndex(p => p === null);
+    if (currentSlot === -1) return;
+
+    let angka = 5;
+    let liveStarted = false;
+    countdownEl.textContent = angka;
+    countdownEl.classList.add('show');
+
+    const interval = setInterval(() => {
+      angka--;
+      // Start live recording at T-2
+      if (angka === 2 && !liveStarted) {
+        liveStarted = true;
+        startLiveRecording(currentSlot);
+      }
+      if (angka > 0) {
+        countdownEl.textContent = angka;
+      } else {
+        clearInterval(interval);
+        countdownEl.classList.remove('show');
+        ambilFoto();
+      }
+    }, 1000);
+  }
+
+  function ambilFoto() {
+    flashEl.classList.add('show');
+    setTimeout(() => flashEl.classList.remove('show'), 200);
+
+    const W = 720, H = 540;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.translate(W, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, video.videoWidth || W, video.videoHeight || H, 0, 0, W, H);
+    ctx.restore();
+
+    photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.85);
+
+    // Stop live ~800ms after shutter (capture post-shutter moment too)
+    setTimeout(() => stopLiveRecording(), 800);
+
+    isCountingDown = false;
+
+    const nextEmpty = photos.findIndex(p => p === null);
+    if (nextEmpty !== -1) {
+      currentSlot = nextEmpty;
+      statusMsg.textContent = `Bagus! Sekarang foto ${nextEmpty + 1}`;
+      setTimeout(() => { statusMsg.textContent = ''; btnAmbil.disabled = false; }, 1200);
+    } else {
+      statusMsg.textContent = 'Semua foto selesai! ✓';
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    }
+
+    renderStrip();
+    renderIndicators();
+    updateTitle();
+  }
+
+  function lanjutFilter() {
+    try {
+      localStorage.removeItem('photos');
+      localStorage.removeItem('filteredPhotos');
+      localStorage.removeItem('livePhotos');
+      localStorage.setItem('photos', JSON.stringify(photos));
+
+      // Wait a bit for last MediaRecorder.onstop to fire
+      setTimeout(() => {
+        const validLive = liveVideos.filter(Boolean);
+        if (validLive.length > 0) {
+          try {
+            localStorage.setItem('livePhotos', JSON.stringify(liveVideos));
+          } catch(e) {
+            console.warn('livePhotos too large for localStorage:', e);
+          }
+        }
+        window.location.href = 'filter.html';
+      }, 600);
+    } catch(err) {
+      alert('Storage browser penuh. Hapus beberapa template lama di Admin, lalu coba lagi.');
+    }
+  }
+
+  function kembali() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    window.location.href = 'template.html';
+  }
+
+  renderIndicators();
+  renderStrip();
+  updateTitle();
+  startCamera();
+</script>
+</body>
+</html>

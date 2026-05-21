@@ -558,12 +558,10 @@
       }));
 
       const tmpl = {
-        id: Date.now(), name, category: selectedCategory,
-        src: imageURL,       // URL Supabase, bukan base64!
-        thumbSrc: imageURL,  // sama, untuk thumbnail
+        name, category: selectedCategory,
+        src: imageURL,
         slots: realSlots,
         w: templateImg.width, h: templateImg.height,
-        createdAt: new Date().toISOString()
       };
 
       // Insert ke Supabase database

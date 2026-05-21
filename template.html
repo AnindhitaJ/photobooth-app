@@ -387,7 +387,7 @@
     const cats = getCategories();
     const el = document.getElementById('catTabs');
     let html = `<button class="cat-tab ${currentCat==='all'?'active':''}" onclick="filterCat('all')">Semua</button>`;
-    html += `<button class="cat-tab ${currentCat==='__basic__'?'active':''}" onclick="filterCat('__basic__')">⭐ Basic</button>`;
+    html += `<button class="cat-tab ${currentCat==='__basic__'?'active':''}" onclick="filterCat('__basic__')">Basic</button>`;
     html += cats.map(c =>
       `<button class="cat-tab ${currentCat===c?'active':''}" onclick="filterCat('${c}')">${c}</button>`
     ).join('');

@@ -46,7 +46,13 @@
       border-radius: 20px; overflow: hidden;
       background: #000; aspect-ratio: 4/3; margin: 8px 0;
     }
-    #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #video {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform-origin: center center;
+      transform: scaleX(-1);
+    }
     #canvas { display: none; position: absolute; left: -9999px; }
 
     .countdown-overlay {
@@ -488,11 +494,14 @@
   const ZOOM_MIN  = 1.0;
 
   function updateVideoTransform() {
-    // Video ditampilkan mirror (scaleX(-1)), jadi panX di-flip juga
-    const tx = -panX * 100; // persen
-    const ty = panY * 100;
+    // Hitung offset pixel dari wrapper supaya tidak kacau saat di-scale
+    const wrapper = document.querySelector('.camera-wrapper');
+    const wW = wrapper.offsetWidth, wH = wrapper.offsetHeight;
+    const tx = -panX * wW; // pixel
+    const ty = panY * wH;
+    // Urutan: mirror dulu, lalu scale dari center, lalu geser
     document.getElementById('video').style.transform =
-      `scaleX(-1) scale(${zoom}) translate(${tx}%, ${ty}%)`;
+      `scaleX(-1) scale(${zoom}) translate(${tx / zoom}px, ${ty / zoom}px)`;
     document.getElementById('zoomLabel').textContent = zoom.toFixed(1) + '×';
   }
 

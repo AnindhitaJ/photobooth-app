@@ -840,11 +840,6 @@
       </style>
     </head><body>
       <img src="${finalDataURL}" onload="window.print();">
-    <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  }
-</script>
 </body></html>`);
     doc.close();
 

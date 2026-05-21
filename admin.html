@@ -258,21 +258,37 @@
   const ctx = canvas.getContext('2d');
   const overlay = document.getElementById('slotOverlay');
 
-  // ─── Categories ───
-  function getCategories() {
-    return JSON.parse(localStorage.getItem('pb_categories') || '[]');
+  // ─── Categories (derived from Supabase templates) ───
+  let _allTemplates = []; // cache
+
+  async function fetchAllTemplates() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?select=*&order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      _allTemplates = await res.json();
+    } catch(e) {
+      console.error('Fetch templates error:', e);
+      _allTemplates = [];
+    }
+    return _allTemplates;
   }
-  function saveCategories(cats) {
-    localStorage.setItem('pb_categories', JSON.stringify(cats));
+
+  function getCategories() {
+    // Derive unique categories from loaded templates + localStorage extras
+    const fromDB = [...new Set(_allTemplates.map(t => t.category))];
+    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    return [...new Set([...fromDB, ...fromLS])];
   }
 
   function tambahKategori() {
     const val = document.getElementById('newCatInput').value.trim();
     if (!val) return;
-    const cats = getCategories();
-    if (cats.includes(val)) { showToast('Kategori sudah ada', true); return; }
+    const cats = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    if (cats.includes(val) || getCategories().includes(val)) { showToast('Kategori sudah ada', true); return; }
     cats.push(val);
-    saveCategories(cats);
+    localStorage.setItem('pb_categories', JSON.stringify(cats));
     document.getElementById('newCatInput').value = '';
     renderCategoryTags();
     renderCatTabs();
@@ -327,9 +343,9 @@
   }
 
   function hapusKategori(idx) {
-    const cats = getCategories();
+    const cats = JSON.parse(localStorage.getItem('pb_categories') || '[]');
     cats.splice(idx, 1);
-    saveCategories(cats);
+    localStorage.setItem('pb_categories', JSON.stringify(cats));
     renderCategoryTags();
     renderCatTabs();
     renderManageCats();
@@ -550,11 +566,24 @@
         createdAt: new Date().toISOString()
       };
 
-      const saved = getTemplates();
-      saved.push(tmpl);
-      localStorage.setItem('pb_templates', JSON.stringify(saved));
+      // Insert ke Supabase database
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(tmpl),
+      });
+      if (!res.ok) throw new Error('DB insert gagal: ' + await res.text());
+      const [inserted] = await res.json();
+      _allTemplates.unshift(inserted);
       showToast('Template tersimpan di cloud! ✓');
       renderTemplateList();
+      renderCatTabs();
+      renderCategoryTags();
 
       // Reset form
       document.getElementById('templateName').value = '';
@@ -575,15 +604,11 @@
   }
 
   // ─── Template List ───
-  function getTemplates() {
-    try { return JSON.parse(localStorage.getItem('pb_templates') || '[]'); }
-    catch { return []; }
-  }
-
   function renderTemplateList() {
     const list = document.getElementById('templateList');
-    const all = getTemplates();
-    const filtered = filterCategory === 'all' ? all : all.filter(t => t.category === filterCategory);
+    const filtered = filterCategory === 'all'
+      ? _allTemplates
+      : _allTemplates.filter(t => t.category === filterCategory);
 
     if (!filtered.length) {
       list.innerHTML = '<div class="empty-state">Belum ada template di kategori ini</div>';
@@ -592,10 +617,10 @@
 
     list.innerHTML = filtered.map(t => `
       <div class="template-item">
-        <img class="template-thumb" src="${t.src}" alt="${t.name}">
+        <img class="template-thumb" src="${t.src}" alt="${t.name}" crossorigin="anonymous">
         <div class="template-info">
           <h4>${t.name}</h4>
-          <p>${t.slots.length} slot foto · ${t.w||591}×${t.h||1772}px</p>
+          <p>${(t.slots||[]).length} slot foto · ${t.w||591}×${t.h||1772}px</p>
           <span class="cat-badge">${t.category}</span>
         </div>
         <button class="btn btn-danger" onclick="hapusTemplate('${t.id}')">Hapus</button>
@@ -603,11 +628,24 @@
     `).join('');
   }
 
-  function hapusTemplate(id) {
-    const saved = getTemplates().filter(t => t.id != id);
-    localStorage.setItem('pb_templates', JSON.stringify(saved));
-    renderTemplateList();
-    showToast('Template dihapus');
+  async function hapusTemplate(id) {
+    if (!confirm('Hapus template ini?')) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+        }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      _allTemplates = _allTemplates.filter(t => t.id != id);
+      renderTemplateList();
+      renderCatTabs();
+      showToast('Template dihapus');
+    } catch(e) {
+      showToast('Gagal hapus: ' + e.message, true);
+    }
   }
 
   function showToast(msg, isError = false) {
@@ -622,7 +660,15 @@
   renderCategoryTags();
   renderCatTabs();
   renderManageCats();
-  renderTemplateList();
+  // Init: load dari Supabase dulu
+  (async () => {
+    document.getElementById('templateList').innerHTML = '<div class="empty-state">Memuat template...</div>';
+    await fetchAllTemplates();
+    renderCatTabs();
+    renderCategoryTags();
+    renderManageCats();
+    renderTemplateList();
+  })();
 </script>
 
 </body>

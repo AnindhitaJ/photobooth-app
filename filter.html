@@ -4,128 +4,120 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#e94560">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="theme-color" content="#ff6b35">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="LUX Photo">
   <meta name="mobile-web-app-capable" content="yes">
   <title>Beauty Filter - LUX Photobooth</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --orange: #ff6b35; --yellow: #ffd23f; --green: #06d6a0;
+      --pink: #ff4d8d; --purple: #a855f7;
+      --bg: #fff8f0; --card: #ffffff; --border: #ffe0c8;
+      --text: #2d1a0e; --text2: #8a6a56;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 20px;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -1;
+      background-image: radial-gradient(circle, rgba(255,107,53,0.07) 1px, transparent 1px);
+      background-size: 28px 28px; background-color: var(--bg);
     }
     .logo-text {
-      font-size: 15px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #e94560, #f5a623);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
+      font-size: 15px; font-weight: 900; margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--orange), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align:center; }
-    p.sub { font-size: 14px; color: #a0a0b0; margin-bottom: 14px; text-align:center; }
-
-    .photo-tabs {
-      display: flex; gap: 8px; justify-content: center;
-      margin-bottom: 14px; flex-wrap: wrap;
-    }
+    h2 { font-size: 22px; font-weight: 900; margin-bottom: 4px; text-align:center; }
+    p.sub { font-size: 14px; color: var(--text2); margin-bottom: 14px; text-align:center; font-weight:500; }
+    .photo-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
     .photo-tab {
-      padding: 6px 16px; border-radius: 50px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      border: 2px solid #0f3460; background: transparent; color: #a0a0b0;
-      transition: all 0.15s;
+      padding: 7px 16px; border-radius: 50px; font-size: 13px; font-weight: 700;
+      cursor: pointer; border: 2px solid var(--border); background: white; color: var(--text2);
+      transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .photo-tab.active { background: #e94560; border-color: #e94560; color: white; }
-
+    .photo-tab.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 14px rgba(255,107,53,0.4); }
     .main-layout {
-      display: flex; gap: 24px; width: 100%; max-width: 960px;
+      display: flex; gap: 20px; width: 100%; max-width: 960px;
       align-items: flex-start; flex-wrap: wrap; justify-content: center;
     }
     .foto-wrapper {
-      width: 300px; flex-shrink: 0;
-      border-radius: 16px; overflow: hidden;
-      border: 3px solid #0f3460; background: #000;
+      width: 300px; flex-shrink: 0; border-radius: 18px; overflow: hidden;
+      border: 3px solid var(--border); background: #000;
+      box-shadow: 0 8px 28px rgba(255,107,53,0.15);
     }
     #previewCanvas { width: 100%; display: block; }
-    .status-bar { font-size: 12px; color: #a0a0b0; text-align: center; margin-top: 8px; min-height: 18px; }
-
-    .filter-panel {
-      flex: 1; min-width: 260px;
-      display: flex; flex-direction: column; gap: 14px;
+    .status-bar { font-size: 12px; color: var(--text2); text-align: center; margin-top: 8px; min-height: 18px; font-weight: 500; }
+    .filter-panel { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 12px; }
+    .filter-group {
+      background: white; border-radius: 16px; padding: 14px 16px;
+      border: 2px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.05);
     }
-    .filter-group { background: #16213e; border-radius: 14px; padding: 14px 16px; }
     .filter-label {
-      font-size: 12px; font-weight: 700; color: #a0a0b0;
-      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+      font-size: 11px; font-weight: 800; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
     }
     .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .pill {
-      padding: 7px 14px; border-radius: 50px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      border: 2px solid #0f3460; background: transparent; color: #a0a0b0;
+      padding: 7px 14px; border-radius: 50px; font-size: 13px; font-weight: 700;
+      cursor: pointer; border: 2px solid var(--border); background: white; color: var(--text2);
+      transition: all 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .pill:hover { border-color: var(--orange); color: var(--orange); }
+    .pill.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 12px rgba(255,107,53,0.4); }
+    .tone-pill {
+      padding: 7px 14px; border-radius: 50px; font-size: 13px; font-weight: 700;
+      cursor: pointer; border: 2px solid var(--border); background: white; color: var(--text2);
       transition: all 0.15s;
     }
-    .pill:hover { border-color: #e94560; color: white; }
-    .pill.active { background: #e94560; border-color: #e94560; color: white; }
-
-    /* Color tone pills (B&W, Sepia, Vintage) */
-    .tone-pill {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 4px; cursor: pointer;
+    .tone-pill.active { background: var(--purple); border-color: var(--purple); color: white; box-shadow: 0 4px 12px rgba(168,85,247,0.35); }
+    .slider-row { display: flex; flex-direction: column; gap: 10px; }
+    .slider-item { display: flex; flex-direction: column; gap: 4px; }
+    .slider-header { display: flex; justify-content: space-between; align-items: center; }
+    .slider-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .slider-val { font-size: 13px; font-weight: 700; color: var(--orange); min-width: 40px; text-align: right; }
+    input[type=range] {
+      width: 100%; height: 6px; cursor: pointer; appearance: none;
+      background: var(--border); border-radius: 50px; outline: none;
     }
-    .tone-preview {
-      width: 48px; height: 48px; border-radius: 8px;
-      border: 2px solid #0f3460; overflow: hidden; transition: all 0.15s;
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--orange); cursor: pointer; box-shadow: 0 2px 8px rgba(255,107,53,0.4);
     }
-    .tone-preview canvas { width: 48px; height: 48px; display: block; object-fit: cover; }
-    .tone-pill:hover .tone-preview { border-color: #e94560; }
-    .tone-pill.active .tone-preview { border-color: #e94560; box-shadow: 0 0 0 2px #e94560; }
-    .tone-name { font-size: 10px; color: #a0a0b0; font-weight: 600; }
-    .tone-pill.active .tone-name { color: #e94560; }
-
-    .swatch-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .swatch {
-      width: 30px; height: 30px; border-radius: 50%;
-      cursor: pointer; border: 3px solid transparent; transition: all 0.15s;
+    .sticker-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sticker-btn {
+      width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--border);
+      background: white; font-size: 22px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; transition: all 0.15s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    .swatch:hover { transform: scale(1.15); }
-    .swatch.active { border-color: white; transform: scale(1.2); }
-    .swatch-off {
-      width: 30px; height: 30px; border-radius: 50%;
-      cursor: pointer; border: 2px solid #a0a0b0;
-      background: transparent; font-size: 9px; color: #a0a0b0;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; transition: all 0.15s;
-    }
-    .swatch-off.active { border-color: white; color: white; }
-
-    .apply-note {
-      font-size: 12px; color: #a0a0b0; background: #16213e;
-      border-radius: 10px; padding: 10px 14px; text-align: center;
-    }
-    .apply-note span { color: #e94560; font-weight: 700; }
-    .btn-row { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+    .sticker-btn:hover { border-color: var(--orange); transform: scale(1.1); }
+    .sticker-btn.active { border-color: var(--orange); background: #fff5ef; box-shadow: 0 4px 12px rgba(255,107,53,0.3); }
+    .apply-row { display: flex; gap: 10px; }
     .btn {
-      padding: 12px 22px; border-radius: 50px;
-      font-size: 14px; font-weight: 600;
-      cursor: pointer; border: none; transition: all 0.2s;
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+      border: none; cursor: pointer; font-weight: 700; font-size: 14px;
+      padding: 14px 20px; border-radius: 50px; transition: all 0.2s;
     }
-    .btn-primary { background: #e94560; color: white; flex: 1; }
-    .btn-primary:hover { background: #c73652; }
-    .btn-secondary { background: transparent; color: #a0a0b0; border: 2px solid #a0a0b0; }
-    .btn-secondary:hover { color: white; border-color: white; }
-    .btn-ghost { background: transparent; color: #a0a0b0; border: 2px solid #0f3460; font-size: 13px; padding: 10px 16px; }
-    .btn-ghost:hover { border-color: #a0a0b0; color: white; }
-    .btn-apply { background: #0f3460; color: white; font-size: 13px; padding: 10px 18px; }
-    .btn-apply:hover { background: #1a5090; }
+    .btn-secondary {
+      background: white; color: var(--text2); border: 2px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); flex: 0 0 auto; padding: 14px 20px;
+    }
+    .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-green { background: linear-gradient(135deg, var(--green), #04b589); color: white; box-shadow: 0 6px 20px rgba(6,214,160,0.35); }
+    .btn-green:hover { transform: translateY(-2px); }
+    .bottom-bar {
+      position: sticky; bottom: 0; width: 100%; max-width: 960px;
+      display: flex; gap: 10px; padding: 12px 0; background: var(--bg);
+      border-top: 2px solid var(--border); margin-top: 8px;
+    }
   </style>
 </head>
 <body>

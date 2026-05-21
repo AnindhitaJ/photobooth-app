@@ -4,81 +4,122 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#e94560">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="theme-color" content="#ff6b35">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="LUX Photo">
   <meta name="mobile-web-app-capable" content="yes">
   <title>LUX Photobooth</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
-      color: white;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
+    :root {
+      --orange: #ff6b35; --yellow: #ffd23f; --green: #06d6a0;
+      --pink: #ff4d8d; --purple: #a855f7;
+      --bg: #fff8f0; --card: #ffffff; --border: #ffe0c8;
+      --text: #2d1a0e; --text2: #8a6a56;
     }
-    .logo { font-size: 56px; margin-bottom: 16px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 24px; overflow: hidden;
+      position: relative;
+    }
+    /* Playful floating shapes */
+    .shape {
+      position: fixed; border-radius: 50%; opacity: 0.12; pointer-events: none;
+      animation: float 6s ease-in-out infinite;
+    }
+    .shape1 { width: 200px; height: 200px; background: var(--yellow); top: -60px; left: -60px; animation-delay: 0s; }
+    .shape2 { width: 150px; height: 150px; background: var(--green); top: 10%; right: -40px; animation-delay: 1s; }
+    .shape3 { width: 120px; height: 120px; background: var(--pink); bottom: 5%; left: 5%; animation-delay: 2s; }
+    .shape4 { width: 180px; height: 180px; background: var(--purple); bottom: -50px; right: -50px; animation-delay: 0.5s; }
+    .shape5 { width: 80px; height: 80px; background: var(--orange); top: 40%; left: 3%; animation-delay: 1.5s; }
+    @keyframes float {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+    /* Dot pattern */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -1;
+      background-image: radial-gradient(circle, rgba(255,107,53,0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .hero-emoji {
+      font-size: 72px; margin-bottom: 16px;
+      animation: bounce 2s ease-in-out infinite;
+      filter: drop-shadow(0 8px 16px rgba(255,107,53,0.3));
+    }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
     h1 {
-      font-size: 36px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      margin-bottom: 8px;
-      background: linear-gradient(135deg, #e94560, #f5a623);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: clamp(32px, 8vw, 52px); font-weight: 900; letter-spacing: -2px;
+      margin-bottom: 8px; line-height: 1;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--pink) 50%, var(--purple) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .tagline {
-      font-size: 15px;
-      color: #a0a0b0;
-      margin-bottom: 48px;
-      line-height: 1.6;
+      font-size: 15px; color: var(--text2); margin-bottom: 40px;
+      line-height: 1.6; font-weight: 500;
+    }
+    .badge-row {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap;
+    }
+    .badge {
+      background: white; border: 2px solid var(--border); border-radius: 50px;
+      padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--text2);
+      display: flex; align-items: center; gap: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .btn-mulai {
-      background: linear-gradient(135deg, #e94560, #f5a623);
-      color: white;
-      border: none;
-      padding: 20px 64px;
-      font-size: 20px;
-      font-weight: 700;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 8px 32px rgba(233,69,96,0.3);
+      background: linear-gradient(135deg, var(--orange), var(--pink));
+      color: white; border: none; padding: 18px 72px;
+      font-size: 20px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 8px 28px rgba(255,107,53,0.45);
+      letter-spacing: -0.3px; position: relative; overflow: hidden;
     }
-    .btn-mulai:hover { transform: scale(1.05); box-shadow: 0 12px 40px rgba(233,69,96,0.4); }
+    .btn-mulai::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+    }
+    .btn-mulai:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 14px 36px rgba(255,107,53,0.55); }
+    .btn-mulai:active { transform: scale(0.98); }
     .footer {
-      position: fixed;
-      bottom: 24px;
-      font-size: 12px;
-      color: #444;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      position: fixed; bottom: 20px;
+      font-size: 11px; color: #cbb8ac;
+      font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
     }
   </style>
 </head>
 <body>
-  <div class="logo">📸</div>
+  <div class="shape shape1"></div>
+  <div class="shape shape2"></div>
+  <div class="shape shape3"></div>
+  <div class="shape shape4"></div>
+  <div class="shape shape5"></div>
+
+  <div class="hero-emoji">📸</div>
   <h1>LUX PHOTOBOOTH</h1>
-  <p class="tagline">Pilih template, ambil foto,<br>download & share hasilnya</p>
-  <button class="btn-mulai" onclick="mulai()">Mulai</button>
+  <p class="tagline">Pilih template, ambil foto,<br>download & share hasilnya ✨</p>
+
+  <div class="badge-row">
+    <div class="badge">🎨 Filter Keren</div>
+    <div class="badge">⚡ GIF Animasi</div>
+    <div class="badge">📱 Live Strip</div>
+  </div>
+
+  <button class="btn-mulai" onclick="mulai()">✨ Mulai Sekarang</button>
   <div class="footer">LUX PHOTOBOOTH</div>
 
   <script>
-    function mulai() {
-      window.location.href = 'template.html';
+    function mulai() { window.location.href = 'template.html'; }
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   </script>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  }
-</script>
 </body>
 </html>

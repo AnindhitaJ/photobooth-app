@@ -218,10 +218,10 @@
   const slotCount = photos.length;
 
   // State per foto: tone added
-  let filterStates = photos.map(() => ({
+  let filterStates = Array.from({ length: Math.max(photos.length, 1) }, () => ({
     tone: 'normal', brightness: 0, smooth: 0, lip: 'off', blush: 'off'
   }));
-  let filteredPhotos = [...photos];
+  let filteredPhotos = photos.length ? [...photos] : [];
   let currentIdx = 0;
 
   const canvas = document.getElementById('previewCanvas');
@@ -248,15 +248,36 @@
     document.getElementById('currentPhotoNum').textContent = idx + 1;
     loadFilterState(filterStates[idx]);
     landmarks = null;
+
+    let src = photos[idx];
+    if (!src) { statusBar.textContent = 'Foto tidak ditemukan.'; return; }
+
+    // Handle fallback sessionStorage
+    if (src.startsWith('__session__')) {
+      const key = 'photo_' + src.replace('__session__','');
+      src = sessionStorage.getItem(key) || '';
+      if (!src) { statusBar.textContent = 'Foto tidak tersedia.'; return; }
+    }
+
+    statusBar.textContent = 'Memuat foto...';
     currentImg = new Image();
+    currentImg.crossOrigin = 'anonymous';
+
+    currentImg.onerror = () => {
+      statusBar.textContent = 'Gagal load foto.';
+      console.error('Image load failed for:', src.substring(0, 80));
+    };
+
     currentImg.onload = async () => {
-      canvas.width = currentImg.width;
-      canvas.height = currentImg.height;
+      const W = currentImg.naturalWidth || currentImg.width;
+      const H = currentImg.naturalHeight || currentImg.height;
+      if (!W || !H) { statusBar.textContent = 'Foto tidak valid.'; return; }
+      canvas.width = W; canvas.height = H;
       await loadMediaPipe();
       applyFilter();
     };
-    currentImg.src = photos[idx];
-    statusBar.textContent = 'Memuat...';
+
+    currentImg.src = src;
   }
 
   async function loadMediaPipe() {
@@ -317,6 +338,29 @@
     });
   }
 
+  // ─── Skin smooth: approximasi bilateral filter (bukan blur biasa) ───
+  function applySkinSmooth(level, W, H) {
+    if (level === 0) return;
+    // Pakai teknik: blur ringan + blend dengan original
+    // Hasilnya halus tapi tidak burem
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const octx = off.getContext('2d');
+
+    // Blur level kecil (max 1.5px) — jauh lebih sedikit dari sebelumnya
+    const blurAmount = level * 0.5; // 0.5, 1.0, 1.5 px
+    octx.filter = `blur(${blurAmount}px)`;
+    octx.drawImage(canvas, 0, 0);
+    octx.filter = 'none';
+
+    // Blend: makin tinggi level, makin banyak blurred version
+    // Tapi max opacity 0.6 biar foto tetap tajam
+    const blendOpacity = level === 1 ? 0.35 : level === 2 ? 0.50 : 0.62;
+    ctx.globalAlpha = blendOpacity;
+    ctx.drawImage(off, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+
   // ─── Apply tone filters ───
   function applyTone(tone, W, H) {
     if (tone === 'normal') return;
@@ -332,7 +376,6 @@
         d[i+1] = Math.min(255, r*0.349 + g*0.686 + b*0.168);
         d[i+2] = Math.min(255, r*0.272 + g*0.534 + b*0.131);
       } else if (tone === 'vintage') {
-        // Desaturate slightly + warm tones + slight vignette hint
         const gray = 0.299*r + 0.587*g + 0.114*b;
         d[i]   = Math.min(255, gray*0.4 + r*0.6 + 20);
         d[i+1] = Math.min(255, gray*0.4 + g*0.6 + 5);
@@ -343,94 +386,18 @@
   }
 
   function applyFilter() {
+    if (!filterStates[currentIdx]) return;
     const s = filterStates[currentIdx];
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Smooth (blur)
-    if (s.smooth > 0) ctx.filter = `blur(${s.smooth}px)`;
+    // 1. Gambar foto dasar (tanpa blur)
     ctx.drawImage(currentImg, 0, 0);
-    ctx.filter = 'none';
 
-    // Tone
-    applyTone(s.tone, W, H);
+    // 2. Skin smooth (blend-based, bukan blur mentah)
+    if (s.smooth > 0) applySkinSmooth(s.smooth, W, H);
 
-    // Brightness (face region)
-    if (s.brightness > 0) {
-      if (landmarks) {
-        const xs = landmarks.map(p => p.x * W);
-        const ys = landmarks.map(p => p.y * H);
-        const minX = Math.min(...xs), maxX = Math.max(...xs);
-        const minY = Math.min(...ys), maxY = Math.max(...ys);
-        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-        const rx = (maxX - minX) / 2 * 1.15;
-        const ry = (maxY - minY) / 2 * 1.15;
-        const maxR = Math.max(rx, ry);
-
-        const off = document.createElement('canvas');
-        off.width = W; off.height = H;
-        const octx = off.getContext('2d');
-        octx.filter = `brightness(${100 + s.brightness}%)`;
-        octx.drawImage(currentImg, 0, 0);
-        octx.filter = 'none';
-        // Re-apply tone to brightened layer
-        if (s.tone !== 'normal') {
-          const id2 = octx.getImageData(0,0,W,H);
-          const d2 = id2.data;
-          for (let i = 0; i < d2.length; i+=4) {
-            const r=d2[i],g=d2[i+1],b=d2[i+2];
-            if (s.tone==='bw'){const gray=0.299*r+0.587*g+0.114*b;d2[i]=d2[i+1]=d2[i+2]=gray;}
-            else if(s.tone==='sepia'){d2[i]=Math.min(255,r*0.393+g*0.769+b*0.189);d2[i+1]=Math.min(255,r*0.349+g*0.686+b*0.168);d2[i+2]=Math.min(255,r*0.272+g*0.534+b*0.131);}
-            else if(s.tone==='vintage'){const gray=0.299*r+0.587*g+0.114*b;d2[i]=Math.min(255,gray*0.4+r*0.6+20);d2[i+1]=Math.min(255,gray*0.4+g*0.6+5);d2[i+2]=Math.min(255,gray*0.4+b*0.6-10);}
-          }
-          octx.putImageData(id2,0,0);
-        }
-
-        const mask = document.createElement('canvas');
-        mask.width = W; mask.height = H;
-        const mctx = mask.getContext('2d');
-        const grad = mctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
-        grad.addColorStop(0, 'rgba(0,0,0,1)');
-        grad.addColorStop(0.55, 'rgba(0,0,0,1)');
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        mctx.save();
-        mctx.translate(cx, cy);
-        mctx.scale(rx/maxR, ry/maxR);
-        mctx.fillStyle = grad;
-        mctx.beginPath();
-        mctx.arc(0,0,maxR,0,Math.PI*2);
-        mctx.fill();
-        mctx.restore();
-        octx.globalCompositeOperation = 'destination-in';
-        octx.drawImage(mask, 0, 0);
-        ctx.drawImage(off, 0, 0);
-      } else {
-        ctx.save();
-        ctx.globalCompositeOperation = 'screen';
-        ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.003})`;
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
-      }
-    }
-
-    // Blush
-    if (s.blush !== 'off') {
-      const [r,g,b] = s.blush.split(',').map(Number);
-      const pts = landmarks
-        ? [[landmarks[234].x*W, landmarks[234].y*H],[landmarks[454].x*W, landmarks[454].y*H]]
-        : [[W*0.25,H*0.45],[W*0.75,H*0.45]];
-      const blushR = W*0.07;
-      pts.forEach(([bx,by]) => {
-        const grad = ctx.createRadialGradient(bx,by,0,bx,by,blushR);
-        grad.addColorStop(0,`rgba(${r},${g},${b},0.30)`);
-        grad.addColorStop(0.5,`rgba(${r},${g},${b},0.12)`);
-        grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-        ctx.beginPath(); ctx.arc(bx,by,blushR,0,Math.PI*2);
-        ctx.fillStyle = grad; ctx.fill();
-      });
-    }
-
-    // Lip
+    // 3. Lip color — SEBELUM tone, biar warnanya ikut dipengaruhi tone
     if (s.lip !== 'off') {
       const [r,g,b] = s.lip.split(',').map(Number);
       const lipOff = document.createElement('canvas');
@@ -457,54 +424,66 @@
       const lblur = lipBlur.getContext('2d');
       lblur.filter = 'blur(3px)';
       lblur.drawImage(lipOff, 0, 0);
-      ctx.globalAlpha = 0.30;
+      lblur.filter = 'none';
+      ctx.globalAlpha = 0.28;
       ctx.drawImage(lipBlur, 0, 0);
       ctx.globalAlpha = 1;
     }
-  }
 
-  function simpanFotoSilent() {
-    filteredPhotos[currentIdx] = canvas.toDataURL('image/jpeg', 0.92);
-  }
+    // 4. Blush — SEBELUM tone, posisi landmark pipi yang lebih akurat
+    if (s.blush !== 'off') {
+      const [r,g,b] = s.blush.split(',').map(Number);
 
-  function simpanFoto() {
-    simpanFotoSilent();
-    statusBar.textContent = `Foto ${currentIdx + 1} tersimpan ✓`;
-    setTimeout(() => { statusBar.textContent = ''; }, 1500);
-  }
+      let pts;
+      if (landmarks) {
+        // Landmark pipi yang lebih akurat:
+        // 118 = pipi kiri bawah mata, 347 = pipi kanan bawah mata
+        // Lebih ke tengah wajah, bukan ke arah telinga
+        const lm = landmarks;
+        const leftCheek  = lm[118] || lm[116] || lm[234];
+        const rightCheek = lm[347] || lm[345] || lm[454];
+        pts = [
+          [leftCheek.x*W,  leftCheek.y*H],
+          [rightCheek.x*W, rightCheek.y*H],
+        ];
+      } else {
+        pts = [[W*0.28, H*0.50], [W*0.72, H*0.50]];
+      }
 
-  window.setPill = function(type, btn) {
-    const val = type === 'tone' ? btn.dataset.val : parseFloat(btn.dataset.val);
-    filterStates[currentIdx][type] = val;
-    btn.closest('.pill-row').querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    applyFilter();
-  };
+      const blushR = W * 0.09; // sedikit lebih besar tapi gradient lebih soft
+      pts.forEach(([bx, by]) => {
+        const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
+        grad.addColorStop(0,    `rgba(${r},${g},${b},0.28)`);
+        grad.addColorStop(0.4,  `rgba(${r},${g},${b},0.14)`);
+        grad.addColorStop(0.75, `rgba(${r},${g},${b},0.05)`);
+        grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(bx, by, blushR, 0, Math.PI*2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      });
+    }
 
-  window.setSwatch = function(type, el) {
-    filterStates[currentIdx][type] = el.dataset.val;
-    const grpId = 'grp' + type.charAt(0).toUpperCase() + type.slice(1);
-    document.getElementById(grpId).querySelectorAll('.swatch,.swatch-off').forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
-    applyFilter();
-  };
+    // 5. Tone warna — SETELAH lip & blush
+    applyTone(s.tone, W, H);
 
-  window.resetFilter = function() {
-    filterStates[currentIdx] = { tone: 'normal', brightness: 0, smooth: 0, lip: 'off', blush: 'off' };
-    loadFilterState(filterStates[currentIdx]);
-    applyFilter();
-  };
+    // 6. Brightness hanya di area wajah — SETELAH tone
+    if (s.brightness > 0) {
+      if (landmarks) {
+        const xs = landmarks.map(p => p.x * W);
+        const ys = landmarks.map(p => p.y * H);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+        const rx = (maxX - minX) / 2 * 1.15;
+        const ry = (maxY - minY) / 2 * 1.15;
+        const maxR = Math.max(rx, ry);
 
-  window.lanjut = function() {
-    simpanFotoSilent();
-    localStorage.setItem('filteredPhotos', JSON.stringify(filteredPhotos));
-    window.location.href = 'result.html';
-  };
+        // Ambil pixel canvas yang sudah ada tone-nya, brighten area wajah
+        const current = ctx.getImageData(0, 0, W, H);
+        const off = document.createElement('canvas');
+        off.width = W; off.height = H;
+        const octx = off.getContext('2d');
+        octx.putImageData(current, 0, 0);
 
-  window.kembali = function() { window.location.href = 'camera.html'; };
-
-  switchPhoto(0);
-</script>
-
-</body>
-</html>
+        // Apply brightness via CSS 

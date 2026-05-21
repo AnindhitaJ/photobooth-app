@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hasil - LUX Photobooth</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -837,6 +838,73 @@
     doc.close();
 
     showStatus('Membuka dialog print...');
+  }
+
+  // ─── Download ZIP (works on desktop & mobile) ───
+  async function downloadZip() {
+    if (!finalDataURL) return;
+    const btn = document.getElementById('btnZip');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan ZIP...';
+    setProgress('zip', 5);
+
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder('lux-photobooth');
+
+      // 1. Foto utama (composite)
+      setProgress('zip', 15);
+      const jpgBlob = dataURLtoBlob(finalDataURL);
+      folder.file('foto-utama.jpg', jpgBlob);
+
+      // 2. Foto satuan (per slot)
+      setProgress('zip', 25);
+      for (let i = 0; i < filteredPhotos.length; i++) {
+        if (filteredPhotos[i]) {
+          const fBlob = dataURLtoBlob(filteredPhotos[i]);
+          folder.file(`foto-${i+1}.jpg`, fBlob);
+        }
+        setProgress('zip', 25 + Math.round((i+1)/filteredPhotos.length * 20));
+      }
+
+      // 3. GIF (buat dulu kalau belum ada)
+      setProgress('zip', 50);
+      btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
+      if (!gifBlob && filteredPhotos.length >= 2) {
+        try {
+          gifBlob = await makeGif();
+        } catch(e) { /* skip gif jika gagal */ }
+      }
+      if (gifBlob) folder.file('animated.gif', gifBlob);
+
+      // 4. Generate ZIP
+      setProgress('zip', 80);
+      btn.querySelector('.btn-label').textContent = 'Membangun ZIP...';
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+        (meta) => setProgress('zip', 80 + Math.round(meta.percent * 0.18))
+      );
+
+      setProgress('zip', null);
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
+
+      // Trigger download
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lux-photobooth-${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+      showStatus('ZIP berhasil didownload ✓');
+
+    } catch(e) {
+      console.error('ZIP error:', e);
+      setProgress('zip', null);
+      btn.disabled = false;
+      btn.querySelector('.btn-label').textContent = 'Download Semua (ZIP)';
+      showStatus('Gagal buat ZIP: ' + e.message, '#e94560');
+    }
   }
 
   function fotoLagi() {

@@ -347,15 +347,59 @@
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Smooth (blur)
-    if (s.smooth > 0) ctx.filter = `blur(${s.smooth}px)`;
+    // ── 1. Base image ──
     ctx.drawImage(currentImg, 0, 0);
-    ctx.filter = 'none';
 
-    // Tone
+    // ── 2. Smooth: blend blurred copy di atas original dengan opacity rendah.
+    //    Hasilnya: menghaluskan detail kecil (pori, tekstur) tanpa burem total.
+    //    Blur radius kecil + alpha rendah → makin smooth makin lembut, bukan makin burem.
+    if (s.smooth > 0) {
+      const blurPx    = [0, 1.2, 2.2, 3.5][s.smooth];  // radius kecil saja
+      const blendAlpha = [0, 0.40, 0.55, 0.68][s.smooth]; // porsi blending
+      const softOff = document.createElement('canvas');
+      softOff.width = W; softOff.height = H;
+      const soc = softOff.getContext('2d');
+      soc.filter = `blur(${blurPx}px)`;
+      soc.drawImage(currentImg, 0, 0);
+      soc.filter = 'none';
+      ctx.globalAlpha = blendAlpha;
+      ctx.drawImage(softOff, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+
+    // ── 3. Blush — SEBELUM tone, supaya ikut ter-grayscale/sepia saat B&W/Sepia.
+    //    Posisi: landmarks[50] & [280] = area pipi bawah mata (lebih ke tengah pipi,
+    //    tidak mentok ke tepi/rambut). Fallback: 30%/70% horizontal, 42% vertikal.
+    if (s.blush !== 'off') {
+      const blushParts = s.blush.split(',');
+      const [br, bg, bb] = blushParts.map(Number);
+      // Landmark 50 = pipi kiri bawah mata, 280 = pipi kanan bawah mata
+      // Shift sedikit ke bawah & tengah agar tidak mentok tepi
+      let pts;
+      if (landmarks) {
+        const lm = landmarks;
+        // Gunakan rata-rata beberapa landmark pipi tengah untuk posisi lebih natural
+        const leftCheek  = [(lm[50].x*0.5 + lm[101].x*0.5)*W,  (lm[50].y*0.5 + lm[101].y*0.5)*H];
+        const rightCheek = [(lm[280].x*0.5 + lm[330].x*0.5)*W, (lm[280].y*0.5 + lm[330].y*0.5)*H];
+        pts = [leftCheek, rightCheek];
+      } else {
+        pts = [[W*0.28, H*0.42], [W*0.72, H*0.42]];
+      }
+      const blushR = W * 0.09; // sedikit lebih besar tapi gradien lebih panjang → natural
+      pts.forEach(([bx, by]) => {
+        const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
+        grad.addColorStop(0,   `rgba(${br},${bg},${bb},0.28)`);
+        grad.addColorStop(0.4, `rgba(${br},${bg},${bb},0.12)`);
+        grad.addColorStop(1,   `rgba(${br},${bg},${bb},0)`);
+        ctx.beginPath(); ctx.arc(bx, by, blushR, 0, Math.PI*2);
+        ctx.fillStyle = grad; ctx.fill();
+      });
+    }
+
+    // ── 4. Tone (B&W / Sepia / Vintage) — setelah blush, jadi blush ikut converted ──
     applyTone(s.tone, W, H);
 
-    // Brightness (face region)
+    // ── 5. Brightness (face region) ──
     if (s.brightness > 0) {
       if (landmarks) {
         const xs = landmarks.map(p => p.x * W);
@@ -373,7 +417,6 @@
         octx.filter = `brightness(${100 + s.brightness}%)`;
         octx.drawImage(currentImg, 0, 0);
         octx.filter = 'none';
-        // Re-apply tone to brightened layer
         if (s.tone !== 'normal') {
           const id2 = octx.getImageData(0,0,W,H);
           const d2 = id2.data;
@@ -385,7 +428,6 @@
           }
           octx.putImageData(id2,0,0);
         }
-
         const mask = document.createElement('canvas');
         mask.width = W; mask.height = H;
         const mctx = mask.getContext('2d');
@@ -413,26 +455,25 @@
       }
     }
 
-    // Blush
-    if (s.blush !== 'off') {
-      const [r,g,b] = s.blush.split(',').map(Number);
-      const pts = landmarks
-        ? [[landmarks[234].x*W, landmarks[234].y*H],[landmarks[454].x*W, landmarks[454].y*H]]
-        : [[W*0.25,H*0.45],[W*0.75,H*0.45]];
-      const blushR = W*0.07;
-      pts.forEach(([bx,by]) => {
-        const grad = ctx.createRadialGradient(bx,by,0,bx,by,blushR);
-        grad.addColorStop(0,`rgba(${r},${g},${b},0.30)`);
-        grad.addColorStop(0.5,`rgba(${r},${g},${b},0.12)`);
-        grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-        ctx.beginPath(); ctx.arc(bx,by,blushR,0,Math.PI*2);
-        ctx.fillStyle = grad; ctx.fill();
-      });
-    }
-
-    // Lip
+    // ── 6. Lip color — pakai multiply blend mode agar tetap terlihat di B&W/Sepia.
+    //    Di B&W, warna lip di-grayscale dulu → hasilnya gelap/terang natural, bukan warna aneh.
     if (s.lip !== 'off') {
-      const [r,g,b] = s.lip.split(',').map(Number);
+      const lipParts = s.lip.split(',');
+      let [lr, lg, lb] = lipParts.map(Number);
+      const lipAlpha = parseFloat(lipParts[3]) || 0.30;
+
+      // Jika tone B&W atau Sepia → konversi warna lip ke grayscale juga,
+      // supaya tidak ada warna ngejreng di foto hitam putih
+      if (s.tone === 'bw') {
+        const gray = Math.round(0.299*lr + 0.587*lg + 0.114*lb);
+        lr = lg = lb = gray;
+      } else if (s.tone === 'sepia') {
+        const nr = Math.min(255, lr*0.393 + lg*0.769 + lb*0.189);
+        const ng = Math.min(255, lr*0.349 + lg*0.686 + lb*0.168);
+        const nb = Math.min(255, lr*0.272 + lg*0.534 + lb*0.131);
+        lr = nr; lg = ng; lb = nb;
+      }
+
       const lipOff = document.createElement('canvas');
       lipOff.width = W; lipOff.height = H;
       const lctx = lipOff.getContext('2d');
@@ -444,12 +485,12 @@
           i===0 ? lctx.moveTo(pt.x*W,pt.y*H) : lctx.lineTo(pt.x*W,pt.y*H);
         });
         lctx.closePath();
-        lctx.fillStyle = `rgba(${r},${g},${b},1)`;
+        lctx.fillStyle = `rgba(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)},1)`;
         lctx.fill();
       } else {
         lctx.beginPath();
         lctx.ellipse(W*0.5,H*0.72,W*0.10,H*0.035,0,0,Math.PI*2);
-        lctx.fillStyle = `rgba(${r},${g},${b},1)`;
+        lctx.fillStyle = `rgba(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)},1)`;
         lctx.fill();
       }
       const lipBlur = document.createElement('canvas');
@@ -457,8 +498,10 @@
       const lblur = lipBlur.getContext('2d');
       lblur.filter = 'blur(3px)';
       lblur.drawImage(lipOff, 0, 0);
-      ctx.globalAlpha = 0.30;
+      ctx.globalAlpha = lipAlpha;
+      ctx.globalCompositeOperation = 'multiply';
       ctx.drawImage(lipBlur, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
     }
   }

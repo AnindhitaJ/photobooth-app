@@ -115,6 +115,63 @@
     .btn-success { background: #27ae60; color: white; }
     .btn-success:hover { background: #219a52; }
     #statusMsg { font-size: 13px; color: #a0a0b0; margin-top: 10px; min-height: 20px; }
+
+    /* Frame guide overlay */
+    .frame-guide {
+      position: absolute; inset: 0; pointer-events: none;
+      border: 2px solid rgba(255,255,255,0.0);
+    }
+    .frame-guide-inner {
+      position: absolute; border: 1.5px solid rgba(255,255,255,0.5);
+      border-radius: 4px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    /* corner brackets */
+    .frame-guide-inner::before,
+    .frame-guide-inner::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: #e94560; border-style: solid;
+    }
+    .frame-guide-inner::before {
+      top: -2px; left: -2px;
+      border-width: 3px 0 0 3px;
+      border-radius: 4px 0 0 0;
+    }
+    .frame-guide-inner::after {
+      bottom: -2px; right: -2px;
+      border-width: 0 3px 3px 0;
+      border-radius: 0 0 4px 0;
+    }
+
+    /* Pan controls */
+    .pan-controls {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; margin: 6px 0; flex-wrap: wrap;
+    }
+    .pan-hint {
+      font-size: 11px; color: #555; width: 100%; text-align: center; margin-top: 2px;
+    }
+    .pan-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 2px solid #0f3460; background: #16213e;
+      color: #a0a0b0; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; user-select: none;
+    }
+    .pan-btn:hover { border-color: #e94560; color: white; }
+    .pan-btn:active { background: #e94560; border-color: #e94560; color: white; }
+    .zoom-label {
+      font-size: 11px; color: #555; min-width: 36px; text-align: center;
+    }
+    .btn-reset-pan {
+      padding: 4px 12px; border-radius: 50px;
+      border: 1px solid #0f3460; background: transparent;
+      color: #555; font-size: 11px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-reset-pan:hover { color: white; border-color: #a0a0b0; }
   </style>
 </head>
 <body>
@@ -127,12 +184,27 @@
 
   <div class="camera-wrapper">
     <video id="video" autoplay playsinline></video>
+    <div class="frame-guide"><div class="frame-guide-inner" id="frameGuide"></div></div>
     <div class="countdown-overlay" id="countdown"></div>
     <div class="flash-overlay" id="flash"></div>
     <div class="rec-indicator" id="recIndicator">
       <div class="rec-dot"></div> REC
     </div>
   </div>
+
+  <!-- Pan & Zoom controls -->
+  <div class="pan-controls" id="panControls">
+    <button class="pan-btn" id="btnZoomOut" title="Zoom out">−</button>
+    <span class="zoom-label" id="zoomLabel">1.0×</span>
+    <button class="pan-btn" id="btnZoomIn" title="Zoom in">+</button>
+    <span style="width:8px"></span>
+    <button class="pan-btn" id="btnPanUp" title="Geser atas">↑</button>
+    <button class="pan-btn" id="btnPanLeft" title="Geser kiri">←</button>
+    <button class="pan-btn" id="btnPanDown" title="Geser bawah">↓</button>
+    <button class="pan-btn" id="btnPanRight" title="Geser kanan">→</button>
+    <button class="btn-reset-pan" id="btnResetPan">Reset</button>
+  </div>
+  <p class="pan-hint">Atur posisi wajah agar tidak terpotong frame</p>
 
   <div class="photos-strip" id="photosStrip"></div>
 
@@ -330,10 +402,25 @@
     const W = 720, H = 540;
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
+
+    // Gambar sesuai pan & zoom yang dipilih user (mirror + offset)
+    const vW = video.videoWidth  || W;
+    const vH = video.videoHeight || H;
+
+    // Cover scale dasar
+    const baseScale = Math.max(W / vW, H / vH);
+    // Total scale dengan zoom
+    const totalScale = baseScale * zoom;
+    const drawW = vW * totalScale;
+    const drawH = vH * totalScale;
+    // Center + pan offset (panX/panY dalam -1..1 koordinat video, dikonversi ke pixel output)
+    const drawX = (W - drawW) / 2 - panX * drawW;
+    const drawY = (H - drawH) / 2 + panY * drawH;
+
     ctx.save();
-    ctx.translate(W, 0);
+    ctx.translate(W, 0);  // mirror
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, video.videoWidth || W, video.videoHeight || H, 0, 0, W, H);
+    ctx.drawImage(video, 0, 0, vW, vH, drawX, drawY, drawW, drawH);
     ctx.restore();
 
     photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.85);
@@ -391,6 +478,81 @@
   renderStrip();
   updateTitle();
   startCamera();
+
+  // ── Pan & Zoom ──
+  // Offset dalam koordinat video (0–1): berapa persen dari center yang digeser
+  let panX = 0, panY = 0, zoom = 1.0;
+  const PAN_STEP  = 0.05;  // geser 5% per klik
+  const ZOOM_STEP = 0.1;
+  const ZOOM_MAX  = 2.5;
+  const ZOOM_MIN  = 1.0;
+
+  function updateVideoTransform() {
+    // Video ditampilkan mirror (scaleX(-1)), jadi panX di-flip juga
+    const tx = -panX * 100; // persen
+    const ty = panY * 100;
+    document.getElementById('video').style.transform =
+      `scaleX(-1) scale(${zoom}) translate(${tx}%, ${ty}%)`;
+    document.getElementById('zoomLabel').textContent = zoom.toFixed(1) + '×';
+  }
+
+  function updateFrameGuide() {
+    // Hitung slot yang sedang aktif dari templateSlots untuk tahu aspek ratio slot
+    const guide = document.getElementById('frameGuide');
+    const wrapper = document.querySelector('.camera-wrapper');
+    const wW = wrapper.offsetWidth, wH = wrapper.offsetHeight;
+
+    // Ambil dimensi slot dari localStorage (dari admin template)
+    const slots = JSON.parse(localStorage.getItem('templateSlots') || '[]');
+    const tmplW = parseInt(localStorage.getItem('templateW') || '591');
+    const tmplH = parseInt(localStorage.getItem('templateH') || '1772');
+
+    if (slots.length === 0) { guide.style.display = 'none'; return; }
+
+    // Ambil slot yang sedang aktif (currentSlot)
+    const slot = slots[currentSlot] || slots[0];
+    const slotAspect = slot.w / slot.h;
+    const wrapAspect = wW / wH;
+
+    // Hitung ukuran guide dalam pixel wrapper
+    let gW, gH;
+    if (slotAspect > wrapAspect) {
+      gW = wW * 0.88; gH = gW / slotAspect;
+    } else {
+      gH = wH * 0.88; gW = gH * slotAspect;
+    }
+
+    guide.style.left   = ((wW - gW) / 2) + 'px';
+    guide.style.top    = ((wH - gH) / 2) + 'px';
+    guide.style.width  = gW + 'px';
+    guide.style.height = gH + 'px';
+    guide.style.display = 'block';
+  }
+
+  document.getElementById('btnZoomIn').onclick  = () => { zoom = Math.min(ZOOM_MAX, +(zoom+ZOOM_STEP).toFixed(1)); updateVideoTransform(); };
+  document.getElementById('btnZoomOut').onclick = () => { zoom = Math.max(ZOOM_MIN, +(zoom-ZOOM_STEP).toFixed(1)); if(zoom===1){panX=0;panY=0;} updateVideoTransform(); };
+  document.getElementById('btnPanUp').onclick    = () => { panY = Math.max(-0.4, panY - PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnPanDown').onclick  = () => { panY = Math.min(0.4, panY + PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnPanLeft').onclick  = () => { panX = Math.min(0.4, panX + PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnPanRight').onclick = () => { panX = Math.max(-0.4, panX - PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnResetPan').onclick = () => { panX = 0; panY = 0; zoom = 1.0; updateVideoTransform(); };
+
+  // Disable pan jika zoom = 1
+  function syncPanBtns() {
+    const disabled = zoom <= ZOOM_MIN;
+    ['btnPanUp','btnPanDown','btnPanLeft','btnPanRight'].forEach(id => {
+      document.getElementById(id).style.opacity = disabled ? '0.3' : '1';
+      document.getElementById(id).style.pointerEvents = disabled ? 'none' : 'auto';
+    });
+  }
+  // Override updateVideoTransform to also sync buttons
+  const _uvt = updateVideoTransform;
+  updateVideoTransform = function() { _uvt(); syncPanBtns(); };
+  syncPanBtns();
+
+  // Show frame guide after camera starts
+  setTimeout(updateFrameGuide, 800);
+  window.addEventListener('resize', updateFrameGuide);
 </script>
 </body>
 </html>

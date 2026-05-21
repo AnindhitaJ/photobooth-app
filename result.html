@@ -335,8 +335,9 @@
       finalPublicURL = await uploadToSupabase(blob, 'foto.jpg');
       const qrBox = document.getElementById('qrcode');
       qrBox.innerHTML = '';
+      const downloadPageURL = window.location.origin + '/download.html?photo=' + encodeURIComponent(finalPublicURL);
       new QRCode(qrBox, {
-        text: finalPublicURL, width: 140, height: 140,
+        text: downloadPageURL, width: 140, height: 140,
         colorDark: '#ffffff', colorLight: '#16213e',
       });
       qrStatus.style.color = '#a0a0b0';
@@ -539,8 +540,8 @@
 
   // Pure JS GIF encoder — tidak butuh library eksternal
   async function makeGif() {
-    const GIF_W = 320;
-    const GIF_H = Math.round(GIF_W * tmplH / tmplW);
+    const GIF_W = 400;
+    const GIF_H = 300;
     const DELAY = 80; // 80 * 10ms = 800ms per frame
 
     // Load semua foto sebagai image

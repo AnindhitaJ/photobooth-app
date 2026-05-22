@@ -143,7 +143,14 @@
     }
     .btn-retake:hover { background: #e94560; transform: scale(1.15); }
     #panControls {
-      display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center;
+      position: fixed;
+      bottom: max(90px, calc(env(safe-area-inset-bottom,16px) + 80px));
+      right: 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      z-index: 25;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(8px);
+      border-radius: 16px; padding: 8px 6px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     .pan-btn {
       width: 32px; height: 32px; border-radius: 50%;
@@ -209,7 +216,7 @@
       }
       .photo-thumb, .photo-thumb-empty { width: 60px; height: 60px; }
       .btn-retake { width: 20px; height: 20px; font-size: 11px; }
-      #panControls { flex-direction: column; gap: 4px; }
+      #panControls { bottom: max(70px, calc(env(safe-area-inset-bottom,8px) + 60px)); right: 12px; }
       #actionRow { flex-direction: column; }
       .btn-primary { padding: 11px 22px; font-size: 14px; }
       #slotIndicator {
@@ -436,11 +443,12 @@
     const wrapAspect = vW / vH;
     let gW, gH;
     if (slotAspect > wrapAspect) {
-      gW = vW * 0.92; gH = gW / slotAspect;
+      gW = vW * 0.88; gH = gW / slotAspect;
     } else {
-      gH = vH * 0.92; gW = gH * slotAspect;
+      gH = vH * 0.88; gW = gH * slotAspect;
     }
-    guide.style.left   = ((vW - gW) / 2) + 'px';
+    const stripOffset = 50; // offset kanan karena thumbnail strip di kiri
+    guide.style.left   = ((vW - gW) / 2 + stripOffset / 2) + 'px';
     guide.style.top    = ((vH - gH) / 2) + 'px';
     guide.style.width  = gW + 'px';
     guide.style.height = gH + 'px';

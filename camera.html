@@ -217,7 +217,8 @@
     background: #16213e; color: white;
     cursor: pointer; text-align: left; transition: all 0.2s;
   }
-  .mode-btn:hover { border-color: #e94560; background: #0f3460; transform: scale(1.02); }
+  .mode-btn:hover:not(:disabled) { border-color: #e94560; background: #0f3460; transform: scale(1.02); }
+  .mode-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .mode-btn .mode-icon { font-size: 32px; flex-shrink: 0; }
   .mode-btn .mode-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
   .mode-btn .mode-text p { font-size: 12px; color: #a0a0b0; margin: 0; }
@@ -239,7 +240,7 @@
       <h2>📸 Pilih Mode Foto</h2>
       <p>Bagaimana kamu mau ambil foto?</p>
 
-      <button class="mode-btn" onclick="setMode('auto')">
+      <button class="mode-btn" onclick="setMode('auto')" disabled>
         <div class="mode-icon">⚡</div>
         <div class="mode-text">
           <h3>Otomatis</h3>
@@ -247,7 +248,7 @@
         </div>
       </button>
 
-      <button class="mode-btn" onclick="setMode('manual')">
+      <button class="mode-btn" onclick="setMode('manual')" disabled>
         <div class="mode-icon">🖐️</div>
         <div class="mode-text">
           <h3>Manual</h3>
@@ -256,12 +257,15 @@
       </button>
 
       <div style="margin-top:8px">
-        <p style="font-size:12px;color:#a0a0b0;margin-bottom:8px">⏱ Timer countdown:</p>
+        <p style="font-size:12px;color:#a0a0b0;margin-bottom:8px">⏱ Pilih timer dulu:</p>
         <div class="mode-timer-row">
-          <button class="mode-timer-opt selected" id="timer3" onclick="setTimer(3)">3 detik</button>
+          <button class="mode-timer-opt" id="timer3" onclick="setTimer(3)">3 detik</button>
           <button class="mode-timer-opt" id="timer5" onclick="setTimer(5)">5 detik</button>
           <button class="mode-timer-opt" id="timer10" onclick="setTimer(10)">10 detik</button>
         </div>
+        <p id="modeHint" style="font-size:11px;color:#e94560;margin-top:8px;text-align:center">
+          ← Pilih timer dulu, baru pilih mode
+        </p>
       </div>
     </div>
   </div>
@@ -316,7 +320,7 @@
   const flashEl      = document.getElementById('flash');
   const btnAmbil     = document.getElementById('btnAmbil');
   let captureMode = null; // 'auto' or 'manual'
-  let countdownSeconds = 3; // default 3 detik
+  let countdownSeconds = null; // harus dipilih dulu
   const btnLanjut    = document.getElementById('btnLanjut');
   const statusMsg    = document.getElementById('statusMsg');
   const recIndicator = document.getElementById('recIndicator');
@@ -491,6 +495,9 @@
       const el = document.getElementById('timer' + s);
       if (el) el.classList.toggle('selected', s === sec);
     });
+    // Enable mode buttons setelah timer dipilih
+    document.querySelectorAll('.mode-btn').forEach(b => b.disabled = false);
+    document.getElementById('modeHint').style.display = 'none';
   }
 
   function setMode(mode) {
@@ -513,7 +520,7 @@
     currentSlot = photos.findIndex(p => p === null);
     if (currentSlot === -1) return;
 
-    let angka = countdownSeconds;
+    let angka = countdownSeconds || 3;
     let liveStarted = false;
     countdownEl.textContent = angka;
     countdownEl.classList.add('show');

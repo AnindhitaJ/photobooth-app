@@ -21,98 +21,206 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; padding: 24px;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; padding: 24px;
     }
     body::before {
       content: ''; position: fixed; inset: 0; z-index: -1;
       background-image: radial-gradient(circle, rgba(255,107,53,0.07) 1px, transparent 1px);
       background-size: 28px 28px; background-color: var(--bg);
     }
-    .logo-text {
-      font-size: 18px; font-weight: 900;
-      background: linear-gradient(135deg, var(--orange), var(--pink));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+
+    /* HEADER */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+      max-width: 1100px; margin-left: auto; margin-right: auto;
     }
-    h2 { font-size: 22px; font-weight: 900; margin-bottom: 4px; text-align:center; }
-    h3 { font-size: 18px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
-    p { font-size: 14px; color: var(--text2); font-weight: 500; }
-    p.sub { margin-bottom: 20px; text-align:center; }
-    input, select, textarea {
-      width: 100%; padding: 12px 16px; border-radius: 12px; font-size: 15px;
-      border: 2px solid var(--border); outline: none; color: var(--text);
-      background: white; font-family: inherit; transition: border-color 0.2s;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--orange); }
-    label { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 4px; display: block; }
-    .card {
-      background: white; border-radius: 18px; border: 2px solid var(--border);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06); padding: 20px;
-      width: 100%; max-width: 600px; margin-bottom: 16px;
-    }
+    .header h1 { font-size: 22px; font-weight: 900; color: var(--text); }
+    .header p { font-size: 13px; color: var(--text2); margin-top: 2px; font-weight: 500; }
+
+    /* BUTTONS */
     .btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      border: none; cursor: pointer; font-weight: 700; font-size: 15px;
-      padding: 14px 24px; border-radius: 50px; transition: all 0.2s; width: 100%;
+      padding: 10px 20px; border-radius: 50px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; border: none; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 6px;
     }
-    .btn-primary { background: linear-gradient(135deg, var(--orange), var(--pink)); color: white; box-shadow: 0 6px 20px rgba(255,107,53,0.4); }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,107,53,0.5); }
-    .btn-primary:disabled { opacity: 0.45; transform: none; box-shadow: none; }
-    .btn-secondary { background: white; color: var(--text2); border: 2px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .btn-primary { background: linear-gradient(135deg, var(--orange), var(--pink)); color: white; box-shadow: 0 4px 16px rgba(255,107,53,0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.5); }
+    .btn-secondary { background: white; color: var(--text2); border: 2px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
     .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-green { background: linear-gradient(135deg, var(--green), #04b589); color: white; box-shadow: 0 6px 20px rgba(6,214,160,0.35); }
-    .btn-green:hover { transform: translateY(-2px); }
-    .btn-red { background: linear-gradient(135deg, #ff4d4d, #cc0000); color: white; box-shadow: 0 6px 20px rgba(255,77,77,0.35); }
-    .btn-red:hover { transform: translateY(-2px); }
-    .section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 10px; }
-    .top-bar { width: 100%; max-width: 860px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-    .badge {
-      display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px;
-      border-radius: 50px; font-size: 12px; font-weight: 700;
+    .btn-success { background: linear-gradient(135deg, var(--green), #04b589); color: white; box-shadow: 0 4px 16px rgba(6,214,160,0.35); }
+    .btn-success:hover { transform: translateY(-2px); }
+    .btn-danger { background: white; color: #e94560; border: 2px solid #ffc0cb; font-size: 12px; padding: 6px 14px; }
+    .btn-danger:hover { background: #fff0f3; border-color: #e94560; }
+    .btn-sm { padding: 7px 14px; font-size: 12px; }
+
+    /* LAYOUT */
+    .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
+    .editor-panel { flex: 1; min-width: 300px; }
+    .templates-panel { width: 320px; flex-shrink: 0; }
+
+    /* FORM */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 12px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%; padding: 12px 16px;
+      border-radius: 12px; border: 2px solid var(--border);
+      background: white; color: var(--text);
+      font-size: 14px; outline: none; transition: border 0.2s; font-family: inherit;
     }
-    .badge-orange { background: rgba(255,107,53,0.12); color: var(--orange); border: 1.5px solid rgba(255,107,53,0.3); }
-    .badge-green { background: rgba(6,214,160,0.12); color: #00a07a; border: 1.5px solid rgba(6,214,160,0.3); }
-    .badge-red { background: rgba(255,77,77,0.1); color: #cc0000; border: 1.5px solid rgba(255,77,77,0.25); }
-    .divider { height: 2px; background: var(--border); border-radius: 50px; margin: 12px 0; }
-    #statusMsg, .status-msg {
-      font-size: 13px; font-weight: 700; text-align: center; min-height: 20px;
-      color: var(--orange); padding: 4px 0;
-    }
-    .template-grid-admin {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 12px; margin-top: 12px;
-    }
-    .template-card-admin {
-      border-radius: 14px; overflow: hidden; border: 2px solid var(--border);
-      background: white; cursor: pointer; transition: all 0.2s;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .template-card-admin:hover { border-color: var(--orange); transform: translateY(-2px); }
-    .template-card-admin img { width: 100%; aspect-ratio: 1/3; object-fit: cover; display: block; }
-    .template-card-admin .name { padding: 6px; font-size: 12px; font-weight: 700; color: var(--text); text-align: center; }
-    .delete-btn {
-      background: #fff0f0; border: 2px solid #ffd0d0; color: #cc0000;
-      border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700;
+    .form-input:focus { border-color: var(--orange); }
+
+    .category-row { display: flex; gap: 8px; }
+    .category-row .form-input { flex: 1; }
+    .category-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .category-tag {
+      background: white; border: 2px solid var(--border); border-radius: 50px;
+      padding: 5px 14px; font-size: 12px; font-weight: 700; color: var(--text2);
       cursor: pointer; transition: all 0.15s;
     }
-    .delete-btn:hover { background: #ffdddd; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .category-tag:hover { border-color: var(--orange); color: var(--orange); }
+    .category-tag.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+
+    /* UPLOAD */
     .upload-area {
-      border: 2.5px dashed var(--border); border-radius: 16px; padding: 28px;
-      text-align: center; cursor: pointer; transition: all 0.2s; background: white;
+      border: 2.5px dashed var(--border); border-radius: 16px;
+      padding: 28px; text-align: center; cursor: pointer;
+      transition: all 0.2s; margin-bottom: 16px; background: white;
     }
     .upload-area:hover { border-color: var(--orange); background: #fff5ef; }
-    .upload-area.drag { border-color: var(--orange); background: #fff5ef; }
-    .upload-icon { font-size: 36px; margin-bottom: 8px; }
-    .upload-text { font-size: 14px; color: var(--text2); font-weight: 500; }
-    .upload-sub { font-size: 12px; color: #bba89a; margin-top: 4px; }
-    .preview-img { max-width: 200px; border-radius: 10px; border: 2px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); border-bottom: 2px solid var(--border); }
-    td { padding: 10px 12px; font-size: 14px; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    .spinner { width:30px; height:30px; border:3px solid var(--border); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    .upload-area.dragover { border-color: var(--orange); background: #fff5ef; }
+    .upload-area p { color: var(--text2); font-size: 13px; margin-top: 6px; }
+    .upload-icon { font-size: 36px; }
+    #fileInput { display: none; }
+
+    /* CANVAS EDITOR */
+    .canvas-wrapper {
+      position: relative; display: none;
+      background: #f0ebe4; border-radius: 16px;
+      overflow: hidden; border: 2.5px solid var(--border);
+      margin-bottom: 16px; user-select: none;
+      box-shadow: 0 4px 20px rgba(255,107,53,0.12);
+    }
+    #editorCanvas { display: block; }
+    .slot-overlay { position: absolute; inset: 0; pointer-events: none; }
+    .slot-box {
+      position: absolute; border: 2.5px solid var(--orange);
+      background: rgba(255,107,53,0.12);
+      pointer-events: all; cursor: move; border-radius: 6px;
+    }
+    .slot-label {
+      position: absolute; top: 4px; left: 6px;
+      font-size: 11px; font-weight: 800; color: var(--orange);
+      background: rgba(255,255,255,0.85); padding: 2px 8px; border-radius: 50px;
+    }
+    .slot-delete {
+      position: absolute; top: 4px; right: 4px;
+      background: var(--orange); color: white; border: none; border-radius: 50%;
+      width: 22px; height: 22px; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(255,107,53,0.5);
+    }
+    .resize-handle {
+      position: absolute; bottom: 0; right: 0;
+      width: 16px; height: 16px; background: var(--orange);
+      cursor: se-resize; border-radius: 2px 0 6px 0;
+    }
+
+    /* SLOT INFO */
+    .slot-info {
+      background: white; border: 2px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; font-size: 13px; color: var(--text2);
+      margin-bottom: 12px; display: none; font-weight: 500;
+    }
+    .slot-info span { color: var(--orange); font-weight: 800; }
+    .editor-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+    /* RIGHT PANEL */
+    .cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .cat-tab {
+      padding: 6px 14px; border-radius: 50px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      border: 2px solid var(--border); background: white; color: var(--text2);
+      transition: all 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .cat-tab.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+
+    /* TEMPLATE LIST */
+    #templateList { display: flex; flex-direction: column; gap: 10px; }
+    .template-item {
+      background: white; border-radius: 14px; padding: 12px;
+      display: flex; gap: 12px; align-items: center;
+      border: 2px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+    .template-item:hover { border-color: var(--orange); box-shadow: 0 4px 16px rgba(255,107,53,0.12); }
+    .template-thumb {
+      width: 44px; height: 72px; object-fit: cover;
+      border-radius: 8px; flex-shrink: 0; background: var(--border);
+      border: 1.5px solid var(--border);
+    }
+    .template-info { flex: 1; min-width: 0; }
+    .template-info h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .template-info p { font-size: 11px; color: var(--text2); }
+    .cat-badge {
+      display: inline-block; background: rgba(255,107,53,0.1); color: var(--orange);
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
+      margin-top: 4px; border: 1px solid rgba(255,107,53,0.2);
+    }
+    .empty-state {
+      text-align: center; color: var(--text2); font-size: 13px; font-weight: 500;
+      padding: 28px 16px; border: 2.5px dashed var(--border); border-radius: 14px;
+      background: white;
+    }
+
+    /* MANAGE CATS */
+    .manage-cats {
+      background: white; border-radius: 14px; padding: 14px;
+      margin-bottom: 16px; border: 2px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .manage-cats h4 { font-size: 13px; font-weight: 800; margin-bottom: 10px; color: var(--text); }
+    .cat-list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text);
+    }
+    .cat-list-item:last-child { border-bottom: none; }
+    .btn-cat-del { background: transparent; border: none; color: var(--orange); cursor: pointer; font-size: 18px; }
+    .btn-cat-del:hover { color: #e94560; }
+
+    /* BASIC INFO */
+    .basic-info {
+      background: white; border-radius: 14px; padding: 14px;
+      margin-bottom: 16px; border: 2px solid var(--yellow);
+      box-shadow: 0 2px 12px rgba(255,210,63,0.2);
+    }
+    .basic-info h4 { font-size: 13px; font-weight: 800; color: #b07d00; margin-bottom: 6px; }
+    .basic-info p { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+    /* HAPUS BUTTON */
+    .btn-hapus {
+      width: 100%; padding: 8px; border-radius: 10px;
+      background: #fff0f0; border: 2px solid #ffd0d0; color: #cc0000;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-hapus:hover { background: #ffe0e0; border-color: #e94560; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--text); color: white;
+      padding: 12px 24px; border-radius: 50px;
+      font-size: 14px; font-weight: 700;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; z-index: 999;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .toast.show { opacity: 1; }
+    .toast.error { background: #e94560; }
   </style>
 </head>
 <body>
@@ -366,263 +474,3 @@
       templateImg.src = templateDataURL;
     };
     reader.readAsDataURL(file);
-  }
-
-  // ─── Auto Detect ───
-  function autoDetect() {
-    if (!templateImg) return;
-    const W = canvas.width, H = canvas.height;
-    const off = document.createElement('canvas');
-    off.width = W; off.height = H;
-    const octx = off.getContext('2d');
-    octx.drawImage(templateImg, 0, 0, W, H);
-    const data = octx.getImageData(0, 0, W, H).data;
-
-    const mask = new Uint8Array(W * H);
-    for (let i = 0; i < W * H; i++) {
-      const r = data[i*4], g = data[i*4+1], b = data[i*4+2], a = data[i*4+3];
-      if (a < 30 || (r < 40 && g < 40 && b < 40 && a > 100)) mask[i] = 1;
-    }
-
-    const rowSums = new Array(H).fill(0);
-    for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++)
-        rowSums[y] += mask[y * W + x];
-
-    const threshold = W * 0.15;
-    let inBlock = false, blockStart = 0;
-    const blocks = [];
-    for (let y = 0; y < H; y++) {
-      if (rowSums[y] > threshold && !inBlock) { inBlock = true; blockStart = y; }
-      else if (rowSums[y] <= threshold && inBlock) {
-        inBlock = false;
-        if (y - blockStart > H * 0.04) blocks.push([blockStart, y - 1]);
-      }
-    }
-    if (inBlock) blocks.push([blockStart, H - 1]);
-
-    slots = [];
-    for (const [y1, y2] of blocks) {
-      const colSums = new Array(W).fill(0);
-      for (let y = y1; y <= y2; y++)
-        for (let x = 0; x < W; x++)
-          colSums[x] += mask[y * W + x];
-      const cThresh = (y2 - y1) * 0.1;
-      const xCols = colSums.map((v,i) => v > cThresh ? i : -1).filter(v => v >= 0);
-      if (!xCols.length) continue;
-      const x1 = xCols[0], x2 = xCols[xCols.length-1];
-      if ((x2-x1) < W*0.1 || (y2-y1) < H*0.02) continue;
-      slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1 });
-    }
-
-    document.getElementById('slotCount').textContent = slots.length;
-    renderSlots();
-    showToast(`${slots.length} slot terdeteksi`);
-  }
-
-  function renderSlots() {
-    overlay.innerHTML = '';
-    slots.forEach((slot, idx) => {
-      const box = document.createElement('div');
-      box.className = 'slot-box';
-      box.style.cssText = `left:${slot.x}px;top:${slot.y}px;width:${slot.w}px;height:${slot.h}px`;
-      box.innerHTML = `
-        <div class="slot-label">Foto ${idx+1}</div>
-        <button class="slot-delete" onclick="deleteSlot(${idx})">×</button>
-        <div class="resize-handle" data-idx="${idx}"></div>
-      `;
-      makeDraggable(box, idx);
-      makeResizable(box.querySelector('.resize-handle'), box, idx);
-      overlay.appendChild(box);
-    });
-  }
-
-  function makeDraggable(box, idx) {
-    let sx, sy, sl, st;
-    box.addEventListener('mousedown', e => {
-      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
-      e.preventDefault();
-      sx = e.clientX; sy = e.clientY; sl = slots[idx].x; st = slots[idx].y;
-      const mv = e => {
-        slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + e.clientX - sx));
-        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + e.clientY - sy));
-        box.style.left = slots[idx].x + 'px'; box.style.top = slots[idx].y + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    });
-  }
-
-  function makeResizable(handle, box, idx) {
-    handle.addEventListener('mousedown', e => {
-      e.preventDefault(); e.stopPropagation();
-      const sx = e.clientX, sy = e.clientY, sw = slots[idx].w, sh = slots[idx].h;
-      const mv = e => {
-        slots[idx].w = Math.max(40, Math.min(canvas.width - slots[idx].x, sw + e.clientX - sx));
-        slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, sh + e.clientY - sy));
-        box.style.width = slots[idx].w + 'px'; box.style.height = slots[idx].h + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    });
-  }
-
-  function addSlotManual() {
-    const W = canvas.width, H = canvas.height;
-    slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18) });
-    document.getElementById('slotCount').textContent = slots.length;
-    renderSlots();
-  }
-
-  function deleteSlot(idx) {
-    slots.splice(idx, 1);
-    document.getElementById('slotCount').textContent = slots.length;
-    renderSlots();
-  }
-
-  function clearSlots() {
-    slots = [];
-    document.getElementById('slotCount').textContent = 0;
-    renderSlots();
-  }
-
-  // ─── Save ───
-  async function saveTemplate() {
-    const name = document.getElementById('templateName').value.trim();
-    if (!name) { showToast('Isi nama template dulu!', true); return; }
-    if (!selectedCategory) { showToast('Pilih atau tambah kategori dulu!', true); return; }
-    if (!templateDataURL) { showToast('Upload PNG dulu!', true); return; }
-    if (!slots.length) { showToast('Tambahkan minimal 1 slot!', true); return; }
-
-    const btn = document.getElementById('btnSave');
-    btn.disabled = true;
-    btn.textContent = '⏫ Mengupload ke cloud...';
-
-    try {
-      // Upload image ke Supabase, simpan URL bukan base64
-      const imageURL = await uploadTemplateImage(templateDataURL, name);
-
-      const realSlots = slots.map(s => ({
-        x: Math.round(s.x / scale), y: Math.round(s.y / scale),
-        w: Math.round(s.w / scale), h: Math.round(s.h / scale),
-      }));
-
-      const tmpl = {
-        name, category: selectedCategory,
-        src: imageURL,
-        slots: realSlots,
-        w: templateImg.width, h: templateImg.height,
-      };
-
-      // Insert ke Supabase database
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
-        body: JSON.stringify(tmpl),
-      });
-      if (!res.ok) throw new Error('DB insert gagal: ' + await res.text());
-      const [inserted] = await res.json();
-      _allTemplates.unshift(inserted);
-      showToast('Template tersimpan di cloud! ✓');
-      renderTemplateList();
-      renderCatTabs();
-      renderCategoryTags();
-
-      // Reset form
-      document.getElementById('templateName').value = '';
-      document.getElementById('canvasWrapper').style.display = 'none';
-      document.getElementById('editorControls').style.display = 'none';
-      document.getElementById('slotInfo').style.display = 'none';
-      templateDataURL = null; templateImg = null; slots = [];
-      document.getElementById('fileInput').value = '';
-
-    } catch(e) {
-      showToast('Gagal upload: ' + e.message, true);
-      console.error(e);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '💾 Simpan Template';
-      btn.style.display = 'none';
-    }
-  }
-
-  // ─── Template List ───
-  function renderTemplateList() {
-    const list = document.getElementById('templateList');
-    const filtered = filterCategory === 'all'
-      ? _allTemplates
-      : _allTemplates.filter(t => t.category === filterCategory);
-
-    if (!filtered.length) {
-      list.innerHTML = '<div class="empty-state">Belum ada template di kategori ini</div>';
-      return;
-    }
-
-    list.innerHTML = filtered.map(t => `
-      <div class="template-item">
-        <img class="template-thumb" src="${t.src}" alt="${t.name}" crossorigin="anonymous">
-        <div class="template-info">
-          <h4>${t.name}</h4>
-          <p>${(t.slots||[]).length} slot foto · ${t.w||591}×${t.h||1772}px</p>
-          <span class="cat-badge">${t.category}</span>
-        </div>
-        <button class="btn btn-danger" onclick="hapusTemplate('${t.id}')">Hapus</button>
-      </div>
-    `).join('');
-  }
-
-  async function hapusTemplate(id) {
-    if (!confirm('Hapus template ini?')) return;
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
-        }
-      });
-      if (!res.ok) throw new Error(await res.text());
-      _allTemplates = _allTemplates.filter(t => t.id != id);
-      renderTemplateList();
-      renderCatTabs();
-      showToast('Template dihapus');
-    } catch(e) {
-      showToast('Gagal hapus: ' + e.message, true);
-    }
-  }
-
-  function showToast(msg, isError = false) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.background = isError ? '#e94560' : '#27ae60';
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
-
-  // Init
-  renderCategoryTags();
-  renderCatTabs();
-  renderManageCats();
-  // Init: load dari Supabase dulu
-  (async () => {
-    document.getElementById('templateList').innerHTML = '<div class="empty-state">Memuat template...</div>';
-    await fetchAllTemplates();
-    renderCatTabs();
-    renderCategoryTags();
-    renderManageCats();
-    renderTemplateList();
-  })();
-</script>
-
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  }
-</script>
-</body>
-</html>

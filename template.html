@@ -388,7 +388,8 @@
     }
 
     // Show/hide frame color picker
-    const showPicker = currentCat === 'all' || currentCat === '__basic__';
+    // Picker hanya muncul kalau template Basic yang sedang DIPILIH
+    const showPicker = selectedTemplate && selectedTemplate.isBasic;
     document.getElementById('frameColorPicker').classList.toggle('show', showPicker);
     if (showPicker) renderColorSwatches();
 
@@ -434,6 +435,9 @@
     document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedTemplate = tmpl;
+    // Update color picker visibility based on selected template
+    const isBasicSel = tmpl && tmpl.isBasic;
+    document.getElementById('frameColorPicker').classList.toggle('show', isBasicSel);
 
     // For basic template, regenerate with current color
     const t = tmpl.isBasic ? getBasicTemplate() : tmpl;

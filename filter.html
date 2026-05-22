@@ -91,6 +91,24 @@
       appearance: none; width: 18px; height: 18px; border-radius: 50%;
       background: var(--orange); cursor: pointer; box-shadow: 0 2px 8px rgba(255,107,53,0.4);
     }
+    /* ─── Lip & Blush swatches ─── */
+    .swatch-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 4px 0; }
+    .swatch {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 3px solid transparent; cursor: pointer;
+      transition: all 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+    }
+    .swatch:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    .swatch.active { border-color: var(--orange); transform: scale(1.18); box-shadow: 0 4px 14px rgba(255,107,53,0.5); }
+    .swatch-off {
+      padding: 5px 12px; border-radius: 50px; font-size: 12px; font-weight: 700;
+      border: 2px solid var(--border); background: white; color: var(--text2);
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .swatch-off:hover { border-color: var(--orange); color: var(--orange); }
+    .swatch-off.active { background: var(--orange); border-color: var(--orange); color: white; }
+
     .sticker-grid { display: flex; gap: 8px; flex-wrap: wrap; }
     .sticker-btn {
       width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--border);
@@ -175,11 +193,21 @@
         <div class="filter-label">Warna Bibir</div>
         <div class="swatch-row" id="grpLip">
           <div class="swatch-off active" data-val="off" onclick="setSwatch('lip',this)">Off</div>
+          <div class="swatch" style="background:#ffb3c1" data-val="255,179,193,0.40" onclick="setSwatch('lip',this)" title="Baby Pink"></div>
           <div class="swatch" style="background:#f4a0b0" data-val="255,160,176,0.45" onclick="setSwatch('lip',this)" title="Pink Natural"></div>
-          <div class="swatch" style="background:#c0392b" data-val="192,57,43,0.50"   onclick="setSwatch('lip',this)" title="Soft Red"></div>
+          <div class="swatch" style="background:#e8607a" data-val="232,96,122,0.50"  onclick="setSwatch('lip',this)" title="Hot Pink"></div>
+          <div class="swatch" style="background:#c0392b" data-val="192,57,43,0.52"   onclick="setSwatch('lip',this)" title="Red Classic"></div>
+          <div class="swatch" style="background:#8b0000" data-val="139,0,0,0.55"     onclick="setSwatch('lip',this)" title="Dark Red"></div>
           <div class="swatch" style="background:#e8836a" data-val="232,131,106,0.48" onclick="setSwatch('lip',this)" title="Coral"></div>
-          <div class="swatch" style="background:#f5c5a3" data-val="245,197,163,0.42" onclick="setSwatch('lip',this)" title="Peach"></div>
+          <div class="swatch" style="background:#ff6347" data-val="255,99,71,0.46"   onclick="setSwatch('lip',this)" title="Tomato"></div>
+          <div class="swatch" style="background:#f5c5a3" data-val="245,197,163,0.42" onclick="setSwatch('lip',this)" title="Peach Nude"></div>
+          <div class="swatch" style="background:#c8a882" data-val="200,168,130,0.45" onclick="setSwatch('lip',this)" title="Nude Warm"></div>
           <div class="swatch" style="background:#c06080" data-val="192,96,128,0.48"  onclick="setSwatch('lip',this)" title="Rose"></div>
+          <div class="swatch" style="background:#9b2d6f" data-val="155,45,111,0.52"  onclick="setSwatch('lip',this)" title="Berry"></div>
+          <div class="swatch" style="background:#6b2d5e" data-val="107,45,94,0.55"   onclick="setSwatch('lip',this)" title="Plum"></div>
+          <div class="swatch" style="background:#4a0030" data-val="74,0,48,0.55"     onclick="setSwatch('lip',this)" title="Dark Plum"></div>
+          <div class="swatch" style="background:#b76e79" data-val="183,110,121,0.48" onclick="setSwatch('lip',this)" title="Mauve"></div>
+          <div class="swatch" style="background:#d4a0b0" data-val="212,160,176,0.42" onclick="setSwatch('lip',this)" title="Dusty Rose"></div>
         </div>
       </div>
 
@@ -187,10 +215,19 @@
         <div class="filter-label">Blush</div>
         <div class="swatch-row" id="grpBlush">
           <div class="swatch-off active" data-val="off" onclick="setSwatch('blush',this)">Off</div>
+          <div class="swatch" style="background:#ffe0e6" data-val="255,224,230,0.30" onclick="setSwatch('blush',this)" title="Sheer Pink"></div>
           <div class="swatch" style="background:#f9c0c8" data-val="249,192,200,0.35" onclick="setSwatch('blush',this)" title="Soft Pink"></div>
-          <div class="swatch" style="background:#f5b89a" data-val="245,184,154,0.32" onclick="setSwatch('blush',this)" title="Peach"></div>
-          <div class="swatch" style="background:#d4708a" data-val="212,112,138,0.30" onclick="setSwatch('blush',this)" title="Rose"></div>
+          <div class="swatch" style="background:#f5a0b0" data-val="245,160,176,0.38" onclick="setSwatch('blush',this)" title="Baby Doll"></div>
+          <div class="swatch" style="background:#e8607a" data-val="232,96,122,0.32"  onclick="setSwatch('blush',this)" title="Hot Pink"></div>
+          <div class="swatch" style="background:#f5b89a" data-val="245,184,154,0.33" onclick="setSwatch('blush',this)" title="Peach"></div>
+          <div class="swatch" style="background:#f0a080" data-val="240,160,128,0.35" onclick="setSwatch('blush',this)" title="Warm Peach"></div>
+          <div class="swatch" style="background:#e8836a" data-val="232,131,106,0.32" onclick="setSwatch('blush',this)" title="Coral"></div>
+          <div class="swatch" style="background:#d4708a" data-val="212,112,138,0.32" onclick="setSwatch('blush',this)" title="Rose"></div>
+          <div class="swatch" style="background:#c06080" data-val="192,96,128,0.30"  onclick="setSwatch('blush',this)" title="Deep Rose"></div>
           <div class="swatch" style="background:#e8909a" data-val="232,144,154,0.33" onclick="setSwatch('blush',this)" title="Medium"></div>
+          <div class="swatch" style="background:#c8a0b8" data-val="200,160,184,0.30" onclick="setSwatch('blush',this)" title="Lilac"></div>
+          <div class="swatch" style="background:#d4b896" data-val="212,184,150,0.30" onclick="setSwatch('blush',this)" title="Bronze"></div>
+          <div class="swatch" style="background:#e8c090" data-val="232,192,144,0.28" onclick="setSwatch('blush',this)" title="Golden"></div>
         </div>
       </div>
 

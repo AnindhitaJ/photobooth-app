@@ -4,463 +4,427 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/icon-192.png">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="LUX Photo">
-  <meta name="mobile-web-app-capable" content="yes">
   <title>Kamera - LUX Photobooth</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: #000;
-      font-family: 'Segoe UI', sans-serif;
-      color: white;
-    }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: white; }
+
+    /* ── Video fullscreen ── */
     #video {
       position: fixed; inset: 0;
       width: 100vw; height: 100vh;
       object-fit: cover;
       transform: scaleX(-1);
-      transform-origin: center center;
       z-index: 1;
     }
-    #canvas { display: none; position: absolute; left: -9999px; }
-    .overlay { position: fixed; z-index: 10; pointer-events: none; }
+    #canvas { display: none; }
+
+    /* ── Overlays ── */
     #flash {
-      inset: 0; background: white;
-      opacity: 0; transition: opacity 0.1s;
-      z-index: 50; pointer-events: none; position: fixed;
+      position: fixed; inset: 0; background: white;
+      opacity: 0; pointer-events: none; transition: opacity 0.08s; z-index: 60;
     }
     #flash.show { opacity: 1; }
+
     #countdown {
-      inset: 0; display: flex; align-items: center; justify-content: center;
-      font-size: min(40vw, 40vh); font-weight: 900; color: white;
-      text-shadow: 0 0 60px rgba(255,107,53,0.9), 0 0 120px rgba(255,107,53,0.5);
-      opacity: 0; transition: opacity 0.2s; position: fixed;
-      pointer-events: none; z-index: 30;
+      position: fixed; inset: 0; z-index: 40; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: min(38vw, 38vh); font-weight: 900; color: white;
+      text-shadow: 0 0 60px rgba(255,107,53,0.9), 0 0 120px rgba(255,107,53,0.4);
+      opacity: 0; transition: opacity 0.2s;
     }
     #countdown.show { opacity: 1; }
+
+    /* Frame guide */
+    #frameGuide {
+      position: fixed; pointer-events: none; z-index: 15;
+      border: 2.5px solid rgba(255,107,53,0.85);
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.32);
+      transition: all 0.35s ease;
+    }
+    #frameGuide::before, #frameGuide::after {
+      content: ''; position: absolute;
+      width: 20px; height: 20px; border-color: #ffd23f; border-style: solid;
+    }
+    #frameGuide::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    #frameGuide::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    /* REC indicator */
     #recIndicator {
       position: fixed; top: max(14px, env(safe-area-inset-top, 14px)); right: 16px;
       display: none; align-items: center; gap: 6px;
       background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
       padding: 5px 12px; border-radius: 50px;
-      font-size: 11px; font-weight: 700; color: white;
-      z-index: 20; pointer-events: none;
+      font-size: 11px; font-weight: 700; z-index: 20; pointer-events: none;
     }
     #recIndicator.show { display: flex; }
     .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff6b35; animation: blink 1s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-    #frameGuide {
-      position: fixed; pointer-events: none; z-index: 15;
-      border: 2px solid rgba(255,107,53,0.8);
-      border-radius: 6px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.30);
-      transition: all 0.3s;
-    }
-    #frameGuide::before, #frameGuide::after {
-      content: ''; position: absolute;
-      width: 22px; height: 22px;
-      border-color: #ffd23f; border-style: solid;
-    }
-    #frameGuide::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-    #frameGuide::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-    /* TOP HUD */
+
+    /* ── TOP HUD ── */
     #topHud {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-      padding: max(10px, env(safe-area-inset-top, 10px)) 16px 10px;
-      display: flex; align-items: center; justify-content: space-between;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
-      pointer-events: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20; pointer-events: none;
+      padding: max(12px, env(safe-area-inset-top, 12px)) 20px 14px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
     .hud-logo {
-      font-size: 13px; font-weight: 800;
+      font-size: 13px; font-weight: 900;
       background: linear-gradient(135deg, #ff6b35, #ffd23f);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      flex-shrink: 0;
     }
-    #titleText { font-size: 14px; font-weight: 700; }
-    .hud-sub { font-size: 11px; color: rgba(255,255,255,0.7); }
+    #titleText { font-size: 15px; font-weight: 700; text-align: center; flex: 1; }
+    #subText { font-size: 11px; color: rgba(255,255,255,0.65); flex-shrink: 0; text-align: right; }
+
+    /* Slot dots row */
     #slotIndicator {
-      position: fixed; top: max(48px, calc(env(safe-area-inset-top, 10px) + 38px)); left: 0; right: 0;
-      display: flex; gap: 8px; justify-content: center; z-index: 20; pointer-events: all;
+      position: fixed; z-index: 20; pointer-events: all;
+      top: max(52px, calc(env(safe-area-inset-top, 12px) + 42px));
+      left: 0; right: 0;
+      display: flex; gap: 8px; justify-content: center;
     }
     .slot-dot {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.4);
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.4);
       backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5);
-      cursor: default; transition: all 0.3s;
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45);
+      cursor: default; transition: all 0.25s;
     }
-    .slot-dot.done { background: #06d6a0; border-color: #06d6a0; color: white; cursor: pointer; }
-    .slot-dot.active { background: #ff6b35; border-color: #ffd23f; color: white; transform: scale(1.25); box-shadow: 0 0 12px rgba(255,107,53,0.7); }
-    /* BOTTOM PANEL */
-    #bottomPanel {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-      padding: 10px 20px max(16px, env(safe-area-inset-bottom, 16px));
-      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
+    .slot-dot.done  { background: #06d6a0; border-color: #06d6a0; color: white; cursor: pointer; }
+    .slot-dot.active { background: #ff6b35; border-color: #ffd23f; color: white; transform: scale(1.25); box-shadow: 0 0 14px rgba(255,107,53,0.7); }
+
+    /* ── Photo strip — left side, stacked vertically ── */
+    #photosStrip {
+      position: fixed; left: 16px;
+      bottom: max(110px, calc(env(safe-area-inset-bottom, 16px) + 100px));
+      z-index: 25; pointer-events: all;
       display: flex; flex-direction: column; gap: 8px;
     }
-    #statusMsg {
-      font-size: 12px; color: rgba(255,255,255,0.6);
-      text-align: center; min-height: 16px;
-    }
-    /* Photo strip overlaid bottom-left on video */
-    #photosStrip {
-      position: fixed;
-      bottom: max(90px, calc(env(safe-area-inset-bottom,16px) + 80px));
-      left: 16px;
-      display: flex; flex-direction: column; gap: 6px;
-      z-index: 25; pointer-events: all;
-    }
-    .photo-item {
-      position: relative; display: block;
-    }
+    .photo-item { position: relative; }
     .photo-thumb {
-      width: 80px; height: 80px; border-radius: 10px;
-      object-fit: cover;
-      border: 2px solid #06d6a0;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-      display: block;
+      width: 72px; height: 72px; border-radius: 10px;
+      object-fit: cover; border: 2px solid #06d6a0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6); display: block;
     }
     .photo-thumb-empty {
-      width: 80px; height: 80px; border-radius: 10px;
-      border: 2px dashed rgba(255,255,255,0.25);
-      background: rgba(0,0,0,0.35);
-      backdrop-filter: blur(4px);
+      width: 72px; height: 72px; border-radius: 10px;
+      border: 2px dashed rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center;
-      color: rgba(255,255,255,0.35); font-size: 24px; font-weight: 700;
+      color: rgba(255,255,255,0.3); font-size: 22px; font-weight: 700;
     }
     .btn-retake {
       position: absolute; top: -8px; right: -8px;
       background: #e94560; color: white; border: 2px solid rgba(0,0,0,0.3);
-      border-radius: 50%; width: 32px; height: 32px;
-      font-size: 16px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-      transition: all 0.15s; z-index: 3;
+      border-radius: 50%; width: 26px; height: 26px;
+      font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: all 0.15s; z-index: 3;
     }
-    .btn-retake:hover { background: #c0392b; transform: scale(1.2); }
+    .btn-retake:hover { background: #c0392b; transform: scale(1.15); }
+
+    /* ── Pan/Zoom controls — right side ── */
     #panControls {
-      position: fixed;
-      bottom: max(90px, calc(env(safe-area-inset-bottom,16px) + 80px));
-      right: 16px;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      position: fixed; right: 14px;
+      bottom: max(110px, calc(env(safe-area-inset-bottom, 16px) + 100px));
       z-index: 25;
-      background: rgba(0,0,0,0.45); backdrop-filter: blur(8px);
-      border-radius: 16px; padding: 8px 6px;
+      background: rgba(0,0,0,0.50); backdrop-filter: blur(10px);
+      border-radius: 16px; padding: 10px 8px;
       border: 1px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
     }
     .pan-btn {
-      width: 32px; height: 32px; border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(6px); color: rgba(255,255,255,0.8);
-      font-size: 14px; cursor: pointer;
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.45);
+      color: rgba(255,255,255,0.75); font-size: 15px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all 0.15s; user-select: none;
     }
-    .pan-btn:hover { border-color: #ff6b35; color: white; }
+    .pan-btn:hover  { border-color: #ff6b35; color: white; }
     .pan-btn:active { background: #ff6b35; border-color: #ff6b35; color: white; }
-    .zoom-label { font-size: 10px; color: rgba(255,255,255,0.6); min-width: 30px; text-align: center; }
-    .btn-reset-pan {
+    .zoom-label { font-size: 10px; color: rgba(255,255,255,0.55); text-align: center; min-width: 32px; }
+    .pan-grid { display: grid; grid-template-columns: 34px 34px 34px; gap: 4px; }
+    .pan-center { /* empty center */ }
+    .btn-reset-zoom {
       padding: 4px 10px; border-radius: 50px;
-      border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35);
       color: rgba(255,255,255,0.5); font-size: 10px; cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.15s; white-space: nowrap;
     }
-    .btn-reset-pan:hover { color: white; border-color: rgba(255,255,255,0.6); }
-    #actionRow {
-      display: flex; gap: 12px; align-items: center; justify-content: space-between;
-      width: 100%;
-    }
-    #actionLeft { display: flex; align-items: center; }
-    #actionRight { display: flex; align-items: center; gap: 10px; }
-    .btn {
-      padding: 11px 22px; border-radius: 50px;
-      font-size: 14px; font-weight: 700;
-      cursor: pointer; border: none; transition: all 0.2s;
-      backdrop-filter: blur(8px);
-    }
-    .btn-back {
-      background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8);
-      border: 1.5px solid rgba(255,255,255,0.2);
-    }
-    .btn-back:hover { background: rgba(255,255,255,0.2); color: white; }
-    .btn-primary {
-      background: linear-gradient(135deg, #ff6b35, #ffd23f);
-      color: white; padding: 14px 32px; font-size: 16px;
-      box-shadow: 0 4px 20px rgba(255,107,53,0.55);
-    }
-    .btn-primary:hover { transform: scale(1.04); box-shadow: 0 8px 28px rgba(255,107,53,0.65); }
-    .btn-primary:disabled { opacity: 0.4; pointer-events: none; }
-    .btn-success {
-      background: linear-gradient(135deg, #06d6a0, #04b589);
-      color: white; box-shadow: 0 4px 20px rgba(6,214,160,0.45);
-    }
-    .btn-success:hover { transform: scale(1.04); }
-    #statusMsg {
-      font-size: 12px; color: rgba(255,255,255,0.6);
-      text-align: center; min-height: 16px;
-    }
-    @media (orientation: landscape) {
-      #bottomPanel {
-        flex-direction: row; align-items: flex-end;
-        flex-wrap: nowrap; gap: 8px;
-        padding: 8px 24px max(8px, env(safe-area-inset-bottom, 8px));
-        right: max(0px, env(safe-area-inset-right, 0px));
-        left: max(0px, env(safe-area-inset-left, 0px));
-        justify-content: center;
-      }
-      #photosStrip {
-        bottom: max(80px, calc(env(safe-area-inset-bottom,8px) + 70px));
-        left: 12px; flex-direction: column; gap: 5px;
-      }
-      .photo-thumb, .photo-thumb-empty { width: 60px; height: 60px; }
-      .btn-retake { width: 20px; height: 20px; font-size: 11px; }
-      #panControls { bottom: max(70px, calc(env(safe-area-inset-bottom,8px) + 60px)); right: 12px; }
-      #actionRow { flex-direction: column; }
-      .btn-primary { padding: 11px 22px; font-size: 14px; }
-      #slotIndicator {
-        top: max(10px, env(safe-area-inset-top, 10px));
-        flex-direction: column;
-        left: auto; right: 8px; width: auto;
-      }
-      #topHud { padding: max(8px, env(safe-area-inset-top, 8px)) 12px 8px; }
-    }
-  
-  /* ─── Mode Selection Modal ─── */
-  .mode-modal-overlay {
-    position: fixed; inset: 0; z-index: 999;
-    background: rgba(0,0,0,0.85);
-    display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
-  }
-  .mode-modal {
-    background: #1a1a2e; border-radius: 20px;
-    padding: 32px 28px; width: 88%; max-width: 380px;
-    border: 2px solid #e94560; text-align: center;
-  }
-  .mode-modal h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; color: white; }
-  .mode-modal p { font-size: 13px; color: #a0a0b0; margin-bottom: 24px; }
-  .mode-btn {
-    display: flex; align-items: center; gap: 14px;
-    width: 100%; padding: 16px 18px; margin-bottom: 12px;
-    border-radius: 14px; border: 2px solid #0f3460;
-    background: #16213e; color: white;
-    cursor: pointer; text-align: left; transition: all 0.2s;
-  }
-  .mode-btn:hover:not(:disabled) { border-color: #e94560; background: #0f3460; transform: scale(1.02); }
-  .mode-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .mode-btn .mode-icon { font-size: 32px; flex-shrink: 0; }
-  .mode-btn .mode-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
-  .mode-btn .mode-text p { font-size: 12px; color: #a0a0b0; margin: 0; }
-  .mode-timer-row { display: flex; gap: 8px; margin-top: 4px; }
-  .mode-timer-opt {
-    flex: 1; padding: 8px; border-radius: 10px;
-    border: 2px solid #0f3460; background: #0f3460;
-    color: white; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .mode-timer-opt.selected { border-color: #e94560; background: #e94560; }
+    .btn-reset-zoom:hover { color: white; border-color: rgba(255,255,255,0.55); }
 
-  /* ─── Photo Preview Panel (muncul setelah selesai) ─── */
-  #photoPreviewPanel {
-    position: fixed; inset: 0; z-index: 28;
-    display: none; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.92); backdrop-filter: blur(8px);
-  }
-  #photoPreviewPanel.show { display: flex; }
-  #previewBigImg {
-    max-width: 70vw; max-height: 65vh;
-    border-radius: 14px; object-fit: contain;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
-    border: 2px solid rgba(255,255,255,0.1);
-    transition: opacity 0.2s;
-  }
-  #previewThumbs {
-    display: flex; gap: 10px; margin-top: 16px;
-    justify-content: center; flex-wrap: wrap;
-  }
-  .preview-thumb {
-    width: 64px; height: 64px; border-radius: 10px;
-    object-fit: cover; cursor: pointer;
-    border: 2px solid rgba(255,255,255,0.2);
-    transition: all 0.15s; opacity: 0.6;
-  }
-  .preview-thumb.active {
-    border-color: #06d6a0; opacity: 1;
-    transform: scale(1.1);
-    box-shadow: 0 4px 16px rgba(6,214,160,0.5);
-  }
-  #previewActions {
-    display: flex; gap: 12px; margin-top: 20px;
-  }
-</style>
+    /* ── BOTTOM BAR ── */
+    #bottomBar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      padding: 12px 20px max(18px, env(safe-area-inset-bottom, 18px));
+      background: linear-gradient(to top, rgba(0,0,0,0.88) 60%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    #statusMsg {
+      position: absolute; top: -22px; left: 0; right: 0;
+      font-size: 12px; color: rgba(255,255,255,0.65); text-align: center;
+    }
+
+    /* Bottom buttons: Back | [Shutter] | Next */
+    .btn-side {
+      flex-shrink: 0; padding: 12px 20px; border-radius: 50px;
+      font-size: 14px; font-weight: 700; cursor: pointer; border: none;
+      backdrop-filter: blur(8px); transition: all 0.2s;
+      background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.8);
+      border: 1.5px solid rgba(255,255,255,0.2); min-width: 90px;
+      text-align: center;
+    }
+    .btn-side:hover { background: rgba(255,255,255,0.22); color: white; }
+
+    #btnAmbil {
+      flex: 1; max-width: 220px;
+      background: linear-gradient(135deg, #ff6b35, #ffd23f);
+      color: white; border: none; padding: 16px 28px;
+      font-size: 17px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; box-shadow: 0 4px 22px rgba(255,107,53,0.55);
+      transition: all 0.2s;
+    }
+    #btnAmbil:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(255,107,53,0.65); }
+    #btnAmbil:disabled { opacity: 0.38; pointer-events: none; }
+
+    #btnLanjut {
+      flex: 1; max-width: 220px;
+      background: linear-gradient(135deg, #06d6a0, #04b589);
+      color: white; border: none; padding: 16px 28px;
+      font-size: 17px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; box-shadow: 0 4px 22px rgba(6,214,160,0.5);
+      transition: all 0.2s; display: none;
+    }
+    #btnLanjut:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(6,214,160,0.65); }
+
+    /* ── Mode Modal ── */
+    #modeModal {
+      position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mode-card {
+      background: #1a1a2e; border-radius: 22px; padding: 28px 24px;
+      width: 88%; max-width: 380px; border: 2px solid rgba(255,107,53,0.4);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .mode-card h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .mode-card p  { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+    .mode-btn {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 14px 16px; margin-bottom: 10px;
+      border-radius: 14px; border: 2px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06); color: white;
+      cursor: pointer; text-align: left; transition: all 0.18s; font-family: inherit;
+    }
+    .mode-btn:hover:not(:disabled) { border-color: #ff6b35; background: rgba(255,107,53,0.12); }
+    .mode-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .mode-icon { font-size: 30px; flex-shrink: 0; }
+    .mode-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+    .mode-text p  { font-size: 12px; color: rgba(255,255,255,0.55); margin: 0; }
+    .timer-row { display: flex; gap: 8px; margin-top: 6px; }
+    .timer-opt {
+      flex: 1; padding: 9px; border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .timer-opt.sel { border-color: #ff6b35; background: rgba(255,107,53,0.18); color: white; }
+    .timer-hint { font-size: 11px; color: #ff6b35; text-align: center; margin-top: 8px; min-height: 16px; }
+
+    /* ── Photo Preview Panel ── */
+    #previewPanel {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.94); backdrop-filter: blur(10px);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px; padding: 24px;
+    }
+    #previewPanel.show { display: flex; }
+    #previewBig {
+      max-width: min(70vw, 380px); max-height: 58vh;
+      border-radius: 14px; object-fit: contain;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+      border: 2px solid rgba(255,255,255,0.08); transition: opacity 0.2s;
+    }
+    #previewThumbs {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    }
+    .prev-thumb {
+      width: 60px; height: 60px; border-radius: 9px; object-fit: cover;
+      cursor: pointer; border: 2.5px solid rgba(255,255,255,0.18);
+      opacity: 0.6; transition: all 0.15s;
+    }
+    .prev-thumb.active { border-color: #06d6a0; opacity: 1; transform: scale(1.1); box-shadow: 0 4px 14px rgba(6,214,160,0.5); }
+    #previewActions {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    }
+    .prev-btn {
+      padding: 13px 26px; border-radius: 50px;
+      font-size: 15px; font-weight: 700; cursor: pointer; border: none;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .prev-btn-back { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); border: 1.5px solid rgba(255,255,255,0.2); }
+    .prev-btn-back:hover { background: rgba(255,255,255,0.2); color: white; }
+    .prev-btn-go { background: linear-gradient(135deg, #06d6a0, #04b589); color: white; box-shadow: 0 6px 20px rgba(6,214,160,0.4); }
+    .prev-btn-go:hover { transform: scale(1.03); }
+
+    /* Landscape tweaks */
+    @media (orientation: landscape) {
+      #photosStrip { bottom: max(88px, calc(env(safe-area-inset-bottom,8px) + 78px)); }
+      #panControls { bottom: max(88px, calc(env(safe-area-inset-bottom,8px) + 78px)); }
+      #bottomBar { padding: 10px 24px max(10px, env(safe-area-inset-bottom, 10px)); }
+      .photo-thumb, .photo-thumb-empty { width: 56px; height: 56px; }
+      #btnAmbil, #btnLanjut { font-size: 15px; padding: 13px 22px; }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Photo Preview Panel -->
-  <div id="photoPreviewPanel">
-    <img id="previewBigImg" src="" alt="Preview" />
-    <div id="previewThumbs"></div>
-    <div id="previewActions">
-      <button class="btn btn-back" onclick="closePreview()">← Edit Ulang</button>
-      <button class="btn btn-success" onclick="lanjutFilter()">Lanjut ke Filter →</button>
-    </div>
+<!-- Photo Preview Panel -->
+<div id="previewPanel">
+  <img id="previewBig" src="" alt="Preview">
+  <div id="previewThumbs"></div>
+  <div id="previewActions">
+    <button class="prev-btn prev-btn-back" onclick="closePreview()">← Edit Ulang</button>
+    <button class="prev-btn prev-btn-go"   onclick="lanjutFilter()">Lanjut ke Filter →</button>
   </div>
+</div>
 
-  <!-- Mode Selection Modal -->
-  <div class="mode-modal-overlay" id="modeModal">
-    <div class="mode-modal">
-      <h2>📸 Pilih Mode Foto</h2>
-      <p>Bagaimana kamu mau ambil foto?</p>
+<!-- Mode Modal -->
+<div id="modeModal">
+  <div class="mode-card">
+    <h2>📸 Pilih Mode</h2>
+    <p>Pilih timer dulu, lalu pilih cara foto.</p>
 
-      <button class="mode-btn" onclick="setMode('auto')" disabled>
-        <div class="mode-icon">⚡</div>
-        <div class="mode-text">
-          <h3>Otomatis</h3>
-          <p>Foto jalan sendiri satu per satu</p>
-        </div>
-      </button>
-
-      <button class="mode-btn" onclick="setMode('manual')" disabled>
-        <div class="mode-icon">🖐️</div>
-        <div class="mode-text">
-          <h3>Manual</h3>
-          <p>Klik tombol sendiri tiap mau foto</p>
-        </div>
-      </button>
-
-      <div style="margin-top:8px">
-        <p style="font-size:12px;color:#a0a0b0;margin-bottom:8px">⏱ Pilih timer dulu:</p>
-        <div class="mode-timer-row">
-          <button class="mode-timer-opt" id="timer3" onclick="setTimer(3)">3 detik</button>
-          <button class="mode-timer-opt" id="timer5" onclick="setTimer(5)">5 detik</button>
-          <button class="mode-timer-opt" id="timer10" onclick="setTimer(10)">10 detik</button>
-        </div>
-        <p id="modeHint" style="font-size:11px;color:#e94560;margin-top:8px;text-align:center">
-          ← Pilih timer dulu, baru pilih mode
-        </p>
-      </div>
+    <div class="timer-row">
+      <button class="timer-opt" id="t3"  onclick="setTimer(3)">3 dtk</button>
+      <button class="timer-opt" id="t5"  onclick="setTimer(5)">5 dtk</button>
+      <button class="timer-opt" id="t10" onclick="setTimer(10)">10 dtk</button>
     </div>
+    <p class="timer-hint" id="timerHint">← Pilih timer dulu</p>
+
+    <button class="mode-btn" id="modeAuto"   onclick="setMode('auto')"   disabled>
+      <div class="mode-icon">⚡</div>
+      <div class="mode-text"><h3>Otomatis</h3><p>Foto jalan sendiri satu per satu</p></div>
+    </button>
+    <button class="mode-btn" id="modeManual" onclick="setMode('manual')" disabled>
+      <div class="mode-icon">🖐️</div>
+      <div class="mode-text"><h3>Manual</h3><p>Klik tombol sendiri tiap mau foto</p></div>
+    </button>
   </div>
+</div>
 
+<!-- Camera -->
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+<div id="flash"></div>
+<div id="countdown"></div>
+<div id="frameGuide"></div>
+<div id="recIndicator"><div class="rec-dot"></div> REC</div>
 
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
-  <div id="flash"></div>
-  <div id="countdown"></div>
-  <div id="frameGuide"></div>
-  <div id="recIndicator"><div class="rec-dot"></div> REC</div>
+<!-- TOP HUD -->
+<div id="topHud">
+  <div class="hud-logo">📸 LUX</div>
+  <div id="titleText"></div>
+  <div id="subText"></div>
+</div>
+<div id="slotIndicator"></div>
 
-  <!-- TOP HUD -->
-  <div id="topHud">
-    <div class="hud-logo">📸 LUX</div>
-    <div id="titleText" style="font-size:14px;font-weight:700"></div>
-    <div class="hud-sub" id="subText"></div>
+<!-- Strip & Pan -->
+<div id="photosStrip"></div>
+<div id="panControls">
+  <button class="pan-btn" id="btnZoomIn">+</button>
+  <span class="zoom-label" id="zoomLabel">1.0×</span>
+  <button class="pan-btn" id="btnZoomOut">−</button>
+  <div style="height:4px"></div>
+  <div class="pan-grid">
+    <div></div>
+    <button class="pan-btn" id="btnPanUp">↑</button>
+    <div></div>
+    <button class="pan-btn" id="btnPanLeft">←</button>
+    <div class="pan-center"></div>
+    <button class="pan-btn" id="btnPanRight">→</button>
+    <div></div>
+    <button class="pan-btn" id="btnPanDown">↓</button>
+    <div></div>
   </div>
-  <div id="slotIndicator"></div>
+  <button class="btn-reset-zoom" id="btnResetPan">Reset</button>
+</div>
 
-  <!-- BOTTOM PANEL -->
-  <div id="bottomPanel">
-    <div id="photosStrip"></div>
-    <div id="panControls">
-      <button class="pan-btn" id="btnZoomOut" title="Zoom out">−</button>
-      <span class="zoom-label" id="zoomLabel">1.0×</span>
-      <button class="pan-btn" id="btnZoomIn" title="Zoom in">+</button>
-      <span style="width:4px"></span>
-      <button class="pan-btn" id="btnPanUp">↑</button>
-      <button class="pan-btn" id="btnPanLeft">←</button>
-      <button class="pan-btn" id="btnPanDown">↓</button>
-      <button class="pan-btn" id="btnPanRight">→</button>
-      <button class="btn-reset-pan" id="btnResetPan">Reset</button>
-    </div>
-    <div id="actionRow">
-      <button class="btn btn-back" onclick="kembali()">← Balik</button>
-      <button class="btn btn-primary" id="btnAmbil" onclick="mulaiCountdown()">📷 Ambil</button>
-      <button class="btn btn-success" id="btnLanjut" onclick="lanjutFilter()" style="display:none">Lanjut →</button>
-    </div>
-    <p id="statusMsg"></p>
-  </div>
+<!-- BOTTOM BAR: Back | Shutter | Next -->
+<div id="bottomBar">
+  <div id="statusMsg"></div>
+  <button class="btn-side" onclick="kembali()">← Balik</button>
+  <button id="btnAmbil"  onclick="mulaiCountdown()">📷 Ambil</button>
+  <button id="btnLanjut" onclick="lanjutFilter()">Lanjut →</button>
+  <button class="btn-side" id="btnSkip" style="visibility:hidden">skip</button>
+</div>
 
 <script>
   const slotCount    = parseInt(localStorage.getItem('slotCount') || '1');
   const templateName = localStorage.getItem('templateName') || 'Template';
-
-  document.getElementById('subText').textContent = `${templateName} · ${slotCount} foto`;
+  document.getElementById('subText').textContent = templateName + ' · ' + slotCount + ' foto';
 
   const video        = document.getElementById('video');
   const canvas       = document.getElementById('canvas');
   const countdownEl  = document.getElementById('countdown');
   const flashEl      = document.getElementById('flash');
   const btnAmbil     = document.getElementById('btnAmbil');
-  let captureMode = null; // 'auto' or 'manual'
-  let countdownSeconds = null; // harus dipilih dulu
   const btnLanjut    = document.getElementById('btnLanjut');
   const statusMsg    = document.getElementById('statusMsg');
   const recIndicator = document.getElementById('recIndicator');
 
-  let photos      = new Array(slotCount).fill(null);
-  let liveVideos  = new Array(slotCount).fill(null);
-  let currentSlot = 0;
+  let photos         = new Array(slotCount).fill(null);
+  let liveVideos     = new Array(slotCount).fill(null);
+  let currentSlot    = 0;
   let isCountingDown = false;
-  let stream      = null;
-  let mediaRecorder   = null;
-  let recordedChunks  = [];
+  let stream         = null;
+  let mediaRecorder  = null;
+  let recordedChunks = [];
+  let captureMode    = null;
+  let countdownSec   = 5;
 
-  // Pan/Zoom state
+  // Pan/Zoom
   let panX = 0, panY = 0, zoom = 1.0;
-  const PAN_STEP  = 0.05;
-  const ZOOM_STEP = 0.1;
-  const ZOOM_MAX  = 2.5;
-  const ZOOM_MIN  = 1.0;
+  const PAN_STEP = 0.05, ZOOM_STEP = 0.1, ZOOM_MAX = 2.5, ZOOM_MIN = 1.0;
 
   function updateVideoTransform() {
-    const vW = window.innerWidth, vH = window.innerHeight;
-    const tx = -panX * vW;
-    const ty =  panY * vH;
-    video.style.transform = `scaleX(-1) scale(${zoom}) translate(${tx / zoom}px, ${ty / zoom}px)`;
+    const tx = -panX * window.innerWidth;
+    const ty =  panY * window.innerHeight;
+    video.style.transform = `scaleX(-1) scale(${zoom}) translate(${tx/zoom}px, ${ty/zoom}px)`;
     document.getElementById('zoomLabel').textContent = zoom.toFixed(1) + '×';
-    syncPanBtns();
-  }
-
-  function syncPanBtns() {
-    const disabled = zoom <= ZOOM_MIN;
+    const disablePan = zoom <= ZOOM_MIN;
     ['btnPanUp','btnPanDown','btnPanLeft','btnPanRight'].forEach(id => {
       const el = document.getElementById(id);
-      el.style.opacity = disabled ? '0.3' : '1';
-      el.style.pointerEvents = disabled ? 'none' : 'auto';
+      el.style.opacity = disablePan ? '0.25' : '1';
+      el.style.pointerEvents = disablePan ? 'none' : 'auto';
     });
   }
 
   function updateFrameGuide() {
     const guide = document.getElementById('frameGuide');
-    const vW = window.innerWidth, vH = window.innerHeight;
     const slots = JSON.parse(localStorage.getItem('templateSlots') || '[]');
-    if (slots.length === 0) { guide.style.opacity = '0'; return; }
+    if (!slots.length) { guide.style.opacity = '0'; return; }
     const slot = slots[currentSlot] || slots[0];
-    const slotAspect = slot.w / slot.h;
-    const wrapAspect = vW / vH;
+    const aspect = slot.w / slot.h;
+    const vW = window.innerWidth, vH = window.innerHeight;
     let gW, gH;
-    if (slotAspect > wrapAspect) {
-      gW = vW * 0.88; gH = gW / slotAspect;
-    } else {
-      gH = vH * 0.88; gW = gH * slotAspect;
-    }
-    const stripOffset = 50; // offset kanan karena thumbnail strip di kiri
-    guide.style.left   = ((vW - gW) / 2 + stripOffset / 2) + 'px';
+    if (aspect > vW / vH) { gW = vW * 0.82; gH = gW / aspect; }
+    else                   { gH = vH * 0.80; gW = gH * aspect; }
+    guide.style.left   = ((vW - gW) / 2 + 40) + 'px'; // +40 offset for strip
     guide.style.top    = ((vH - gH) / 2) + 'px';
     guide.style.width  = gW + 'px';
     guide.style.height = gH + 'px';
     guide.style.opacity = '1';
   }
 
+  // ── Indicators & Strip ──
   function renderIndicators() {
     const ind = document.getElementById('slotIndicator');
     ind.innerHTML = '';
@@ -468,12 +432,10 @@
       const dot = document.createElement('div');
       if (photos[i]) {
         dot.className = 'slot-dot done';
-        dot.title = `Foto ${i+1} — klik untuk retake`;
         dot.onclick = () => retakePhoto(i);
-      } else if (i === currentSlot) {
-        dot.className = 'slot-dot active';
+        dot.title = 'Foto ' + (i+1) + ' — klik retake';
       } else {
-        dot.className = 'slot-dot';
+        dot.className = 'slot-dot' + (i === currentSlot ? ' active' : '');
       }
       dot.textContent = i + 1;
       ind.appendChild(dot);
@@ -510,13 +472,15 @@
     const allDone = photos.every(p => p !== null);
     if (!allDone) {
       const next = photos.findIndex(p => p === null);
-      document.getElementById('titleText').textContent = `Foto ${next + 1}/${slotCount}`;
+      document.getElementById('titleText').textContent = 'Foto ' + (next+1) + '/' + slotCount;
       btnAmbil.style.display = '';
       btnLanjut.style.display = 'none';
+      document.getElementById('btnSkip').style.visibility = 'hidden';
     } else {
-      document.getElementById('titleText').textContent = 'Selesai! ✓';
+      document.getElementById('titleText').textContent = 'Semua selesai ✓';
       btnAmbil.style.display = 'none';
       btnLanjut.style.display = '';
+      document.getElementById('btnSkip').style.visibility = 'hidden';
     }
   }
 
@@ -525,12 +489,13 @@
     photos[idx] = null; liveVideos[idx] = null;
     currentSlot = idx;
     renderStrip(); renderIndicators(); updateTitle();
-    statusMsg.textContent = `Siap ambil ulang foto ${idx + 1}`;
+    statusMsg.textContent = 'Siap ambil ulang foto ' + (idx+1);
     btnAmbil.disabled = false;
-    if (!video.srcObject || !video.srcObject.active) startCamera();
     updateFrameGuide();
+    if (!stream || !stream.active) startCamera();
   }
 
+  // ── Camera ──
   async function startCamera() {
     try {
       if (stream) stream.getTracks().forEach(t => t.stop());
@@ -539,30 +504,32 @@
         audio: false
       });
       video.srcObject = stream;
-    } catch(err) {
+      video.play().catch(() => {});
+    } catch(e) {
       statusMsg.textContent = 'Kamera tidak bisa diakses.';
       btnAmbil.disabled = true;
     }
   }
 
-  function startLiveRecording(slotIdx) {
+  // ── Live recording ──
+  function startLiveRecording(idx) {
     if (!stream || !window.MediaRecorder) return;
     recordedChunks = [];
-    const mimeType = ['video/webm;codecs=vp8','video/webm','video/mp4']
+    const mime = ['video/webm;codecs=vp8','video/webm','video/mp4']
       .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e) { return false; } }) || '';
-    if (!mimeType) return;
+    if (!mime) return;
     try {
-      mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1500000 });
-      mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1500000 });
+      mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: mimeType });
+        const blob = new Blob(recordedChunks, { type: mime });
         const reader = new FileReader();
-        reader.onload = ev => { liveVideos[slotIdx] = ev.target.result; };
+        reader.onload = ev => { liveVideos[idx] = ev.target.result; };
         reader.readAsDataURL(blob);
       };
       mediaRecorder.start(100);
       recIndicator.classList.add('show');
-    } catch(e) { console.warn('MediaRecorder error:', e); }
+    } catch(e) { console.warn('MediaRecorder:', e); }
   }
 
   function stopLiveRecording() {
@@ -571,49 +538,52 @@
     mediaRecorder = null;
   }
 
+  // ── Timer & Mode selection ──
   function setTimer(sec) {
-    countdownSeconds = sec;
-    [3, 5, 10].forEach(s => {
-      const el = document.getElementById('timer' + s);
-      if (el) el.classList.toggle('selected', s === sec);
-    });
-    // Enable mode buttons setelah timer dipilih
-    document.querySelectorAll('.mode-btn').forEach(b => b.disabled = false);
-    document.getElementById('modeHint').style.display = 'none';
+    countdownSec = sec;
+    [3,5,10].forEach(s => document.getElementById('t'+s).classList.toggle('sel', s === sec));
+    document.getElementById('timerHint').textContent = '';
+    document.getElementById('modeAuto').disabled   = false;
+    document.getElementById('modeManual').disabled = false;
   }
 
   function setMode(mode) {
     captureMode = mode;
     document.getElementById('modeModal').style.display = 'none';
-    if (mode === 'manual') {
-      btnAmbil.style.display = '';
-      btnAmbil.disabled = false;
-    } else {
-      // Auto mode: hide manual button, start automatically
-      btnAmbil.style.display = 'none';
-      setTimeout(() => mulaiCountdown(), 800);
-    }
+    // Start camera now that modal is closed
+    startCamera().then(() => {
+      setTimeout(updateFrameGuide, 600);
+      if (mode === 'auto') {
+        btnAmbil.style.display = 'none';
+        setTimeout(() => mulaiCountdown(), 800);
+      } else {
+        btnAmbil.style.display = '';
+        btnAmbil.disabled = false;
+      }
+    });
   }
 
+  // ── Countdown & Capture ──
   function mulaiCountdown() {
     if (isCountingDown) return;
     isCountingDown = true;
     btnAmbil.disabled = true;
     currentSlot = photos.findIndex(p => p === null);
-    if (currentSlot === -1) return;
+    if (currentSlot === -1) { isCountingDown = false; return; }
+    renderIndicators();
 
-    let angka = countdownSeconds || 3;
+    let angka = countdownSec;
     let liveStarted = false;
     countdownEl.textContent = angka;
     countdownEl.classList.add('show');
 
-    const interval = setInterval(() => {
+    const iv = setInterval(() => {
       angka--;
       if (angka === 2 && !liveStarted) { liveStarted = true; startLiveRecording(currentSlot); }
       if (angka > 0) {
         countdownEl.textContent = angka;
       } else {
-        clearInterval(interval);
+        clearInterval(iv);
         countdownEl.classList.remove('show');
         ambilFoto();
       }
@@ -622,33 +592,32 @@
 
   function ambilFoto() {
     flashEl.classList.add('show');
-    setTimeout(() => flashEl.classList.remove('show'), 200);
+    setTimeout(() => flashEl.classList.remove('show'), 180);
 
-    const W = 720, H = 540;
+    const W = 960, H = 720;
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
-    const vW = video.videoWidth || W;
-    const vH = video.videoHeight || H;
-    const baseScale = Math.max(W / vW, H / vH);
+    const vW = video.videoWidth || W, vH = video.videoHeight || H;
+    const baseScale = Math.max(W/vW, H/vH);
     const totalScale = baseScale * zoom;
     const drawW = vW * totalScale, drawH = vH * totalScale;
     const drawX = (W - drawW) / 2 - panX * drawW;
     const drawY = (H - drawH) / 2 + panY * drawH;
-    ctx.save();
-    ctx.translate(W, 0); ctx.scale(-1, 1);
+    ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, vW, vH, drawX, drawY, drawW, drawH);
     ctx.restore();
-    photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.85);
 
+    photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.85);
     setTimeout(() => stopLiveRecording(), 800);
     isCountingDown = false;
+
+    renderStrip(); renderIndicators(); updateTitle(); updateFrameGuide();
 
     const nextEmpty = photos.findIndex(p => p === null);
     if (nextEmpty !== -1) {
       currentSlot = nextEmpty;
-      statusMsg.textContent = `Bagus! Sekarang foto ${nextEmpty + 1}`;
+      statusMsg.textContent = 'Bagus! Sekarang foto ' + (nextEmpty+1);
       if (captureMode === 'auto') {
-        // Auto mode: langsung countdown foto berikutnya
         setTimeout(() => { statusMsg.textContent = ''; mulaiCountdown(); }, 1200);
       } else {
         setTimeout(() => { statusMsg.textContent = ''; btnAmbil.disabled = false; }, 1200);
@@ -656,60 +625,54 @@
     } else {
       statusMsg.textContent = 'Semua foto selesai! ✓';
       if (stream) stream.getTracks().forEach(t => t.stop());
-      setTimeout(() => showPhotoPreview(), 600);
+      setTimeout(() => showPreview(), 700);
     }
-    renderStrip(); renderIndicators(); updateTitle(); updateFrameGuide();
   }
 
-  function showPhotoPreview() {
-    const panel = document.getElementById('photoPreviewPanel');
-    const bigImg = document.getElementById('previewBigImg');
+  // ── Preview Panel ──
+  function showPreview() {
+    const panel = document.getElementById('previewPanel');
+    const big   = document.getElementById('previewBig');
     const thumbs = document.getElementById('previewThumbs');
-
-    panel.classList.add('show');
-
-    // Build thumbs
     thumbs.innerHTML = '';
-    photos.forEach((src, i) => {
-      if (!src) return;
+    const valid = photos.filter(Boolean);
+    big.src = valid[0] || '';
+    valid.forEach((src, i) => {
       const img = document.createElement('img');
-      img.className = 'preview-thumb' + (i === 0 ? ' active' : '');
+      img.className = 'prev-thumb' + (i === 0 ? ' active' : '');
       img.src = src;
       img.onclick = () => {
-        document.querySelectorAll('.preview-thumb').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.prev-thumb').forEach(t => t.classList.remove('active'));
         img.classList.add('active');
-        bigImg.style.opacity = '0';
-        setTimeout(() => { bigImg.src = src; bigImg.style.opacity = '1'; }, 150);
+        big.style.opacity = '0';
+        setTimeout(() => { big.src = src; big.style.opacity = '1'; }, 150);
       };
       thumbs.appendChild(img);
     });
-
-    // Show first photo
-    bigImg.src = photos.find(Boolean) || '';
+    panel.classList.add('show');
   }
 
   function closePreview() {
-    document.getElementById('photoPreviewPanel').classList.remove('show');
-    // Allow retake
-    const idx = photos.findIndex((p, i) => i === 0); // go back to first slot retake mode
+    document.getElementById('previewPanel').classList.remove('show');
     btnAmbil.style.display = captureMode === 'manual' ? '' : 'none';
-    if (stream && stream.active) return;
-    startCamera();
+    if (!stream || !stream.active) startCamera();
   }
 
   function lanjutFilter() {
     try {
-      localStorage.removeItem('photos'); localStorage.removeItem('filteredPhotos'); localStorage.removeItem('livePhotos');
+      localStorage.removeItem('photos');
+      localStorage.removeItem('filteredPhotos');
+      localStorage.removeItem('livePhotos');
       localStorage.setItem('photos', JSON.stringify(photos));
       setTimeout(() => {
         const validLive = liveVideos.filter(Boolean);
         if (validLive.length > 0) {
-          try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) { console.warn('livePhotos too large:', e); }
+          try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) {}
         }
         window.location.href = 'filter.html';
-      }, 600);
-    } catch(err) {
-      alert('Storage penuh. Hapus beberapa template lama di Admin, lalu coba lagi.');
+      }, 500);
+    } catch(e) {
+      alert('Storage penuh. Hapus template lama di Admin lalu coba lagi.');
     }
   }
 
@@ -718,19 +681,17 @@
     window.location.href = 'template.html';
   }
 
-  // Pan/Zoom buttons
+  // ── Pan/Zoom wiring ──
   document.getElementById('btnZoomIn').onclick  = () => { zoom = Math.min(ZOOM_MAX, +(zoom+ZOOM_STEP).toFixed(1)); updateVideoTransform(); };
   document.getElementById('btnZoomOut').onclick = () => { zoom = Math.max(ZOOM_MIN, +(zoom-ZOOM_STEP).toFixed(1)); if(zoom===1){panX=0;panY=0;} updateVideoTransform(); };
-  document.getElementById('btnPanUp').onclick    = () => { panY = Math.max(-0.4, panY - PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnPanDown').onclick  = () => { panY = Math.min(0.4, panY + PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnPanLeft').onclick  = () => { panX = Math.min(0.4, panX + PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnPanRight').onclick = () => { panX = Math.max(-0.4, panX - PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnResetPan').onclick = () => { panX = 0; panY = 0; zoom = 1.0; updateVideoTransform(); };
+  document.getElementById('btnPanUp').onclick    = () => { panY = Math.max(-0.4, panY-PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnPanDown').onclick  = () => { panY = Math.min(0.4,  panY+PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnPanLeft').onclick  = () => { panX = Math.min(0.4,  panX+PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnPanRight').onclick = () => { panX = Math.max(-0.4, panX-PAN_STEP); updateVideoTransform(); };
+  document.getElementById('btnResetPan').onclick = () => { panX=0; panY=0; zoom=1.0; updateVideoTransform(); };
 
-  syncPanBtns();
-  renderIndicators(); renderStrip(); updateTitle();
-  startCamera();
-  setTimeout(updateFrameGuide, 800);
+  // Init
+  renderIndicators(); renderStrip(); updateTitle(); updateVideoTransform();
   window.addEventListener('resize', updateFrameGuide);
 </script>
 

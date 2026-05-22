@@ -119,10 +119,15 @@
       color: rgba(255,255,255,0.3); font-size: 18px;
     }
     .btn-retake {
-      background: rgba(255,107,53,0.85); color: white; border: none;
-      border-radius: 50px; font-size: 9px; font-weight: 700;
-      padding: 2px 7px; cursor: pointer;
+      position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+      background: rgba(233,69,96,0.92); color: white; border: none;
+      border-radius: 50px; font-size: 13px; font-weight: 700;
+      padding: 5px 14px; cursor: pointer; white-space: nowrap;
+      backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      transition: all 0.15s; z-index: 2;
     }
+    .btn-retake:hover { background: #e94560; transform: translateX(-50%) scale(1.08); }
+    .photo-item { position: relative; }
     #panControls {
       display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center;
     }

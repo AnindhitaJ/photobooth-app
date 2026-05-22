@@ -254,9 +254,53 @@
     cursor: pointer; transition: all 0.15s;
   }
   .mode-timer-opt.selected { border-color: #e94560; background: #e94560; }
+
+  /* ─── Photo Preview Panel (muncul setelah selesai) ─── */
+  #photoPreviewPanel {
+    position: fixed; inset: 0; z-index: 28;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.92); backdrop-filter: blur(8px);
+  }
+  #photoPreviewPanel.show { display: flex; }
+  #previewBigImg {
+    max-width: 70vw; max-height: 65vh;
+    border-radius: 14px; object-fit: contain;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    border: 2px solid rgba(255,255,255,0.1);
+    transition: opacity 0.2s;
+  }
+  #previewThumbs {
+    display: flex; gap: 10px; margin-top: 16px;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .preview-thumb {
+    width: 64px; height: 64px; border-radius: 10px;
+    object-fit: cover; cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: all 0.15s; opacity: 0.6;
+  }
+  .preview-thumb.active {
+    border-color: #06d6a0; opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(6,214,160,0.5);
+  }
+  #previewActions {
+    display: flex; gap: 12px; margin-top: 20px;
+  }
 </style>
 </head>
 <body>
+
+  <!-- Photo Preview Panel -->
+  <div id="photoPreviewPanel">
+    <img id="previewBigImg" src="" alt="Preview" />
+    <div id="previewThumbs"></div>
+    <div id="previewActions">
+      <button class="btn btn-back" onclick="closePreview()">← Edit Ulang</button>
+      <button class="btn btn-success" onclick="lanjutFilter()">Lanjut ke Filter →</button>
+    </div>
+  </div>
 
   <!-- Mode Selection Modal -->
   <div class="mode-modal-overlay" id="modeModal">
@@ -392,9 +436,9 @@
     const wrapAspect = vW / vH;
     let gW, gH;
     if (slotAspect > wrapAspect) {
-      gW = vW * 0.85; gH = gW / slotAspect;
+      gW = vW * 0.92; gH = gW / slotAspect;
     } else {
-      gH = vH * 0.85; gW = gH * slotAspect;
+      gH = vH * 0.92; gW = gH * slotAspect;
     }
     guide.style.left   = ((vW - gW) / 2) + 'px';
     guide.style.top    = ((vH - gH) / 2) + 'px';
@@ -598,8 +642,45 @@
     } else {
       statusMsg.textContent = 'Semua foto selesai! ✓';
       if (stream) stream.getTracks().forEach(t => t.stop());
+      setTimeout(() => showPhotoPreview(), 600);
     }
     renderStrip(); renderIndicators(); updateTitle(); updateFrameGuide();
+  }
+
+  function showPhotoPreview() {
+    const panel = document.getElementById('photoPreviewPanel');
+    const bigImg = document.getElementById('previewBigImg');
+    const thumbs = document.getElementById('previewThumbs');
+
+    panel.classList.add('show');
+
+    // Build thumbs
+    thumbs.innerHTML = '';
+    photos.forEach((src, i) => {
+      if (!src) return;
+      const img = document.createElement('img');
+      img.className = 'preview-thumb' + (i === 0 ? ' active' : '');
+      img.src = src;
+      img.onclick = () => {
+        document.querySelectorAll('.preview-thumb').forEach(t => t.classList.remove('active'));
+        img.classList.add('active');
+        bigImg.style.opacity = '0';
+        setTimeout(() => { bigImg.src = src; bigImg.style.opacity = '1'; }, 150);
+      };
+      thumbs.appendChild(img);
+    });
+
+    // Show first photo
+    bigImg.src = photos.find(Boolean) || '';
+  }
+
+  function closePreview() {
+    document.getElementById('photoPreviewPanel').classList.remove('show');
+    // Allow retake
+    const idx = photos.findIndex((p, i) => i === 0); // go back to first slot retake mode
+    btnAmbil.style.display = captureMode === 'manual' ? '' : 'none';
+    if (stream && stream.active) return;
+    startCamera();
   }
 
   function lanjutFilter() {

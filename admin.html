@@ -306,6 +306,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ─── Supabase config (HARUS di atas semua fungsi yang pakai ini) ───
+  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+  const BUCKET = 'photobooth';
+
   const DISPLAY_MAX_W = 320;
   let templateImg = null, templateDataURL = null;
   let slots = [], scale = 1;
@@ -414,10 +419,6 @@
   document.getElementById('fileInput').addEventListener('change', e => {
     if (e.target.files[0]) loadTemplate(e.target.files[0]);
   });
-  // ─── Supabase config ───
-  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
-  const BUCKET = 'photobooth';
 
   async function uploadTemplateImage(dataURL, name) {
     const blob = dataURLtoBlob(dataURL);
@@ -641,22 +642,25 @@
       renderCatTabs();
       renderCategoryTags();
 
-      // Reset form
+      // Reset form (hanya saat sukses)
       document.getElementById('templateName').value = '';
       document.getElementById('canvasWrapper').style.display = 'none';
       document.getElementById('editorControls').style.display = 'none';
       document.getElementById('slotInfo').style.display = 'none';
+      btn.style.display = 'none';
       templateDataURL = null; templateImg = null; slots = [];
       document.getElementById('fileInput').value = '';
 
     } catch(e) {
       showToast('Gagal upload: ' + e.message, true);
       console.error(e);
-    } finally {
+      // Kalau error, tombol tetap tampil supaya user bisa retry
       btn.disabled = false;
       btn.textContent = '💾 Simpan Template';
-      btn.style.display = 'none';
+      return;
     }
+    btn.disabled = false;
+    btn.textContent = '💾 Simpan Template';
   }
 
   // ─── Template List ───

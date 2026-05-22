@@ -417,7 +417,8 @@
     let gW, gH;
     if (aspect > vW / vH) { gW = vW * 0.82; gH = gW / aspect; }
     else                   { gH = vH * 0.80; gW = gH * aspect; }
-    guide.style.left   = ((vW - gW) / 2 + 40) + 'px'; // +40 offset for strip
+    const stripW = 72 + 16; // thumb width + left margin
+    guide.style.left   = ((vW - stripW - gW) / 2 + stripW) + 'px';
     guide.style.top    = ((vH - gH) / 2) + 'px';
     guide.style.width  = gW + 'px';
     guide.style.height = gH + 'px';

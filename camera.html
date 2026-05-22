@@ -195,9 +195,77 @@
       }
       #topHud { padding: max(8px, env(safe-area-inset-top, 8px)) 12px 8px; }
     }
-  </style>
+  
+  /* ─── Mode Selection Modal ─── */
+  .mode-modal-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .mode-modal {
+    background: #1a1a2e; border-radius: 20px;
+    padding: 32px 28px; width: 88%; max-width: 380px;
+    border: 2px solid #e94560; text-align: center;
+  }
+  .mode-modal h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; color: white; }
+  .mode-modal p { font-size: 13px; color: #a0a0b0; margin-bottom: 24px; }
+  .mode-btn {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 16px 18px; margin-bottom: 12px;
+    border-radius: 14px; border: 2px solid #0f3460;
+    background: #16213e; color: white;
+    cursor: pointer; text-align: left; transition: all 0.2s;
+  }
+  .mode-btn:hover { border-color: #e94560; background: #0f3460; transform: scale(1.02); }
+  .mode-btn .mode-icon { font-size: 32px; flex-shrink: 0; }
+  .mode-btn .mode-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .mode-btn .mode-text p { font-size: 12px; color: #a0a0b0; margin: 0; }
+  .mode-timer-row { display: flex; gap: 8px; margin-top: 4px; }
+  .mode-timer-opt {
+    flex: 1; padding: 8px; border-radius: 10px;
+    border: 2px solid #0f3460; background: #0f3460;
+    color: white; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mode-timer-opt.selected { border-color: #e94560; background: #e94560; }
+</style>
 </head>
 <body>
+
+  <!-- Mode Selection Modal -->
+  <div class="mode-modal-overlay" id="modeModal">
+    <div class="mode-modal">
+      <h2>📸 Pilih Mode Foto</h2>
+      <p>Bagaimana kamu mau ambil foto?</p>
+
+      <button class="mode-btn" onclick="setMode('auto')">
+        <div class="mode-icon">⚡</div>
+        <div class="mode-text">
+          <h3>Otomatis</h3>
+          <p>Foto jalan sendiri satu per satu</p>
+        </div>
+      </button>
+
+      <button class="mode-btn" onclick="setMode('manual')">
+        <div class="mode-icon">🖐️</div>
+        <div class="mode-text">
+          <h3>Manual</h3>
+          <p>Klik tombol sendiri tiap mau foto</p>
+        </div>
+      </button>
+
+      <div style="margin-top:8px">
+        <p style="font-size:12px;color:#a0a0b0;margin-bottom:8px">⏱ Timer countdown:</p>
+        <div class="mode-timer-row">
+          <button class="mode-timer-opt selected" id="timer3" onclick="setTimer(3)">3 detik</button>
+          <button class="mode-timer-opt" id="timer5" onclick="setTimer(5)">5 detik</button>
+          <button class="mode-timer-opt" id="timer10" onclick="setTimer(10)">10 detik</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
@@ -247,6 +315,8 @@
   const countdownEl  = document.getElementById('countdown');
   const flashEl      = document.getElementById('flash');
   const btnAmbil     = document.getElementById('btnAmbil');
+  let captureMode = null; // 'auto' or 'manual'
+  let countdownSeconds = 3; // default 3 detik
   const btnLanjut    = document.getElementById('btnLanjut');
   const statusMsg    = document.getElementById('statusMsg');
   const recIndicator = document.getElementById('recIndicator');
@@ -415,6 +485,27 @@
     mediaRecorder = null;
   }
 
+  function setTimer(sec) {
+    countdownSeconds = sec;
+    [3, 5, 10].forEach(s => {
+      const el = document.getElementById('timer' + s);
+      if (el) el.classList.toggle('selected', s === sec);
+    });
+  }
+
+  function setMode(mode) {
+    captureMode = mode;
+    document.getElementById('modeModal').style.display = 'none';
+    if (mode === 'manual') {
+      btnAmbil.style.display = '';
+      btnAmbil.disabled = false;
+    } else {
+      // Auto mode: hide manual button, start automatically
+      btnAmbil.style.display = 'none';
+      setTimeout(() => mulaiCountdown(), 800);
+    }
+  }
+
   function mulaiCountdown() {
     if (isCountingDown) return;
     isCountingDown = true;
@@ -422,7 +513,7 @@
     currentSlot = photos.findIndex(p => p === null);
     if (currentSlot === -1) return;
 
-    let angka = 5;
+    let angka = countdownSeconds;
     let liveStarted = false;
     countdownEl.textContent = angka;
     countdownEl.classList.add('show');
@@ -467,7 +558,12 @@
     if (nextEmpty !== -1) {
       currentSlot = nextEmpty;
       statusMsg.textContent = `Bagus! Sekarang foto ${nextEmpty + 1}`;
-      setTimeout(() => { statusMsg.textContent = ''; btnAmbil.disabled = false; }, 1200);
+      if (captureMode === 'auto') {
+        // Auto mode: langsung countdown foto berikutnya
+        setTimeout(() => { statusMsg.textContent = ''; mulaiCountdown(); }, 1200);
+      } else {
+        setTimeout(() => { statusMsg.textContent = ''; btnAmbil.disabled = false; }, 1200);
+      }
     } else {
       statusMsg.textContent = 'Semua foto selesai! ✓';
       if (stream) stream.getTracks().forEach(t => t.stop());

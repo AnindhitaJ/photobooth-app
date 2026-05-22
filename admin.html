@@ -474,3 +474,263 @@
       templateImg.src = templateDataURL;
     };
     reader.readAsDataURL(file);
+  }
+
+  // ─── Auto Detect ───
+  function autoDetect() {
+    if (!templateImg) return;
+    const W = canvas.width, H = canvas.height;
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const octx = off.getContext('2d');
+    octx.drawImage(templateImg, 0, 0, W, H);
+    const data = octx.getImageData(0, 0, W, H).data;
+
+    const mask = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      const r = data[i*4], g = data[i*4+1], b = data[i*4+2], a = data[i*4+3];
+      if (a < 30 || (r < 40 && g < 40 && b < 40 && a > 100)) mask[i] = 1;
+    }
+
+    const rowSums = new Array(H).fill(0);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        rowSums[y] += mask[y * W + x];
+
+    const threshold = W * 0.15;
+    let inBlock = false, blockStart = 0;
+    const blocks = [];
+    for (let y = 0; y < H; y++) {
+      if (rowSums[y] > threshold && !inBlock) { inBlock = true; blockStart = y; }
+      else if (rowSums[y] <= threshold && inBlock) {
+        inBlock = false;
+        if (y - blockStart > H * 0.04) blocks.push([blockStart, y - 1]);
+      }
+    }
+    if (inBlock) blocks.push([blockStart, H - 1]);
+
+    slots = [];
+    for (const [y1, y2] of blocks) {
+      const colSums = new Array(W).fill(0);
+      for (let y = y1; y <= y2; y++)
+        for (let x = 0; x < W; x++)
+          colSums[x] += mask[y * W + x];
+      const cThresh = (y2 - y1) * 0.1;
+      const xCols = colSums.map((v,i) => v > cThresh ? i : -1).filter(v => v >= 0);
+      if (!xCols.length) continue;
+      const x1 = xCols[0], x2 = xCols[xCols.length-1];
+      if ((x2-x1) < W*0.1 || (y2-y1) < H*0.02) continue;
+      slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1 });
+    }
+
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+    showToast(`${slots.length} slot terdeteksi`);
+  }
+
+  function renderSlots() {
+    overlay.innerHTML = '';
+    slots.forEach((slot, idx) => {
+      const box = document.createElement('div');
+      box.className = 'slot-box';
+      box.style.cssText = `left:${slot.x}px;top:${slot.y}px;width:${slot.w}px;height:${slot.h}px`;
+      box.innerHTML = `
+        <div class="slot-label">Foto ${idx+1}</div>
+        <button class="slot-delete" onclick="deleteSlot(${idx})">×</button>
+        <div class="resize-handle" data-idx="${idx}"></div>
+      `;
+      makeDraggable(box, idx);
+      makeResizable(box.querySelector('.resize-handle'), box, idx);
+      overlay.appendChild(box);
+    });
+  }
+
+  function makeDraggable(box, idx) {
+    let sx, sy, sl, st;
+    box.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
+      e.preventDefault();
+      sx = e.clientX; sy = e.clientY; sl = slots[idx].x; st = slots[idx].y;
+      const mv = e => {
+        slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + e.clientX - sx));
+        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + e.clientY - sy));
+        box.style.left = slots[idx].x + 'px'; box.style.top = slots[idx].y + 'px';
+      };
+      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    });
+  }
+
+  function makeResizable(handle, box, idx) {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      const sx = e.clientX, sy = e.clientY, sw = slots[idx].w, sh = slots[idx].h;
+      const mv = e => {
+        slots[idx].w = Math.max(40, Math.min(canvas.width - slots[idx].x, sw + e.clientX - sx));
+        slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, sh + e.clientY - sy));
+        box.style.width = slots[idx].w + 'px'; box.style.height = slots[idx].h + 'px';
+      };
+      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    });
+  }
+
+  function addSlotManual() {
+    const W = canvas.width, H = canvas.height;
+    slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18) });
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+  }
+
+  function deleteSlot(idx) {
+    slots.splice(idx, 1);
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+  }
+
+  function clearSlots() {
+    slots = [];
+    document.getElementById('slotCount').textContent = 0;
+    renderSlots();
+  }
+
+  // ─── Save ───
+  async function saveTemplate() {
+    const name = document.getElementById('templateName').value.trim();
+    if (!name) { showToast('Isi nama template dulu!', true); return; }
+    if (!selectedCategory) { showToast('Pilih atau tambah kategori dulu!', true); return; }
+    if (!templateDataURL) { showToast('Upload PNG dulu!', true); return; }
+    if (!slots.length) { showToast('Tambahkan minimal 1 slot!', true); return; }
+
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.textContent = '⏫ Mengupload ke cloud...';
+
+    try {
+      // Upload image ke Supabase, simpan URL bukan base64
+      const imageURL = await uploadTemplateImage(templateDataURL, name);
+
+      const realSlots = slots.map(s => ({
+        x: Math.round(s.x / scale), y: Math.round(s.y / scale),
+        w: Math.round(s.w / scale), h: Math.round(s.h / scale),
+      }));
+
+      const tmpl = {
+        name, category: selectedCategory,
+        src: imageURL,
+        slots: realSlots,
+        w: templateImg.width, h: templateImg.height,
+      };
+
+      // Insert ke Supabase database
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(tmpl),
+      });
+      if (!res.ok) throw new Error('DB insert gagal: ' + await res.text());
+      const [inserted] = await res.json();
+      _allTemplates.unshift(inserted);
+      showToast('Template tersimpan di cloud! ✓');
+      renderTemplateList();
+      renderCatTabs();
+      renderCategoryTags();
+
+      // Reset form
+      document.getElementById('templateName').value = '';
+      document.getElementById('canvasWrapper').style.display = 'none';
+      document.getElementById('editorControls').style.display = 'none';
+      document.getElementById('slotInfo').style.display = 'none';
+      templateDataURL = null; templateImg = null; slots = [];
+      document.getElementById('fileInput').value = '';
+
+    } catch(e) {
+      showToast('Gagal upload: ' + e.message, true);
+      console.error(e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Simpan Template';
+      btn.style.display = 'none';
+    }
+  }
+
+  // ─── Template List ───
+  function renderTemplateList() {
+    const list = document.getElementById('templateList');
+    const filtered = filterCategory === 'all'
+      ? _allTemplates
+      : _allTemplates.filter(t => t.category === filterCategory);
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty-state">Belum ada template di kategori ini</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => `
+      <div class="template-item">
+        <img class="template-thumb" src="${t.src}" alt="${t.name}" crossorigin="anonymous">
+        <div class="template-info">
+          <h4>${t.name}</h4>
+          <p>${(t.slots||[]).length} slot foto · ${t.w||591}×${t.h||1772}px</p>
+          <span class="cat-badge">${t.category}</span>
+        </div>
+        <button class="btn btn-danger" onclick="hapusTemplate('${t.id}')">Hapus</button>
+      </div>
+    `).join('');
+  }
+
+  async function hapusTemplate(id) {
+    if (!confirm('Hapus template ini?')) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+        }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      _allTemplates = _allTemplates.filter(t => t.id != id);
+      renderTemplateList();
+      renderCatTabs();
+      showToast('Template dihapus');
+    } catch(e) {
+      showToast('Gagal hapus: ' + e.message, true);
+    }
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#e94560' : '#27ae60';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // Init
+  renderCategoryTags();
+  renderCatTabs();
+  renderManageCats();
+  // Init: load dari Supabase dulu
+  (async () => {
+    document.getElementById('templateList').innerHTML = '<div class="empty-state">Memuat template...</div>';
+    await fetchAllTemplates();
+    renderCatTabs();
+    renderCategoryTags();
+    renderManageCats();
+    renderTemplateList();
+  })();
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>

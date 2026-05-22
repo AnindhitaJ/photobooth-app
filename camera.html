@@ -101,10 +101,13 @@
     /* BOTTOM PANEL */
     #bottomPanel {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-      padding: 12px 16px max(16px, env(safe-area-inset-bottom, 16px));
-      background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%);
-      display: flex; flex-direction: row; gap: 12px;
-      align-items: flex-end; justify-content: center;
+      padding: 10px 20px max(16px, env(safe-area-inset-bottom, 16px));
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    #statusMsg {
+      font-size: 12px; color: rgba(255,255,255,0.6);
+      text-align: center; min-height: 16px;
     }
     /* Photo strip overlaid bottom-left on video */
     #photosStrip {
@@ -133,15 +136,15 @@
       color: rgba(255,255,255,0.35); font-size: 24px; font-weight: 700;
     }
     .btn-retake {
-      position: absolute; top: 4px; right: 4px;
-      background: rgba(233,69,96,0.9); color: white; border: none;
-      border-radius: 50%; width: 24px; height: 24px;
-      font-size: 13px; font-weight: 700;
+      position: absolute; top: -8px; right: -8px;
+      background: #e94560; color: white; border: 2px solid rgba(0,0,0,0.3);
+      border-radius: 50%; width: 32px; height: 32px;
+      font-size: 16px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      transition: all 0.15s; z-index: 3;
     }
-    .btn-retake:hover { background: #e94560; transform: scale(1.15); }
+    .btn-retake:hover { background: #c0392b; transform: scale(1.2); }
     #panControls {
       position: fixed;
       bottom: max(90px, calc(env(safe-area-inset-bottom,16px) + 80px));
@@ -172,8 +175,11 @@
     }
     .btn-reset-pan:hover { color: white; border-color: rgba(255,255,255,0.6); }
     #actionRow {
-      display: flex; gap: 12px; align-items: center; justify-content: center;
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      width: 100%;
     }
+    #actionLeft { display: flex; align-items: center; }
+    #actionRight { display: flex; align-items: center; gap: 10px; }
     .btn {
       padding: 11px 22px; border-radius: 50px;
       font-size: 14px; font-weight: 700;

@@ -386,17 +386,37 @@
     oc.drawImage(currentImg, 0, 0);
     oc.filter = 'none';
 
-    // ── 2. DEBUG: gambar langsung ke ctx buat test ────────────────────────────
+    // ── 2. DEBUG: gambar oval hitam langsung ke ctx, bypass offscreen ──────────
     if (s.smooth > 0) {
-      dbg("smooth ON → test gambar langsung ke ctx");
-      // Flush dulu foto asli ke ctx
+      dbg("test oval langsung ke ctx");
       ctx.clearRect(0, 0, W, H);
       ctx.drawImage(currentImg, 0, 0);
-      // Gambar kotak merah solid langsung ke ctx — kalau ini ga keliatan, ctx-nya bermasalah
-      ctx.fillStyle = 'rgba(255,0,0,0.7)';
-      ctx.fillRect(W*0.1, H*0.1, W*0.8, H*0.4);
-      dbg("kotak merah harusnya keliatan di foto");
-      return; // stop di sini dulu
+      if (faces.length > 0) {
+        faces.forEach((lm, fi) => {
+          const xs = lm.map(p => p.x * W);
+          const ys = lm.map(p => p.y * H);
+          const minX = Math.min(...xs), maxX = Math.max(...xs);
+          const minY = Math.min(...ys), maxY = Math.max(...ys);
+          const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+          const rx = (maxX - minX) / 2 * 1.1;
+          const ry = (maxY - minY) / 2 * 1.1;
+          ctx.save();
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = 'black';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          dbg("face " + fi + " cx=" + Math.round(cx) + " cy=" + Math.round(cy) + " rx=" + Math.round(rx) + " ry=" + Math.round(ry));
+        });
+      } else {
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(W*0.2, H*0.1, W*0.6, H*0.5);
+        ctx.globalAlpha = 1;
+        dbg("no faces → kotak biru fallback");
+      }
+      return;
     }
 
     // ── 3. Blush ─────────────────────────────────────────────────────────────

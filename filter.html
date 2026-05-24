@@ -423,8 +423,8 @@
 
     // ── 2. Smooth — HANYA area wajah per face, bukan seluruh foto ──
     if (s.smooth > 0) {
-      const blurPx     = [0, 4, 8, 12][s.smooth];
-      const blendAlpha = [0, 0.7, 0.85, 0.95][s.smooth];
+      const blurPx     = [0, 6, 12, 18][s.smooth];
+      const blendAlpha = [0, 0.75, 0.88, 0.96][s.smooth];
 
       // Buat satu versi blur dari foto asli
       const blurOff = document.createElement('canvas');
@@ -507,7 +507,7 @@
         brightOff.width = W; brightOff.height = H;
         const boc = brightOff.getContext('2d');
         // Gambar foto asli, apply brightness, apply tone
-        boc.filter = `brightness(${100 + s.brightness}%)`;
+        boc.filter = `brightness(${100 + s.brightness * 3}%)`;
         boc.drawImage(currentImg, 0, 0);
         boc.filter = 'none';
         if (s.tone !== 'normal') {

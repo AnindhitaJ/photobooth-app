@@ -133,6 +133,7 @@
         <canvas id="previewCanvas"></canvas>
       </div>
       <p class="status-bar" id="statusBar">Memuat...</p>
+      <div id="debugBox" style="margin-top:8px;background:#000;color:#0f0;font-size:11px;font-family:monospace;padding:8px 10px;border-radius:10px;line-height:1.7;display:none;"></div>
     </div>
 
     <div class="filter-panel">
@@ -347,13 +348,30 @@
     }
   }
 
-  // ── MAIN applyFilter — semua efek ke offscreen dulu ─────────────────────────
+  // ── Debug helper ─────────────────────────────────────────────────────────────
+  function dbg(msg) {
+    const box = document.getElementById('debugBox');
+    box.style.display = 'block';
+    box.innerHTML += msg + '<br>';
+  }
+  function dbgClear() {
+    document.getElementById('debugBox').innerHTML = '';
+    document.getElementById('debugBox').style.display = 'block';
+  }
+
+  // ── MAIN applyFilter ─────────────────────────────────────────────────────────
   function applyFilter() {
     if (!filterStates[currentIdx]) return;
     const s = filterStates[currentIdx];
     const W = canvas.width, H = canvas.height;
-
     const faces = allLandmarks.length > 0 ? allLandmarks : [];
+
+    dbgClear();
+    dbg("canvas: " + W + "x" + H);
+    dbg("photos: " + photos.length + " | idx: " + currentIdx);
+    dbg("faces: " + allLandmarks.length);
+    dbg("smooth: " + s.smooth + " | brightness: " + s.brightness);
+    dbg("tone: " + s.tone + " | lip: " + s.lip);
 
     // Buat offscreen sebagai working canvas
     const off = document.createElement('canvas');
@@ -369,44 +387,50 @@
 
     // ── 2. DEBUG: tampilkan area smooth sebagai mask hitam ───────────────────
     if (s.smooth > 0) {
+      dbg("smooth ON → faces.length=" + faces.length);
       if (faces.length > 0) {
-        faces.forEach(lm => {
+        dbg("pakai landmark mediapipe");
+        faces.forEach((lm, fi) => {
           const maskC = makeFaceMask(lm, W, H);
-          const debugLayer = document.createElement('canvas');
+          const debugLayer = document.createElement("canvas");
           debugLayer.width = W; debugLayer.height = H;
-          const dc = debugLayer.getContext('2d');
-          dc.fillStyle = 'black';
+          const dc = debugLayer.getContext("2d");
+          dc.fillStyle = "black";
           dc.fillRect(0, 0, W, H);
-          dc.globalCompositeOperation = 'destination-in';
+          dc.globalCompositeOperation = "destination-in";
           dc.drawImage(maskC, 0, 0);
           oc.globalAlpha = 0.65;
           oc.drawImage(debugLayer, 0, 0);
           oc.globalAlpha = 1;
+          dbg("face " + fi + " → mask drawn");
         });
       } else {
-        // Fallback: tidak ada landmark, tampilkan oval default
+        dbg("FALLBACK oval (no landmark)");
         const cx = W/2, cy = H*0.36, rx = W*0.33, ry = H*0.33;
         const maxR = Math.max(rx, ry);
-        const maskC = document.createElement('canvas');
+        const maskC = document.createElement("canvas");
         maskC.width = W; maskC.height = H;
-        const mc = maskC.getContext('2d');
+        const mc = maskC.getContext("2d");
         const grad = mc.createRadialGradient(cx, cy, 0, cx, cy, maxR);
-        grad.addColorStop(0,    'rgba(0,0,0,1)');
-        grad.addColorStop(0.65, 'rgba(0,0,0,0.7)');
-        grad.addColorStop(1,    'rgba(0,0,0,0)');
+        grad.addColorStop(0,    "rgba(0,0,0,1)");
+        grad.addColorStop(0.65, "rgba(0,0,0,0.7)");
+        grad.addColorStop(1,    "rgba(0,0,0,0)");
         mc.save(); mc.translate(cx, cy); mc.scale(rx/maxR, ry/maxR);
         mc.fillStyle = grad; mc.beginPath(); mc.arc(0,0,maxR,0,Math.PI*2); mc.fill(); mc.restore();
-        const debugLayer = document.createElement('canvas');
+        const debugLayer = document.createElement("canvas");
         debugLayer.width = W; debugLayer.height = H;
-        const dc = debugLayer.getContext('2d');
-        dc.fillStyle = 'black';
+        const dc = debugLayer.getContext("2d");
+        dc.fillStyle = "black";
         dc.fillRect(0, 0, W, H);
-        dc.globalCompositeOperation = 'destination-in';
+        dc.globalCompositeOperation = "destination-in";
         dc.drawImage(maskC, 0, 0);
         oc.globalAlpha = 0.65;
         oc.drawImage(debugLayer, 0, 0);
         oc.globalAlpha = 1;
+        dbg("fallback oval drawn");
       }
+    } else {
+      dbg("smooth OFF");
     }
 
     // ── 3. Blush ─────────────────────────────────────────────────────────────

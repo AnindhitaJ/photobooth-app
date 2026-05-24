@@ -90,6 +90,9 @@
     .btn-outline { background: white; color: var(--text2); border: 2px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
     .btn-outline:disabled { opacity: 0.4; }
+    .btn-cetak2strip { background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+    .btn-cetak2strip:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,99,235,0.5); }
+    .btn-cetak2strip:disabled { opacity: 0.4; transform: none; box-shadow: none; }
     .hint-text { font-size: 11px; color: var(--text2); text-align: center; margin-top: -4px; font-weight: 500; }
     .progress-bar {
       height: 4px; background: var(--border); border-radius: 50px;
@@ -188,6 +191,12 @@
       <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
         <span class="btn-icon">📤</span>
         <span class="btn-label">Share ke Aplikasi Lain</span>
+      </button>
+
+      <button class="btn btn-cetak2strip" id="btnCetak2Strip" onclick="cetak2Strip()" disabled>
+        <span class="btn-icon">🖨️</span>
+        <span class="btn-label">Cetak 2 Strip</span>
+        <span class="btn-badge">10×15</span>
       </button>
 
       <button class="btn btn-print" id="btnPrint" onclick="printFoto()" disabled>
@@ -346,7 +355,7 @@
       document.getElementById('loadingOverlay').style.display = 'none';
 
       const hasLive = livePhotos.some(Boolean);
-      ['btnJpg','btnShare','btnPrint','btnZip'].forEach(id => {
+      ['btnJpg','btnShare','btnPrint','btnZip','btnCetak2Strip'].forEach(id => {
         document.getElementById(id).disabled = false;
       });
       document.getElementById('btnLive').disabled = !hasLive;
@@ -817,6 +826,73 @@
     return result;
   }
 
+
+  // ─── Cetak 2 Strip (10×15 cm, 2 strip 5×15 berdampingan tanpa gap) ───
+  async function cetak2Strip() {
+    if (!finalDataURL) return;
+    const btn = document.getElementById('btnCetak2Strip');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Memproses...';
+    try {
+      // 10×15 cm @ 300dpi = 1181×1772 px
+      // Masing-masing strip: 5×15 cm = 590×1772 px
+      // Disusun ke samping: total 1180×1772 px (2×590, tanpa gap)
+      const STRIP_W = 590;
+      const STRIP_H = 1772;
+      const canvas  = document.createElement('canvas');
+      canvas.width  = STRIP_W * 2;  // 1180
+      canvas.height = STRIP_H;      // 1772
+      const ctx = canvas.getContext('2d');
+
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload  = () => res(i);
+        i.onerror = () => rej(new Error('Gagal load foto'));
+        i.src = finalDataURL;
+      });
+
+      // Gambar strip kiri (cover-fit ke 590×1772)
+      const scale = Math.max(STRIP_W / img.width, STRIP_H / img.height);
+      const sw = STRIP_W / scale, sh = STRIP_H / scale;
+      const sx = (img.width  - sw) / 2;
+      const sy = (img.height - sh) / 2;
+
+      ctx.drawImage(img, sx, sy, sw, sh, 0,       0, STRIP_W, STRIP_H); // kiri
+      ctx.drawImage(img, sx, sy, sw, sh, STRIP_W, 0, STRIP_W, STRIP_H); // kanan (identik)
+
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], `lux-cetak2strip-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        // Coba Web Share API dulu (buka ke app lain langsung)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'Cetak 2 Strip LUX Photobooth' });
+          } catch(e) {
+            if (e.name !== 'AbortError') {
+              // Fallback: download biasa
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = file.name;
+              a.click();
+            }
+          }
+        } else {
+          // Desktop / browser tanpa share API: langsung download
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = file.name;
+          a.click();
+          showStatus('File 10×15 didownload — buka di app cetak favorit kamu');
+        }
+        btn.querySelector('.btn-label').textContent = 'Cetak 2 Strip';
+        btn.disabled = false;
+      }, 'image/jpeg', 0.95);
+
+    } catch(e) {
+      showStatus('Gagal generate: ' + e.message);
+      btn.querySelector('.btn-label').textContent = 'Cetak 2 Strip';
+      btn.disabled = false;
+    }
+  }
 
   // ─── Share ───
   async function shareNative() {

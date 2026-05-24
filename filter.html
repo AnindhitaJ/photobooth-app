@@ -133,7 +133,7 @@
         <canvas id="previewCanvas"></canvas>
       </div>
       <p class="status-bar" id="statusBar">Memuat...</p>
-      <div id="debugBox" style="margin-top:8px;background:#000;color:#0f0;font-size:11px;font-family:monospace;padding:8px 10px;border-radius:10px;line-height:1.7;display:none;"></div>
+
     </div>
 
     <div class="filter-panel">
@@ -349,16 +349,6 @@
     }
   }
 
-  // ── Debug helper ─────────────────────────────────────────────────────────────
-  function dbg(msg) {
-    const box = document.getElementById('debugBox');
-    box.style.display = 'block';
-    box.innerHTML += msg + '<br>';
-  }
-  function dbgClear() {
-    document.getElementById('debugBox').innerHTML = '';
-    document.getElementById('debugBox').style.display = 'block';
-  }
 
   // ── MAIN applyFilter ─────────────────────────────────────────────────────────
   function applyFilter() {
@@ -367,61 +357,58 @@
     const W = canvas.width, H = canvas.height;
     const faces = allLandmarks.length > 0 ? allLandmarks : [];
 
-    dbgClear();
-    dbg("canvas: " + W + "x" + H);
-    dbg("photos: " + photos.length + " | idx: " + currentIdx);
-    dbg("faces: " + allLandmarks.length);
-    dbg("smooth: " + s.smooth + " | brightness: " + s.brightness);
-    dbg("tone: " + s.tone + " | lip: " + s.lip);
-
-    // Buat offscreen sebagai working canvas
-    const off = document.createElement('canvas');
-    off.width = W; off.height = H;
-    const oc = off.getContext('2d');
-
-    // ── 1. Gambar foto asli + brightness via CSS filter ──────────────────────
+    // ── 1. Gambar foto asli + brightness ─────────────────────────────────────
+    ctx.clearRect(0, 0, W, H);
     if (s.brightness > 0) {
-      oc.filter = `brightness(${100 + s.brightness}%)`;
+      ctx.filter = `brightness(${100 + s.brightness}%)`;
     }
-    oc.drawImage(currentImg, 0, 0);
-    oc.filter = 'none';
+    ctx.drawImage(currentImg, 0, 0, W, H);
+    ctx.filter = 'none';
 
-    // ── 2. DEBUG: gambar oval hitam langsung ke ctx, bypass offscreen ──────────
+    // ── 2. Smooth (blur wajah via getImageData region) ───────────────────────
     if (s.smooth > 0) {
-      dbg("test oval langsung ke ctx");
-      ctx.clearRect(0, 0, W, H);
-      ctx.drawImage(currentImg, 0, 0);
-      if (faces.length > 0) {
-        faces.forEach((lm, fi) => {
-          const xs = lm.map(p => p.x * W);
-          const ys = lm.map(p => p.y * H);
-          const minX = Math.min(...xs), maxX = Math.max(...xs);
-          const minY = Math.min(...ys), maxY = Math.max(...ys);
-          const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-          const rx = (maxX - minX) / 2 * 1.1;
-          const ry = (maxY - minY) / 2 * 1.1;
-          ctx.save();
-          ctx.globalAlpha = 0.7;
-          ctx.fillStyle = 'black';
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-          dbg("face " + fi + " cx=" + Math.round(cx) + " cy=" + Math.round(cy) + " rx=" + Math.round(rx) + " ry=" + Math.round(ry));
-        });
-      } else {
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(W*0.2, H*0.1, W*0.6, H*0.5);
-        ctx.globalAlpha = 1;
-        dbg("no faces → kotak biru fallback");
-      }
-      return;
+      const blurPx = s.smooth === 1 ? '3px' : s.smooth === 2 ? '6px' : '10px';
+      faces.forEach(lm => {
+        const xs = lm.map(p => p.x * W);
+        const ys = lm.map(p => p.y * H);
+        const minX = Math.max(0, Math.min(...xs) - W * 0.02);
+        const minY = Math.max(0, Math.min(...ys) - H * 0.02);
+        const maxX = Math.min(W, Math.max(...xs) + W * 0.02);
+        const maxY = Math.min(H, Math.max(...ys) + H * 0.02);
+        const fx = minX, fy = minY, fw = maxX - minX, fh = maxY - minY;
+
+        // Ambil region wajah, blur, gambar balik dengan masking oval
+        const tmp = document.createElement('canvas');
+        tmp.width = W; tmp.height = H;
+        const tc = tmp.getContext('2d');
+        tc.filter = `blur(${blurPx})`;
+        tc.drawImage(canvas, 0, 0, W, H);
+        tc.filter = 'none';
+
+        // Masking oval tepat di wajah
+        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+        const rx = (maxX - minX) / 2 * 1.05;
+        const ry = (maxY - minY) / 2 * 1.1;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(tmp, 0, 0, W, H);
+        ctx.restore();
+      });
     }
 
-    // ── 3. Blush ─────────────────────────────────────────────────────────────
-    try {
-      if (s.blush !== 'off') {
+    // ── 3. Tone ───────────────────────────────────────────────────────────────
+    if (s.tone !== 'normal') {
+      const id = ctx.getImageData(0, 0, W, H);
+      applyToneToPixels(id.data, s.tone);
+      ctx.putImageData(id, 0, 0);
+    }
+
+    // ── 4. Blush ─────────────────────────────────────────────────────────────
+    if (s.blush !== 'off') {
+      try {
         const parts = s.blush.split(',').map(Number);
         const [br, bg, bb] = parts;
         const blushR = W * 0.10;
@@ -432,30 +419,21 @@
             ])
           : [[W*0.28, H*0.42], [W*0.72, H*0.42]];
         blushPts.forEach(([bx, by]) => {
-          const grad = oc.createRadialGradient(bx, by, 0, bx, by, blushR);
+          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
           grad.addColorStop(0,   `rgba(${br},${bg},${bb},0.30)`);
           grad.addColorStop(0.5, `rgba(${br},${bg},${bb},0.12)`);
           grad.addColorStop(1,   `rgba(${br},${bg},${bb},0)`);
-          oc.beginPath(); oc.arc(bx, by, blushR, 0, Math.PI*2);
-          oc.fillStyle = grad; oc.fill();
+          ctx.beginPath();
+          ctx.arc(bx, by, blushR, 0, Math.PI*2);
+          ctx.fillStyle = grad;
+          ctx.fill();
         });
-      }
-      dbg("✓ blush ok");
-    } catch(e) { dbg("❌ CRASH blush: " + e.message); }
-
-    // ── 4. Tone ───────────────────────────────────────────────────────────────
-    try {
-      if (s.tone !== 'normal') {
-        const id = oc.getImageData(0, 0, W, H);
-        applyToneToPixels(id.data, s.tone);
-        oc.putImageData(id, 0, 0);
-      }
-      dbg("✓ tone ok");
-    } catch(e) { dbg("❌ CRASH tone: " + e.message); }
+      } catch(e) { console.warn('blush error:', e); }
+    }
 
     // ── 5. Lip color ──────────────────────────────────────────────────────────
-    try {
-      if (s.lip !== 'off') {
+    if (s.lip !== 'off') {
+      try {
         const parts = s.lip.split(',');
         let [lr, lg, lb] = parts.map(Number);
         const lipAlpha = parseFloat(parts[3]) || 0.30;
@@ -463,10 +441,9 @@
           const gray = Math.round(0.299*lr + 0.587*lg + 0.114*lb);
           lr = lg = lb = gray;
         } else if (s.tone === 'sepia') {
-          const nr = Math.min(255, lr*0.393 + lg*0.769 + lb*0.189);
-          const ng = Math.min(255, lr*0.349 + lg*0.686 + lb*0.168);
-          const nb = Math.min(255, lr*0.272 + lg*0.534 + lb*0.131);
-          lr = nr; lg = ng; lb = nb;
+          lr = Math.min(255, lr*0.393 + lg*0.769 + lb*0.189);
+          lg = Math.min(255, lr*0.349 + lg*0.686 + lb*0.168);
+          lb = Math.min(255, lr*0.272 + lg*0.534 + lb*0.131);
         }
         const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
         const lipShape = document.createElement('canvas');
@@ -495,22 +472,13 @@
         lblur.filter = 'blur(3px)';
         lblur.drawImage(lipShape, 0, 0);
         lblur.filter = 'none';
-        oc.save();
-        oc.globalAlpha = lipAlpha;
-        oc.globalCompositeOperation = 'multiply';
-        oc.drawImage(lipBlur, 0, 0);
-        oc.restore();
-      }
-      dbg("✓ lip ok");
-    } catch(e) { dbg("❌ CRASH lip: " + e.message); }
-
-    // ── 6. Flush offscreen ke main canvas ─────────────────────────────────────
-    dbg("flush: off=" + off.width + "x" + off.height + " ctx=" + canvas.width + "x" + canvas.height);
-    ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-    ctx.drawImage(off, 0, 0);
-    dbg("✓ flush done");
+        ctx.save();
+        ctx.globalAlpha = lipAlpha;
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.drawImage(lipBlur, 0, 0);
+        ctx.restore();
+      } catch(e) { console.warn('lip error:', e); }
+    }
   }
 
   // ── Load UI state dari filterStates ─────────────────────────────────────────

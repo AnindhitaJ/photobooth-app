@@ -86,6 +86,18 @@
     }
     .btn-mulai:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 14px 36px rgba(255,107,53,0.55); }
     .btn-mulai:active { transform: scale(0.98); }
+    .btn-galeri {
+      background: white; color: #8a6a56;
+      border: 2.5px solid #ffe0c8; padding: 13px 48px;
+      font-size: 16px; font-weight: 700; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      letter-spacing: -0.3px; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-galeri:hover { border-color: #ff6b35; color: #ff6b35; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.18); }
+    .btn-galeri:active { transform: scale(0.98); }
+    .btn-group { display: flex; flex-direction: column; align-items: center; gap: 0; }
     .footer {
       position: fixed; bottom: 20px;
       font-size: 11px; color: #cbb8ac;
@@ -110,11 +122,15 @@
     <div class="badge">📱 Live Strip</div>
   </div>
 
-  <button class="btn-mulai" onclick="mulai()">✨ Mulai Sekarang</button>
+  <div class="btn-group">
+    <button class="btn-mulai" onclick="mulai()">✨ Mulai Sekarang</button>
+    <button class="btn-galeri" onclick="bukaGaleri()">🖼️ Galeri Foto</button>
+  </div>
   <div class="footer">LUX PHOTOBOOTH</div>
 
   <script>
     function mulai() { window.location.href = 'template.html'; }
+    function bukaGaleri() { window.location.href = 'gallery.html'; }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

@@ -264,6 +264,7 @@
   const statusBar = document.getElementById('statusBar');
 
   let landmarks = null;
+  let allLandmarks = [];
   let currentImg = new Image();
 
   // Build tabs
@@ -306,11 +307,13 @@
           modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
           delegate: 'CPU'
         },
-        runningMode: 'IMAGE', numFaces: 1
+        runningMode: 'IMAGE', numFaces: 4
       });
       const result = faceLandmarker.detect(currentImg);
-      landmarks = result.faceLandmarks?.[0] || null;
-      statusBar.textContent = landmarks ? 'Wajah terdeteksi ✓' : 'Wajah tidak terdeteksi';
+      allLandmarks = result.faceLandmarks || [];
+      landmarks = allLandmarks[0] || null;
+      const n = allLandmarks.length;
+      statusBar.textContent = n > 0 ? n + ' wajah terdeteksi ✓' : 'Wajah tidak terdeteksi';
     } catch(e) {
       statusBar.textContent = 'Filter aktif';
     }
@@ -352,11 +355,36 @@
     });
   }
 
+  // Helper: buat oval mask untuk area wajah satu landmark set
+  function makeFaceMask(lm, W, H) {
+    const xs = lm.map(p => p.x * W);
+    const ys = lm.map(p => p.y * H);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const rx = (maxX - minX) / 2 * 1.1;
+    const ry = (maxY - minY) / 2 * 1.1;
+    const maxR = Math.max(rx, ry);
+    const maskC = document.createElement('canvas');
+    maskC.width = W; maskC.height = H;
+    const mc = maskC.getContext('2d');
+    const grad = mc.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+    grad.addColorStop(0,    'rgba(0,0,0,1)');
+    grad.addColorStop(0.6,  'rgba(0,0,0,1)');
+    grad.addColorStop(1,    'rgba(0,0,0,0)');
+    mc.save();
+    mc.translate(cx, cy);
+    mc.scale(rx / maxR, ry / maxR);
+    mc.fillStyle = grad;
+    mc.beginPath();
+    mc.arc(0, 0, maxR, 0, Math.PI * 2);
+    mc.fill();
+    mc.restore();
+    return { maskC, cx, cy, rx, ry, maxR };
+  }
+
   // ─── Apply tone filters ───
-  function applyTone(tone, W, H) {
-    if (tone === 'normal') return;
-    const imageData = ctx.getImageData(0, 0, W, H);
-    const d = imageData.data;
+  function applyToneToPixels(d, tone) {
     for (let i = 0; i < d.length; i += 4) {
       const r = d[i], g = d[i+1], b = d[i+2];
       if (tone === 'bw') {
@@ -367,17 +395,23 @@
         d[i+1] = Math.min(255, r*0.349 + g*0.686 + b*0.168);
         d[i+2] = Math.min(255, r*0.272 + g*0.534 + b*0.131);
       } else if (tone === 'vintage') {
-        // Desaturate slightly + warm tones + slight vignette hint
         const gray = 0.299*r + 0.587*g + 0.114*b;
         d[i]   = Math.min(255, gray*0.4 + r*0.6 + 20);
         d[i+1] = Math.min(255, gray*0.4 + g*0.6 + 5);
         d[i+2] = Math.min(255, gray*0.4 + b*0.6 - 10);
       }
     }
+  }
+
+  function applyTone(tone, W, H) {
+    if (tone === 'normal') return;
+    const imageData = ctx.getImageData(0, 0, W, H);
+    applyToneToPixels(imageData.data, tone);
     ctx.putImageData(imageData, 0, 0);
   }
 
   function applyFilter() {
+    if (!filterStates[currentIdx]) return;
     const s = filterStates[currentIdx];
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
@@ -385,120 +419,131 @@
     // ── 1. Base image ──
     ctx.drawImage(currentImg, 0, 0);
 
-    // ── 2. Smooth: blend blurred copy di atas original dengan opacity rendah.
-    //    Hasilnya: menghaluskan detail kecil (pori, tekstur) tanpa burem total.
-    //    Blur radius kecil + alpha rendah → makin smooth makin lembut, bukan makin burem.
+    const faces = allLandmarks.length > 0 ? allLandmarks : (landmarks ? [landmarks] : []);
+
+    // ── 2. Smooth — HANYA area wajah per face, bukan seluruh foto ──
     if (s.smooth > 0) {
-      const blurPx    = [0, 1.2, 2.2, 3.5][s.smooth];  // radius kecil saja
-      const blendAlpha = [0, 0.40, 0.55, 0.68][s.smooth]; // porsi blending
-      const softOff = document.createElement('canvas');
-      softOff.width = W; softOff.height = H;
-      const soc = softOff.getContext('2d');
-      soc.filter = `blur(${blurPx}px)`;
-      soc.drawImage(currentImg, 0, 0);
-      soc.filter = 'none';
-      ctx.globalAlpha = blendAlpha;
-      ctx.drawImage(softOff, 0, 0);
-      ctx.globalAlpha = 1;
+      const blurPx     = [0, 1.2, 2.2, 3.5][s.smooth];
+      const blendAlpha = [0, 0.38, 0.52, 0.65][s.smooth];
+
+      // Buat satu versi blur dari foto asli
+      const blurOff = document.createElement('canvas');
+      blurOff.width = W; blurOff.height = H;
+      const boc = blurOff.getContext('2d');
+      boc.filter = `blur(${blurPx}px)`;
+      boc.drawImage(currentImg, 0, 0);
+      boc.filter = 'none';
+
+      if (faces.length > 0) {
+        // Untuk tiap wajah: potong bagian blur yang overlap wajah → tempel ke canvas
+        faces.forEach(lm => {
+          const { maskC } = makeFaceMask(lm, W, H);
+          const faceBlur = document.createElement('canvas');
+          faceBlur.width = W; faceBlur.height = H;
+          const fc = faceBlur.getContext('2d');
+          fc.drawImage(blurOff, 0, 0);
+          fc.globalCompositeOperation = 'destination-in';
+          fc.drawImage(maskC, 0, 0);
+          fc.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = blendAlpha;
+          ctx.drawImage(faceBlur, 0, 0);
+          ctx.globalAlpha = 1;
+        });
+      } else {
+        // Fallback tanpa landmark: blur area oval tengah-atas foto
+        const cx = W/2, cy = H*0.38, rx = W*0.32, ry = H*0.32;
+        const maxR = Math.max(rx, ry);
+        const maskC = document.createElement('canvas');
+        maskC.width = W; maskC.height = H;
+        const mc = maskC.getContext('2d');
+        const grad = mc.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+        grad.addColorStop(0, 'rgba(0,0,0,1)');
+        grad.addColorStop(0.65, 'rgba(0,0,0,0.6)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        mc.save(); mc.translate(cx, cy); mc.scale(rx/maxR, ry/maxR);
+        mc.fillStyle = grad; mc.beginPath(); mc.arc(0,0,maxR,0,Math.PI*2); mc.fill(); mc.restore();
+        const faceBlur = document.createElement('canvas');
+        faceBlur.width = W; faceBlur.height = H;
+        const fc = faceBlur.getContext('2d');
+        fc.drawImage(blurOff, 0, 0);
+        fc.globalCompositeOperation = 'destination-in';
+        fc.drawImage(maskC, 0, 0);
+        ctx.globalAlpha = blendAlpha;
+        ctx.drawImage(faceBlur, 0, 0);
+        ctx.globalAlpha = 1;
+      }
     }
 
-    // ── 3. Blush — SEBELUM tone, supaya ikut ter-grayscale/sepia saat B&W/Sepia.
-    //    Posisi: landmarks[50] & [280] = area pipi bawah mata (lebih ke tengah pipi,
-    //    tidak mentok ke tepi/rambut). Fallback: 30%/70% horizontal, 42% vertikal.
+    // ── 3. Blush — per semua wajah, SEBELUM tone ──
     if (s.blush !== 'off') {
-      const blushParts = s.blush.split(',');
-      const [br, bg, bb] = blushParts.map(Number);
-      // Landmark 50 = pipi kiri bawah mata, 280 = pipi kanan bawah mata
-      // Shift sedikit ke bawah & tengah agar tidak mentok tepi
-      let pts;
-      if (landmarks) {
-        const lm = landmarks;
-        // Gunakan rata-rata beberapa landmark pipi tengah untuk posisi lebih natural
-        const leftCheek  = [(lm[50].x*0.5 + lm[101].x*0.5)*W,  (lm[50].y*0.5 + lm[101].y*0.5)*H];
-        const rightCheek = [(lm[280].x*0.5 + lm[330].x*0.5)*W, (lm[280].y*0.5 + lm[330].y*0.5)*H];
-        pts = [leftCheek, rightCheek];
-      } else {
-        pts = [[W*0.28, H*0.42], [W*0.72, H*0.42]];
-      }
-      const blushR = W * 0.09; // sedikit lebih besar tapi gradien lebih panjang → natural
-      pts.forEach(([bx, by]) => {
+      const [br, bg, bb] = s.blush.split(',').map(Number);
+      const blushR = W * 0.08;
+
+      const blushPts = faces.length > 0
+        ? faces.flatMap(lm => [
+            [(lm[50].x*0.5 + lm[101].x*0.5)*W, (lm[50].y*0.5 + lm[101].y*0.5)*H],
+            [(lm[280].x*0.5 + lm[330].x*0.5)*W, (lm[280].y*0.5 + lm[330].y*0.5)*H]
+          ])
+        : [[W*0.28, H*0.42], [W*0.72, H*0.42]];
+
+      blushPts.forEach(([bx, by]) => {
         const grad = ctx.createRadialGradient(bx, by, 0, bx, by, blushR);
-        grad.addColorStop(0,   `rgba(${br},${bg},${bb},0.28)`);
-        grad.addColorStop(0.4, `rgba(${br},${bg},${bb},0.12)`);
+        grad.addColorStop(0,   `rgba(${br},${bg},${bb},0.26)`);
+        grad.addColorStop(0.45,`rgba(${br},${bg},${bb},0.10)`);
         grad.addColorStop(1,   `rgba(${br},${bg},${bb},0)`);
         ctx.beginPath(); ctx.arc(bx, by, blushR, 0, Math.PI*2);
         ctx.fillStyle = grad; ctx.fill();
       });
     }
 
-    // ── 4. Tone (B&W / Sepia / Vintage) — setelah blush, jadi blush ikut converted ──
+    // ── 4. Tone — setelah blush ──
     applyTone(s.tone, W, H);
 
-    // ── 5. Brightness (face region) ──
+    // ── 5. Brightness — per semua wajah, SETELAH tone ──
     if (s.brightness > 0) {
-      if (landmarks) {
-        const xs = landmarks.map(p => p.x * W);
-        const ys = landmarks.map(p => p.y * H);
-        const minX = Math.min(...xs), maxX = Math.max(...xs);
-        const minY = Math.min(...ys), maxY = Math.max(...ys);
-        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-        const rx = (maxX - minX) / 2 * 1.15;
-        const ry = (maxY - minY) / 2 * 1.15;
-        const maxR = Math.max(rx, ry);
-
-        const off = document.createElement('canvas');
-        off.width = W; off.height = H;
-        const octx = off.getContext('2d');
-        octx.filter = `brightness(${100 + s.brightness}%)`;
-        octx.drawImage(currentImg, 0, 0);
-        octx.filter = 'none';
+      if (faces.length > 0) {
+        // Buat versi foto yang sudah di-brighten + sudah di-tone
+        const brightOff = document.createElement('canvas');
+        brightOff.width = W; brightOff.height = H;
+        const boc = brightOff.getContext('2d');
+        // Gambar foto asli, apply brightness, apply tone
+        boc.filter = `brightness(${100 + s.brightness}%)`;
+        boc.drawImage(currentImg, 0, 0);
+        boc.filter = 'none';
         if (s.tone !== 'normal') {
-          const id2 = octx.getImageData(0,0,W,H);
-          const d2 = id2.data;
-          for (let i = 0; i < d2.length; i+=4) {
-            const r=d2[i],g=d2[i+1],b=d2[i+2];
-            if (s.tone==='bw'){const gray=0.299*r+0.587*g+0.114*b;d2[i]=d2[i+1]=d2[i+2]=gray;}
-            else if(s.tone==='sepia'){d2[i]=Math.min(255,r*0.393+g*0.769+b*0.189);d2[i+1]=Math.min(255,r*0.349+g*0.686+b*0.168);d2[i+2]=Math.min(255,r*0.272+g*0.534+b*0.131);}
-            else if(s.tone==='vintage'){const gray=0.299*r+0.587*g+0.114*b;d2[i]=Math.min(255,gray*0.4+r*0.6+20);d2[i+1]=Math.min(255,gray*0.4+g*0.6+5);d2[i+2]=Math.min(255,gray*0.4+b*0.6-10);}
-          }
-          octx.putImageData(id2,0,0);
+          const id2 = boc.getImageData(0, 0, W, H);
+          applyToneToPixels(id2.data, s.tone);
+          boc.putImageData(id2, 0, 0);
         }
-        const mask = document.createElement('canvas');
-        mask.width = W; mask.height = H;
-        const mctx = mask.getContext('2d');
-        const grad = mctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
-        grad.addColorStop(0, 'rgba(0,0,0,1)');
-        grad.addColorStop(0.55, 'rgba(0,0,0,1)');
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        mctx.save();
-        mctx.translate(cx, cy);
-        mctx.scale(rx/maxR, ry/maxR);
-        mctx.fillStyle = grad;
-        mctx.beginPath();
-        mctx.arc(0,0,maxR,0,Math.PI*2);
-        mctx.fill();
-        mctx.restore();
-        octx.globalCompositeOperation = 'destination-in';
-        octx.drawImage(mask, 0, 0);
-        ctx.drawImage(off, 0, 0);
+
+        // Untuk tiap wajah: composite bright+toned hanya di area oval wajah
+        faces.forEach(lm => {
+          const { maskC } = makeFaceMask(lm, W, H);
+          const faceBright = document.createElement('canvas');
+          faceBright.width = W; faceBright.height = H;
+          const fc = faceBright.getContext('2d');
+          fc.drawImage(brightOff, 0, 0);
+          fc.globalCompositeOperation = 'destination-in';
+          fc.drawImage(maskC, 0, 0);
+          fc.globalCompositeOperation = 'source-over';
+          ctx.drawImage(faceBright, 0, 0);
+        });
       } else {
+        // Fallback tanpa landmark: screen blend tipis ke seluruh foto
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
-        ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.003})`;
+        ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.0025})`;
         ctx.fillRect(0, 0, W, H);
         ctx.restore();
       }
     }
 
-    // ── 6. Lip color — pakai multiply blend mode agar tetap terlihat di B&W/Sepia.
-    //    Di B&W, warna lip di-grayscale dulu → hasilnya gelap/terang natural, bukan warna aneh.
+    // ── 6. Lip color — per semua wajah ──
     if (s.lip !== 'off') {
       const lipParts = s.lip.split(',');
       let [lr, lg, lb] = lipParts.map(Number);
       const lipAlpha = parseFloat(lipParts[3]) || 0.30;
 
-      // Jika tone B&W atau Sepia → konversi warna lip ke grayscale juga,
-      // supaya tidak ada warna ngejreng di foto hitam putih
       if (s.tone === 'bw') {
         const gray = Math.round(0.299*lr + 0.587*lg + 0.114*lb);
         lr = lg = lb = gray;
@@ -509,30 +554,35 @@
         lr = nr; lg = ng; lb = nb;
       }
 
+      const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
       const lipOff = document.createElement('canvas');
       lipOff.width = W; lipOff.height = H;
       const lctx = lipOff.getContext('2d');
-      if (landmarks) {
-        const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
-        lctx.beginPath();
-        lipIdx.forEach((idx,i) => {
-          const pt = landmarks[idx]; if (!pt) return;
-          i===0 ? lctx.moveTo(pt.x*W,pt.y*H) : lctx.lineTo(pt.x*W,pt.y*H);
+
+      if (faces.length > 0) {
+        faces.forEach(lm => {
+          lctx.beginPath();
+          lipIdx.forEach((idx, i) => {
+            const pt = lm[idx]; if (!pt) return;
+            i === 0 ? lctx.moveTo(pt.x*W, pt.y*H) : lctx.lineTo(pt.x*W, pt.y*H);
+          });
+          lctx.closePath();
+          lctx.fillStyle = `rgba(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)},1)`;
+          lctx.fill();
         });
-        lctx.closePath();
-        lctx.fillStyle = `rgba(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)},1)`;
-        lctx.fill();
       } else {
         lctx.beginPath();
-        lctx.ellipse(W*0.5,H*0.72,W*0.10,H*0.035,0,0,Math.PI*2);
+        lctx.ellipse(W*0.5, H*0.72, W*0.10, H*0.035, 0, 0, Math.PI*2);
         lctx.fillStyle = `rgba(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)},1)`;
         lctx.fill();
       }
+
       const lipBlur = document.createElement('canvas');
       lipBlur.width = W; lipBlur.height = H;
       const lblur = lipBlur.getContext('2d');
       lblur.filter = 'blur(3px)';
       lblur.drawImage(lipOff, 0, 0);
+      lblur.filter = 'none';
       ctx.globalAlpha = lipAlpha;
       ctx.globalCompositeOperation = 'multiply';
       ctx.drawImage(lipBlur, 0, 0);

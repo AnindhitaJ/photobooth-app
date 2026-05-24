@@ -399,10 +399,12 @@
           dc.fillRect(0, 0, W, H);
           dc.globalCompositeOperation = "destination-in";
           dc.drawImage(maskC, 0, 0);
+          dc.globalCompositeOperation = "source-over";
           oc.globalAlpha = 0.65;
+          oc.globalCompositeOperation = "source-over";
           oc.drawImage(debugLayer, 0, 0);
           oc.globalAlpha = 1;
-          dbg("face " + fi + " → mask drawn");
+          dbg("face " + fi + " → mask drawn ke oc size=" + oc.canvas.width + "x" + oc.canvas.height);
         });
       } else {
         dbg("FALLBACK oval (no landmark)");
@@ -523,8 +525,12 @@
     }
 
     // ── 6. Flush offscreen ke main canvas ─────────────────────────────────────
+    dbg("flush: off=" + off.width + "x" + off.height + " ctx=" + canvas.width + "x" + canvas.height);
     ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
     ctx.drawImage(off, 0, 0);
+    dbg("✓ flush done");
   }
 
   // ── Load UI state dari filterStates ─────────────────────────────────────────

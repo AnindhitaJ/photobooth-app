@@ -357,13 +357,9 @@
     const W = canvas.width, H = canvas.height;
     const faces = allLandmarks.length > 0 ? allLandmarks : [];
 
-    // ── 1. Gambar foto asli + brightness ─────────────────────────────────────
+    // ── 1. Gambar foto asli (brightness diterapkan per-wajah di step 2b) ──────
     ctx.clearRect(0, 0, W, H);
-    if (s.brightness > 0) {
-      ctx.filter = `brightness(${100 + s.brightness}%)`;
-    }
     ctx.drawImage(currentImg, 0, 0, W, H);
-    ctx.filter = 'none';
 
     // ── 2. Smooth natural (bilateral-style: multi-pass blur + edge blend) ──────
     if (s.smooth > 0) {
@@ -497,6 +493,49 @@
 
           ctx.drawImage(sharpC, 0, 0);
         });
+      });
+    }
+
+    // ── 2b. Brightness — hanya di area wajah (oval sama seperti smooth) ────────
+    if (s.brightness > 0 && faces.length > 0) {
+      faces.forEach(lm => {
+        const xs = lm.map(p => p.x * W);
+        const ys = lm.map(p => p.y * H);
+        const minX = Math.max(0, Math.min(...xs) - W * 0.02);
+        const minY = Math.max(0, Math.min(...ys) - H * 0.02);
+        const maxX = Math.min(W, Math.max(...xs) + W * 0.02);
+        const maxY = Math.min(H, Math.max(...ys) + H * 0.02);
+        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+        const rx = (maxX - minX) / 2 * 1.05;
+        const ry = (maxY - minY) / 2 * 1.1;
+
+        // Buat canvas dengan brightness diapply
+        const brightC = document.createElement('canvas');
+        brightC.width = W; brightC.height = H;
+        const bc = brightC.getContext('2d');
+        bc.filter = `brightness(${100 + s.brightness}%)`;
+        bc.drawImage(canvas, 0, 0, W, H);
+        bc.filter = 'none';
+
+        // Buat mask oval feathered
+        const maskC = document.createElement('canvas');
+        maskC.width = W; maskC.height = H;
+        const mc = maskC.getContext('2d');
+        mc.beginPath();
+        mc.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        mc.fillStyle = 'white';
+        mc.fill();
+        const softC = document.createElement('canvas');
+        softC.width = W; softC.height = H;
+        const sc = softC.getContext('2d');
+        sc.filter = 'blur(18px)';
+        sc.drawImage(maskC, 0, 0);
+        sc.filter = 'none';
+
+        // Apply brightC ke ctx hanya dalam oval
+        bc.globalCompositeOperation = 'destination-in';
+        bc.drawImage(softC, 0, 0);
+        ctx.drawImage(brightC, 0, 0);
       });
     }
 

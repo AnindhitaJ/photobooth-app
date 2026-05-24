@@ -14,691 +14,697 @@
   <style>
     :root {
       --orange: #ff6b35; --yellow: #ffd23f; --green: #06d6a0;
-      --pink: #ff4d8d; --purple: #a855f7;
+      --pink: #ff4d8d; --purple: #a855f7; --red: #e94560;
       --bg: #fff8f0; --card: #ffffff; --border: #ffe0c8;
       --text: #2d1a0e; --text2: #8a6a56;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg); color: var(--text);
-      min-height: 100vh;
-    }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
     body::before {
-      content: ''; position: fixed; inset: 0; z-index: -1;
-      background-image: radial-gradient(circle, rgba(255,107,53,0.07) 1px, transparent 1px);
-      background-size: 28px 28px; background-color: var(--bg);
+      content:''; position:fixed; inset:0; z-index:-1;
+      background-image:radial-gradient(circle,rgba(255,107,53,0.07) 1px,transparent 1px);
+      background-size:28px 28px; background-color:var(--bg);
     }
 
-    /* ── PASSWORD SCREEN ── */
+    /* ── LOCK SCREEN ── */
     #lockScreen {
-      position: fixed; inset: 0; z-index: 999;
-      background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      flex-direction: column; padding: 24px; text-align: center;
+      position:fixed; inset:0; z-index:999; background:var(--bg);
+      display:flex; align-items:center; justify-content:center;
+      flex-direction:column; padding:24px; text-align:center;
     }
-    #lockScreen::before {
-      content: ''; position: fixed; inset: 0; z-index: -1;
-      background-image: radial-gradient(circle, rgba(255,107,53,0.07) 1px, transparent 1px);
-      background-size: 28px 28px;
-    }
-    .lock-icon { font-size: 64px; margin-bottom: 16px; animation: bounce 2s ease-in-out infinite; }
+    .lock-icon { font-size:64px; margin-bottom:16px; animation:bounce 2s ease-in-out infinite; }
     @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
     .lock-title {
-      font-size: 26px; font-weight: 900; letter-spacing: -1px; margin-bottom: 6px;
-      background: linear-gradient(135deg, var(--orange), var(--pink));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-size:26px; font-weight:900; letter-spacing:-1px; margin-bottom:6px;
+      background:linear-gradient(135deg,var(--orange),var(--pink));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     }
-    .lock-sub { font-size: 14px; color: var(--text2); margin-bottom: 32px; font-weight: 500; }
+    .lock-sub { font-size:14px; color:var(--text2); margin-bottom:32px; font-weight:500; }
     .lock-card {
-      background: white; border: 2px solid var(--border); border-radius: 20px;
-      padding: 28px 32px; width: 100%; max-width: 340px;
-      box-shadow: 0 8px 32px rgba(255,107,53,0.12);
+      background:white; border:2px solid var(--border); border-radius:20px;
+      padding:28px 32px; width:100%; max-width:340px;
+      box-shadow:0 8px 32px rgba(255,107,53,0.12);
     }
-    .lock-label { font-size: 12px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; display: block; text-align: left; }
+    .lock-label { font-size:12px; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px; display:block; text-align:left; }
     .lock-input {
-      width: 100%; padding: 14px 16px; border-radius: 12px;
-      border: 2px solid var(--border); background: #fff8f0;
-      font-size: 20px; letter-spacing: 6px; text-align: center; outline: none;
-      color: var(--text); transition: border 0.2s; font-family: inherit;
-      margin-bottom: 12px;
+      width:100%; padding:14px 16px; border-radius:12px; border:2px solid var(--border);
+      background:#fff8f0; font-size:20px; letter-spacing:6px; text-align:center;
+      outline:none; color:var(--text); transition:border 0.2s; font-family:inherit; margin-bottom:12px;
     }
-    .lock-input:focus { border-color: var(--orange); }
-    .lock-error {
-      color: #e94560; font-size: 13px; font-weight: 700; margin-bottom: 12px;
-      display: none; background: #fff0f3; border-radius: 8px; padding: 8px 12px;
-    }
+    .lock-input:focus { border-color:var(--orange); }
+    .lock-error { color:var(--red); font-size:13px; font-weight:700; margin-bottom:12px; display:none; background:#fff0f3; border-radius:8px; padding:8px 12px; }
     .btn-unlock {
-      width: 100%; padding: 15px; border-radius: 50px;
-      background: linear-gradient(135deg, var(--orange), var(--pink));
-      color: white; font-size: 16px; font-weight: 800; border: none;
-      cursor: pointer; transition: all 0.2s;
-      box-shadow: 0 6px 20px rgba(255,107,53,0.4);
+      width:100%; padding:15px; border-radius:50px;
+      background:linear-gradient(135deg,var(--orange),var(--pink));
+      color:white; font-size:16px; font-weight:800; border:none; cursor:pointer;
+      transition:all 0.2s; box-shadow:0 6px 20px rgba(255,107,53,0.4);
     }
-    .btn-unlock:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,107,53,0.5); }
-    .btn-unlock:active { transform: scale(0.98); }
-    .btn-back-lock {
-      margin-top: 14px; background: none; border: none; cursor: pointer;
-      color: var(--text2); font-size: 14px; font-weight: 600;
-      text-decoration: underline; text-underline-offset: 3px;
-    }
-    .btn-back-lock:hover { color: var(--orange); }
+    .btn-unlock:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(255,107,53,0.5); }
+    .btn-back-lock { margin-top:14px; background:none; border:none; cursor:pointer; color:var(--text2); font-size:14px; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+    .btn-back-lock:hover { color:var(--orange); }
 
-    /* ── MAIN GALLERY ── */
-    #galleryScreen { display: none; min-height: 100vh; }
+    /* ── GALLERY SCREEN ── */
+    #galleryScreen { display:none; min-height:100vh; }
 
     .header {
-      background: white; border-bottom: 2px solid var(--border);
-      padding: 16px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 12px;
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 2px 12px rgba(255,107,53,0.08);
+      background:white; border-bottom:2px solid var(--border); padding:16px 24px;
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+      position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(255,107,53,0.08);
     }
-    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .header-title { font-size:18px; font-weight:900; color:var(--text); }
+    .header-title span { color:var(--orange); }
+
+    /* mode toggle */
+    .mode-tabs { display:flex; gap:6px; }
+    .mode-tab {
+      padding:8px 16px; border-radius:50px; font-size:13px; font-weight:700; cursor:pointer;
+      border:2px solid var(--border); background:white; color:var(--text2); transition:all 0.15s;
+    }
+    .mode-tab.active { background:var(--orange); border-color:var(--orange); color:white; box-shadow:0 4px 12px rgba(255,107,53,0.3); }
+
     .btn-back {
-      background: white; border: 2px solid var(--border); border-radius: 50px;
-      padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--text2);
-      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+      background:white; border:2px solid var(--border); border-radius:50px;
+      padding:8px 16px; font-size:13px; font-weight:700; color:var(--text2);
+      cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px;
     }
-    .btn-back:hover { border-color: var(--orange); color: var(--orange); }
-    .header-title { font-size: 18px; font-weight: 900; color: var(--text); }
-    .header-title span { color: var(--orange); }
+    .btn-back:hover { border-color:var(--orange); color:var(--orange); }
 
     .toolbar {
-      background: white; border-bottom: 2px solid var(--border);
-      padding: 14px 24px;
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background:white; border-bottom:2px solid var(--border); padding:14px 24px;
+      display:flex; align-items:center; gap:12px; flex-wrap:wrap;
     }
-    .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .filter-label { font-size: 12px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+    .filter-group { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .filter-label { font-size:12px; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:0.8px; white-space:nowrap; }
     .filter-date {
-      padding: 9px 14px; border-radius: 50px; border: 2px solid var(--border);
-      background: white; color: var(--text); font-size: 13px; font-family: inherit;
-      cursor: pointer; transition: border 0.2s; outline: none; font-weight: 600;
+      padding:9px 14px; border-radius:50px; border:2px solid var(--border);
+      background:white; color:var(--text); font-size:13px; font-family:inherit;
+      cursor:pointer; transition:border 0.2s; outline:none; font-weight:600;
     }
-    .filter-date:focus { border-color: var(--orange); }
+    .filter-date:focus { border-color:var(--orange); }
     .btn-clear-filter {
-      padding: 9px 16px; border-radius: 50px; border: 2px solid var(--border);
-      background: white; color: var(--text2); font-size: 13px; font-weight: 700;
-      cursor: pointer; transition: all 0.2s; display: none;
+      padding:9px 16px; border-radius:50px; border:2px solid var(--border);
+      background:white; color:var(--text2); font-size:13px; font-weight:700;
+      cursor:pointer; transition:all 0.2s; display:none;
     }
-    .btn-clear-filter:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-clear-filter:hover { border-color:var(--orange); color:var(--orange); }
     .count-badge {
-      background: rgba(255,107,53,0.1); color: var(--orange);
-      border-radius: 50px; padding: 4px 12px; font-size: 12px; font-weight: 800;
-      margin-left: auto;
+      background:rgba(255,107,53,0.1); color:var(--orange);
+      border-radius:50px; padding:4px 12px; font-size:12px; font-weight:800; margin-left:auto;
     }
-
-    /* ── PRINT BAR ── */
-    .print-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-      background: white; border-top: 2px solid var(--border);
-      padding: 14px 24px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-      transform: translateY(100%); transition: transform 0.3s ease;
-    }
-    .print-bar.visible { transform: translateY(0); }
-    .print-bar-info { font-size: 14px; font-weight: 700; color: var(--text2); }
-    .print-bar-info strong { color: var(--orange); }
-    .print-bar-actions { display: flex; gap: 10px; align-items: center; }
-    .btn-deselect {
-      padding: 10px 18px; border-radius: 50px; border: 2px solid var(--border);
-      background: white; color: var(--text2); font-size: 13px; font-weight: 700;
-      cursor: pointer; transition: all 0.2s;
-    }
-    .btn-deselect:hover { border-color: #e94560; color: #e94560; }
-    .btn-print-now {
-      padding: 11px 24px; border-radius: 50px;
-      background: linear-gradient(135deg, var(--green), #04b589);
-      color: white; font-size: 14px; font-weight: 800; border: none;
-      cursor: pointer; transition: all 0.2s;
-      box-shadow: 0 4px 16px rgba(6,214,160,0.4);
-      display: flex; align-items: center; gap: 7px;
-    }
-    .btn-print-now:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(6,214,160,0.5); }
-    .btn-print-now:active { transform: scale(0.98); }
 
     /* ── PHOTO GRID ── */
-    .gallery-content {
-      padding: 24px; padding-bottom: 100px;
-      max-width: 1200px; margin: 0 auto;
-    }
-    .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 16px;
-    }
+    .gallery-content { padding:24px; padding-bottom:120px; max-width:1200px; margin:0 auto; }
+    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; }
+
     .photo-item {
-      position: relative; background: white;
-      border: 2.5px solid var(--border); border-radius: 16px;
-      overflow: hidden; cursor: pointer;
-      transition: all 0.2s; aspect-ratio: 9/16;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      position:relative; background:white; border:2.5px solid var(--border); border-radius:16px;
+      overflow:hidden; cursor:pointer; transition:all 0.2s; aspect-ratio:9/16;
+      box-shadow:0 2px 10px rgba(0,0,0,0.06);
     }
-    .photo-item:hover { border-color: var(--orange); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(255,107,53,0.2); }
-    .photo-item.selected {
-      border-color: var(--green); border-width: 3px;
-      box-shadow: 0 0 0 4px rgba(6,214,160,0.2), 0 8px 24px rgba(6,214,160,0.3);
-      transform: translateY(-3px);
-    }
-    .photo-item img {
-      width: 100%; height: 100%; object-fit: cover; display: block;
-    }
+    .photo-item:hover { border-color:var(--orange); transform:translateY(-3px); box-shadow:0 8px 24px rgba(255,107,53,0.2); }
+    .photo-item.selected { border-color:var(--green); border-width:3px; box-shadow:0 0 0 4px rgba(6,214,160,0.2),0 8px 24px rgba(6,214,160,0.3); transform:translateY(-3px); }
+    .photo-item.delete-mode:hover { border-color:var(--red); box-shadow:0 8px 24px rgba(233,69,96,0.2); }
+    .photo-item.marked-delete { border-color:var(--red); border-width:3px; box-shadow:0 0 0 4px rgba(233,69,96,0.2); opacity:0.7; transform:translateY(-2px); }
+
+    .photo-item img { width:100%; height:100%; object-fit:cover; display:block; }
+
     .photo-check {
-      position: absolute; top: 8px; right: 8px;
-      width: 28px; height: 28px; border-radius: 50%;
-      background: white; border: 2.5px solid var(--border);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; transition: all 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%;
+      background:white; border:2.5px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; transition:all 0.2s; box-shadow:0 2px 8px rgba(0,0,0,0.1);
     }
-    .photo-item.selected .photo-check {
-      background: var(--green); border-color: var(--green); color: white;
-    }
+    .photo-item.selected .photo-check { background:var(--green); border-color:var(--green); color:white; }
+    .photo-item.marked-delete .photo-check { background:var(--red); border-color:var(--red); color:white; }
+
     .photo-date {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.7));
-      color: white; font-size: 10px; font-weight: 700;
-      padding: 16px 8px 8px; text-align: center; letter-spacing: 0.3px;
+      position:absolute; bottom:0; left:0; right:0;
+      background:linear-gradient(transparent,rgba(0,0,0,0.7));
+      color:white; font-size:10px; font-weight:700;
+      padding:16px 8px 8px; text-align:center; letter-spacing:0.3px;
     }
     .photo-num {
-      position: absolute; top: 8px; left: 8px;
-      background: var(--green); color: white;
-      width: 22px; height: 22px; border-radius: 50%;
-      font-size: 12px; font-weight: 900;
-      display: none; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(6,214,160,0.5);
+      position:absolute; top:8px; left:8px; background:var(--green); color:white;
+      width:22px; height:22px; border-radius:50%; font-size:12px; font-weight:900;
+      display:none; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(6,214,160,0.5);
     }
-    .photo-item.selected .photo-num { display: flex; }
+    .photo-item.selected .photo-num { display:flex; }
+
+    /* delete X badge */
+    .photo-x {
+      position:absolute; top:8px; left:8px; background:var(--red); color:white;
+      width:22px; height:22px; border-radius:50%; font-size:13px; font-weight:900;
+      display:none; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(233,69,96,0.5);
+    }
+    .photo-item.marked-delete .photo-x { display:flex; }
 
     /* ── LOADING / EMPTY ── */
-    .loading-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 80px 24px; gap: 16px; text-align: center;
-    }
-    .spinner {
-      width: 48px; height: 48px; border: 4px solid var(--border);
-      border-top-color: var(--orange); border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { font-size: 14px; font-weight: 600; color: var(--text2); }
-    .empty-state { text-align: center; padding: 80px 24px; }
-    .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .empty-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-    .empty-sub { font-size: 14px; color: var(--text2); font-weight: 500; }
+    .loading-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 24px; gap:16px; text-align:center; }
+    .spinner { width:48px; height:48px; border:4px solid var(--border); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .loading-text { font-size:14px; font-weight:600; color:var(--text2); }
+    .empty-state { text-align:center; padding:80px 24px; }
+    .empty-icon { font-size:64px; margin-bottom:16px; opacity:0.5; }
+    .empty-title { font-size:20px; font-weight:800; color:var(--text); margin-bottom:8px; }
+    .empty-sub { font-size:14px; color:var(--text2); font-weight:500; }
 
-    /* ── ERROR TOAST ── */
+    /* ── BOTTOM ACTION BAR ── */
+    .action-bar {
+      position:fixed; bottom:0; left:0; right:0; z-index:200;
+      background:white; border-top:2px solid var(--border); padding:14px 24px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      box-shadow:0 -4px 20px rgba(0,0,0,0.1);
+      transform:translateY(100%); transition:transform 0.3s ease;
+    }
+    .action-bar.visible { transform:translateY(0); }
+    .action-bar-info { font-size:14px; font-weight:700; color:var(--text2); }
+    .action-bar-info strong { color:var(--orange); }
+    .action-bar-info.delete-info strong { color:var(--red); }
+    .action-bar-btns { display:flex; gap:10px; align-items:center; }
+
+    .btn-bar-cancel {
+      padding:10px 18px; border-radius:50px; border:2px solid var(--border);
+      background:white; color:var(--text2); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s;
+    }
+    .btn-bar-cancel:hover { border-color:var(--red); color:var(--red); }
+
+    .btn-bar-primary {
+      padding:11px 24px; border-radius:50px; color:white; font-size:14px; font-weight:800;
+      border:none; cursor:pointer; transition:all 0.2s;
+      display:flex; align-items:center; gap:7px;
+    }
+    .btn-bar-primary.green { background:linear-gradient(135deg,var(--green),#04b589); box-shadow:0 4px 16px rgba(6,214,160,0.4); }
+    .btn-bar-primary.green:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(6,214,160,0.5); }
+    .btn-bar-primary.red { background:linear-gradient(135deg,var(--red),#c0392b); box-shadow:0 4px 16px rgba(233,69,96,0.4); }
+    .btn-bar-primary.red:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(233,69,96,0.5); }
+    .btn-bar-primary:active { transform:scale(0.98); }
+
+    /* ── TOAST ── */
     .toast {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: #e94560; color: white; padding: 12px 24px;
-      border-radius: 50px; font-size: 14px; font-weight: 700;
-      box-shadow: 0 6px 24px rgba(233,69,96,0.4);
-      opacity: 0; transition: all 0.3s; z-index: 9999; white-space: nowrap;
-      pointer-events: none;
+      position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+      background:var(--red); color:white; padding:12px 24px; border-radius:50px;
+      font-size:14px; font-weight:700; box-shadow:0 6px 24px rgba(233,69,96,0.4);
+      opacity:0; transition:all 0.3s; z-index:9999; white-space:nowrap; pointer-events:none;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast.success { background: var(--green); box-shadow: 0 6px 24px rgba(6,214,160,0.4); }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast.success { background:var(--green); box-shadow:0 6px 24px rgba(6,214,160,0.4); }
 
-    /* ── PRINT MODAL ── */
-    #printModal {
-      position: fixed; inset: 0; z-index: 9000; display: none;
-      background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
-      padding: 24px;
+    /* ── MODAL ── */
+    .modal-wrap {
+      position:fixed; inset:0; z-index:9000; display:none;
+      background:rgba(0,0,0,0.65); align-items:center; justify-content:center; padding:24px;
     }
-    #printModal.open { display: flex; }
+    .modal-wrap.open { display:flex; }
     .modal-box {
-      background: white; border-radius: 24px; padding: 32px;
-      max-width: 480px; width: 100%;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.3);
-      animation: popIn 0.25s ease;
+      background:white; border-radius:24px; padding:28px 32px; max-width:480px; width:100%;
+      box-shadow:0 24px 64px rgba(0,0,0,0.3); animation:popIn 0.25s ease;
     }
-    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; color: var(--text); }
-    .modal-sub { font-size: 13px; color: var(--text2); font-weight: 500; margin-bottom: 24px; }
-    .modal-preview {
-      display: flex; gap: 12px; margin-bottom: 24px; justify-content: center;
+    @keyframes popIn { from{transform:scale(0.9);opacity:0} to{transform:scale(1);opacity:1} }
+    .modal-title { font-size:20px; font-weight:900; margin-bottom:6px; color:var(--text); }
+    .modal-sub { font-size:13px; color:var(--text2); font-weight:500; margin-bottom:22px; line-height:1.5; }
+    .modal-preview { display:flex; gap:12px; margin-bottom:22px; justify-content:center; }
+    .modal-preview img { width:calc(50% - 6px); border-radius:12px; border:2px solid var(--border); object-fit:cover; aspect-ratio:9/16; }
+    .modal-actions { display:flex; gap:10px; }
+    .btn-modal-cancel {
+      flex:1; padding:14px; border-radius:50px; border:2px solid var(--border);
+      background:white; color:var(--text2); font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s;
     }
-    .modal-preview img {
-      width: calc(50% - 6px); border-radius: 12px; border: 2px solid var(--border);
-      object-fit: cover; aspect-ratio: 9/16;
+    .btn-modal-cancel:hover { border-color:var(--red); color:var(--red); }
+    .btn-modal-confirm {
+      flex:2; padding:14px; border-radius:50px; color:white; font-size:14px; font-weight:800;
+      border:none; cursor:pointer; transition:all 0.2s;
+      display:flex; align-items:center; justify-content:center; gap:8px;
     }
-    .modal-actions { display: flex; gap: 10px; }
-    .btn-cancel-modal {
-      flex: 1; padding: 14px; border-radius: 50px;
-      border: 2px solid var(--border); background: white;
-      color: var(--text2); font-size: 14px; font-weight: 700; cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-cancel-modal:hover { border-color: #e94560; color: #e94560; }
-    .btn-generate-print {
-      flex: 2; padding: 14px; border-radius: 50px;
-      background: linear-gradient(135deg, var(--orange), var(--pink));
-      color: white; font-size: 14px; font-weight: 800; border: none;
-      cursor: pointer; transition: all 0.2s;
-      box-shadow: 0 4px 16px rgba(255,107,53,0.4);
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-generate-print:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,107,53,0.5); }
-    .btn-generate-print:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .modal-progress {
-      display: none; margin-top: 16px; text-align: center;
-      font-size: 13px; color: var(--text2); font-weight: 600;
-    }
-    .modal-progress .prog-bar-wrap {
-      height: 6px; background: var(--border); border-radius: 50px; margin-top: 8px; overflow: hidden;
-    }
-    .modal-progress .prog-bar { height: 100%; background: var(--orange); width: 0%; transition: width 0.4s; border-radius: 50px; }
+    .btn-modal-confirm.orange { background:linear-gradient(135deg,var(--orange),var(--pink)); box-shadow:0 4px 16px rgba(255,107,53,0.4); }
+    .btn-modal-confirm.orange:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(255,107,53,0.5); }
+    .btn-modal-confirm.red { background:linear-gradient(135deg,var(--red),#c0392b); box-shadow:0 4px 16px rgba(233,69,96,0.4); }
+    .btn-modal-confirm.red:hover { transform:translateY(-1px); }
+    .btn-modal-confirm:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+    /* delete preview thumbnails */
+    .del-thumbs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .del-thumb { width:64px; height:88px; border-radius:10px; object-fit:cover; border:2px solid #ffc0cb; }
+
+    .modal-progress { display:none; margin-top:16px; text-align:center; font-size:13px; color:var(--text2); font-weight:600; }
+    .prog-bar-wrap { height:6px; background:var(--border); border-radius:50px; margin-top:8px; overflow:hidden; }
+    .prog-bar { height:100%; background:var(--orange); width:0%; transition:width 0.4s; border-radius:50px; }
   </style>
 </head>
 <body>
 
-  <!-- PASSWORD LOCK SCREEN -->
-  <div id="lockScreen">
-    <div class="lock-icon">🔒</div>
-    <div class="lock-title">Galeri LUX</div>
-    <div class="lock-sub">Masukkan password untuk melihat semua foto</div>
-    <div class="lock-card">
-      <label class="lock-label" for="pwInput">Password</label>
-      <input type="password" id="pwInput" class="lock-input" placeholder="••••••" maxlength="10"
-        autocomplete="current-password" onkeydown="if(event.key==='Enter') checkPass()">
-      <div class="lock-error" id="pwError">❌ Password salah. Coba lagi.</div>
-      <button class="btn-unlock" onclick="checkPass()">🔓 Buka Galeri</button>
-    </div>
-    <button class="btn-back-lock" onclick="location.href='index.html'">← Kembali ke Beranda</button>
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title">Galeri LUX</div>
+  <div class="lock-sub">Masukkan password untuk melihat semua foto</div>
+  <div class="lock-card">
+    <label class="lock-label" for="pwInput">Password</label>
+    <input type="password" id="pwInput" class="lock-input" placeholder="••••••" maxlength="10"
+      autocomplete="current-password" onkeydown="if(event.key==='Enter') checkPass()">
+    <div class="lock-error" id="pwError">❌ Password salah. Coba lagi.</div>
+    <button class="btn-unlock" onclick="checkPass()">🔓 Buka Galeri</button>
   </div>
+  <button class="btn-back-lock" onclick="location.href='index.html'">← Kembali ke Beranda</button>
+</div>
 
-  <!-- GALLERY SCREEN -->
-  <div id="galleryScreen">
+<!-- GALLERY -->
+<div id="galleryScreen">
 
-    <div class="header">
-      <div class="header-left">
-        <button class="btn-back" onclick="location.href='index.html'">← Beranda</button>
-        <div class="header-title">🖼️ Galeri <span>LUX</span></div>
-      </div>
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="location.href='index.html'">← Beranda</button>
+      <div class="header-title">🖼️ Galeri <span>LUX</span></div>
     </div>
-
-    <div class="toolbar">
-      <div class="filter-group">
-        <span class="filter-label">📅 Filter Tanggal:</span>
-        <input type="date" id="filterDate" class="filter-date" onchange="applyFilter()">
-        <button class="btn-clear-filter" id="btnClearFilter" onclick="clearFilter()">✕ Hapus Filter</button>
-      </div>
-      <div class="count-badge" id="countBadge">0 foto</div>
-    </div>
-
-    <div class="gallery-content">
-      <div id="loadingState" class="loading-state">
-        <div class="spinner"></div>
-        <div class="loading-text">Memuat foto...</div>
-      </div>
-      <div id="emptyState" class="empty-state" style="display:none">
-        <div class="empty-icon">📷</div>
-        <div class="empty-title">Belum ada foto</div>
-        <div class="empty-sub">Belum ada foto yang tersimpan pada tanggal ini</div>
-      </div>
-      <div class="photo-grid" id="photoGrid"></div>
-    </div>
-
-  </div>
-
-  <!-- PRINT ACTION BAR -->
-  <div class="print-bar" id="printBar">
-    <div class="print-bar-info">
-      <strong id="selectedCount">0</strong> / 2 foto dipilih
-    </div>
-    <div class="print-bar-actions">
-      <button class="btn-deselect" onclick="clearSelection()">✕ Batal Pilih</button>
-      <button class="btn-print-now" onclick="openPrintModal()">🖨️ Print Sekaligus</button>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabPrint" onclick="setMode('print')">🖨️ Mode Print</button>
+      <button class="mode-tab" id="tabDelete" onclick="setMode('delete')">🗑️ Mode Hapus</button>
     </div>
   </div>
 
-  <!-- PRINT CONFIRM MODAL -->
-  <div id="printModal">
-    <div class="modal-box">
-      <div class="modal-title">🖨️ Print Sekaligus</div>
-      <div class="modal-sub">2 foto akan digabung dalam ukuran kertas 10×15 cm siap cetak</div>
-      <div class="modal-preview" id="modalPreview"></div>
-      <div class="modal-actions">
-        <button class="btn-cancel-modal" onclick="closePrintModal()">Batal</button>
-        <button class="btn-generate-print" id="btnGenPrint" onclick="generatePrint()">
-          🖨️ Generate & Download
-        </button>
-      </div>
-      <div class="modal-progress" id="modalProgress">
-        <span id="progressText">Membuat file print...</span>
-        <div class="prog-bar-wrap"><div class="prog-bar" id="progBar"></div></div>
-      </div>
+  <div class="toolbar">
+    <div class="filter-group">
+      <span class="filter-label">📅 Filter Tanggal:</span>
+      <input type="date" id="filterDate" class="filter-date" onchange="applyFilter()">
+      <button class="btn-clear-filter" id="btnClearFilter" onclick="clearFilter()">✕ Hapus Filter</button>
     </div>
+    <div class="count-badge" id="countBadge">0 foto</div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="gallery-content">
+    <div id="loadingState" class="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text">Memuat foto...</div>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="empty-icon">📷</div>
+      <div class="empty-title">Belum ada foto</div>
+      <div class="empty-sub">Belum ada foto yang tersimpan</div>
+    </div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
 
-  <script>
-    const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
-    const BUCKET        = 'photobooth';
-    const PASSWORD      = '123456';
+</div>
 
-    let allPhotos   = [];   // { url, name, date }
-    let filtered    = [];
-    let selected    = [];   // max 2
+<!-- BOTTOM ACTION BAR -->
+<div class="action-bar" id="actionBar">
+  <div class="action-bar-info" id="actionInfo">
+    <strong id="actionCount">0</strong> foto dipilih
+  </div>
+  <div class="action-bar-btns">
+    <button class="btn-bar-cancel" onclick="clearSelection()">✕ Batal</button>
+    <button class="btn-bar-primary green" id="btnPrintAction" onclick="openPrintModal()">🖨️ Print Sekaligus</button>
+    <button class="btn-bar-primary red" id="btnDeleteAction" style="display:none" onclick="openDeleteModal()">🗑️ Hapus Foto</button>
+  </div>
+</div>
 
-    // ── PASSWORD ──────────────────────────────────────────────────────
-    function checkPass() {
-      const val = document.getElementById('pwInput').value;
-      const err = document.getElementById('pwError');
-      if (val === PASSWORD) {
-        document.getElementById('lockScreen').style.display = 'none';
-        document.getElementById('galleryScreen').style.display = 'block';
-        loadPhotos();
-      } else {
-        err.style.display = 'block';
-        document.getElementById('pwInput').value = '';
-        document.getElementById('pwInput').focus();
-        setTimeout(() => { err.style.display = 'none'; }, 3000);
-      }
+<!-- PRINT MODAL -->
+<div class="modal-wrap" id="printModal">
+  <div class="modal-box">
+    <div class="modal-title">🖨️ Print Sekaligus</div>
+    <div class="modal-sub">2 foto akan digabung dalam ukuran 10×15 cm (300 dpi) siap cetak.</div>
+    <div class="modal-preview" id="printPreview"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closePrintModal()">Batal</button>
+      <button class="btn-modal-confirm orange" id="btnGenPrint" onclick="generatePrint()">🖨️ Generate & Download</button>
+    </div>
+    <div class="modal-progress" id="modalProgress">
+      <span id="progressText">Membuat file print...</span>
+      <div class="prog-bar-wrap"><div class="prog-bar" id="progBar"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-wrap" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-title">🗑️ Hapus Foto?</div>
+    <div class="modal-sub" id="deleteModalSub">Foto yang dihapus tidak bisa dikembalikan.</div>
+    <div class="del-thumbs" id="deleteThumbs"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeDeleteModal()">Batal</button>
+      <button class="btn-modal-confirm red" id="btnConfirmDelete" onclick="doDelete()">🗑️ Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+  const BUCKET = 'photobooth';
+  const PASSWORD = '123456';
+
+  let allPhotos = [];
+  let filtered  = [];
+  let selected  = [];      // url list
+  let mode      = 'print'; // 'print' | 'delete'
+
+  // ── PASSWORD ─────────────────────────────────────────────────────────
+  function checkPass() {
+    const val = document.getElementById('pwInput').value;
+    const err = document.getElementById('pwError');
+    if (val === PASSWORD) {
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('galleryScreen').style.display = 'block';
+      loadPhotos();
+    } else {
+      err.style.display = 'block';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+      setTimeout(() => { err.style.display = 'none'; }, 3000);
     }
+  }
 
-    // ── LOAD PHOTOS FROM SUPABASE ─────────────────────────────────────
-    async function loadPhotos() {
-      try {
-        // Supabase Storage: POST /storage/v1/object/list/{bucket} dengan prefix
-        const res = await fetch(
-          `${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`,
-          {
-            method: 'POST',
-            headers: {
-              'apikey': SUPABASE_ANON,
-              'Authorization': `Bearer ${SUPABASE_ANON}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prefix: 'results/',
-              limit: 1000,
-              offset: 0,
-              sortBy: { column: 'created_at', order: 'desc' }
-            })
-          }
-        );
+  // ── MODE ─────────────────────────────────────────────────────────────
+  function setMode(m) {
+    mode = m;
+    selected = [];
+    document.getElementById('tabPrint').classList.toggle('active', m === 'print');
+    document.getElementById('tabDelete').classList.toggle('active', m === 'delete');
+    document.getElementById('btnPrintAction').style.display = m === 'print' ? 'flex' : 'none';
+    document.getElementById('btnDeleteAction').style.display = m === 'delete' ? 'flex' : 'none';
+    updateActionBar();
+    renderGrid();
+  }
 
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`HTTP ${res.status} - ${errText}`);
-        }
-        const files = await res.json();
-        if (!Array.isArray(files)) throw new Error('Respons tidak valid dari server');
-
-        allPhotos = files
-          .filter(f => f.name && /\.(jpg|jpeg|png)$/i.test(f.name))
-          .map(f => {
-            // Nama file: timestamp_foto.jpg  atau  timestamp_filename
-            const ts = parseInt(f.name.split('_')[0]);
-            const d  = (ts > 1000000000000)
-              ? new Date(ts)
-              : (f.created_at ? new Date(f.created_at) : new Date());
-            return {
-              url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/results/${f.name}`,
-              name: f.name,
-              date: d,
-              dateStr: d.toISOString().slice(0, 10),
-            };
-          })
-          .sort((a, b) => b.date - a.date);
-
-        document.getElementById('loadingState').style.display = 'none';
-        applyFilter();
-      } catch (e) {
-        document.getElementById('loadingState').innerHTML = `
-          <div style="font-size:48px">⚠️</div>
-          <div style="font-weight:700;color:var(--text)">Gagal memuat foto</div>
-          <div style="font-size:13px;color:var(--text2);margin-top:4px">${e.message}</div>
-          <button onclick="loadPhotos()" style="margin-top:16px;padding:10px 24px;border-radius:50px;background:var(--orange);color:white;border:none;font-weight:700;cursor:pointer;font-size:14px;">🔄 Coba Lagi</button>
-        `;
-      }
-    }
-
-    // ── FILTER ────────────────────────────────────────────────────────
-    function applyFilter() {
-      const dateVal = document.getElementById('filterDate').value;
-      const btnClear = document.getElementById('btnClearFilter');
-
-      if (dateVal) {
-        filtered = allPhotos.filter(p => p.dateStr === dateVal);
-        btnClear.style.display = 'block';
-      } else {
-        filtered = [...allPhotos];
-        btnClear.style.display = 'none';
-      }
-
-      // Reset selection on filter change
-      selected = [];
-      updatePrintBar();
-      renderGrid();
-    }
-
-    function clearFilter() {
-      document.getElementById('filterDate').value = '';
-      applyFilter();
-    }
-
-    // ── RENDER GRID ───────────────────────────────────────────────────
-    function renderGrid() {
-      const grid  = document.getElementById('photoGrid');
-      const empty = document.getElementById('emptyState');
-      const badge = document.getElementById('countBadge');
-
-      badge.textContent = filtered.length + ' foto';
-
-      if (filtered.length === 0) {
-        grid.innerHTML = '';
-        empty.style.display = 'block';
-        return;
-      }
-      empty.style.display = 'none';
-
-      grid.innerHTML = filtered.map((p, i) => {
-        const sel = selected.includes(p.url);
-        const idx = selected.indexOf(p.url) + 1;
-        const dateLabel = p.date.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
-        return `
-          <div class="photo-item${sel ? ' selected' : ''}" onclick="toggleSelect('${p.url}', ${i})" data-url="${p.url}">
-            <img src="${p.url}" alt="foto" loading="lazy" crossorigin="anonymous">
-            <div class="photo-check">${sel ? '✓' : ''}</div>
-            <div class="photo-num">${sel ? idx : ''}</div>
-            <div class="photo-date">${dateLabel}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // ── SELECTION ─────────────────────────────────────────────────────
-    function toggleSelect(url, idx) {
-      const pos = selected.indexOf(url);
-      if (pos > -1) {
-        selected.splice(pos, 1);
-      } else {
-        if (selected.length >= 2) {
-          showToast('⚠️ Maksimal 2 foto yang bisa dipilih');
-          return;
-        }
-        selected.push(url);
-      }
-      updatePrintBar();
-      renderGrid();
-    }
-
-    function clearSelection() {
-      selected = [];
-      updatePrintBar();
-      renderGrid();
-    }
-
-    function updatePrintBar() {
-      const bar = document.getElementById('printBar');
-      const cnt = document.getElementById('selectedCount');
-      cnt.textContent = selected.length;
-
-      if (selected.length > 0) {
-        bar.classList.add('visible');
-      } else {
-        bar.classList.remove('visible');
-      }
-    }
-
-    // ── PRINT MODAL ───────────────────────────────────────────────────
-    function openPrintModal() {
-      if (selected.length < 2) {
-        showToast('❌ Harus memilih tepat 2 foto untuk dicetak');
-        return;
-      }
-      if (selected.length > 2) {
-        showToast('❌ Hanya bisa memilih tepat 2 foto untuk dicetak');
-        return;
-      }
-
-      // Show preview
-      const preview = document.getElementById('modalPreview');
-      preview.innerHTML = selected.map(url =>
-        `<img src="${url}" alt="preview" crossorigin="anonymous">`
-      ).join('');
-
-      document.getElementById('printModal').classList.add('open');
-      document.getElementById('modalProgress').style.display = 'none';
-      document.getElementById('btnGenPrint').disabled = false;
-    }
-
-    function closePrintModal() {
-      document.getElementById('printModal').classList.remove('open');
-    }
-
-    // ── GENERATE PRINT (10×15 cm = 1181×1772 px @ 300dpi) ─────────────
-    // Layout: 2 foto berdampingan, masing-masing 50% lebar
-    async function generatePrint() {
-      if (selected.length !== 2) {
-        showToast('❌ Harus memilih tepat 2 foto untuk dicetak');
-        closePrintModal();
-        return;
-      }
-
-      const btn      = document.getElementById('btnGenPrint');
-      const progress = document.getElementById('modalProgress');
-      const progBar  = document.getElementById('progBar');
-      const progText = document.getElementById('progressText');
-
-      btn.disabled = true;
-      progress.style.display = 'block';
-      progBar.style.width = '10%';
-      progText.textContent = 'Memuat foto 1...';
-
-      try {
-        // 10×15 cm @ 300 dpi = 1181 × 1772 px
-        const PW = 1181;
-        const PH = 1772;
-
-        const canvas = document.createElement('canvas');
-        canvas.width  = PW;
-        canvas.height = PH;
-        const ctx = canvas.getContext('2d');
-
-        // White background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, PW, PH);
-
-        const slotW = Math.floor(PW / 2);
-        const slotH = PH;
-
-        progBar.style.width = '20%';
-        progText.textContent = 'Memuat foto 1...';
-        const img1 = await loadImage(selected[0]);
-
-        progBar.style.width = '50%';
-        progText.textContent = 'Memuat foto 2...';
-        const img2 = await loadImage(selected[1]);
-
-        progBar.style.width = '70%';
-        progText.textContent = 'Menyusun layout...';
-
-        // Draw foto 1 (left half) — cover crop
-        drawCover(ctx, img1, 0, 0, slotW, slotH);
-
-        // Draw foto 2 (right half) — cover crop
-        drawCover(ctx, img2, slotW, 0, slotW, slotH);
-
-        // Thin divider line
-        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(slotW, 0);
-        ctx.lineTo(slotW, PH);
-        ctx.stroke();
-
-        progBar.style.width = '90%';
-        progText.textContent = 'Membuat file download...';
-
-        canvas.toBlob(blob => {
-          progBar.style.width = '100%';
-          progText.textContent = 'Selesai! ✓';
-
-          const url = URL.createObjectURL(blob);
-          const a   = document.createElement('a');
-          a.href     = url;
-          a.download = `lux-print-10x15-${Date.now()}.jpg`;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-          setTimeout(() => {
-            closePrintModal();
-            showToast('✅ File print berhasil didownload!', 'success');
-          }, 800);
-        }, 'image/jpeg', 0.95);
-
-      } catch (e) {
-        progText.textContent = '⚠️ Gagal: ' + e.message;
-        btn.disabled = false;
-      }
-    }
-
-    // Draw image with cover-fit (crop center) into a rectangle
-    function drawCover(ctx, img, x, y, w, h) {
-      const scale = Math.max(w / img.width, h / img.height);
-      const sw = w / scale;
-      const sh = h / scale;
-      const sx = (img.width  - sw) / 2;
-      const sy = (img.height - sh) / 2;
-      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-    }
-
-    function loadImage(src) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload  = () => resolve(img);
-        img.onerror = () => reject(new Error('Gagal load gambar'));
-        img.src = src;
+  // ── LOAD PHOTOS ───────────────────────────────────────────────────────
+  async function loadPhotos() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prefix: 'results/',
+          limit: 1000,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' }
+        })
       });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status} — ${errText}`);
+      }
+      const files = await res.json();
+      if (!Array.isArray(files)) throw new Error('Respons tidak valid dari server');
+
+      allPhotos = files
+        .filter(f => f.name && /\.(jpg|jpeg|png)$/i.test(f.name))
+        .map(f => {
+          const ts = parseInt(f.name.split('_')[0]);
+          const d  = (ts > 1000000000000)
+            ? new Date(ts)
+            : (f.created_at ? new Date(f.created_at) : new Date());
+          return {
+            url:     `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/results/${f.name}`,
+            name:    f.name,              // hanya nama file, bukan full path
+            path:    `results/${f.name}`, // full path di bucket
+            date:    d,
+            dateStr: d.toISOString().slice(0, 10),
+          };
+        })
+        .sort((a, b) => b.date - a.date);
+
+      document.getElementById('loadingState').style.display = 'none';
+      applyFilter();
+
+    } catch (e) {
+      document.getElementById('loadingState').innerHTML = `
+        <div style="font-size:48px">⚠️</div>
+        <div style="font-weight:700;color:var(--text)">Gagal memuat foto</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">${e.message}</div>
+        <button onclick="loadPhotos()" style="margin-top:16px;padding:10px 24px;border-radius:50px;background:var(--orange);color:white;border:none;font-weight:700;cursor:pointer;font-size:14px;">🔄 Coba Lagi</button>
+      `;
+    }
+  }
+
+  // ── FILTER ────────────────────────────────────────────────────────────
+  function applyFilter() {
+    const dateVal  = document.getElementById('filterDate').value;
+    const btnClear = document.getElementById('btnClearFilter');
+    filtered = dateVal ? allPhotos.filter(p => p.dateStr === dateVal) : [...allPhotos];
+    btnClear.style.display = dateVal ? 'block' : 'none';
+    selected = [];
+    updateActionBar();
+    renderGrid();
+  }
+  function clearFilter() {
+    document.getElementById('filterDate').value = '';
+    applyFilter();
+  }
+
+  // ── RENDER ────────────────────────────────────────────────────────────
+  function renderGrid() {
+    const grid  = document.getElementById('photoGrid');
+    const empty = document.getElementById('emptyState');
+    document.getElementById('countBadge').textContent = filtered.length + ' foto';
+
+    if (filtered.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    grid.innerHTML = filtered.map((p, i) => {
+      const isSel   = selected.includes(p.url);
+      const selIdx  = selected.indexOf(p.url) + 1;
+      const isDelete = mode === 'delete';
+      const dateLabel = p.date.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+
+      let cls = 'photo-item';
+      if (isDelete) cls += ' delete-mode';
+      if (isSel && !isDelete) cls += ' selected';
+      if (isSel && isDelete)  cls += ' marked-delete';
+
+      return `
+        <div class="${cls}" onclick="toggleSelect('${p.url}')" data-url="${p.url}">
+          <img src="${p.url}" alt="foto" loading="lazy" crossorigin="anonymous">
+          <div class="photo-check">${isSel ? (isDelete ? '🗑' : '✓') : ''}</div>
+          <div class="photo-num">${(!isDelete && isSel) ? selIdx : ''}</div>
+          <div class="photo-x"></div>
+          <div class="photo-date">${dateLabel}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── SELECTION ─────────────────────────────────────────────────────────
+  function toggleSelect(url) {
+    const pos = selected.indexOf(url);
+    if (pos > -1) {
+      selected.splice(pos, 1);
+    } else {
+      if (mode === 'print' && selected.length >= 2) {
+        showToast('⚠️ Maksimal 2 foto yang bisa dipilih untuk print');
+        return;
+      }
+      selected.push(url);
+    }
+    updateActionBar();
+    renderGrid();
+  }
+
+  function clearSelection() {
+    selected = [];
+    updateActionBar();
+    renderGrid();
+  }
+
+  function updateActionBar() {
+    const bar   = document.getElementById('actionBar');
+    const cnt   = document.getElementById('actionCount');
+    const info  = document.getElementById('actionInfo');
+    cnt.textContent = selected.length;
+
+    if (mode === 'delete') {
+      info.className = 'action-bar-info delete-info';
+      cnt.style.color = 'var(--red)';
+    } else {
+      info.className = 'action-bar-info';
+      cnt.style.color = 'var(--orange)';
     }
 
-    // ── TOAST ─────────────────────────────────────────────────────────
-    let toastTimer;
-    function showToast(msg, type = 'error') {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = 'toast show' + (type === 'success' ? ' success' : '');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
-    }
+    bar.classList.toggle('visible', selected.length > 0);
+  }
 
-    // ── INIT ──────────────────────────────────────────────────────────
-    document.getElementById('pwInput').focus();
-  </script>
-
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+  // ── PRINT ─────────────────────────────────────────────────────────────
+  function openPrintModal() {
+    if (selected.length !== 2) {
+      showToast('❌ Pilih tepat 2 foto untuk dicetak');
+      return;
     }
-  </script>
+    document.getElementById('printPreview').innerHTML =
+      selected.map(url => `<img src="${url}" alt="preview" crossorigin="anonymous">`).join('');
+    document.getElementById('printModal').classList.add('open');
+    document.getElementById('modalProgress').style.display = 'none';
+    document.getElementById('btnGenPrint').disabled = false;
+    document.getElementById('progBar').style.width = '0%';
+  }
+  function closePrintModal() {
+    document.getElementById('printModal').classList.remove('open');
+  }
+
+  async function generatePrint() {
+    if (selected.length !== 2) return;
+    const btn = document.getElementById('btnGenPrint');
+    const progress = document.getElementById('modalProgress');
+    const progBar  = document.getElementById('progBar');
+    const progText = document.getElementById('progressText');
+
+    btn.disabled = true;
+    progress.style.display = 'block';
+
+    try {
+      const PW = 1181, PH = 1772; // 10×15 cm @ 300dpi
+      const canvas = document.createElement('canvas');
+      canvas.width = PW; canvas.height = PH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, PW, PH);
+      const slotW = Math.floor(PW / 2);
+
+      progBar.style.width = '20%'; progText.textContent = 'Memuat foto 1...';
+      const img1 = await loadImage(selected[0]);
+      progBar.style.width = '50%'; progText.textContent = 'Memuat foto 2...';
+      const img2 = await loadImage(selected[1]);
+      progBar.style.width = '75%'; progText.textContent = 'Menyusun layout...';
+
+      drawCover(ctx, img1, 0,      0, slotW, PH);
+      drawCover(ctx, img2, slotW,  0, slotW, PH);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(slotW, 0); ctx.lineTo(slotW, PH); ctx.stroke();
+
+      progBar.style.width = '90%'; progText.textContent = 'Membuat file...';
+      canvas.toBlob(blob => {
+        progBar.style.width = '100%'; progText.textContent = 'Selesai ✓';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `lux-print-10x15-${Date.now()}.jpg`;
+        a.click();
+        setTimeout(() => {
+          closePrintModal();
+          showToast('✅ File print berhasil didownload!', 'success');
+        }, 800);
+      }, 'image/jpeg', 0.95);
+    } catch(e) {
+      progText.textContent = '⚠️ Gagal: ' + e.message;
+      btn.disabled = false;
+    }
+  }
+
+  function drawCover(ctx, img, x, y, w, h) {
+    const scale = Math.max(w / img.width, h / img.height);
+    const sw = w / scale, sh = h / scale;
+    const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  }
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve(img);
+      img.onerror = () => reject(new Error('Gagal load gambar'));
+      img.src = src;
+    });
+  }
+
+  // ── DELETE ────────────────────────────────────────────────────────────
+  function openDeleteModal() {
+    if (selected.length === 0) {
+      showToast('❌ Pilih foto yang ingin dihapus dulu');
+      return;
+    }
+    const n = selected.length;
+    document.getElementById('deleteModalSub').textContent =
+      `${n} foto akan dihapus permanen dari server. Tindakan ini tidak bisa dibatalkan.`;
+
+    // show thumbnails
+    const thumbs = document.getElementById('deleteThumbs');
+    thumbs.innerHTML = selected.map(url =>
+      `<img class="del-thumb" src="${url}" alt="hapus" crossorigin="anonymous">`
+    ).join('');
+
+    document.getElementById('deleteModal').classList.add('open');
+    document.getElementById('btnConfirmDelete').disabled = false;
+    document.getElementById('btnConfirmDelete').textContent = `🗑️ Ya, Hapus ${n} Foto`;
+  }
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('open');
+  }
+
+  async function doDelete() {
+    const btn = document.getElementById('btnConfirmDelete');
+    btn.disabled = true;
+    btn.textContent = '⏳ Menghapus...';
+
+    // Kumpulkan path lengkap dari foto yang dipilih
+    const pathsToDelete = selected.map(url => {
+      const found = allPhotos.find(p => p.url === url);
+      return found ? found.path : null;
+    }).filter(Boolean);
+
+    try {
+      // Supabase Storage bulk delete: DELETE /storage/v1/object/{bucket}
+      // dengan body { prefixes: [...paths] }
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prefixes: pathsToDelete })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status} — ${errText}`);
+      }
+
+      const result = await res.json();
+      const deleted = Array.isArray(result) ? result.length : pathsToDelete.length;
+
+      // Hapus dari state lokal
+      const deletedUrls = new Set(selected);
+      allPhotos = allPhotos.filter(p => !deletedUrls.has(p.url));
+      selected  = [];
+
+      closeDeleteModal();
+      applyFilter();
+      showToast(`✅ ${deleted} foto berhasil dihapus`, 'success');
+
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = '🗑️ Ya, Hapus';
+      closeDeleteModal();
+      showToast('❌ Gagal hapus: ' + e.message);
+    }
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type = 'error') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type === 'success' ? ' success' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = 'toast'; }, 3500);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  document.getElementById('pwInput').focus();
+  setMode('print'); // init tampilan tombol
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+</script>
 </body>
 </html>

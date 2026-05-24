@@ -436,93 +436,89 @@
     }
 
     // ── 3. Blush ─────────────────────────────────────────────────────────────
-    if (s.blush !== 'off') {
-      const parts = s.blush.split(',').map(Number);
-      const [br, bg, bb] = parts;
-      const blushR = W * 0.10;
+    try {
+      if (s.blush !== 'off') {
+        const parts = s.blush.split(',').map(Number);
+        const [br, bg, bb] = parts;
+        const blushR = W * 0.10;
+        const blushPts = faces.length > 0
+          ? faces.flatMap(lm => [
+              [(lm[50].x*0.5 + lm[101].x*0.5)*W, (lm[50].y*0.5 + lm[101].y*0.5)*H],
+              [(lm[280].x*0.5 + lm[330].x*0.5)*W, (lm[280].y*0.5 + lm[330].y*0.5)*H]
+            ])
+          : [[W*0.28, H*0.42], [W*0.72, H*0.42]];
+        blushPts.forEach(([bx, by]) => {
+          const grad = oc.createRadialGradient(bx, by, 0, bx, by, blushR);
+          grad.addColorStop(0,   `rgba(${br},${bg},${bb},0.30)`);
+          grad.addColorStop(0.5, `rgba(${br},${bg},${bb},0.12)`);
+          grad.addColorStop(1,   `rgba(${br},${bg},${bb},0)`);
+          oc.beginPath(); oc.arc(bx, by, blushR, 0, Math.PI*2);
+          oc.fillStyle = grad; oc.fill();
+        });
+      }
+      dbg("✓ blush ok");
+    } catch(e) { dbg("❌ CRASH blush: " + e.message); }
 
-      const blushPts = faces.length > 0
-        ? faces.flatMap(lm => [
-            [(lm[50].x*0.5 + lm[101].x*0.5)*W, (lm[50].y*0.5 + lm[101].y*0.5)*H],
-            [(lm[280].x*0.5 + lm[330].x*0.5)*W, (lm[280].y*0.5 + lm[330].y*0.5)*H]
-          ])
-        : [[W*0.28, H*0.42], [W*0.72, H*0.42]];
-
-      blushPts.forEach(([bx, by]) => {
-        const grad = oc.createRadialGradient(bx, by, 0, bx, by, blushR);
-        grad.addColorStop(0,    `rgba(${br},${bg},${bb},0.30)`);
-        grad.addColorStop(0.5,  `rgba(${br},${bg},${bb},0.12)`);
-        grad.addColorStop(1,    `rgba(${br},${bg},${bb},0)`);
-        oc.beginPath(); oc.arc(bx, by, blushR, 0, Math.PI*2);
-        oc.fillStyle = grad; oc.fill();
-      });
-    }
-
-    // ── 4. Tone — terapkan ke seluruh offscreen ───────────────────────────────
-    if (s.tone !== 'normal') {
-      const id = oc.getImageData(0, 0, W, H);
-      applyToneToPixels(id.data, s.tone);
-      oc.putImageData(id, 0, 0);
-    }
+    // ── 4. Tone ───────────────────────────────────────────────────────────────
+    try {
+      if (s.tone !== 'normal') {
+        const id = oc.getImageData(0, 0, W, H);
+        applyToneToPixels(id.data, s.tone);
+        oc.putImageData(id, 0, 0);
+      }
+      dbg("✓ tone ok");
+    } catch(e) { dbg("❌ CRASH tone: " + e.message); }
 
     // ── 5. Lip color ──────────────────────────────────────────────────────────
-    if (s.lip !== 'off') {
-      const parts = s.lip.split(',');
-      let [lr, lg, lb] = parts.map(Number);
-      const lipAlpha = parseFloat(parts[3]) || 0.30;
-
-      // Sesuaikan warna lip dengan tone
-      if (s.tone === 'bw') {
-        const gray = Math.round(0.299*lr + 0.587*lg + 0.114*lb);
-        lr = lg = lb = gray;
-      } else if (s.tone === 'sepia') {
-        const nr = Math.min(255, lr*0.393 + lg*0.769 + lb*0.189);
-        const ng = Math.min(255, lr*0.349 + lg*0.686 + lb*0.168);
-        const nb = Math.min(255, lr*0.272 + lg*0.534 + lb*0.131);
-        lr = nr; lg = ng; lb = nb;
-      }
-
-      const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
-
-      // Gambar shape bibir ke canvas terpisah
-      const lipShape = document.createElement('canvas');
-      lipShape.width = W; lipShape.height = H;
-      const lctx = lipShape.getContext('2d');
-
-      if (faces.length > 0) {
-        faces.forEach(lm => {
-          lctx.beginPath();
-          lipIdx.forEach((idx, i) => {
-            const pt = lm[idx]; if (!pt) return;
-            i === 0 ? lctx.moveTo(pt.x*W, pt.y*H) : lctx.lineTo(pt.x*W, pt.y*H);
+    try {
+      if (s.lip !== 'off') {
+        const parts = s.lip.split(',');
+        let [lr, lg, lb] = parts.map(Number);
+        const lipAlpha = parseFloat(parts[3]) || 0.30;
+        if (s.tone === 'bw') {
+          const gray = Math.round(0.299*lr + 0.587*lg + 0.114*lb);
+          lr = lg = lb = gray;
+        } else if (s.tone === 'sepia') {
+          const nr = Math.min(255, lr*0.393 + lg*0.769 + lb*0.189);
+          const ng = Math.min(255, lr*0.349 + lg*0.686 + lb*0.168);
+          const nb = Math.min(255, lr*0.272 + lg*0.534 + lb*0.131);
+          lr = nr; lg = ng; lb = nb;
+        }
+        const lipIdx = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+        const lipShape = document.createElement('canvas');
+        lipShape.width = W; lipShape.height = H;
+        const lctx = lipShape.getContext('2d');
+        if (faces.length > 0) {
+          faces.forEach(lm => {
+            lctx.beginPath();
+            lipIdx.forEach((idx, i) => {
+              const pt = lm[idx]; if (!pt) return;
+              i === 0 ? lctx.moveTo(pt.x*W, pt.y*H) : lctx.lineTo(pt.x*W, pt.y*H);
+            });
+            lctx.closePath();
+            lctx.fillStyle = `rgb(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)})`;
+            lctx.fill();
           });
-          lctx.closePath();
+        } else {
+          lctx.beginPath();
+          lctx.ellipse(W*0.5, H*0.72, W*0.10, H*0.035, 0, 0, Math.PI*2);
           lctx.fillStyle = `rgb(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)})`;
           lctx.fill();
-        });
-      } else {
-        // Fallback: oval bibir tengah bawah foto
-        lctx.beginPath();
-        lctx.ellipse(W*0.5, H*0.72, W*0.10, H*0.035, 0, 0, Math.PI*2);
-        lctx.fillStyle = `rgb(${Math.round(lr)},${Math.round(lg)},${Math.round(lb)})`;
-        lctx.fill();
+        }
+        const lipBlur = document.createElement('canvas');
+        lipBlur.width = W; lipBlur.height = H;
+        const lblur = lipBlur.getContext('2d');
+        lblur.filter = 'blur(3px)';
+        lblur.drawImage(lipShape, 0, 0);
+        lblur.filter = 'none';
+        oc.save();
+        oc.globalAlpha = lipAlpha;
+        oc.globalCompositeOperation = 'multiply';
+        oc.drawImage(lipBlur, 0, 0);
+        oc.restore();
       }
-
-      // Blur agar natural
-      const lipBlur = document.createElement('canvas');
-      lipBlur.width = W; lipBlur.height = H;
-      const lblur = lipBlur.getContext('2d');
-      lblur.filter = 'blur(3px)';
-      lblur.drawImage(lipShape, 0, 0);
-      lblur.filter = 'none';
-
-      // Tempel ke offscreen dengan multiply + alpha
-      oc.save();
-      oc.globalAlpha = lipAlpha;
-      oc.globalCompositeOperation = 'multiply';
-      oc.drawImage(lipBlur, 0, 0);
-      oc.restore(); // <-- penting: restore bersihkan composite mode & alpha
-    }
+      dbg("✓ lip ok");
+    } catch(e) { dbg("❌ CRASH lip: " + e.message); }
 
     // ── 6. Flush offscreen ke main canvas ─────────────────────────────────────
     dbg("flush: off=" + off.width + "x" + off.height + " ctx=" + canvas.width + "x" + canvas.height);

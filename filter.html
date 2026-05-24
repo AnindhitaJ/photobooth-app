@@ -423,8 +423,8 @@
 
     // ── 2. Smooth — HANYA area wajah per face, bukan seluruh foto ──
     if (s.smooth > 0) {
-      const blurPx     = [0, 6, 12, 18][s.smooth];
-      const blendAlpha = [0, 0.75, 0.88, 0.96][s.smooth];
+      const blurPx     = [0, 1.2, 2.2, 3.5][s.smooth];
+      const blendAlpha = [0, 0.38, 0.52, 0.65][s.smooth];
 
       // Buat satu versi blur dari foto asli
       const blurOff = document.createElement('canvas');
@@ -500,26 +500,43 @@
     applyTone(s.tone, W, H);
 
     // ── 5. Brightness — per semua wajah, SETELAH tone ──
-    faces.forEach(lm => {
-      const { maskC } = makeFaceMask(lm, W, H);
-      const faceBright = document.createElement('canvas');
-            faceBright.width = W; faceBright.height = H;
-            const fc = faceBright.getContext('2d');
-            fc.drawImage(brightOff, 0, 0);
-            fc.globalCompositeOperation = 'destination-in';
-            fc.drawImage(maskC, 0, 0);
-            fc.globalCompositeOperation = 'source-over';
-            ctx.drawImage(faceBright, 0, 0);
-          });
-        } else {
-          // Fallback tanpa landmark: screen blend tipis ke seluruh foto
-          ctx.save();
-          ctx.globalCompositeOperation = 'screen';
-          ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.008})`;
-          ctx.fillRect(0, 0, W, H);
-          ctx.restore();
+    if (s.brightness > 0) {
+      if (faces.length > 0) {
+        // Buat versi foto yang sudah di-brighten + sudah di-tone
+        const brightOff = document.createElement('canvas');
+        brightOff.width = W; brightOff.height = H;
+        const boc = brightOff.getContext('2d');
+        // Gambar foto asli, apply brightness, apply tone
+        boc.filter = `brightness(${100 + s.brightness}%)`;
+        boc.drawImage(currentImg, 0, 0);
+        boc.filter = 'none';
+        if (s.tone !== 'normal') {
+          const id2 = boc.getImageData(0, 0, W, H);
+          applyToneToPixels(id2.data, s.tone);
+          boc.putImageData(id2, 0, 0);
         }
+
+        // Untuk tiap wajah: composite bright+toned hanya di area oval wajah
+        faces.forEach(lm => {
+          const { maskC } = makeFaceMask(lm, W, H);
+          const faceBright = document.createElement('canvas');
+          faceBright.width = W; faceBright.height = H;
+          const fc = faceBright.getContext('2d');
+          fc.drawImage(brightOff, 0, 0);
+          fc.globalCompositeOperation = 'destination-in';
+          fc.drawImage(maskC, 0, 0);
+          fc.globalCompositeOperation = 'source-over';
+          ctx.drawImage(faceBright, 0, 0);
+        });
+      } else {
+        // Fallback tanpa landmark: screen blend tipis ke seluruh foto
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.0025})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
       }
+    }
 
     // ── 6. Lip color — per semua wajah ──
     if (s.lip !== 'off') {

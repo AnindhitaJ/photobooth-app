@@ -367,42 +367,24 @@
     oc.drawImage(currentImg, 0, 0);
     oc.filter = 'none';
 
-    // ── 2. Smooth — blur area wajah, blend di atas offscreen ─────────────────
+    // ── 2. DEBUG: tampilkan area smooth sebagai mask hitam ───────────────────
     if (s.smooth > 0) {
-      const blurPx     = [0, 2.5, 4.5, 7.0][s.smooth];
-      const blendAlpha = [0, 0.55, 0.72, 0.85][s.smooth];
-
-      // Buat versi "bahan blur" dari foto asli (dengan brightness yang sama)
-      const blurSource = document.createElement('canvas');
-      blurSource.width = W; blurSource.height = H;
-      const bsc = blurSource.getContext('2d');
-      if (s.brightness > 0) bsc.filter = `brightness(${100 + s.brightness}%)`;
-      bsc.drawImage(currentImg, 0, 0);
-      bsc.filter = 'none';
-
       if (faces.length > 0) {
         faces.forEach(lm => {
           const maskC = makeFaceMask(lm, W, H);
-
-          // Canvas blur yang sudah dipotong ke oval wajah
-          const blurCut = document.createElement('canvas');
-          blurCut.width = W; blurCut.height = H;
-          const bc = blurCut.getContext('2d');
-          bc.filter = `blur(${blurPx}px)`;
-          bc.drawImage(blurSource, 0, 0);
-          bc.filter = 'none';
-          // Potong hanya area oval wajah
-          bc.globalCompositeOperation = 'destination-in';
-          bc.drawImage(maskC, 0, 0);
-          bc.globalCompositeOperation = 'source-over';
-
-          // Tempel ke offscreen
-          oc.globalAlpha = blendAlpha;
-          oc.drawImage(blurCut, 0, 0);
+          const debugLayer = document.createElement('canvas');
+          debugLayer.width = W; debugLayer.height = H;
+          const dc = debugLayer.getContext('2d');
+          dc.fillStyle = 'black';
+          dc.fillRect(0, 0, W, H);
+          dc.globalCompositeOperation = 'destination-in';
+          dc.drawImage(maskC, 0, 0);
+          oc.globalAlpha = 0.65;
+          oc.drawImage(debugLayer, 0, 0);
           oc.globalAlpha = 1;
         });
       } else {
-        // Fallback tanpa landmark: oval tengah atas foto
+        // Fallback: tidak ada landmark, tampilkan oval default
         const cx = W/2, cy = H*0.36, rx = W*0.33, ry = H*0.33;
         const maxR = Math.max(rx, ry);
         const maskC = document.createElement('canvas');
@@ -414,18 +396,15 @@
         grad.addColorStop(1,    'rgba(0,0,0,0)');
         mc.save(); mc.translate(cx, cy); mc.scale(rx/maxR, ry/maxR);
         mc.fillStyle = grad; mc.beginPath(); mc.arc(0,0,maxR,0,Math.PI*2); mc.fill(); mc.restore();
-
-        const blurCut = document.createElement('canvas');
-        blurCut.width = W; blurCut.height = H;
-        const bc = blurCut.getContext('2d');
-        bc.filter = `blur(${blurPx}px)`;
-        bc.drawImage(blurSource, 0, 0);
-        bc.filter = 'none';
-        bc.globalCompositeOperation = 'destination-in';
-        bc.drawImage(maskC, 0, 0);
-
-        oc.globalAlpha = blendAlpha;
-        oc.drawImage(blurCut, 0, 0);
+        const debugLayer = document.createElement('canvas');
+        debugLayer.width = W; debugLayer.height = H;
+        const dc = debugLayer.getContext('2d');
+        dc.fillStyle = 'black';
+        dc.fillRect(0, 0, W, H);
+        dc.globalCompositeOperation = 'destination-in';
+        dc.drawImage(maskC, 0, 0);
+        oc.globalAlpha = 0.65;
+        oc.drawImage(debugLayer, 0, 0);
         oc.globalAlpha = 1;
       }
     }

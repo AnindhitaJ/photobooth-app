@@ -365,12 +365,52 @@
     ctx.drawImage(currentImg, 0, 0, W, H);
     ctx.filter = 'none';
 
-    // ── 2. Smooth (blur wajah, kecuali mata & bibir) ─────────────────────────
+    // ── 2. Smooth natural (bilateral-style: multi-pass blur + edge blend) ──────
     if (s.smooth > 0) {
-      const blurPx = s.smooth === 1 ? '3px' : s.smooth === 2 ? '6px' : '10px';
       const leftEyeIdx  = [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246];
       const rightEyeIdx = [362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398];
       const lipCutIdx   = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+
+      // Bilateral-style approximation: blur kecil (texture) + blur besar (color),
+      // lalu blend — hasilnya kulit halus tapi tepi/kontur tetap terjaga
+      function makeBilateralCanvas(src, passes, blurPx) {
+        // Pass 1: blur kecil — smear warna
+        const a = document.createElement('canvas');
+        a.width = src.width; a.height = src.height;
+        const ac = a.getContext('2d');
+        ac.filter = `blur(${blurPx}px)`;
+        ac.drawImage(src, 0, 0);
+        ac.filter = 'none';
+
+        if (passes < 2) return a;
+
+        // Pass 2: blur lagi dari hasil pass 1 — haluskan lebih
+        const b = document.createElement('canvas');
+        b.width = src.width; b.height = src.height;
+        const bc = b.getContext('2d');
+        bc.filter = `blur(${blurPx}px)`;
+        bc.drawImage(a, 0, 0);
+        bc.filter = 'none';
+
+        // Blend pass1 + pass2: 60/40 — lebih smooth tapi jaga sedikit tekstur
+        const out = document.createElement('canvas');
+        out.width = src.width; out.height = src.height;
+        const oc = out.getContext('2d');
+        oc.drawImage(a, 0, 0);
+        oc.globalAlpha = 0.4;
+        oc.drawImage(b, 0, 0);
+        oc.globalAlpha = 1;
+        return out;
+      }
+
+      // Kekuatan smooth per level
+      const cfg = s.smooth === 1
+        ? { blurPx: 2, passes: 1, strength: 0.55 }
+        : s.smooth === 2
+        ? { blurPx: 3, passes: 2, strength: 0.70 }
+        : { blurPx: 4, passes: 2, strength: 0.85 };
+
+      const smoothed = makeBilateralCanvas(canvas, cfg.passes, cfg.blurPx);
 
       faces.forEach(lm => {
         const xs = lm.map(p => p.x * W);
@@ -379,34 +419,53 @@
         const minY = Math.max(0, Math.min(...ys) - H * 0.02);
         const maxX = Math.min(W, Math.max(...xs) + W * 0.02);
         const maxY = Math.min(H, Math.max(...ys) + H * 0.02);
-
-        // Canvas blur
-        const tmp = document.createElement('canvas');
-        tmp.width = W; tmp.height = H;
-        const tc = tmp.getContext('2d');
-        tc.filter = `blur(${blurPx})`;
-        tc.drawImage(canvas, 0, 0, W, H);
-        tc.filter = 'none';
-
-        // Gambar blur dalam oval wajah
         const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
         const rx = (maxX - minX) / 2 * 1.05;
         const ry = (maxY - minY) / 2 * 1.1;
+
+        // Buat alpha mask oval wajah dengan feathered edge (gradient radial)
+        const maskC = document.createElement('canvas');
+        maskC.width = W; maskC.height = H;
+        const mc = maskC.getContext('2d');
+        // Isi oval penuh dulu
+        mc.beginPath();
+        mc.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        mc.fillStyle = `rgba(255,255,255,${cfg.strength})`;
+        mc.fill();
+        // Blur tepi mask supaya transisi natural
+        const featherC = document.createElement('canvas');
+        featherC.width = W; featherC.height = H;
+        const fc = featherC.getContext('2d');
+        fc.filter = 'blur(18px)';
+        fc.drawImage(maskC, 0, 0);
+        fc.filter = 'none';
+
+        // Gambar smoothed dalam oval (pakai feathered mask via globalAlpha trick)
         ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        // Clip ke oval yang sedikit lebih besar dari landmark
         ctx.beginPath();
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, rx * 1.08, ry * 1.08, 0, 0, Math.PI * 2);
         ctx.clip();
-        ctx.drawImage(tmp, 0, 0, W, H);
+        // Blend smoothed di atas asli dengan strength
+        ctx.globalAlpha = cfg.strength;
+        ctx.drawImage(smoothed, 0, 0, W, H);
+        ctx.globalAlpha = 1;
         ctx.restore();
 
         // Kembalikan foto asli di mata & bibir supaya tetap tajam
         [leftEyeIdx, rightEyeIdx, lipCutIdx].forEach(idxList => {
           const pts = idxList.map(i => lm[i]).filter(Boolean);
           if (pts.length < 3) return;
+          // Expand sedikit tiap titik dari centroid biar area cutout lebih luas
+          const ox = pts.reduce((s,p) => s + p.x*W, 0) / pts.length;
+          const oy = pts.reduce((s,p) => s + p.y*H, 0) / pts.length;
           ctx.save();
           ctx.beginPath();
           pts.forEach((pt, i) => {
-            i === 0 ? ctx.moveTo(pt.x * W, pt.y * H) : ctx.lineTo(pt.x * W, pt.y * H);
+            const px = ox + (pt.x*W - ox) * 1.25;
+            const py = oy + (pt.y*H - oy) * 1.25;
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
           });
           ctx.closePath();
           ctx.clip();

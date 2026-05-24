@@ -500,67 +500,9 @@
     applyTone(s.tone, W, H);
 
     // ── 5. Brightness — per semua wajah, SETELAH tone ──
-    if (s.brightness > 0) {
-      if (faces.length > 0) {
-        // Buat versi foto yang sudah di-brighten + sudah di-tone
-        const brightOff = document.createElement('canvas');
-        brightOff.width = W; brightOff.height = H;
-        const boc = brightOff.getContext('2d');
-        // Gambar foto asli, apply brightness, apply tone
-        boc.filter = `brightness(${100 + s.brightness * 3}%)`;
-        boc.drawImage(currentImg, 0, 0);
-        boc.filter = 'none';
-        if (s.tone !== 'normal') {
-          const id2 = boc.getImageData(0, 0, W, H);
-          applyToneToPixels(id2.data, s.tone);
-          boc.putImageData(id2, 0, 0);
-        }
-
-        // Untuk tiap wajah: composite bright+toned hanya di area oval wajah
-        if (s.brightness > 0) {
-        // Ambil state canvas sekarang (udah ada tone + blush)
-        const currentState = ctx.getImageData(0, 0, W, H);
-        
-        if (faces.length > 0) {
-          faces.forEach(lm => {
-            const xs = lm.map(p => p.x * W);
-            const ys = lm.map(p => p.y * H);
-            const minX = Math.min(...xs), maxX = Math.max(...xs);
-            const minY = Math.min(...ys), maxY = Math.max(...ys);
-            const cx = (minX + maxX) / 2;
-            const cy = (minY + maxY) / 2;
-            const rx = (maxX - minX) / 2 * 1.15;
-            const ry = (maxY - minY) / 2 * 1.15;
-  
-            // Brighten pixel-level di area ellipse wajah
-            const id = ctx.getImageData(0, 0, W, H);
-            const d = id.data;
-            const factor = s.brightness * 3 / 100;
-            for (let py = 0; py < H; py++) {
-              for (let px = 0; px < W; px++) {
-                // Cek apakah pixel di dalam ellipse
-                const dx = (px - cx) / rx;
-                const dy = (py - cy) / ry;
-                if (dx*dx + dy*dy > 1) continue;
-                // Feather di tepi ellipse
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                const alpha = dist > 0.7 ? 1 - (dist - 0.7) / 0.3 : 1;
-                const i = (py * W + px) * 4;
-                d[i]   = Math.min(255, d[i]   + 255 * factor * alpha);
-                d[i+1] = Math.min(255, d[i+1] + 255 * factor * alpha);
-                d[i+2] = Math.min(255, d[i+2] + 255 * factor * alpha);
-              }
-            }
-            ctx.putImageData(id, 0, 0);
-          });
-        } else {
-          ctx.save();
-          ctx.globalCompositeOperation = 'screen';
-          ctx.fillStyle = `rgba(255,255,255,${s.brightness * 0.008})`;
-          ctx.fillRect(0, 0, W, H);
-          ctx.restore();
-        }
-      }
+    faces.forEach(lm => {
+      const { maskC } = makeFaceMask(lm, W, H);
+      const faceBright = document.createElement('canvas');
             faceBright.width = W; faceBright.height = H;
             const fc = faceBright.getContext('2d');
             fc.drawImage(brightOff, 0, 0);

@@ -188,9 +188,10 @@
 
       <div class="divider"></div>
 
-      <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
-        <span class="btn-icon">📤</span>
+      <button class="btn btn-cetak2strip" id="btnShare" onclick="shareNative()" disabled>
+        <span class="btn-icon">🖨️</span>
         <span class="btn-label">Cetak 1 Strip</span>
+        <span class="btn-badge">5×15</span>
       </button>
 
       <button class="btn btn-cetak2strip" id="btnCetak2Strip" onclick="cetak2Strip()" disabled>
@@ -893,17 +894,64 @@
   // ─── Share ───
   async function shareNative() {
     if (!finalDataURL) return;
+    const btn = document.getElementById('btnShare');
+    btn.disabled = true;
+    btn.querySelector('.btn-label').textContent = 'Memproses...';
     try {
-      const blob = dataURLtoBlob(finalDataURL);
-      const file = new File([blob], 'photobooth.jpg', { type: 'image/jpeg' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Hasil LUX Photobooth' });
-      } else {
-        downloadJpg();
-        showStatus('Share tidak didukung — file didownload');
-      }
+      // Canvas 10×15 cm @ 300dpi = 1181×1772 px
+      // Kiri (5×15 = 590×1772): foto strip, Kanan: putih/transparan
+      const TOTAL_W = 1181, STRIP_W = 590, H = 1772;
+      const canvas  = document.createElement('canvas');
+      canvas.width  = TOTAL_W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // Background putih penuh
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, TOTAL_W, H);
+
+      // Gambar foto hanya di sisi kiri (590×1772), sisi kanan tetap putih
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload  = () => res(i);
+        i.onerror = () => rej(new Error('Gagal load foto'));
+        i.src = finalDataURL;
+      });
+
+      const scale = Math.max(STRIP_W / img.width, H / img.height);
+      const sw = STRIP_W / scale, sh = H / scale;
+      const sx = (img.width  - sw) / 2;
+      const sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, H);
+
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], `lux-cetak1strip-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'Cetak 1 Strip LUX Photobooth' });
+          } catch(e) {
+            if (e.name !== 'AbortError') {
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = file.name;
+              a.click();
+            }
+          }
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = file.name;
+          a.click();
+          showStatus('File 10×15 didownload — buka di app cetak favorit kamu');
+        }
+        btn.querySelector('.btn-label').textContent = 'Cetak 1 Strip';
+        btn.disabled = false;
+      }, 'image/jpeg', 0.95);
+
     } catch(e) {
-      if (e.name !== 'AbortError') downloadJpg();
+      showStatus('Gagal generate: ' + e.message);
+      btn.querySelector('.btn-label').textContent = 'Cetak 1 Strip';
+      btn.disabled = false;
     }
   }
 

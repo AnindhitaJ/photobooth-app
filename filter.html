@@ -313,10 +313,11 @@
     const maskC = document.createElement('canvas');
     maskC.width = W; maskC.height = H;
     const mc = maskC.getContext('2d');
+    // destination-in pakai ALPHA channel — harus putih (alpha=1) di dalam, transparan di luar
     const grad = mc.createRadialGradient(cx, cy, 0, cx, cy, maxR);
-    grad.addColorStop(0,   'rgba(0,0,0,1)');
-    grad.addColorStop(0.6, 'rgba(0,0,0,1)');
-    grad.addColorStop(1,   'rgba(0,0,0,0)');
+    grad.addColorStop(0,   'rgba(255,255,255,1)');
+    grad.addColorStop(0.6, 'rgba(255,255,255,1)');
+    grad.addColorStop(1,   'rgba(255,255,255,0)');
     mc.save();
     mc.translate(cx, cy);
     mc.scale(rx / maxR, ry / maxR);

@@ -386,54 +386,17 @@
     oc.drawImage(currentImg, 0, 0);
     oc.filter = 'none';
 
-    // ── 2. DEBUG: tampilkan area smooth sebagai mask hitam ───────────────────
+    // ── 2. DEBUG: gambar langsung ke ctx buat test ────────────────────────────
     if (s.smooth > 0) {
-      dbg("smooth ON → faces.length=" + faces.length);
-      if (faces.length > 0) {
-        dbg("pakai landmark mediapipe");
-        faces.forEach((lm, fi) => {
-          const maskC = makeFaceMask(lm, W, H);
-          const debugLayer = document.createElement("canvas");
-          debugLayer.width = W; debugLayer.height = H;
-          const dc = debugLayer.getContext("2d");
-          dc.fillStyle = "black";
-          dc.fillRect(0, 0, W, H);
-          dc.globalCompositeOperation = "destination-in";
-          dc.drawImage(maskC, 0, 0);
-          dc.globalCompositeOperation = "source-over";
-          oc.globalAlpha = 0.65;
-          oc.globalCompositeOperation = "source-over";
-          oc.drawImage(debugLayer, 0, 0);
-          oc.globalAlpha = 1;
-          dbg("face " + fi + " → mask drawn ke oc size=" + oc.canvas.width + "x" + oc.canvas.height);
-        });
-      } else {
-        dbg("FALLBACK oval (no landmark)");
-        const cx = W/2, cy = H*0.36, rx = W*0.33, ry = H*0.33;
-        const maxR = Math.max(rx, ry);
-        const maskC = document.createElement("canvas");
-        maskC.width = W; maskC.height = H;
-        const mc = maskC.getContext("2d");
-        const grad = mc.createRadialGradient(cx, cy, 0, cx, cy, maxR);
-        grad.addColorStop(0,    "rgba(0,0,0,1)");
-        grad.addColorStop(0.65, "rgba(0,0,0,0.7)");
-        grad.addColorStop(1,    "rgba(0,0,0,0)");
-        mc.save(); mc.translate(cx, cy); mc.scale(rx/maxR, ry/maxR);
-        mc.fillStyle = grad; mc.beginPath(); mc.arc(0,0,maxR,0,Math.PI*2); mc.fill(); mc.restore();
-        const debugLayer = document.createElement("canvas");
-        debugLayer.width = W; debugLayer.height = H;
-        const dc = debugLayer.getContext("2d");
-        dc.fillStyle = "black";
-        dc.fillRect(0, 0, W, H);
-        dc.globalCompositeOperation = "destination-in";
-        dc.drawImage(maskC, 0, 0);
-        oc.globalAlpha = 0.65;
-        oc.drawImage(debugLayer, 0, 0);
-        oc.globalAlpha = 1;
-        dbg("fallback oval drawn");
-      }
-    } else {
-      dbg("smooth OFF");
+      dbg("smooth ON → test gambar langsung ke ctx");
+      // Flush dulu foto asli ke ctx
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(currentImg, 0, 0);
+      // Gambar kotak merah solid langsung ke ctx — kalau ini ga keliatan, ctx-nya bermasalah
+      ctx.fillStyle = 'rgba(255,0,0,0.7)';
+      ctx.fillRect(W*0.1, H*0.1, W*0.8, H*0.4);
+      dbg("kotak merah harusnya keliatan di foto");
+      return; // stop di sini dulu
     }
 
     // ── 3. Blush ─────────────────────────────────────────────────────────────

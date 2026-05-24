@@ -190,7 +190,7 @@
 
       <button class="btn btn-share" id="btnShare" onclick="shareNative()" disabled>
         <span class="btn-icon">📤</span>
-        <span class="btn-label">Share ke Aplikasi Lain</span>
+        <span class="btn-label">Cetak 1 Strip</span>
       </button>
 
       <button class="btn btn-cetak2strip" id="btnCetak2Strip" onclick="cetak2Strip()" disabled>
@@ -199,10 +199,6 @@
         <span class="btn-badge">10×15</span>
       </button>
 
-      <button class="btn btn-print" id="btnPrint" onclick="printFoto()" disabled>
-        <span class="btn-icon">🖨️</span>
-        <span class="btn-label">Kirim ke Printer / Epson iPrint</span>
-      </button>
 
       <div class="divider"></div>
 
@@ -355,7 +351,7 @@
       document.getElementById('loadingOverlay').style.display = 'none';
 
       const hasLive = livePhotos.some(Boolean);
-      ['btnJpg','btnShare','btnPrint','btnZip','btnCetak2Strip'].forEach(id => {
+      ['btnJpg','btnShare','btnZip','btnCetak2Strip'].forEach(id => {
         document.getElementById(id).disabled = false;
       });
       document.getElementById('btnLive').disabled = !hasLive;

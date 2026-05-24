@@ -453,24 +453,49 @@
         ctx.globalAlpha = 1;
         ctx.restore();
 
-        // Kembalikan foto asli di mata & bibir supaya tetap tajam
-        [leftEyeIdx, rightEyeIdx, lipCutIdx].forEach(idxList => {
+        // Kembalikan foto asli di mata & bibir — dengan feathered edge (tidak harsh)
+        const cutoutExpand = [1.20, 1.20, 1.05];
+        const featherBlur  = [6, 6, 4]; // px blur untuk tiap region
+        [leftEyeIdx, rightEyeIdx, lipCutIdx].forEach((idxList, li) => {
           const pts = idxList.map(i => lm[i]).filter(Boolean);
           if (pts.length < 3) return;
-          // Expand sedikit tiap titik dari centroid biar area cutout lebih luas
+          const expand = cutoutExpand[li];
+          const fBlur  = featherBlur[li];
           const ox = pts.reduce((s,p) => s + p.x*W, 0) / pts.length;
           const oy = pts.reduce((s,p) => s + p.y*H, 0) / pts.length;
-          ctx.save();
-          ctx.beginPath();
+
+          // 1. Gambar shape ke mask canvas
+          const maskC = document.createElement('canvas');
+          maskC.width = W; maskC.height = H;
+          const mc = maskC.getContext('2d');
+          mc.beginPath();
           pts.forEach((pt, i) => {
-            const px = ox + (pt.x*W - ox) * 1.25;
-            const py = oy + (pt.y*H - oy) * 1.25;
-            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            const px = ox + (pt.x*W - ox) * expand;
+            const py = oy + (pt.y*H - oy) * expand;
+            i === 0 ? mc.moveTo(px, py) : mc.lineTo(px, py);
           });
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(currentImg, 0, 0, W, H);
-          ctx.restore();
+          mc.closePath();
+          mc.fillStyle = 'white';
+          mc.fill();
+
+          // 2. Blur mask supaya tepinya soft
+          const softC = document.createElement('canvas');
+          softC.width = W; softC.height = H;
+          const sc = softC.getContext('2d');
+          sc.filter = `blur(${fBlur}px)`;
+          sc.drawImage(maskC, 0, 0);
+          sc.filter = 'none';
+
+          // 3. Pakai mask sebagai alpha: gambar foto asli ke tmp, lalu
+          //    composite ke ctx dengan destination-in trick
+          const sharpC = document.createElement('canvas');
+          sharpC.width = W; sharpC.height = H;
+          const hc = sharpC.getContext('2d');
+          hc.drawImage(currentImg, 0, 0, W, H);
+          hc.globalCompositeOperation = 'destination-in';
+          hc.drawImage(softC, 0, 0);
+
+          ctx.drawImage(sharpC, 0, 0);
         });
       });
     }

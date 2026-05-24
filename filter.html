@@ -365,9 +365,13 @@
     ctx.drawImage(currentImg, 0, 0, W, H);
     ctx.filter = 'none';
 
-    // ── 2. Smooth (blur wajah via getImageData region) ───────────────────────
+    // ── 2. Smooth (blur wajah, kecuali mata & bibir) ─────────────────────────
     if (s.smooth > 0) {
       const blurPx = s.smooth === 1 ? '3px' : s.smooth === 2 ? '6px' : '10px';
+      const leftEyeIdx  = [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246];
+      const rightEyeIdx = [362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398];
+      const lipCutIdx   = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146];
+
       faces.forEach(lm => {
         const xs = lm.map(p => p.x * W);
         const ys = lm.map(p => p.y * H);
@@ -375,9 +379,8 @@
         const minY = Math.max(0, Math.min(...ys) - H * 0.02);
         const maxX = Math.min(W, Math.max(...xs) + W * 0.02);
         const maxY = Math.min(H, Math.max(...ys) + H * 0.02);
-        const fx = minX, fy = minY, fw = maxX - minX, fh = maxY - minY;
 
-        // Ambil region wajah, blur, gambar balik dengan masking oval
+        // Canvas blur
         const tmp = document.createElement('canvas');
         tmp.width = W; tmp.height = H;
         const tc = tmp.getContext('2d');
@@ -385,17 +388,31 @@
         tc.drawImage(canvas, 0, 0, W, H);
         tc.filter = 'none';
 
-        // Masking oval tepat di wajah
+        // Gambar blur dalam oval wajah
         const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
         const rx = (maxX - minX) / 2 * 1.05;
         const ry = (maxY - minY) / 2 * 1.1;
-
         ctx.save();
         ctx.beginPath();
         ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
         ctx.clip();
         ctx.drawImage(tmp, 0, 0, W, H);
         ctx.restore();
+
+        // Kembalikan foto asli di mata & bibir supaya tetap tajam
+        [leftEyeIdx, rightEyeIdx, lipCutIdx].forEach(idxList => {
+          const pts = idxList.map(i => lm[i]).filter(Boolean);
+          if (pts.length < 3) return;
+          ctx.save();
+          ctx.beginPath();
+          pts.forEach((pt, i) => {
+            i === 0 ? ctx.moveTo(pt.x * W, pt.y * H) : ctx.lineTo(pt.x * W, pt.y * H);
+          });
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(currentImg, 0, 0, W, H);
+          ctx.restore();
+        });
       });
     }
 

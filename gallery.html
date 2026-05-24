@@ -405,8 +405,9 @@
     // ── LOAD PHOTOS FROM SUPABASE ─────────────────────────────────────
     async function loadPhotos() {
       try {
+        // Supabase Storage: POST /storage/v1/object/list/{bucket} dengan prefix
         const res = await fetch(
-          `${SUPABASE_URL}/storage/v1/object/list/${BUCKET}/results`,
+          `${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`,
           {
             method: 'POST',
             headers: {
@@ -414,19 +415,30 @@
               'Authorization': `Bearer ${SUPABASE_ANON}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ limit: 1000, offset: 0, sortBy: { column: 'created_at', order: 'desc' } })
+            body: JSON.stringify({
+              prefix: 'results/',
+              limit: 1000,
+              offset: 0,
+              sortBy: { column: 'created_at', order: 'desc' }
+            })
           }
         );
 
-        if (!res.ok) throw new Error('Gagal memuat');
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status} - ${errText}`);
+        }
         const files = await res.json();
+        if (!Array.isArray(files)) throw new Error('Respons tidak valid dari server');
 
         allPhotos = files
-          .filter(f => f.name && (f.name.endsWith('.jpg') || f.name.endsWith('.png') || f.name.endsWith('.jpeg')))
+          .filter(f => f.name && /\.(jpg|jpeg|png)$/i.test(f.name))
           .map(f => {
-            // Name format: timestamp_foto.jpg
+            // Nama file: timestamp_foto.jpg  atau  timestamp_filename
             const ts = parseInt(f.name.split('_')[0]);
-            const d  = ts ? new Date(ts) : new Date(f.created_at || Date.now());
+            const d  = (ts > 1000000000000)
+              ? new Date(ts)
+              : (f.created_at ? new Date(f.created_at) : new Date());
             return {
               url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/results/${f.name}`,
               name: f.name,
@@ -442,7 +454,7 @@
         document.getElementById('loadingState').innerHTML = `
           <div style="font-size:48px">⚠️</div>
           <div style="font-weight:700;color:var(--text)">Gagal memuat foto</div>
-          <div style="font-size:13px;color:var(--text2)">${e.message}</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px">${e.message}</div>
           <button onclick="loadPhotos()" style="margin-top:16px;padding:10px 24px;border-radius:50px;background:var(--orange);color:white;border:none;font-weight:700;cursor:pointer;font-size:14px;">🔄 Coba Lagi</button>
         `;
       }

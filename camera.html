@@ -129,35 +129,7 @@
     }
     .btn-retake:hover { background: #c0392b; transform: scale(1.15); }
 
-    /* ── Pan/Zoom controls — right side ── */
-    #panControls {
-      position: fixed; right: 14px;
-      bottom: max(110px, calc(env(safe-area-inset-bottom, 16px) + 100px));
-      z-index: 25;
-      background: rgba(0,0,0,0.50); backdrop-filter: blur(10px);
-      border-radius: 16px; padding: 10px 8px;
-      border: 1px solid rgba(255,255,255,0.1);
-      display: flex; flex-direction: column; align-items: center; gap: 5px;
-    }
-    .pan-btn {
-      width: 34px; height: 34px; border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.45);
-      color: rgba(255,255,255,0.75); font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s; user-select: none;
-    }
-    .pan-btn:hover  { border-color: #ff6b35; color: white; }
-    .pan-btn:active { background: #ff6b35; border-color: #ff6b35; color: white; }
-    .zoom-label { font-size: 10px; color: rgba(255,255,255,0.55); text-align: center; min-width: 32px; }
-    .pan-grid { display: grid; grid-template-columns: 34px 34px 34px; gap: 4px; }
-    .pan-center { /* empty center */ }
-    .btn-reset-zoom {
-      padding: 4px 10px; border-radius: 50px;
-      border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35);
-      color: rgba(255,255,255,0.5); font-size: 10px; cursor: pointer;
-      transition: all 0.15s; white-space: nowrap;
-    }
-    .btn-reset-zoom:hover { color: white; border-color: rgba(255,255,255,0.55); }
+
 
     /* ── BOTTOM BAR ── */
     #bottomBar {
@@ -277,7 +249,6 @@
     /* Landscape tweaks */
     @media (orientation: landscape) {
       #photosStrip { bottom: max(88px, calc(env(safe-area-inset-bottom,8px) + 78px)); }
-      #panControls { bottom: max(88px, calc(env(safe-area-inset-bottom,8px) + 78px)); }
       #bottomBar { padding: 10px 24px max(10px, env(safe-area-inset-bottom, 10px)); }
       .photo-thumb, .photo-thumb-empty { width: 56px; height: 56px; }
       #btnAmbil, #btnLanjut { font-size: 15px; padding: 13px 22px; }
@@ -336,26 +307,8 @@
 </div>
 <div id="slotIndicator"></div>
 
-<!-- Strip & Pan -->
+<!-- Strip -->
 <div id="photosStrip"></div>
-<div id="panControls">
-  <button class="pan-btn" id="btnZoomIn">+</button>
-  <span class="zoom-label" id="zoomLabel">1.0×</span>
-  <button class="pan-btn" id="btnZoomOut">−</button>
-  <div style="height:4px"></div>
-  <div class="pan-grid">
-    <div></div>
-    <button class="pan-btn" id="btnPanUp">↑</button>
-    <div></div>
-    <button class="pan-btn" id="btnPanLeft">←</button>
-    <div class="pan-center"></div>
-    <button class="pan-btn" id="btnPanRight">→</button>
-    <div></div>
-    <button class="pan-btn" id="btnPanDown">↓</button>
-    <div></div>
-  </div>
-  <button class="btn-reset-zoom" id="btnResetPan">Reset</button>
-</div>
 
 <!-- BOTTOM BAR: Back | Shutter | Next -->
 <div id="bottomBar">
@@ -404,20 +357,11 @@
   let countdownSec   = 5;
 
   // Pan/Zoom
-  let panX = 0, panY = 0, zoom = 1.0;
-  const PAN_STEP = 0.05, ZOOM_STEP = 0.1, ZOOM_MAX = 2.5, ZOOM_MIN = 1.0;
+  const zoom = 1.0, panX = 0, panY = 0;
 
   function updateVideoTransform() {
-    const tx = -panX * window.innerWidth;
-    const ty =  panY * window.innerHeight;
-    video.style.transform = `scaleX(-1) scale(${zoom}) translate(${tx/zoom}px, ${ty/zoom}px)`;
-    document.getElementById('zoomLabel').textContent = zoom.toFixed(1) + '×';
-    const disablePan = zoom <= ZOOM_MIN;
-    ['btnPanUp','btnPanDown','btnPanLeft','btnPanRight'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.opacity = disablePan ? '0.25' : '1';
-      el.style.pointerEvents = disablePan ? 'none' : 'auto';
-    });
+    video.style.transform = 'scaleX(-1)';
+    updateFrameGuide();
   }
 
   function updateFrameGuide() {
@@ -425,16 +369,57 @@
     const slots = JSON.parse(localStorage.getItem('templateSlots') || '[]');
     if (!slots.length) { guide.style.opacity = '0'; return; }
     const slot = slots[currentSlot] || slots[0];
-    const aspect = slot.w / slot.h;
+
+    // Aspect ratio slot = area yang akan dipakai saat composite (center-crop)
+    const slotAspect = slot.w / slot.h;
+
+    // Ukuran canvas capture yang dipakai saat ambilFoto()
+    const CAP_W = 960, CAP_H = 720;
+    const capAspect = CAP_W / CAP_H;
+
+    // Hitung area crop aktual: same logic sebagai composite di result.html
+    // scale = Math.max(slot.w / photo.width, slot.h / photo.height)
+    // → area yang dipakai dari foto: slot.w/scale × slot.h/scale di tengah
+    // → rasio area crop terhadap full foto:
+    let cropRatioW, cropRatioH;
+    if (slotAspect > capAspect) {
+      // slot lebih lebar dari foto → crop full lebar, crop tinggi
+      cropRatioW = 1.0;
+      cropRatioH = capAspect / slotAspect;
+    } else {
+      // slot lebih tinggi dari foto → crop full tinggi, crop lebar
+      cropRatioH = 1.0;
+      cropRatioW = slotAspect / capAspect;
+    }
+
+    // Sekarang overlay guide di layar sesuai video feed
+    // Video ditampilkan cover-fit di layar → hitung posisi & ukuran video di layar
     const vW = window.innerWidth, vH = window.innerHeight;
-    let gW, gH;
-    if (aspect > vW / vH) { gW = vW * 0.82; gH = gW / aspect; }
-    else                   { gH = vH * 0.80; gW = gH * aspect; }
-    const stripW = 72 + 16; // thumb width + left margin
-    guide.style.left   = ((vW - stripW - gW) / 2 + stripW) + 'px';
-    guide.style.top    = ((vH - gH) / 2) + 'px';
-    guide.style.width  = gW + 'px';
-    guide.style.height = gH + 'px';
+    const videoAspect = (video.videoWidth || CAP_W) / (video.videoHeight || CAP_H);
+    
+    // Video di-mirror & cover-fit ke layar
+    let vidDispW, vidDispH;
+    if (videoAspect > vW / vH) {
+      vidDispH = vH;
+      vidDispW = vH * videoAspect;
+    } else {
+      vidDispW = vW;
+      vidDispH = vW / videoAspect;
+    }
+
+    // Offset video di layar (karena cover → mungkin keluar layar)
+    const vidOffX = (vW - vidDispW) / 2;
+    const vidOffY = (vH - vidDispH) / 2;
+
+    const guideW = vidDispW * cropRatioW;
+    const guideH = vidDispH * cropRatioH;
+    const centerX = vW / 2;
+    const centerY = vH / 2;
+
+    guide.style.left   = (centerX - guideW / 2) + 'px';
+    guide.style.top    = (centerY - guideH / 2) + 'px';
+    guide.style.width  = guideW + 'px';
+    guide.style.height = guideH + 'px';
     guide.style.opacity = '1';
   }
 
@@ -612,11 +597,10 @@
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     const vW = video.videoWidth || W, vH = video.videoHeight || H;
-    const baseScale = Math.max(W/vW, H/vH);
-    const totalScale = baseScale * zoom;
-    const drawW = vW * totalScale, drawH = vH * totalScale;
-    const drawX = (W - drawW) / 2 - panX * drawW;
-    const drawY = (H - drawH) / 2 + panY * drawH;
+    const scale = Math.max(W/vW, H/vH);
+    const drawW = vW * scale, drawH = vH * scale;
+    const drawX = (W - drawW) / 2;
+    const drawY = (H - drawH) / 2;
     ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, vW, vH, drawX, drawY, drawW, drawH);
     ctx.restore();
@@ -710,13 +694,7 @@
   }
 
   // ── Pan/Zoom wiring ──
-  document.getElementById('btnZoomIn').onclick  = () => { zoom = Math.min(ZOOM_MAX, +(zoom+ZOOM_STEP).toFixed(1)); updateVideoTransform(); };
-  document.getElementById('btnZoomOut').onclick = () => { zoom = Math.max(ZOOM_MIN, +(zoom-ZOOM_STEP).toFixed(1)); if(zoom===1){panX=0;panY=0;} updateVideoTransform(); };
-  document.getElementById('btnPanUp').onclick    = () => { panY = Math.max(-0.4, panY-PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnPanDown').onclick  = () => { panY = Math.min(0.4,  panY+PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnPanLeft').onclick  = () => { panX = Math.min(0.4,  panX+PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnPanRight').onclick = () => { panX = Math.max(-0.4, panX-PAN_STEP); updateVideoTransform(); };
-  document.getElementById('btnResetPan').onclick = () => { panX=0; panY=0; zoom=1.0; updateVideoTransform(); };
+
 
   // Init
   renderIndicators(); renderStrip(); updateTitle(); updateVideoTransform();

@@ -221,9 +221,67 @@
     }
     .toast.show { opacity: 1; }
     .toast.error { background: #e94560; }
+    /* ── ADMIN LOCK ── */
+    #adminLock {
+      position:fixed;inset:0;z-index:9999;background:var(--bg);
+      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      padding:24px;text-align:center;
+    }
+    #adminLock::before {
+      content:'';position:fixed;inset:0;z-index:-1;
+      background-image:radial-gradient(circle,rgba(255,107,53,0.07) 1px,transparent 1px);
+      background-size:28px 28px;
+    }
+    .al-icon { font-size:60px;margin-bottom:14px;animation:al-bounce 2s ease-in-out infinite; }
+    @keyframes al-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    .al-title {
+      font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:6px;
+      background:linear-gradient(135deg,var(--orange),var(--pink));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .al-sub { font-size:14px;color:var(--text2);margin-bottom:28px;font-weight:500; }
+    .al-card {
+      background:white;border:2px solid var(--border);border-radius:20px;
+      padding:26px 30px;width:100%;max-width:320px;
+      box-shadow:0 8px 32px rgba(255,107,53,0.12);
+    }
+    .al-label { font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;display:block;text-align:left; }
+    .al-input {
+      width:100%;padding:13px 16px;border-radius:12px;border:2px solid var(--border);
+      background:#fff8f0;font-size:22px;letter-spacing:8px;text-align:center;
+      outline:none;color:var(--text);transition:border 0.2s;font-family:inherit;margin-bottom:12px;
+    }
+    .al-input:focus { border-color:var(--orange); }
+    .al-error { color:#e94560;font-size:13px;font-weight:700;margin-bottom:12px;display:none;background:#fff0f3;border-radius:8px;padding:8px 12px; }
+    .al-btn {
+      width:100%;padding:14px;border-radius:50px;
+      background:linear-gradient(135deg,var(--orange),var(--pink));
+      color:white;font-size:15px;font-weight:800;border:none;cursor:pointer;
+      transition:all 0.2s;box-shadow:0 6px 20px rgba(255,107,53,0.4);
+    }
+    .al-btn:hover { transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,107,53,0.5); }
+    .al-back { margin-top:14px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px; }
+    .al-back:hover { color:var(--orange); }
   </style>
 </head>
 <body>
+
+<!-- ADMIN PIN LOCK -->
+<div id="adminLock">
+  <div class="al-icon">🔐</div>
+  <div class="al-title">Admin Panel</div>
+  <div class="al-sub">Masukkan PIN untuk mengakses template manager</div>
+  <div class="al-card">
+    <label class="al-label" for="adminPin">PIN</label>
+    <input type="password" id="adminPin" class="al-input" placeholder="••••••" maxlength="10"
+      autocomplete="current-password" onkeydown="if(event.key==='Enter') checkAdminPin()">
+    <div class="al-error" id="adminPinError">❌ PIN salah. Coba lagi.</div>
+    <button class="al-btn" onclick="checkAdminPin()">🔓 Masuk</button>
+  </div>
+  <button class="al-back" onclick="location.href='template.html'">← Kembali ke App</button>
+</div>
+
+<div id="adminContent" style="display:none">
 
 <div class="header">
   <div>
@@ -729,6 +787,26 @@
     renderManageCats();
     renderTemplateList();
   })();
+</script>
+
+</div><!-- /adminContent -->
+
+<script>
+  const ADMIN_PIN = '123456';
+  function checkAdminPin() {
+    const val = document.getElementById('adminPin').value;
+    const err = document.getElementById('adminPinError');
+    if (val === ADMIN_PIN) {
+      document.getElementById('adminLock').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+    } else {
+      err.style.display = 'block';
+      document.getElementById('adminPin').value = '';
+      document.getElementById('adminPin').focus();
+      setTimeout(() => { err.style.display = 'none'; }, 3000);
+    }
+  }
+  document.getElementById('adminPin').focus();
 </script>
 
 <script>

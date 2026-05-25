@@ -366,6 +366,19 @@
   <button class="btn-side" id="btnSkip" style="visibility:hidden">skip</button>
 </div>
 
+<!-- CONFIRM QUIT MODAL -->
+<div id="confirmQuitModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#1a1a2e;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;border:1.5px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+    <div style="font-size:18px;font-weight:900;color:white;margin-bottom:8px;">Batalkan Sesi?</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px;line-height:1.5;">Foto yang sudah diambil akan hilang.<br>Yakin ingin keluar?</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="batalKeluar()" style="flex:1;padding:13px;border-radius:50px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:14px;font-weight:700;cursor:pointer;">Lanjut Foto</button>
+      <button onclick="konfirmasiKeluar()" style="flex:1;padding:13px;border-radius:50px;border:none;background:linear-gradient(135deg,#e94560,#c0392b);color:white;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(233,69,96,0.4);">Ya, Keluar</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const slotCount    = parseInt(localStorage.getItem('slotCount') || '1');
   const templateName = localStorage.getItem('templateName') || 'Template';
@@ -678,8 +691,22 @@
   }
 
   function kembali() {
+    // Cek apakah sudah ada foto yang diambil
+    const sudahAda = photos.some(Boolean);
+    if (sudahAda) {
+      document.getElementById('confirmQuitModal').style.display = 'flex';
+    } else {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      window.location.href = 'template.html';
+    }
+  }
+  function konfirmasiKeluar() {
     if (stream) stream.getTracks().forEach(t => t.stop());
+    ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
     window.location.href = 'template.html';
+  }
+  function batalKeluar() {
+    document.getElementById('confirmQuitModal').style.display = 'none';
   }
 
   // ── Pan/Zoom wiring ──

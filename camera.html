@@ -370,54 +370,50 @@
     if (!slots.length) { guide.style.opacity = '0'; return; }
     const slot = slots[currentSlot] || slots[0];
 
-    // Aspect ratio slot = area yang akan dipakai saat composite (center-crop)
-    const slotAspect = slot.w / slot.h;
+    // Yang menentukan bentuk crop adalah ASPECT RATIO slot saja.
+    // slot.w & slot.h dalam koordinat template — tidak perlu tahu skalanya,
+    // hanya perlu tahu perbandingan lebar:tinggi.
+    const slotAspect = slot.w / slot.h; // mis. 551/400 ≈ 1.38 (hampir persegi)
 
-    // Ukuran canvas capture yang dipakai saat ambilFoto()
+    // Foto capture = 960×720 (landscape, aspect 4:3)
     const CAP_W = 960, CAP_H = 720;
-    const capAspect = CAP_W / CAP_H;
+    const capAspect = CAP_W / CAP_H; // 1.333...
 
-    // Hitung area crop aktual: same logic sebagai composite di result.html
-    // scale = Math.max(slot.w / photo.width, slot.h / photo.height)
-    // → area yang dipakai dari foto: slot.w/scale × slot.h/scale di tengah
-    // → rasio area crop terhadap full foto:
-    let cropRatioW, cropRatioH;
-    if (slotAspect > capAspect) {
-      // slot lebih lebar dari foto → crop full lebar, crop tinggi
-      cropRatioW = 1.0;
-      cropRatioH = capAspect / slotAspect;
+    // Composite: ctx.drawImage cover-fit foto ke slot
+    // → scale = Math.max(slot.w/960, slot.h/720)
+    // → area foto yang TIDAK dipakai = sisanya (center-crop)
+    // → rasio area yang DIPAKAI dari foto:
+    //   jika slotAspect > capAspect → foto full lebar, crop tinggi
+    //   jika slotAspect < capAspect → foto full tinggi, crop lebar
+    let usedRatioW, usedRatioH;
+    if (slotAspect >= capAspect) {
+      usedRatioW = 1.0;
+      usedRatioH = slotAspect / capAspect; // > 1 artinya crop dari tinggi? tidak — ini > capAspect
+      // Koreksi: slotAspect > capAspect → scale by width → used height = capAspect/slotAspect
+      usedRatioW = 1.0;
+      usedRatioH = capAspect / slotAspect;
     } else {
-      // slot lebih tinggi dari foto → crop full tinggi, crop lebar
-      cropRatioH = 1.0;
-      cropRatioW = slotAspect / capAspect;
+      // slotAspect < capAspect → scale by height
+      usedRatioH = 1.0;
+      usedRatioW = slotAspect / capAspect;
     }
 
-    // Sekarang overlay guide di layar sesuai video feed
-    // Video ditampilkan cover-fit di layar → hitung posisi & ukuran video di layar
+    // Layar user
     const vW = window.innerWidth, vH = window.innerHeight;
-    const videoAspect = (video.videoWidth || CAP_W) / (video.videoHeight || CAP_H);
-    
-    // Video di-mirror & cover-fit ke layar
-    let vidDispW, vidDispH;
-    if (videoAspect > vW / vH) {
-      vidDispH = vH;
-      vidDispW = vH * videoAspect;
-    } else {
-      vidDispW = vW;
-      vidDispH = vW / videoAspect;
-    }
 
-    // Offset video di layar (karena cover → mungkin keluar layar)
-    const vidOffX = (vW - vidDispW) / 2;
-    const vidOffY = (vH - vidDispH) / 2;
+    // Video kamera: object-fit cover di elemen video yang memenuhi layar
+    // Kita tidak bisa pakai video.videoWidth/Height karena di mobile portrait
+    // browser bisa melaporkan dimensi yang rotate-aware atau tidak.
+    // Pendekatan lebih robust: gunakan aspect ratio video YANG TERLIHAT di layar.
+    // video element = 100vw × 100vh, object-fit:cover
+    // → area video yang terlihat = seluruh layar (vW × vH)
+    // → guide tinggal dihitung sebagai fraksi dari layar
 
-    const guideW = vidDispW * cropRatioW;
-    const guideH = vidDispH * cropRatioH;
-    const centerX = vW / 2;
-    const centerY = vH / 2;
+    const guideW = vW * usedRatioW;
+    const guideH = vH * usedRatioH;
 
-    guide.style.left   = (centerX - guideW / 2) + 'px';
-    guide.style.top    = (centerY - guideH / 2) + 'px';
+    guide.style.left   = (vW / 2 - guideW / 2) + 'px';
+    guide.style.top    = (vH / 2 - guideH / 2) + 'px';
     guide.style.width  = guideW + 'px';
     guide.style.height = guideH + 'px';
     guide.style.opacity = '1';

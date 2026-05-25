@@ -370,54 +370,70 @@
     if (!slots.length) { guide.style.opacity = '0'; return; }
     const slot = slots[currentSlot] || slots[0];
 
-    // Yang menentukan bentuk crop adalah ASPECT RATIO slot saja.
-    // slot.w & slot.h dalam koordinat template — tidak perlu tahu skalanya,
-    // hanya perlu tahu perbandingan lebar:tinggi.
-    const slotAspect = slot.w / slot.h; // mis. 551/400 ≈ 1.38 (hampir persegi)
+    const slotAspect = slot.w / slot.h;
 
-    // Foto capture = 960×720 (landscape, aspect 4:3)
+    // Dimensi capture canvas (landscape selalu)
     const CAP_W = 960, CAP_H = 720;
-    const capAspect = CAP_W / CAP_H; // 1.333...
 
-    // Composite: ctx.drawImage cover-fit foto ke slot
-    // → scale = Math.max(slot.w/960, slot.h/720)
-    // → area foto yang TIDAK dipakai = sisanya (center-crop)
-    // → rasio area yang DIPAKAI dari foto:
-    //   jika slotAspect > capAspect → foto full lebar, crop tinggi
-    //   jika slotAspect < capAspect → foto full tinggi, crop lebar
-    let usedRatioW, usedRatioH;
-    if (slotAspect >= capAspect) {
-      usedRatioW = 1.0;
-      usedRatioH = slotAspect / capAspect; // > 1 artinya crop dari tinggi? tidak — ini > capAspect
-      // Koreksi: slotAspect > capAspect → scale by width → used height = capAspect/slotAspect
-      usedRatioW = 1.0;
-      usedRatioH = capAspect / slotAspect;
-    } else {
-      // slotAspect < capAspect → scale by height
-      usedRatioH = 1.0;
-      usedRatioW = slotAspect / capAspect;
-    }
+    // Dimensi video asli dari kamera
+    const rawW = video.videoWidth  || 1280;
+    const rawH = video.videoHeight || 720;
 
     // Layar user
-    const vW = window.innerWidth, vH = window.innerHeight;
+    const scrW = window.innerWidth;
+    const scrH = window.innerHeight;
 
-    // Video kamera: object-fit cover di elemen video yang memenuhi layar
-    // Kita tidak bisa pakai video.videoWidth/Height karena di mobile portrait
-    // browser bisa melaporkan dimensi yang rotate-aware atau tidak.
-    // Pendekatan lebih robust: gunakan aspect ratio video YANG TERLIHAT di layar.
-    // video element = 100vw × 100vh, object-fit:cover
-    // → area video yang terlihat = seluruh layar (vW × vH)
-    // → guide tinggal dihitung sebagai fraksi dari layar
+    // ── Step 1: video (rawW×rawH) → canvas capture (CAP_W×CAP_H) ──
+    // ambilFoto() pakai cover-fit: scale = Math.max(CAP_W/rawW, CAP_H/rawH)
+    // → area video yang masuk ke capture (center-crop):
+    const capScale = Math.max(CAP_W / rawW, CAP_H / rawH);
+    const capSrcW  = CAP_W / capScale;   // lebar area video → capture
+    const capSrcH  = CAP_H / capScale;   // tinggi area video → capture
 
-    const guideW = vW * usedRatioW;
-    const guideH = vH * usedRatioH;
+    // ── Step 2: video (rawW×rawH) → layar (scrW×scrH) via object-fit:cover ──
+    // scale agar video cover layar:
+    const dispScale = Math.max(scrW / rawW, scrH / rawH);
+    // area video yang visible di layar (center-crop):
+    const visSrcW = scrW / dispScale;    // lebar area video yang keliatan
+    const visSrcH = scrH / dispScale;    // tinggi area video yang keliatan
 
-    guide.style.left   = (vW / 2 - guideW / 2) + 'px';
-    guide.style.top    = (vH / 2 - guideH / 2) + 'px';
+    // ── Step 3: irisan capture ∩ visible ──
+    // Keduanya center-crop dari video asli
+    // Irisan = min dari keduanya di tiap dimensi:
+    const interSrcW = Math.min(capSrcW, visSrcW);
+    const interSrcH = Math.min(capSrcH, visSrcH);
+
+    // Ukuran irisan di layar (px):
+    const interScrW = interSrcW * dispScale;
+    const interScrH = interSrcH * dispScale;
+
+    // ── Step 4: dalam irisan (= area capture yang terlihat di layar),
+    // composite cover-fit ke slot aspect ratio ──
+    // Rasio irisan terhadap capture:
+    const interCapW = interSrcW / capSrcW;   // fraksi lebar capture yang visible
+    const interCapH = interSrcH / capSrcH;   // fraksi tinggi capture yang visible
+    // Ukuran irisan dalam px capture:
+    const interCapPxW = interCapW * CAP_W;
+    const interCapPxH = interCapH * CAP_H;
+    // Cover-fit slot ke irisan capture:
+    const slotScale = Math.max(slot.w / interCapPxW, slot.h / interCapPxH);
+    const usedCapW  = slot.w / slotScale;
+    const usedCapH  = slot.h / slotScale;
+    // Rasio area yang dipakai terhadap irisan:
+    const useRatioW = usedCapW / interCapPxW;
+    const useRatioH = usedCapH / interCapPxH;
+
+    // ── Step 5: guide di layar ──
+    const guideW = interScrW * useRatioW;
+    const guideH = interScrH * useRatioH;
+
+    guide.style.left   = (scrW / 2 - guideW / 2) + 'px';
+    guide.style.top    = (scrH / 2 - guideH / 2) + 'px';
     guide.style.width  = guideW + 'px';
     guide.style.height = guideH + 'px';
     guide.style.opacity = '1';
   }
+
 
   // ── Indicators & Strip ──
   function renderIndicators() {

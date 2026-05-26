@@ -373,24 +373,43 @@
 
   async function uploadForQR() {
     const qrStatus = document.getElementById('qrStatus');
+    const btnQR    = document.getElementById('btnQR');
+    const btnLabel = document.getElementById('btnQRLabel');
     qrStatus.textContent = '⏫ Mengupload...';
     try {
       const blob = dataURLtoBlob(finalDataURL);
       finalPublicURL = await uploadToSupabase(blob, 'foto.jpg');
-      const qrBox = document.getElementById('qrcode');
+      const qrBox = document.getElementById('qrcodeModal');
       qrBox.innerHTML = '';
       const downloadPageURL = window.location.origin + '/download.html?photo=' + encodeURIComponent(finalPublicURL);
       new QRCode(qrBox, {
-        text: downloadPageURL, width: 140, height: 140,
-        colorDark: '#ffffff', colorLight: '#16213e',
+        text: downloadPageURL, width: 220, height: 220,
+        colorDark: '#1D3557', colorLight: '#ffffff',
       });
-      qrStatus.style.color = '#a0a0b0';
-      qrStatus.textContent = 'Scan untuk download ke HP';
+      qrStatus.style.color = 'var(--text2)';
+      qrStatus.textContent = 'Scan untuk download foto ke HP';
+      btnQR.disabled = false;
+      btnLabel.textContent = 'Scan QR — Download ke HP';
     } catch(e) {
       qrStatus.style.color = '#e94560';
-      qrStatus.textContent = 'QR tidak tersedia — gunakan tombol Download';
+      qrStatus.textContent = 'QR tidak tersedia';
+      btnQR.disabled = true;
+      btnLabel.textContent = 'QR Tidak Tersedia';
     }
   }
+
+  // ─── QR Modal ───
+  function bukaQR() {
+    document.getElementById('qrModal').classList.add('open');
+  }
+  function tutupQR() {
+    document.getElementById('qrModal').classList.remove('open');
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('qrModal').addEventListener('click', function(e) {
+      if (e.target === this) tutupQR();
+    });
+  });
 
   // ─── Download JPG ───
   function downloadJpg() {

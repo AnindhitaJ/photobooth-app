@@ -33,7 +33,7 @@
       position: fixed; inset: 0; z-index: 40; pointer-events: none;
       display: flex; align-items: center; justify-content: center;
       font-size: min(38vw, 38vh); font-weight: 900; color: white;
-      text-shadow: 0 0 60px rgba(255,107,53,0.9), 0 0 120px rgba(255,107,53,0.4);
+      text-shadow: 0 0 60px rgba(216,75,126,0.9), 0 0 120px rgba(216,75,126,0.4);
       opacity: 0; transition: opacity 0.2s;
     }
     #countdown.show { opacity: 1; }
@@ -41,14 +41,14 @@
     /* Frame guide */
     #frameGuide {
       position: fixed; pointer-events: none; z-index: 15;
-      border: 2.5px solid rgba(255,107,53,0.85);
+      border: 2.5px solid rgba(216,75,126,0.85);
       border-radius: 8px;
       box-shadow: 0 0 0 9999px rgba(0,0,0,0.32);
       transition: all 0.35s ease;
     }
     #frameGuide::before, #frameGuide::after {
       content: ''; position: absolute;
-      width: 20px; height: 20px; border-color: #ffd23f; border-style: solid;
+      width: 20px; height: 20px; border-color: #E5B842; border-style: solid;
     }
     #frameGuide::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
     #frameGuide::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
@@ -62,7 +62,7 @@
       font-size: 11px; font-weight: 700; z-index: 20; pointer-events: none;
     }
     #recIndicator.show { display: flex; }
-    .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff6b35; animation: blink 1s ease-in-out infinite; }
+    .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #D84B7E; animation: blink 1s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
     /* ── TOP HUD ── */
@@ -74,7 +74,7 @@
     }
     .hud-logo {
       font-size: 13px; font-weight: 900;
-      background: linear-gradient(135deg, #ff6b35, #ffd23f);
+      background: linear-gradient(135deg, #D84B7E, #E5B842);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       flex-shrink: 0;
     }
@@ -96,8 +96,8 @@
       font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45);
       cursor: default; transition: all 0.25s;
     }
-    .slot-dot.done  { background: #06d6a0; border-color: #06d6a0; color: white; cursor: pointer; }
-    .slot-dot.active { background: #ff6b35; border-color: #ffd23f; color: white; transform: scale(1.25); box-shadow: 0 0 14px rgba(255,107,53,0.7); }
+    .slot-dot.done  { background: #E5B842; border-color: #E5B842; color: white; cursor: pointer; }
+    .slot-dot.active { background: #D84B7E; border-color: #E5B842; color: white; transform: scale(1.25); box-shadow: 0 0 14px rgba(216,75,126,0.6); }
 
     /* ── Photo strip — left side, stacked vertically ── */
     #photosStrip {
@@ -109,7 +109,7 @@
     .photo-item { position: relative; }
     .photo-thumb {
       width: 72px; height: 72px; border-radius: 10px;
-      object-fit: cover; border: 2px solid #06d6a0;
+      object-fit: cover; border: 2px solid #E5B842;
       box-shadow: 0 4px 16px rgba(0,0,0,0.6); display: block;
     }
     .photo-thumb-empty {
@@ -156,24 +156,24 @@
 
     #btnAmbil {
       flex: 1; max-width: 220px;
-      background: linear-gradient(135deg, #ff6b35, #ffd23f);
+      background: linear-gradient(135deg, #D84B7E, #E5B842);
       color: white; border: none; padding: 16px 28px;
       font-size: 17px; font-weight: 800; border-radius: 50px;
-      cursor: pointer; box-shadow: 0 4px 22px rgba(255,107,53,0.55);
+      cursor: pointer; box-shadow: 0 4px 22px rgba(216,75,126,0.55);
       transition: all 0.2s;
     }
-    #btnAmbil:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(255,107,53,0.65); }
+    #btnAmbil:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(216,75,126,0.65); }
     #btnAmbil:disabled { opacity: 0.38; pointer-events: none; }
 
     #btnLanjut {
       flex: 1; max-width: 220px;
-      background: linear-gradient(135deg, #06d6a0, #04b589);
+      background: linear-gradient(135deg, #E5B842, #c9972a);
       color: white; border: none; padding: 16px 28px;
       font-size: 17px; font-weight: 800; border-radius: 50px;
-      cursor: pointer; box-shadow: 0 4px 22px rgba(6,214,160,0.5);
+      cursor: pointer; box-shadow: 0 4px 22px rgba(229,184,66,0.5);
       transition: all 0.2s; display: none;
     }
-    #btnLanjut:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(6,214,160,0.65); }
+    #btnLanjut:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(229,184,66,0.65); }
 
     /* ── Mode Modal ── */
     #modeModal {
@@ -182,8 +182,8 @@
       display: flex; align-items: center; justify-content: center;
     }
     .mode-card {
-      background: #1a1a2e; border-radius: 22px; padding: 28px 24px;
-      width: 88%; max-width: 380px; border: 2px solid rgba(255,107,53,0.4);
+      background: #1D3557; border-radius: 22px; padding: 28px 24px;
+      width: 88%; max-width: 380px; border: 2px solid rgba(216,75,126,0.4);
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
     .mode-card h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
@@ -195,7 +195,7 @@
       background: rgba(255,255,255,0.06); color: white;
       cursor: pointer; text-align: left; transition: all 0.18s; font-family: inherit;
     }
-    .mode-btn:hover:not(:disabled) { border-color: #ff6b35; background: rgba(255,107,53,0.12); }
+    .mode-btn:hover:not(:disabled) { border-color: #D84B7E; background: rgba(216,75,126,0.12); }
     .mode-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .mode-icon { font-size: 30px; flex-shrink: 0; }
     .mode-text h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
@@ -207,8 +207,8 @@
       color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 700;
       cursor: pointer; transition: all 0.15s; font-family: inherit;
     }
-    .timer-opt.sel { border-color: #ff6b35; background: rgba(255,107,53,0.18); color: white; }
-    .timer-hint { font-size: 11px; color: #ff6b35; text-align: center; margin-top: 8px; min-height: 16px; }
+    .timer-opt.sel { border-color: #D84B7E; background: rgba(216,75,126,0.18); color: white; }
+    .timer-hint { font-size: 11px; color: #D84B7E; text-align: center; margin-top: 8px; min-height: 16px; }
 
     /* ── Photo Preview Panel ── */
     #previewPanel {
@@ -232,7 +232,7 @@
       cursor: pointer; border: 2.5px solid rgba(255,255,255,0.18);
       opacity: 0.6; transition: all 0.15s;
     }
-    .prev-thumb.active { border-color: #06d6a0; opacity: 1; transform: scale(1.1); box-shadow: 0 4px 14px rgba(6,214,160,0.5); }
+    .prev-thumb.active { border-color: #E5B842; opacity: 1; transform: scale(1.1); box-shadow: 0 4px 14px rgba(229,184,66,0.5); }
     #previewActions {
       display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
     }
@@ -243,7 +243,7 @@
     }
     .prev-btn-back { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); border: 1.5px solid rgba(255,255,255,0.2); }
     .prev-btn-back:hover { background: rgba(255,255,255,0.2); color: white; }
-    .prev-btn-go { background: linear-gradient(135deg, #06d6a0, #04b589); color: white; box-shadow: 0 6px 20px rgba(6,214,160,0.4); }
+    .prev-btn-go { background: linear-gradient(135deg, #E5B842, #c9972a); color: white; box-shadow: 0 6px 20px rgba(229,184,66,0.4); }
     .prev-btn-go:hover { transform: scale(1.03); }
 
     /* Landscape tweaks */
@@ -321,7 +321,7 @@
 
 <!-- CONFIRM QUIT MODAL -->
 <div id="confirmQuitModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px;">
-  <div style="background:#1a1a2e;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;border:1.5px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+  <div style="background:#1D3557;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;border:1.5px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
     <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
     <div style="font-size:18px;font-weight:900;color:white;margin-bottom:8px;">Batalkan Sesi?</div>
     <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px;line-height:1.5;">Foto yang sudah diambil akan hilang.<br>Yakin ingin keluar?</div>

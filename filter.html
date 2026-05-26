@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <meta name="theme-color" content="#ff6b35">
+  <meta name="theme-color" content="#1D3557">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="LUX Photo">
@@ -13,10 +13,10 @@
   <title>Beauty Filter - LUX Photobooth</title>
   <style>
     :root {
-      --orange: #ff6b35; --yellow: #ffd23f; --green: #06d6a0;
-      --pink: #ff4d8d; --purple: #a855f7;
-      --bg: #fff8f0; --card: #ffffff; --border: #ffe0c8;
-      --text: #2d1a0e; --text2: #8a6a56;
+      --orange: #D84B7E; --yellow: #E5B842; --green: #E5B842;
+      --pink: #D84B7E; --purple: #1D3557;
+      --bg: #FFF8FC; --card: #ffffff; --border: #f5c6da;
+      --text: #1D3557; --text2: #6b7fa3;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -27,12 +27,12 @@
     }
     body::before {
       content: ''; position: fixed; inset: 0; z-index: -1;
-      background-image: radial-gradient(circle, rgba(255,107,53,0.07) 1px, transparent 1px);
+      background-image: radial-gradient(circle, rgba(216,75,126,0.07) 1px, transparent 1px);
       background-size: 28px 28px; background-color: var(--bg);
     }
     .logo-text {
       font-size: 15px; font-weight: 900; margin-bottom: 8px;
-      background: linear-gradient(135deg, var(--orange), var(--pink));
+      background: linear-gradient(135deg, var(--orange), var(--purple));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     h2 { font-size: 22px; font-weight: 900; margin-bottom: 4px; text-align:center; }
@@ -43,7 +43,7 @@
       cursor: pointer; border: 2px solid var(--border); background: white; color: var(--text2);
       transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .photo-tab.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 14px rgba(255,107,53,0.4); }
+    .photo-tab.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 14px rgba(216,75,126,0.4); }
     .main-layout {
       display: flex; gap: 20px; width: 100%; max-width: 960px;
       align-items: flex-start; flex-wrap: wrap; justify-content: center;
@@ -51,7 +51,7 @@
     .foto-wrapper {
       width: 300px; flex-shrink: 0; border-radius: 18px; overflow: hidden;
       border: 3px solid var(--border); background: #000;
-      box-shadow: 0 8px 28px rgba(255,107,53,0.15);
+      box-shadow: 0 8px 28px rgba(216,75,126,0.15);
     }
     #previewCanvas { width: 100%; display: block; }
     .status-bar { font-size: 12px; color: var(--text2); text-align: center; margin-top: 8px; min-height: 18px; font-weight: 500; }
@@ -71,7 +71,7 @@
       transition: all 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
     .pill:hover { border-color: var(--orange); color: var(--orange); }
-    .pill.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 12px rgba(255,107,53,0.4); }
+    .pill.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 12px rgba(216,75,126,0.4); }
 
     .swatch-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 4px 0; }
     .swatch {
@@ -81,7 +81,7 @@
       flex-shrink: 0;
     }
     .swatch:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-    .swatch.active { border-color: var(--orange); transform: scale(1.18); box-shadow: 0 4px 14px rgba(255,107,53,0.5); }
+    .swatch.active { border-color: var(--orange); transform: scale(1.18); box-shadow: 0 4px 14px rgba(216,75,126,0.5); }
     .swatch-off {
       padding: 5px 12px; border-radius: 50px; font-size: 12px; font-weight: 700;
       border: 2px solid var(--border); background: white; color: var(--text2);
@@ -106,14 +106,14 @@
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     }
     .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-apply { background: linear-gradient(135deg, var(--orange), var(--pink)); color: white; box-shadow: 0 6px 20px rgba(255,107,53,0.35); }
-    .btn-apply:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.45); }
+    .btn-apply { background: linear-gradient(135deg, var(--orange), var(--purple)); color: white; box-shadow: 0 6px 20px rgba(216,75,126,0.35); }
+    .btn-apply:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(216,75,126,0.45); }
     .btn-secondary {
       background: white; color: var(--text2); border: 2px solid var(--border);
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     }
     .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-primary { background: linear-gradient(135deg, var(--green), #04b589); color: white; box-shadow: 0 6px 20px rgba(6,214,160,0.35); }
+    .btn-primary { background: linear-gradient(135deg, var(--green), #c9972a); color: white; box-shadow: 0 6px 20px rgba(229,184,66,0.35); }
     .btn-primary:hover { transform: translateY(-2px); }
   </style>
 </head>
@@ -232,7 +232,7 @@
         <button class="btn btn-apply"  onclick="simpanFoto()">✓ Simpan Foto Ini</button>
       </div>
       <div class="btn-row">
-        <button class="btn btn-apply" style="background:linear-gradient(135deg,#06d6a0,#0099cc);box-shadow:0 6px 20px rgba(6,214,160,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
+        <button class="btn btn-apply" style="background:linear-gradient(135deg,#E5B842,#0099cc);box-shadow:0 6px 20px rgba(229,184,66,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
       </div>
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
@@ -886,7 +886,7 @@
 
 <!-- CONFIRM QUIT MODAL -->
 <div id="confirmQuitModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px;">
-  <div style="background:#1a1a2e;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;border:1.5px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+  <div style="background:#1D3557;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;border:1.5px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
     <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
     <div style="font-size:18px;font-weight:900;color:white;margin-bottom:8px;">Batalkan Sesi?</div>
     <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px;line-height:1.5;">Semua foto dan filter akan hilang.<br>Yakin ingin keluar?</div>

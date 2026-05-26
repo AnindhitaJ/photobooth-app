@@ -227,13 +227,18 @@
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
       method: 'POST',
       headers: {
+        'apikey': SUPABASE_ANON,
         'Authorization': `Bearer ${SUPABASE_ANON}`,
-        'Content-Type': blob.type,
+        'Content-Type': blob.type || 'image/jpeg',
         'x-upsert': 'true',
       },
       body: blob,
     });
-    if (!res.ok) throw new Error(`Upload gagal: ${await res.text()}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Supabase upload error:', res.status, errText);
+      throw new Error(`Upload gagal (${res.status}): ${errText}`);
+    }
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
   }
 
@@ -391,8 +396,9 @@
       btnQR.disabled = false;
       btnLabel.textContent = 'Scan QR — Download ke HP';
     } catch(e) {
+      console.error('QR upload error:', e);
       qrStatus.style.color = '#e94560';
-      qrStatus.textContent = 'QR tidak tersedia';
+      qrStatus.textContent = e.message || 'Upload gagal';
       btnQR.disabled = true;
       btnLabel.textContent = 'QR Tidak Tersedia';
     }

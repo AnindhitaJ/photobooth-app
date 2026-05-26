@@ -203,10 +203,19 @@
 
       <div class="divider"></div>
 
-      <div class="qr-box">
-        <p>Scan QR untuk download dari HP</p>
-        <div id="qrcode"></div>
-        <p id="qrStatus" style="color:#e94560">Menunggu foto selesai...</p>
+      <button class="btn btn-qr" id="btnQR" onclick="bukaQR()" disabled>
+        <span>📲</span>
+        <span id="btnQRLabel">Menunggu foto selesai...</span>
+      </button>
+
+      <div id="qrModal">
+        <div class="qr-modal-box">
+          <div class="qr-modal-title">📲 Scan QR Code</div>
+          <div class="qr-modal-sub">Scan pakai kamera HP untuk download foto</div>
+          <div id="qrcodeModal"></div>
+          <p id="qrStatus">⏫ Mengupload...</p>
+          <button class="btn-qr-close" onclick="tutupQR()">✕ Tutup</button>
+        </div>
       </div>
 
       <div class="divider"></div>

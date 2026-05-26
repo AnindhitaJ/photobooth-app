@@ -173,7 +173,7 @@
 <body>
 
   <div style="text-align:center;margin-bottom:18px;">
-    <div class="logo-text">📸 LUX PHOTOBOOTH</div>
+    <div class="logo-text" style="display:flex;align-items:center;gap:8px;"><img src="/logo.png" alt="LUX Photobooth" style="height:36px;width:36px;border-radius:50%;object-fit:cover;"><span>LUX PHOTOBOOTH</span></div>
     <h2>Hasil Fotomu 🎉</h2>
     <p class="sub">Download satuan atau semua sekaligus</p>
   </div>
@@ -298,6 +298,7 @@
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
   const tmplW          = parseInt(localStorage.getItem('templateW') || '591');
   const tmplH          = parseInt(localStorage.getItem('templateH') || '1772');
+  const isBasicTemplate = localStorage.getItem('templateIsBasic') === '1';
 
   const canvas = document.getElementById('resultCanvas');
   const ctx    = canvas.getContext('2d');
@@ -389,6 +390,33 @@
         ctx.drawImage(tmpl, 0, 0, tmplW, tmplH);
       }
 
+      // ── Logo watermark (hanya untuk template custom, bukan basic) ──
+      if (!isBasicTemplate && slots.length > 0) {
+        try {
+          // Cari Y paling bawah dari semua slot
+          const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
+          const gapH = tmplH - bottomOfLastSlot; // tinggi area kosong di bawah
+
+          if (gapH > 20) { // hanya kalau ada ruang cukup
+            const logoImg = await loadImage('/logo.png');
+            // Ukuran logo: maks 80% dari gap, tapi tidak lebih dari 120px
+            const logoSize = Math.min(gapH * 0.75, 120);
+            // Posisi: tengah horizontal, tengah vertikal di gap
+            const logoX = (tmplW - logoSize) / 2;
+            const logoY = bottomOfLastSlot + (gapH - logoSize) / 2;
+            // Gambar logo dengan border-radius (circle clip)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            ctx.restore();
+          }
+        } catch(e) {
+          console.warn('Logo watermark gagal:', e);
+        }
+      }
+
       finalDataURL = canvas.toDataURL('image/jpeg', 0.92);
 
       // Bersihkan base64 besar dari localStorage setelah dipakai
@@ -429,19 +457,34 @@
     const qrStatus = document.getElementById('qrStatus');
     const btnQR    = document.getElementById('btnQR');
     const btnLabel = document.getElementById('btnQRLabel');
-    qrStatus.textContent = '⏫ Mengupload...';
+    qrStatus.textContent = '⏫ Mengupload foto...';
     try {
-      const blob = dataURLtoBlob(finalDataURL);
-      finalPublicURL = await uploadToSupabase(blob, 'foto.jpg');
+      const ts = Date.now();
+
+      // Upload foto utama
+      const photoBlob = dataURLtoBlob(finalDataURL);
+      finalPublicURL = await uploadToSupabase(photoBlob, 'foto.jpg');
+
+      // Upload GIF kalau sudah di-generate
+      let gifURL = '';
+      if (gifBlob) {
+        qrStatus.textContent = '⏫ Mengupload GIF...';
+        try { gifURL = await uploadToSupabase(gifBlob, 'animated.gif'); } catch(e) {}
+      }
+
+      // Build QR URL
+      const params = new URLSearchParams({ photo: finalPublicURL });
+      if (gifURL) params.set('gif', gifURL);
+
+      const downloadPageURL = window.location.origin + '/download.html?' + params.toString();
       const qrBox = document.getElementById('qrcodeModal');
       qrBox.innerHTML = '';
-      const downloadPageURL = window.location.origin + '/download.html?photo=' + encodeURIComponent(finalPublicURL);
       new QRCode(qrBox, {
         text: downloadPageURL, width: 220, height: 220,
         colorDark: '#1D3557', colorLight: '#ffffff',
       });
       qrStatus.style.color = 'var(--text2)';
-      qrStatus.textContent = 'Scan untuk download foto ke HP';
+      qrStatus.textContent = gifURL ? 'Foto & GIF siap di-scan ✓' : 'Scan untuk download foto ke HP';
       btnQR.disabled = false;
       btnLabel.textContent = 'Scan QR — Download ke HP';
     } catch(e) {

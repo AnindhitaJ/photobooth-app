@@ -208,15 +208,6 @@
         <span id="btnQRLabel">Menunggu foto selesai...</span>
       </button>
 
-      <div id="qrModal">
-        <div class="qr-modal-box">
-          <div class="qr-modal-title">📲 Scan QR Code</div>
-          <div class="qr-modal-sub">Scan pakai kamera HP untuk download foto</div>
-          <div id="qrcodeModal"></div>
-          <p id="qrStatus">⏫ Mengupload...</p>
-          <button class="btn-qr-close" onclick="tutupQR()">✕ Tutup</button>
-        </div>
-      </div>
 
       <div class="divider"></div>
       <p id="statusMsg"></p>
@@ -224,6 +215,17 @@
 
     </div>
   </div>
+
+<!-- QR MODAL -->
+<div id="qrModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.72);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px;">
+  <div class="qr-modal-box">
+    <div class="qr-modal-title">📲 Scan QR Code</div>
+    <div class="qr-modal-sub">Scan pakai kamera HP untuk download foto</div>
+    <div id="qrcodeModal"></div>
+    <p id="qrStatus">⏫ Mengupload...</p>
+    <button class="btn-qr-close" onclick="tutupQR()">✕ Tutup</button>
+  </div>
+</div>
 
 <script>
   // ─── Supabase ───
@@ -415,15 +417,14 @@
 
   // ─── QR Modal ───
   function bukaQR() {
-    document.getElementById('qrModal').classList.add('open');
+    const m = document.getElementById('qrModal');
+    m.style.display = 'flex';
   }
   function tutupQR() {
-    document.getElementById('qrModal').classList.remove('open');
+    document.getElementById('qrModal').style.display = 'none';
   }
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('qrModal').addEventListener('click', function(e) {
-      if (e.target === this) tutupQR();
-    });
+  document.getElementById('qrModal').addEventListener('click', function(e) {
+    if (e.target === this) tutupQR();
   });
 
   // ─── Download JPG ───

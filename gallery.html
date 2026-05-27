@@ -151,6 +151,21 @@
     .empty-title { font-size:18px; font-weight:800; margin-bottom:6px; }
     .empty-sub { font-size:13px; color:var(--text2); font-weight:500; }
 
+    /* ── PRINT SELECTION ── */
+    .session-card.print-selected {
+      border-color: var(--yellow); border-width: 3px;
+      box-shadow: 0 0 0 4px rgba(229,184,66,0.25), 0 8px 24px rgba(229,184,66,0.3);
+      transform: translateY(-3px);
+    }
+    .session-card.print-selected:hover { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(229,184,66,0.3), 0 12px 32px rgba(229,184,66,0.35); }
+    .print-num-badge {
+      position:absolute; top:8px; left:8px; background:var(--yellow); color:white;
+      width:26px; height:26px; border-radius:50%; font-size:13px; font-weight:900;
+      display:none; align-items:center; justify-content:center;
+      box-shadow:0 2px 8px rgba(229,184,66,0.5);
+    }
+    .session-card.print-selected .print-num-badge { display:flex; }
+
     /* ── ACTION BAR (delete mode) ── */
     .action-bar {
       position:fixed; bottom:0; left:0; right:0; z-index:200;
@@ -335,6 +350,7 @@
     </div>
     <div class="mode-tabs">
       <button class="mode-tab active" id="tabView" onclick="setMode('view')">📸 Lihat</button>
+      <button class="mode-tab" id="tabPrint" onclick="setMode('print')">🖨️ Print</button>
       <button class="mode-tab" id="tabDelete" onclick="setMode('delete')">🗑️ Hapus</button>
     </div>
   </div>
@@ -362,10 +378,11 @@
 
 <!-- ACTION BAR (delete mode) -->
 <div class="action-bar" id="actionBar">
-  <div class="action-info"><strong id="actionCount">0</strong> sesi dipilih</div>
+  <div class="action-info" id="actionInfo"><strong id="actionCount">0</strong> <span id="actionLabel">sesi dipilih</span></div>
   <div style="display:flex;gap:8px;">
     <button class="btn-bar-cancel" onclick="clearSelection()">✕ Batal</button>
-    <button class="btn-bar-del" onclick="openDeleteModal()">🗑️ Hapus Sesi</button>
+    <button class="btn-bar-del" id="btnBarDel" onclick="openDeleteModal()" style="display:none">🗑️ Hapus</button>
+    <button class="btn-bar-print" id="btnBarPrint" onclick="openPrintModal()" style="display:none;padding:11px 22px;border-radius:50px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--yellow),#c9972a);color:white;font-size:14px;font-weight:800;box-shadow:0 4px 16px rgba(229,184,66,0.4);transition:all 0.2s;">🖨️ Print Sekaligus</button>
   </div>
 </div>
 
@@ -395,6 +412,23 @@
     <div class="sm-individual-wrap">
       <div class="sm-section-label" id="smIndLabel">📸 Foto Individual</div>
       <div class="sm-individual-grid" id="smIndGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT MODAL -->
+<div class="modal-wrap" id="printModal" style="position:fixed;inset:0;z-index:9000;display:none;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px;">
+  <div style="background:white;border-radius:24px;padding:28px;max-width:480px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);animation:popIn 0.25s ease;">
+    <div style="font-size:19px;font-weight:900;margin-bottom:6px;color:var(--text);">🖨️ Print Sekaligus</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">2 strip akan digabung dalam ukuran 10×15 cm siap cetak.</div>
+    <div id="printPreview" style="display:flex;gap:12px;margin-bottom:20px;justify-content:center;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closePrintModal()" style="flex:1;padding:14px;border-radius:50px;border:2px solid var(--border);background:white;color:var(--text2);font-size:14px;font-weight:700;cursor:pointer;">Batal</button>
+      <button id="btnGenPrint" onclick="generatePrint()" style="flex:2;padding:14px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--yellow),#c9972a);color:white;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(229,184,66,0.4);display:flex;align-items:center;justify-content:center;gap:8px;">🖨️ Generate & Download</button>
+    </div>
+    <div id="printProgress" style="display:none;margin-top:14px;text-align:center;font-size:13px;color:var(--text2);font-weight:600;">
+      <span id="printProgressText">Membuat file...</span>
+      <div style="height:6px;background:var(--border);border-radius:50px;margin-top:8px;overflow:hidden;"><div id="printProgBar" style="height:100%;background:var(--yellow);width:0%;transition:width 0.4s;border-radius:50px;"></div></div>
     </div>
   </div>
 </div>
@@ -530,6 +564,7 @@
     mode = m;
     selected = [];
     document.getElementById('tabView').classList.toggle('active', m === 'view');
+    document.getElementById('tabPrint').classList.toggle('active', m === 'print');
     document.getElementById('tabDelete').classList.toggle('active', m === 'delete');
     updateActionBar();
     renderGrid();
@@ -551,11 +586,13 @@
       const indCount  = s.individuals.length;
       let cls = 'session-card';
       if (isMarked) cls += ' marked-delete';
+      if (mode === 'print' && selected.includes(s.ts)) cls += ' print-selected';
 
       return `
         <div class="${cls}" onclick="cardClick(${s.ts})" data-ts="${s.ts}">
           <img class="strip-thumb" src="${s.strip.url}" alt="strip" loading="lazy" crossorigin="anonymous">
           <div class="del-badge">🗑</div>
+          <div class="print-num-badge" id="pnb-${s.ts}">${selected.includes(s.ts) && mode==='print' ? selected.indexOf(s.ts)+1 : ''}</div>
           <div class="session-footer">
             <div>
               <div class="session-date">${dateLabel}</div>
@@ -572,6 +609,8 @@
   function cardClick(ts) {
     if (mode === 'delete') {
       toggleDelete(ts);
+    } else if (mode === 'print') {
+      togglePrintSelect(ts);
     } else {
       const sess = allSessions.find(s => s.ts === ts);
       if (sess) openSessionModal(sess);
@@ -589,7 +628,17 @@
   function updateActionBar() {
     const bar = document.getElementById('actionBar');
     document.getElementById('actionCount').textContent = selected.length;
-    bar.classList.toggle('visible', mode === 'delete' && selected.length > 0);
+    const delBtn   = document.getElementById('btnBarDel');
+    const printBtn = document.getElementById('btnBarPrint');
+    const label    = document.getElementById('actionLabel');
+    if (mode === 'delete') {
+      delBtn.style.display = 'block'; printBtn.style.display = 'none';
+      label.textContent = 'sesi dipilih';
+    } else if (mode === 'print') {
+      delBtn.style.display = 'none'; printBtn.style.display = 'block';
+      label.textContent = '/ 2 strip dipilih';
+    }
+    bar.classList.toggle('visible', selected.length > 0 && mode !== 'view');
   }
 
   // ── SESSION MODAL ────────────────────────────────────────────────────
@@ -674,7 +723,85 @@
     }
   }
 
-  // ── DELETE ───────────────────────────────────────────────────────────
+  // ── PRINT ────────────────────────────────────────────────────────────
+  function togglePrintSelect(ts) {
+    const i = selected.indexOf(ts);
+    if (i > -1) { selected.splice(i, 1); }
+    else {
+      if (selected.length >= 2) { showToast('⚠️ Maksimal 2 strip untuk print'); return; }
+      selected.push(ts);
+    }
+    updateActionBar();
+    renderGrid();
+  }
+
+  function openPrintModal() {
+    if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
+    const sessions = selected.map(ts => allSessions.find(s => s.ts === ts));
+    document.getElementById('printPreview').innerHTML = sessions.map(s =>
+      `<img src="${s.strip.url}" alt="strip" crossorigin="anonymous" style="width:calc(50% - 6px);border-radius:12px;border:2px solid var(--border);object-fit:cover;aspect-ratio:9/16;">`
+    ).join('');
+    document.getElementById('printModal').style.display = 'flex';
+    document.getElementById('printProgress').style.display = 'none';
+    document.getElementById('btnGenPrint').disabled = false;
+    document.getElementById('printProgBar').style.width = '0%';
+  }
+
+  function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
+
+  async function generatePrint() {
+    if (selected.length !== 2) return;
+    const btn  = document.getElementById('btnGenPrint');
+    const prog = document.getElementById('printProgress');
+    const bar  = document.getElementById('printProgBar');
+    const txt  = document.getElementById('printProgressText');
+    btn.disabled = true; prog.style.display = 'block';
+    try {
+      const PW = 1181, PH = 1772;
+      const canvas = document.createElement('canvas');
+      canvas.width = PW; canvas.height = PH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,PW,PH);
+      const slotW = Math.floor(PW/2);
+      bar.style.width = '20%'; txt.textContent = 'Memuat strip 1...';
+      const sessions = selected.map(ts => allSessions.find(s => s.ts === ts));
+      const img1 = await loadImage(sessions[0].strip.url);
+      bar.style.width = '50%'; txt.textContent = 'Memuat strip 2...';
+      const img2 = await loadImage(sessions[1].strip.url);
+      bar.style.width = '75%'; txt.textContent = 'Menyusun layout...';
+      drawCover(ctx, img1, 0, 0, slotW, PH);
+      drawCover(ctx, img2, slotW, 0, slotW, PH);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(slotW,0); ctx.lineTo(slotW,PH); ctx.stroke();
+      bar.style.width = '90%'; txt.textContent = 'Membuat file...';
+      canvas.toBlob(blob => {
+        bar.style.width = '100%'; txt.textContent = 'Selesai ✓';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `lux-print-10x15-${Date.now()}.jpg`;
+        a.click();
+        setTimeout(() => { closePrintModal(); showToast('✅ File print berhasil!', 'success'); }, 800);
+      }, 'image/jpeg', 0.95);
+    } catch(e) {
+      txt.textContent = '⚠️ Gagal: ' + e.message;
+      btn.disabled = false;
+    }
+  }
+
+  function drawCover(ctx, img, x, y, w, h) {
+    const scale = Math.max(w/img.width, h/img.height);
+    const sw = w/scale, sh = h/scale;
+    ctx.drawImage(img, (img.width-sw)/2, (img.height-sh)/2, sw, sh, x, y, w, h);
+  }
+  function loadImage(src) {
+    return new Promise((res,rej) => {
+      const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = () => res(img); img.onerror = () => rej(new Error('Gagal load'));
+      img.src = src;
+    });
+  }
+
+  // ── DELETE ────────────────────────────────────────────────────────────
   function openDeleteModal() {
     if (!selected.length) return;
     const sessions = allSessions.filter(s => selected.includes(s.ts));

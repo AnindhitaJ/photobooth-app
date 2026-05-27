@@ -373,7 +373,7 @@
     const slotAspect = slot.w / slot.h;
 
     // Dimensi capture canvas (landscape selalu)
-    const CAP_W = 960, CAP_H = 720;
+    const CAP_W = 1280, CAP_H = 960;
 
     // Dimensi video asli dari kamera
     const rawW = video.videoWidth  || 1280;
@@ -511,7 +511,7 @@
     try {
       if (stream) stream.getTracks().forEach(t => t.stop());
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
       });
       video.srcObject = stream;
@@ -605,7 +605,7 @@
     flashEl.classList.add('show');
     setTimeout(() => flashEl.classList.remove('show'), 180);
 
-    const W = 960, H = 720;
+    const W = 1280, H = 960;
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     const vW = video.videoWidth || W, vH = video.videoHeight || H;

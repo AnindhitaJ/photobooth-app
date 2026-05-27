@@ -147,6 +147,17 @@
       cursor: pointer; transition: all 0.2s;
     }
     .btn-qr-close:hover { border-color: var(--orange); color: var(--orange); }
+    /* Countdown */
+    .countdown-bar {
+      background: linear-gradient(135deg, #fff3e0, #fff8f0);
+      border: 2px solid #f5c6da; border-radius: 14px;
+      padding: 10px 14px; margin: 0 0 10px;
+      display: none; align-items: center; gap: 10px;
+    }
+    .countdown-bar.visible { display: flex; }
+    .countdown-icon { font-size: 18px; flex-shrink: 0; }
+    .countdown-text { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .countdown-text span { color: var(--orange); font-weight: 900; }
     /* Status toast */
     #statusToast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
@@ -189,6 +200,11 @@
     </div>
 
     <div class="action-panel">
+
+      <div class="countdown-bar" id="countdownBar">
+        <div class="countdown-icon">⏳</div>
+        <div class="countdown-text">File akan dihapus otomatis dalam <span id="countdownText">14 hari</span> — download sekarang!</div>
+      </div>
 
       <div class="section-label">Download Satuan</div>
 
@@ -390,34 +406,54 @@
         ctx.drawImage(tmpl, 0, 0, tmplW, tmplH);
       }
 
-      // ── Logo watermark (hanya untuk template custom, bukan basic) ──
+      // ── Teks "LUX PHOTOBOOTH" di area bawah (hanya template custom) ──
       if (!isBasicTemplate && slots.length > 0) {
         try {
-          // Cari Y paling bawah dari semua slot
           const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
-          const gapH = tmplH - bottomOfLastSlot; // tinggi area kosong di bawah
+          const gapH = tmplH - bottomOfLastSlot;
 
-          if (gapH > 20) { // hanya kalau ada ruang cukup
-            const logoImg = await loadImage('/logo.png');
-            // Ukuran logo: maks 80% dari gap, tapi tidak lebih dari 120px
-            const logoSize = Math.min(gapH * 0.75, 120);
-            // Posisi: tengah horizontal, tengah vertikal di gap
-            const logoX = (tmplW - logoSize) / 2;
-            const logoY = bottomOfLastSlot + (gapH - logoSize) / 2;
-            // Gambar logo dengan border-radius (circle clip)
+          if (gapH > 16) {
+            // Sample warna background di area footer (tengah-bawah template)
+            const sampleX = Math.floor(tmplW / 2);
+            const sampleY = Math.floor(bottomOfLastSlot + gapH / 2);
+            const px = ctx.getImageData(sampleX, sampleY, 1, 1).data;
+            const r = px[0], g = px[1], b = px[2];
+
+            // Hitung luminance
+            const lum = 0.299*r + 0.587*g + 0.114*b;
+
+            // Kalau background gelap → teks putih; terang → teks hitam
+            // Tapi jangan terlalu terang/gelap → pilih warna mid-contrast
+            let textR, textG, textB;
+            if (lum < 128) {
+              // Background gelap → teks putih agak warm
+              textR = 255; textG = 248; textB = 240;
+            } else {
+              // Background terang → teks navy gelap
+              textR = 29; textG = 53; textB = 87;
+            }
+
+            // Font size: proporsional dengan gap, min 18px max 52px
+            const fontSize = Math.max(18, Math.min(52, Math.floor(gapH * 0.38)));
+            const centerX  = tmplW / 2;
+            const centerY  = bottomOfLastSlot + gapH / 2;
+
             ctx.save();
-            ctx.beginPath();
-            ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            ctx.globalAlpha = 0.70;
+            ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.letterSpacing = '3px';
+            ctx.fillStyle = `rgb(${textR},${textG},${textB})`;
+            ctx.fillText('LUX PHOTOBOOTH', centerX, centerY);
             ctx.restore();
           }
         } catch(e) {
-          console.warn('Logo watermark gagal:', e);
+          console.warn('Watermark teks gagal:', e);
         }
       }
 
-      finalDataURL = canvas.toDataURL('image/jpeg', 0.92);
+      finalDataURL = canvas.toDataURL('image/jpeg', 0.97);
 
       // Bersihkan base64 besar dari localStorage setelah dipakai
       // (URL Supabase tetap aman disimpan)
@@ -434,6 +470,7 @@
       document.getElementById('loadingOverlay').style.display = 'none';
 
       const hasLive = livePhotos.some(Boolean);
+      startCountdown();
       ['btnJpg','btnShare','btnZip','btnCetak2Strip','btnQR'].forEach(id => {
         document.getElementById(id).disabled = false;
       });
@@ -457,13 +494,29 @@
     const qrStatus = document.getElementById('qrStatus');
     const btnQR    = document.getElementById('btnQR');
     const btnLabel = document.getElementById('btnQRLabel');
-    qrStatus.textContent = '⏫ Mengupload foto...';
+    qrStatus.textContent = '⏫ Mengupload foto strip...';
     try {
-      const ts = Date.now();
-
-      // Upload foto utama
+      // Upload foto strip (composite)
       const photoBlob = dataURLtoBlob(finalDataURL);
-      finalPublicURL = await uploadToSupabase(photoBlob, 'foto.jpg');
+      finalPublicURL = await uploadToSupabase(photoBlob, 'strip.jpg');
+
+      // Upload foto individual (parallel, fire-and-forget — tidak blokir QR)
+      const individualURLs = [];
+      if (filteredPhotos.length > 0) {
+        qrStatus.textContent = '⏫ Mengupload foto individual...';
+        await Promise.allSettled(
+          filteredPhotos.map(async (src, i) => {
+            if (!src) return;
+            try {
+              const blob = dataURLtoBlob(src);
+              const url  = await uploadToSupabase(blob, `foto-${i+1}.jpg`);
+              individualURLs[i] = url;
+            } catch(e) {
+              console.warn(`Upload foto-${i+1} gagal:`, e);
+            }
+          })
+        );
+      }
 
       // Upload GIF kalau sudah di-generate
       let gifURL = '';
@@ -475,6 +528,8 @@
       // Build QR URL
       const params = new URLSearchParams({ photo: finalPublicURL });
       if (gifURL) params.set('gif', gifURL);
+      // Kirim URLs foto individual sebagai JSON (untuk keperluan galeri/future)
+      // Tidak perlu ditampilkan di QR — sudah tersimpan di Supabase dengan prefix sama
 
       const downloadPageURL = window.location.origin + '/download.html?' + params.toString();
       const qrBox = document.getElementById('qrcodeModal');
@@ -484,7 +539,8 @@
         colorDark: '#1D3557', colorLight: '#ffffff',
       });
       qrStatus.style.color = 'var(--text2)';
-      qrStatus.textContent = gifURL ? 'Foto & GIF siap di-scan ✓' : 'Scan untuk download foto ke HP';
+      const uploaded = individualURLs.filter(Boolean).length;
+      qrStatus.textContent = `Strip + ${uploaded} foto individual tersimpan ✓`;
       btnQR.disabled = false;
       btnLabel.textContent = 'Scan QR — Download ke HP';
     } catch(e) {
@@ -494,6 +550,34 @@
       btnQR.disabled = true;
       btnLabel.textContent = 'QR Tidak Tersedia';
     }
+  }
+
+  // ─── Countdown 14 hari ───
+  function startCountdown() {
+    const RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
+    function getTs() {
+      if (finalPublicURL) {
+        const m = finalPublicURL.match(/results\/(\d{13})_/);
+        if (m) return parseInt(m[1]);
+      }
+      return Date.now();
+    }
+    function fmt(ms) {
+      if (ms <= 0) return 'sudah kadaluarsa';
+      const d = Math.floor(ms / 86400000);
+      const h = Math.floor((ms % 86400000) / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      if (d > 0) return d + ' hari ' + h + ' jam ' + m + ' menit lagi';
+      if (h > 0) return h + ' jam ' + m + ' menit lagi';
+      return m + ' menit lagi';
+    }
+    function tick() {
+      const rem = (getTs() + RETENTION_MS) - Date.now();
+      document.getElementById('countdownBar').classList.add('visible');
+      document.getElementById('countdownText').textContent = fmt(rem);
+    }
+    tick();
+    setInterval(tick, 60000);
   }
 
   // ─── QR Modal ───

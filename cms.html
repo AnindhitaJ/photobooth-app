@@ -252,8 +252,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+  const CMS_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const CMS_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
   const SUPER_ADMIN_EMAIL = 'luxphotobooth.id@gmail.com';
 
   let allUsers = [];
@@ -276,9 +276,9 @@
   async function loadUsers() {
     try {
       const session = Auth.getSession();
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc`, {
+      const res = await fetch(`${CMS_URL}/rest/v1/profiles?select=*&order=created_at.desc`, {
         headers: {
-          'apikey': SUPABASE_ANON,
+          'apikey': CMS_ANON,
           'Authorization': `Bearer ${session.access_token}`
         }
       });
@@ -371,10 +371,10 @@
   async function toggleActive(userId, active) {
     try {
       const session = Auth.getSession();
-      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${userId}`, {
         method: 'PATCH',
         headers: {
-          'apikey': SUPABASE_ANON,
+          'apikey': CMS_ANON,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
@@ -391,10 +391,10 @@
     try {
       const session = Auth.getSession();
       const trialEnd = new Date(Date.now() + 7*24*60*60*1000).toISOString();
-      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${userId}`, {
         method: 'PATCH',
         headers: {
-          'apikey': SUPABASE_ANON,
+          'apikey': CMS_ANON,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
@@ -447,10 +447,10 @@
     btn.disabled = true; btn.textContent = '⏳ Mengaktifkan...';
     try {
       const session = Auth.getSession();
-      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${selectedUserId}`, {
+      await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${selectedUserId}`, {
         method: 'PATCH',
         headers: {
-          'apikey': SUPABASE_ANON,
+          'apikey': CMS_ANON,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'

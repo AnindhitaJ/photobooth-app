@@ -200,6 +200,9 @@
       </div>
     </div>
 
+    <!-- Plan status banner -->
+    <div id="planBanner" style="display:none;margin-bottom:12px;"></div>
+
     <div class="action-panel">
 
       <div class="countdown-bar" id="countdownBar">
@@ -458,6 +461,27 @@
         }
       }
 
+      // ── Watermark "Property of LUX" untuk non-PRO ──
+      if (!Auth.isPro() && !Auth.isSuperAdmin()) {
+        const wCtx = canvas;
+        const w = canvas.width, h = canvas.height;
+        // Banner di bagian atas foto
+        ctx.save();
+        ctx.globalAlpha = 0.82;
+        ctx.fillStyle = '#1D3557';
+        ctx.fillRect(0, 0, w, 72);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#E5B842';
+        ctx.font = `900 ${Math.floor(w * 0.055)}px 'Segoe UI', Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('PROPERTY OF LUX PHOTOBOOTH', w/2, 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = `600 ${Math.floor(w * 0.038)}px 'Segoe UI', Arial, sans-serif`;
+        ctx.fillText('IG/TikTok: @luxphotobooth.id  •  Hubungi untuk hapus watermark', w/2, 50);
+        ctx.restore();
+      }
+
       finalDataURL = canvas.toDataURL('image/jpeg', 0.97);
 
       // Bersihkan base64 besar dari localStorage setelah dipakai
@@ -487,6 +511,8 @@
       if (!canGif) document.getElementById('gifHint').textContent = 'Butuh minimal 2 foto';
 
       uploadForQR();
+      // Tampilkan plan banner
+      showPlanBanner();
 
     } catch(e) {
       console.error(e);
@@ -554,6 +580,25 @@
       qrStatus.textContent = e.message || 'Upload gagal';
       btnQR.disabled = true;
       btnLabel.textContent = 'QR Tidak Tersedia';
+    }
+  }
+
+  // ─── Plan Banner ───
+  function showPlanBanner() {
+    const banner = document.getElementById('planBanner');
+    if (!banner) return;
+    const status = Auth.getPlanStatus();
+    const days   = Auth.getDaysLeft();
+
+    if (status === 'pro') {
+      banner.style.display = 'block';
+      banner.innerHTML = `<div style="background:#d1fae5;border:2px solid #a7f3d0;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#059669;display:flex;align-items:center;gap:8px;">⭐ Akun PRO aktif — ${days} hari lagi</div>`;
+    } else if (status === 'trial') {
+      banner.style.display = 'block';
+      banner.innerHTML = `<div style="background:#fef3c7;border:2px solid #fde68a;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#d97706;display:flex;align-items:center;gap:8px;">🔄 Free Trial — ${days} hari lagi • <a href='https://instagram.com/luxphotobooth.id' target='_blank' style='color:var(--orange);text-decoration:underline'>Upgrade ke PRO</a></div>`;
+    } else if (status === 'expired') {
+      banner.style.display = 'block';
+      banner.innerHTML = `<div style="background:#fee2e2;border:2px solid #fca5a5;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:8px;">⏰ Akses kamu sudah habis — <a href='https://instagram.com/luxphotobooth.id' target='_blank' style='color:var(--orange);text-decoration:underline'>Hubungi @luxphotobooth.id</a> untuk perpanjang</div>`;
     }
   }
 

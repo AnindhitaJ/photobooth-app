@@ -135,3 +135,38 @@ document.addEventListener('DOMContentLoaded', () => {
     el.textContent = Auth.getBoothName();
   });
 });
+
+// ── PLAN HELPERS ────────────────────────────────────────────────────────
+Object.assign(Auth, {
+  // Status plan: 'pro' | 'trial' | 'expired' | 'inactive'
+  getPlanStatus() {
+    const p = this.getProfile();
+    if (!p) return 'expired';
+    if (!p.is_active) return 'inactive';
+    const now = new Date();
+    if (p.plan === 'pro' && p.pro_ends_at && new Date(p.pro_ends_at) > now) return 'pro';
+    if (p.plan === 'trial' && p.trial_ends_at && new Date(p.trial_ends_at) > now) return 'trial';
+    return 'expired';
+  },
+
+  isPro() { return this.getPlanStatus() === 'pro'; },
+  isTrialActive() { return this.getPlanStatus() === 'trial'; },
+  hasAccess() {
+    const s = this.getPlanStatus();
+    return s === 'pro' || s === 'trial';
+  },
+
+  // Sisa hari trial/pro
+  getDaysLeft() {
+    const p = this.getProfile();
+    if (!p) return 0;
+    const now = Date.now();
+    if (p.plan === 'pro' && p.pro_ends_at) return Math.max(0, Math.ceil((new Date(p.pro_ends_at) - now) / 86400000));
+    if (p.plan === 'trial' && p.trial_ends_at) return Math.max(0, Math.ceil((new Date(p.trial_ends_at) - now) / 86400000));
+    return 0;
+  },
+
+  isSuperAdmin() {
+    return localStorage.getItem('sb_user_email') === 'luxphotobooth.id@gmail.com';
+  }
+});

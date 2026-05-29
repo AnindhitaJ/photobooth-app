@@ -48,6 +48,10 @@
   ],
   "rewrites": [
     {
+      "source": "/cms",
+      "destination": "/cms.html"
+    },
+    {
       "source": "/login",
       "destination": "/login.html"
     },

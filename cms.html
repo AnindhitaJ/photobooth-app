@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1D3557">
+  <title>CMS - Photobooth Admin</title>
+  <script src="/auth.js"></script>
+  <style>
+    :root {
+      --orange: #D84B7E; --yellow: #E5B842; --navy: #1D3557;
+      --bg: #f0f4f8; --card: #ffffff; --border: #e2e8f0;
+      --text: #1D3557; --text2: #64748b;
+      --green: #10b981; --red: #ef4444; --purple: #8b5cf6;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* ── HEADER ── */
+    .cms-header {
+      background:var(--navy); color:white; padding:16px 24px;
+      display:flex; align-items:center; justify-content:space-between;
+      box-shadow:0 2px 12px rgba(0,0,0,0.2);
+    }
+    .cms-logo { display:flex; align-items:center; gap:10px; font-size:18px; font-weight:900; }
+    .cms-badge {
+      background:var(--yellow); color:var(--navy);
+      font-size:10px; font-weight:900; padding:3px 8px; border-radius:50px;
+      letter-spacing:0.5px;
+    }
+    .btn-logout {
+      padding:8px 16px; border-radius:50px; border:2px solid rgba(255,255,255,0.3);
+      background:none; color:white; font-size:13px; font-weight:700; cursor:pointer;
+      transition:all 0.2s;
+    }
+    .btn-logout:hover { background:rgba(255,255,255,0.1); }
+
+    /* ── LAYOUT ── */
+    .cms-body { max-width:1100px; margin:0 auto; padding:24px 20px; }
+
+    /* ── STATS ── */
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+    .stat-card {
+      background:var(--card); border:2px solid var(--border); border-radius:16px;
+      padding:18px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    }
+    .stat-label { font-size:11px; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
+    .stat-value { font-size:28px; font-weight:900; color:var(--text); }
+    .stat-sub { font-size:12px; color:var(--text2); margin-top:3px; }
+
+    /* ── TABLE ── */
+    .section-card {
+      background:var(--card); border:2px solid var(--border); border-radius:16px;
+      overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:20px;
+    }
+    .section-header {
+      padding:16px 20px; border-bottom:2px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    }
+    .section-title { font-size:15px; font-weight:900; color:var(--text); }
+    .search-input {
+      padding:8px 14px; border-radius:50px; border:2px solid var(--border);
+      font-size:13px; outline:none; font-family:inherit; color:var(--text);
+      transition:border 0.2s; width:220px;
+    }
+    .search-input:focus { border-color:var(--orange); }
+
+    table { width:100%; border-collapse:collapse; }
+    th {
+      padding:12px 16px; text-align:left; font-size:11px; font-weight:800;
+      color:var(--text2); text-transform:uppercase; letter-spacing:0.8px;
+      background:#f8fafc; border-bottom:2px solid var(--border);
+    }
+    td { padding:14px 16px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#f8fafc; }
+
+    .badge {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:4px 10px; border-radius:50px; font-size:11px; font-weight:800;
+    }
+    .badge-trial { background:#fef3c7; color:#d97706; }
+    .badge-pro { background:#d1fae5; color:#059669; }
+    .badge-expired { background:#fee2e2; color:#dc2626; }
+    .badge-inactive { background:#f1f5f9; color:#94a3b8; }
+
+    .btn-sm {
+      padding:6px 12px; border-radius:50px; font-size:12px; font-weight:700;
+      cursor:pointer; border:none; transition:all 0.2s; font-family:inherit;
+    }
+    .btn-activate { background:#d1fae5; color:#059669; }
+    .btn-activate:hover { background:#059669; color:white; }
+    .btn-deactivate { background:#fee2e2; color:#dc2626; }
+    .btn-deactivate:hover { background:#dc2626; color:white; }
+    .btn-pro { background:var(--yellow); color:var(--navy); }
+    .btn-pro:hover { background:#c9972a; color:white; }
+    .btn-trial { background:#e0e7ff; color:#4f46e5; }
+    .btn-trial:hover { background:#4f46e5; color:white; }
+
+    .btn-actions { display:flex; gap:6px; flex-wrap:wrap; }
+
+    /* ── PRO MODAL ── */
+    .modal-wrap {
+      position:fixed; inset:0; z-index:9000; display:none;
+      background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center; padding:24px;
+    }
+    .modal-wrap.open { display:flex; }
+    .modal-box {
+      background:white; border-radius:20px; padding:28px; max-width:400px; width:100%;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25); animation:popIn 0.2s ease;
+    }
+    @keyframes popIn { from{transform:scale(0.92);opacity:0} to{transform:scale(1);opacity:1} }
+    .modal-title { font-size:18px; font-weight:900; margin-bottom:6px; }
+    .modal-sub { font-size:13px; color:var(--text2); margin-bottom:20px; }
+    .modal-user { font-weight:700; color:var(--orange); }
+    .duration-options { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+    .duration-opt {
+      display:flex; align-items:center; gap:10px; padding:12px 14px;
+      border:2px solid var(--border); border-radius:12px; cursor:pointer;
+      transition:all 0.15s; font-size:14px; font-weight:600;
+    }
+    .duration-opt:hover { border-color:var(--yellow); }
+    .duration-opt.selected { border-color:var(--yellow); background:#fffbeb; }
+    .duration-opt input { accent-color:var(--yellow); width:16px; height:16px; }
+    .custom-date-wrap { display:none; margin-top:-4px; margin-bottom:8px; }
+    .custom-date-wrap input {
+      width:100%; padding:10px 14px; border-radius:10px; border:2px solid var(--border);
+      font-size:14px; outline:none; font-family:inherit; color:var(--text);
+    }
+    .custom-date-wrap input:focus { border-color:var(--yellow); }
+    .modal-actions { display:flex; gap:10px; }
+    .btn-modal-cancel {
+      flex:1; padding:12px; border-radius:50px; border:2px solid var(--border);
+      background:white; color:var(--text2); font-size:14px; font-weight:700; cursor:pointer;
+    }
+    .btn-modal-confirm {
+      flex:2; padding:12px; border-radius:50px; border:none;
+      background:linear-gradient(135deg,var(--yellow),#c9972a);
+      color:white; font-size:14px; font-weight:800; cursor:pointer;
+    }
+    .btn-modal-confirm:disabled { opacity:0.6; cursor:not-allowed; }
+
+    /* ── TOAST ── */
+    .toast {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+      background:var(--navy); color:white; padding:12px 24px; border-radius:50px;
+      font-size:14px; font-weight:700; opacity:0; transition:all 0.3s;
+      z-index:9999; white-space:nowrap; pointer-events:none;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .toast.success { background:var(--green); }
+    .toast.error { background:var(--red); }
+
+    .loading { text-align:center; padding:40px; color:var(--text2); font-weight:600; }
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .empty { text-align:center; padding:40px; color:var(--text2); font-size:14px; }
+  </style>
+</head>
+<body>
+
+<div class="cms-header">
+  <div class="cms-logo">
+    <svg width="32" height="32" viewBox="0 0 100 100">
+      <rect x="8" y="32" width="84" height="52" rx="10" fill="#E5B842"/>
+      <rect x="36" y="22" width="28" height="14" rx="5" fill="#E5B842"/>
+      <rect x="14" y="26" width="14" height="8" rx="3" fill="#D84B7E"/>
+      <circle cx="50" cy="58" r="20" fill="#fff"/>
+      <circle cx="50" cy="58" r="13" fill="#1D3557"/>
+      <circle cx="78" cy="38" r="6" fill="#D84B7E"/>
+    </svg>
+    CMS Dashboard
+    <span class="cms-badge">SUPER ADMIN</span>
+  </div>
+  <button class="btn-logout" onclick="Auth.logout()">Logout</button>
+</div>
+
+<div class="cms-body">
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Akun</div>
+      <div class="stat-value" id="statTotal">—</div>
+      <div class="stat-sub">terdaftar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Free Trial</div>
+      <div class="stat-value" id="statTrial" style="color:var(--yellow)">—</div>
+      <div class="stat-sub">aktif</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">PRO</div>
+      <div class="stat-value" id="statPro" style="color:var(--green)">—</div>
+      <div class="stat-sub">aktif</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Expired</div>
+      <div class="stat-value" id="statExpired" style="color:var(--red)">—</div>
+      <div class="stat-sub">perlu follow up</div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">👥 Semua Akun</div>
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍 Cari email / nama..." oninput="filterTable()">
+    </div>
+    <div id="tableWrap">
+      <div class="loading"><div class="spinner"></div>Memuat data...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PRO ACTIVATION MODAL -->
+<div class="modal-wrap" id="proModal">
+  <div class="modal-box">
+    <div class="modal-title">⭐ Aktifkan PRO</div>
+    <div class="modal-sub">Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">user</span></div>
+    <div class="duration-options">
+      <label class="duration-opt" id="opt1week">
+        <input type="radio" name="duration" value="1week" checked onchange="onDurationChange()">
+        📅 1 Minggu (7 hari)
+      </label>
+      <label class="duration-opt selected" id="opt1month">
+        <input type="radio" name="duration" value="1month" onchange="onDurationChange()">
+        📆 1 Bulan (30 hari)
+      </label>
+      <label class="duration-opt" id="opt3month">
+        <input type="radio" name="duration" value="3month" onchange="onDurationChange()">
+        🗓️ 3 Bulan (90 hari)
+      </label>
+      <label class="duration-opt" id="optCustom">
+        <input type="radio" name="duration" value="custom" onchange="onDurationChange()">
+        ✏️ Custom tanggal
+      </label>
+    </div>
+    <div class="custom-date-wrap" id="customDateWrap">
+      <input type="date" id="customDate">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeProModal()">Batal</button>
+      <button class="btn-modal-confirm" id="btnConfirmPro" onclick="confirmActivatePro()">⭐ Aktifkan PRO</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+  const SUPER_ADMIN_EMAIL = 'luxphotobooth.id@gmail.com';
+
+  let allUsers = [];
+  let selectedUserId = null;
+
+  // ── AUTH CHECK ───────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    const session = Auth.getSession();
+    if (!session) { window.location.href = '/login'; return; }
+    const email = localStorage.getItem('sb_user_email');
+    if (email !== SUPER_ADMIN_EMAIL) {
+      alert('Akses ditolak. Halaman ini hanya untuk super admin.');
+      window.location.href = '/';
+      return;
+    }
+    loadUsers();
+  });
+
+  // ── LOAD USERS ───────────────────────────────────────────────────────
+  async function loadUsers() {
+    try {
+      const session = Auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc`, {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      allUsers = await res.json();
+      renderStats();
+      renderTable(allUsers);
+    } catch(e) {
+      document.getElementById('tableWrap').innerHTML = `<div class="empty">❌ Gagal memuat data: ${e.message}</div>`;
+    }
+  }
+
+  function getPlanStatus(u) {
+    const now = new Date();
+    if (!u.is_active) return 'inactive';
+    if (u.plan === 'pro' && u.pro_ends_at && new Date(u.pro_ends_at) > now) return 'pro';
+    if (u.plan === 'trial' && u.trial_ends_at && new Date(u.trial_ends_at) > now) return 'trial';
+    return 'expired';
+  }
+
+  function renderStats() {
+    const now = new Date();
+    let trial=0, pro=0, expired=0;
+    allUsers.forEach(u => {
+      const s = getPlanStatus(u);
+      if (s==='trial') trial++;
+      else if (s==='pro') pro++;
+      else if (s==='expired') expired++;
+    });
+    document.getElementById('statTotal').textContent   = allUsers.length;
+    document.getElementById('statTrial').textContent   = trial;
+    document.getElementById('statPro').textContent     = pro;
+    document.getElementById('statExpired').textContent = expired;
+  }
+
+  function renderTable(users) {
+    if (!users.length) {
+      document.getElementById('tableWrap').innerHTML = '<div class="empty">Belum ada akun terdaftar</div>';
+      return;
+    }
+    const rows = users.map(u => {
+      const status = getPlanStatus(u);
+      const badgeMap = {
+        pro:      '<span class="badge badge-pro">⭐ PRO</span>',
+        trial:    '<span class="badge badge-trial">🔄 Trial</span>',
+        expired:  '<span class="badge badge-expired">⏰ Expired</span>',
+        inactive: '<span class="badge badge-inactive">⛔ Nonaktif</span>',
+      };
+      const badge = badgeMap[status] || '';
+
+      const proEnd = u.pro_ends_at ? new Date(u.pro_ends_at).toLocaleDateString('id-ID') : '—';
+      const trialEnd = u.trial_ends_at ? new Date(u.trial_ends_at).toLocaleDateString('id-ID') : '—';
+      const endInfo = status === 'pro' ? `PRO s/d ${proEnd}` : status === 'trial' ? `Trial s/d ${trialEnd}` : '—';
+
+      const activeBtn = u.is_active
+        ? `<button class="btn-sm btn-deactivate" onclick="toggleActive('${u.id}', false)">⛔ Nonaktifkan</button>`
+        : `<button class="btn-sm btn-activate" onclick="toggleActive('${u.id}', true)">✅ Aktifkan</button>`;
+
+      const proBtn = status !== 'pro'
+        ? `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${u.email||''}')">⭐ Aktifkan PRO</button>`
+        : `<button class="btn-sm btn-trial" onclick="setTrial('${u.id}')">🔄 Reset Trial</button>`;
+
+      return `<tr>
+        <td><div style="font-weight:700">${u.booth_name || '—'}</div><div style="font-size:11px;color:var(--text2)">${u.email || '—'}</div></td>
+        <td>${badge}</td>
+        <td style="font-size:12px;color:var(--text2)">${endInfo}</td>
+        <td style="font-size:12px;color:var(--text2)">${new Date(u.created_at).toLocaleDateString('id-ID')}</td>
+        <td><div class="btn-actions">${proBtn}${activeBtn}</div></td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('tableWrap').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Akun</th><th>Status</th><th>Berlaku</th><th>Daftar</th><th>Aksi</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allUsers.filter(u =>
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.booth_name || '').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  // ── TOGGLE ACTIVE ─────────────────────────────────────────────────────
+  async function toggleActive(userId, active) {
+    try {
+      const session = Auth.getSession();
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_active: active })
+      });
+      showToast(active ? '✅ Akun diaktifkan' : '⛔ Akun dinonaktifkan', 'success');
+      loadUsers();
+    } catch(e) { showToast('❌ Gagal: ' + e.message, 'error'); }
+  }
+
+  // ── SET TRIAL ─────────────────────────────────────────────────────────
+  async function setTrial(userId) {
+    try {
+      const session = Auth.getSession();
+      const trialEnd = new Date(Date.now() + 7*24*60*60*1000).toISOString();
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ plan: 'trial', trial_ends_at: trialEnd, pro_ends_at: null })
+      });
+      showToast('🔄 Trial direset 7 hari', 'success');
+      loadUsers();
+    } catch(e) { showToast('❌ Gagal: ' + e.message, 'error'); }
+  }
+
+  // ── PRO MODAL ─────────────────────────────────────────────────────────
+  function openProModal(userId, email) {
+    selectedUserId = userId;
+    document.getElementById('modalUserEmail').textContent = email || userId;
+    document.querySelector('input[value="1week"]').checked = true;
+    document.querySelectorAll('.duration-opt').forEach(el => el.classList.remove('selected'));
+    document.querySelector('#opt1week').classList.add('selected');
+    document.getElementById('customDateWrap').style.display = 'none';
+    document.getElementById('proModal').classList.add('open');
+  }
+  function closeProModal() {
+    document.getElementById('proModal').classList.remove('open');
+    selectedUserId = null;
+  }
+  function onDurationChange() {
+    const val = document.querySelector('input[name="duration"]:checked').value;
+    document.querySelectorAll('.duration-opt').forEach(el => el.classList.remove('selected'));
+    document.getElementById('customDateWrap').style.display = val === 'custom' ? 'block' : 'none';
+    // Highlight selected
+    const map = { '1week':'opt1week','1month':'opt1month','3month':'opt3month','custom':'optCustom' };
+    document.getElementById(map[val]).classList.add('selected');
+  }
+
+  async function confirmActivatePro() {
+    if (!selectedUserId) return;
+    const val = document.querySelector('input[name="duration"]:checked').value;
+    let proEnd;
+    const now = new Date();
+    if (val === '1week')  proEnd = new Date(now.getTime() + 7*24*60*60*1000);
+    if (val === '1month') proEnd = new Date(now.getTime() + 30*24*60*60*1000);
+    if (val === '3month') proEnd = new Date(now.getTime() + 90*24*60*60*1000);
+    if (val === 'custom') {
+      const d = document.getElementById('customDate').value;
+      if (!d) { showToast('❌ Pilih tanggal custom', 'error'); return; }
+      proEnd = new Date(d);
+    }
+
+    const btn = document.getElementById('btnConfirmPro');
+    btn.disabled = true; btn.textContent = '⏳ Mengaktifkan...';
+    try {
+      const session = Auth.getSession();
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${selectedUserId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ plan: 'pro', pro_ends_at: proEnd.toISOString() })
+      });
+      closeProModal();
+      showToast(`⭐ PRO aktif s/d ${proEnd.toLocaleDateString('id-ID')}`, 'success');
+      loadUsers();
+    } catch(e) {
+      showToast('❌ Gagal: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '⭐ Aktifkan PRO';
+    }
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' '+type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = 'toast'; }, 3500);
+  }
+</script>
+</body>
+</html>

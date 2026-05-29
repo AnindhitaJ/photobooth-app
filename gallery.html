@@ -320,6 +320,7 @@
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     .toast.success { background:#06a870; }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -335,14 +336,14 @@
     <div class="lock-error" id="pwError">❌ Password salah. Coba lagi.</div>
     <button class="btn-unlock" onclick="checkPass()">🔓 Buka Galeri</button>
   </div>
-  <button class="btn-back-lock" onclick="location.href='index.html'">← Kembali ke Beranda</button>
+  <button class="btn-back-lock" onclick="location.href='/index'">← Kembali ke Beranda</button>
 </div>
 
 <!-- GALLERY -->
 <div id="galleryScreen">
   <div class="header">
     <div class="header-left">
-      <button class="btn-back" onclick="location.href='index.html'">← Beranda</button>
+      <button class="btn-back" onclick="location.href='/index'">← Beranda</button>
       <div class="header-title">
         <img src="/logo.png" alt="LUX">
         <span>Galeri <span style="color:var(--orange)">LUX</span></span>
@@ -464,16 +465,33 @@
 
   // ── PASSWORD ────────────────────────────────────────────────────────
   function checkPass() {
-    const val = document.getElementById('pwInput').value;
-    if (val === PASSWORD) {
-      document.getElementById('lockScreen').style.display = 'none';
-      document.getElementById('galleryScreen').style.display = 'block';
-      loadPhotos();
-    } else {
-      const err = document.getElementById('pwError');
+    // Verifikasi dengan password login
+    reAuthGallery(document.getElementById('pwInput').value);
+  }
+
+  async function reAuthGallery(password) {
+    const session = Auth.getSession();
+    if (!session) { window.location.href = '/login'; return; }
+    const email = localStorage.getItem('sb_user_email');
+    const err = document.getElementById('pwError');
+    try {
+      const res = await fetch('https://eguiubpsijwjwxaxvkhi.supabase.co/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (res.ok) {
+        document.getElementById('lockScreen').style.display = 'none';
+        document.getElementById('galleryScreen').style.display = 'block';
+        loadPhotos();
+      } else {
+        err.style.display = 'block';
+        document.getElementById('pwInput').value = '';
+        setTimeout(() => { err.style.display = 'none'; }, 3000);
+      }
+    } catch(e) {
+      err.textContent = '❌ Gagal verifikasi';
       err.style.display = 'block';
-      document.getElementById('pwInput').value = '';
-      setTimeout(() => { err.style.display = 'none'; }, 3000);
     }
   }
 
@@ -869,7 +887,13 @@
   }
 
   // ── INIT ─────────────────────────────────────────────────────────────
-  document.getElementById('pwInput').focus();
+  // Cek session
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!Auth.getSession()) { window.location.href = '/login'; return; }
+    document.getElementById('pwInput').focus();
+    // Update sub text
+    document.querySelector('.lock-sub').textContent = 'Masukkan password login untuk melihat galeri';
+  });
 </script>
 
 <script>

@@ -263,6 +263,7 @@
     .al-back { margin-top:14px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px; }
     .al-back:hover { color:var(--orange); }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -270,25 +271,60 @@
 <div id="adminLock">
   <div class="al-icon">🔐</div>
   <div class="al-title">Admin Panel</div>
-  <div class="al-sub">Masukkan PIN untuk mengakses template manager</div>
+  <div class="al-sub">Masukkan password login untuk mengakses admin</div>
   <div class="al-card">
-    <label class="al-label" for="adminPin">PIN</label>
+    <label class="al-label" for="adminPin">Password Login</label>
     <input type="password" id="adminPin" class="al-input" placeholder="••••••" maxlength="10"
       autocomplete="current-password" onkeydown="if(event.key==='Enter') checkAdminPin()">
     <div class="al-error" id="adminPinError">❌ PIN salah. Coba lagi.</div>
     <button class="al-btn" onclick="checkAdminPin()">🔓 Masuk</button>
   </div>
-  <button class="al-back" onclick="location.href='template.html'">← Kembali ke App</button>
+  <button class="al-back" onclick="location.href='/template'">← Kembali ke App</button>
 </div>
 
 <div id="adminContent" style="display:none">
+
+<!-- PROFILE SECTION -->
+<div class="profile-section" style="max-width:800px;margin:24px auto 0;">
+  <div class="profile-title">👤 Profil Photobooth</div>
+  <div class="profile-grid">
+    <div class="logo-upload-wrap">
+      <img id="logoPreview" class="logo-preview" src="/logo.png" alt="Logo"
+        onclick="document.getElementById('logoFileInput').click()">
+      <div class="logo-upload-btn" onclick="document.getElementById('logoFileInput').click()">Ganti Logo</div>
+      <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="onLogoChange(this)">
+    </div>
+    <div class="profile-fields">
+      <div class="profile-field">
+        <label>Nama Photobooth</label>
+        <input type="text" id="profileBoothName" placeholder="Nama photobooth kamu">
+      </div>
+      <div class="profile-field">
+        <label>Email</label>
+        <input type="email" id="profileEmail" placeholder="email@kamu.com">
+      </div>
+      <div class="watermark-row">
+        <div>
+          <div class="watermark-label">Tampilkan nama di hasil foto</div>
+          <div class="watermark-sub">Watermark nama photobooth di bawah strip</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="watermarkToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+  <button class="btn-save-profile" id="btnSaveProfile" onclick="saveProfile()">💾 Simpan Perubahan</button>
+  <div class="profile-status" id="profileStatus"></div>
+</div>
 
 <div class="header">
   <div>
     <h1>⚙️ Template Manager</h1>
     <p>Upload dan kelola template photobooth (output 5×15 cm / 591×1772 px)</p>
   </div>
-  <button class="btn btn-secondary" onclick="window.location.href='template.html'">← Kembali ke App</button>
+  <button class="btn btn-secondary" onclick="window.location.href='/template'">← Kembali ke App</button>
 </div>
 
 <div class="layout">
@@ -792,21 +828,108 @@
 </div><!-- /adminContent -->
 
 <script>
-  const ADMIN_PIN = '123456';
+  // Auth — pakai Supabase session
   function checkAdminPin() {
-    const val = document.getElementById('adminPin').value;
+    const session = Auth.getSession();
+    const inputVal = document.getElementById('adminPin').value;
+    const profile  = Auth.getProfile();
+    // Password = password login (kita validasi via Supabase)
+    // Untuk simplicity: cek apakah session ada + PIN match password hash
+    // Karena kita tidak bisa reverse hash, gunakan re-auth
+    reAuthWithPassword(inputVal);
+  }
+
+  async function reAuthWithPassword(password) {
+    const session = Auth.getSession();
+    if (!session) { window.location.href = '/login'; return; }
     const err = document.getElementById('adminPinError');
-    if (val === ADMIN_PIN) {
-      document.getElementById('adminLock').style.display = 'none';
-      document.getElementById('adminContent').style.display = 'block';
-    } else {
+    const email = localStorage.getItem('sb_user_email');
+    try {
+      const res = await fetch(`${Auth_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': Auth_SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (res.ok) {
+        document.getElementById('adminLock').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadProfile();
+      } else {
+        err.style.display = 'block';
+        document.getElementById('adminPin').value = '';
+        setTimeout(() => { err.style.display = 'none'; }, 3000);
+      }
+    } catch(e) {
+      err.textContent = '❌ Gagal verifikasi';
       err.style.display = 'block';
-      document.getElementById('adminPin').value = '';
-      document.getElementById('adminPin').focus();
-      setTimeout(() => { err.style.display = 'none'; }, 3000);
     }
   }
-  document.getElementById('adminPin').focus();
+
+  const Auth_SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const Auth_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+
+  // Cek session saat load
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!Auth.getSession()) { window.location.href = '/login'; return; }
+    document.getElementById('adminPin').focus();
+  });
+
+  // Load profile ke form
+  function loadProfile() {
+    const p = Auth.getProfile();
+    if (!p) return;
+    if (p.logo_url) document.getElementById('logoPreview').src = p.logo_url;
+    if (p.booth_name) document.getElementById('profileBoothName').value = p.booth_name;
+    if (p.email) document.getElementById('profileEmail').value = p.email;
+    document.getElementById('watermarkToggle').checked = p.show_watermark !== false;
+  }
+
+  // Logo preview
+  function onLogoChange(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('logoPreview').src = e.target.result; };
+    reader.readAsDataURL(file);
+  }
+
+  // Save profile
+  async function saveProfile() {
+    const btn = document.getElementById('btnSaveProfile');
+    const status = document.getElementById('profileStatus');
+    btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+    status.style.display = 'none';
+    try {
+      // Upload logo kalau ada file baru
+      const logoInput = document.getElementById('logoFileInput');
+      let logoUrl = Auth.getProfile()?.logo_url || null;
+      if (logoInput.files[0]) {
+        logoUrl = await Auth.uploadLogo(logoInput.files[0]);
+        if (!logoUrl) throw new Error('Upload logo gagal');
+      }
+
+      // Update profile
+      const result = await Auth.updateProfile({
+        booth_name:     document.getElementById('profileBoothName').value.trim(),
+        email:          document.getElementById('profileEmail').value.trim(),
+        logo_url:       logoUrl,
+        show_watermark: document.getElementById('watermarkToggle').checked,
+      });
+
+      if (result) {
+        status.textContent = '✅ Profil berhasil disimpan!';
+        status.className = 'profile-status ok';
+      } else {
+        throw new Error('Gagal menyimpan');
+      }
+    } catch(e) {
+      status.textContent = '❌ ' + e.message;
+      status.className = 'profile-status err';
+    } finally {
+      status.style.display = 'block';
+      btn.disabled = false; btn.textContent = '💾 Simpan Perubahan';
+    }
+  }
 </script>
 
 <script>

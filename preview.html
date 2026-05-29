@@ -61,6 +61,7 @@
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(216,75,126,0.5); }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -93,12 +94,12 @@
 
     function ulangi() {
       localStorage.removeItem('foto');
-      window.location.href = 'camera.html';
+      window.location.href = '/camera';
     }
 
     function lanjut() {
       if (!foto) return;
-      window.location.href = 'filter.html';
+      window.location.href = '/filter';
     }
   </script>
 

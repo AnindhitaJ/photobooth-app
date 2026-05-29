@@ -254,6 +254,7 @@
       #btnAmbil, #btnLanjut { font-size: 15px; padding: 13px 22px; }
     }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -679,7 +680,7 @@
         if (validLive.length > 0) {
           try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) {}
         }
-        window.location.href = 'filter.html';
+        window.location.href = '/filter';
       }, 500);
     } catch(e) {
       alert('Storage penuh. Hapus template lama di Admin lalu coba lagi.');
@@ -693,13 +694,13 @@
       document.getElementById('confirmQuitModal').style.display = 'flex';
     } else {
       if (stream) stream.getTracks().forEach(t => t.stop());
-      window.location.href = 'template.html';
+      window.location.href = '/template';
     }
   }
   function konfirmasiKeluar() {
     if (stream) stream.getTracks().forEach(t => t.stop());
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    window.location.href = 'template.html';
+    window.location.href = '/template';
   }
   function batalKeluar() {
     document.getElementById('confirmQuitModal').style.display = 'none';

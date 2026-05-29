@@ -104,6 +104,7 @@
       font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
     }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
   <div class="shape shape1"></div>
@@ -113,7 +114,7 @@
   <div class="shape shape5"></div>
 
   <img src="/logo.png" alt="LUX Photobooth" style="width:120px;height:120px;border-radius:50%;object-fit:cover;box-shadow:0 8px 32px rgba(216,75,126,0.3);">
-  <h1>LUX PHOTOBOOTH</h1>
+  <h1 data-auth-boothname>LUX PHOTOBOOTH</h1>
   <p class="tagline">Pilih template, ambil foto,<br>download & share hasilnya ✨</p>
 
   <div class="badge-row">
@@ -122,15 +123,20 @@
     <div class="badge">📱 Live Strip</div>
   </div>
 
-  <div class="btn-group">
+  <div style="position:absolute;top:16px;right:16px;z-index:10;">
+  <button onclick="Auth.logout()" style="background:white;border:2px solid #fad0e4;border-radius:50px;padding:7px 14px;font-size:12px;font-weight:700;color:#7a90b8;cursor:pointer;">Logout</button>
+</div>
+<div class="btn-group">
     <button class="btn-mulai" onclick="mulai()">✨ Mulai Sekarang</button>
     <button class="btn-galeri" onclick="bukaGaleri()">🖼️ Galeri Foto</button>
   </div>
   <div class="footer"><img src="/logo.png" alt="LUX" style="height:22px;width:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">LUX PHOTOBOOTH</div>
 
   <script>
-    function mulai() { window.location.href = 'template.html'; }
-    function bukaGaleri() { window.location.href = 'gallery.html'; }
+    // Cek auth
+    if (!Auth.getSession()) { window.location.href = '/login'; }
+    function mulai() { window.location.href = '/template'; }
+    function bukaGaleri() { window.location.href = '/gallery'; }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

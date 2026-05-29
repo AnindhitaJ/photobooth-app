@@ -116,6 +116,7 @@
     .btn-primary { background: linear-gradient(135deg, var(--green), #c9972a); color: white; box-shadow: 0 6px 20px rgba(229,184,66,0.35); }
     .btn-primary:hover { transform: translateY(-2px); }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -866,7 +867,7 @@
   window.lanjut = function() {
     simpanFotoSilent();
     localStorage.setItem('filteredPhotos', JSON.stringify(filteredPhotos));
-    window.location.href = 'result.html';
+    window.location.href = '/result';
   };
 
   window.kembali = function() {
@@ -874,7 +875,7 @@
   };
   window.konfirmasiKeluar = function() {
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    window.location.href = 'template.html';
+    window.location.href = '/template';
   };
   window.batalKeluar = function() {
     document.getElementById('confirmQuitModal').style.display = 'none';

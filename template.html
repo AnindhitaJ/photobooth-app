@@ -164,6 +164,7 @@
     }
     .modal-error { color: #e94560; font-size: 12px; margin-top: 8px; min-height: 18px; font-weight: 600; }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -466,10 +467,10 @@
     localStorage.removeItem('filteredPhotos');
     localStorage.removeItem('livePhotos');
     localStorage.removeItem('finalPhoto');
-    window.location.href = 'camera.html';
+    window.location.href = '/camera';
   }
 
-  function kembali() { window.location.href = 'index.html'; }
+  function kembali() { window.location.href = '/index'; }
 
   function bukaAdmin() {
     document.getElementById('modalOverlay').classList.add('show');
@@ -484,7 +485,7 @@
     const pw = document.getElementById('passwordInput').value;
     if (pw === '123456') {
       tutupModal();
-      window.location.href = 'admin.html';
+      window.location.href = '/admin';
     } else {
       document.getElementById('modalError').textContent = 'Password salah. Coba lagi.';
       document.getElementById('passwordInput').value = '';

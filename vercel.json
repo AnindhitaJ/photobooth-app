@@ -45,5 +45,47 @@
       "path": "/api/cleanup",
       "schedule": "0 0 * * *"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/template",
+      "destination": "/template.html"
+    },
+    {
+      "source": "/camera",
+      "destination": "/camera.html"
+    },
+    {
+      "source": "/filter",
+      "destination": "/filter.html"
+    },
+    {
+      "source": "/result",
+      "destination": "/result.html"
+    },
+    {
+      "source": "/preview",
+      "destination": "/preview.html"
+    },
+    {
+      "source": "/download",
+      "destination": "/download.html"
+    },
+    {
+      "source": "/gallery",
+      "destination": "/gallery.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    }
   ]
 }

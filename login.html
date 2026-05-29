@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1D3557">
+  <title>Login - Photobooth App</title>
+  <style>
+    :root {
+      --orange: #D84B7E; --yellow: #E5B842;
+      --navy: #1D3557; --bg: #FFF8FC; --border: #fad0e4;
+      --text: #1D3557; --text2: #7a90b8;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Segoe UI',system-ui,sans-serif;
+      background:var(--bg); min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      padding:24px;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:-1;
+      background-image:radial-gradient(circle,rgba(216,75,126,0.10) 1px,transparent 1px);
+      background-size:28px 28px; background-color:var(--bg);
+    }
+    .card {
+      background:white; border:2px solid var(--border); border-radius:24px;
+      padding:36px 32px; width:100%; max-width:380px;
+      box-shadow:0 8px 40px rgba(216,75,126,0.12);
+    }
+    .logo-wrap {
+      display:flex; flex-direction:column; align-items:center; margin-bottom:28px;
+    }
+    .logo-wrap svg { margin-bottom:12px; }
+    .logo-title {
+      font-size:22px; font-weight:900; letter-spacing:-0.5px;
+      background:linear-gradient(135deg,var(--orange),var(--navy));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .logo-sub { font-size:13px; color:var(--text2); font-weight:500; margin-top:3px; }
+
+    .tabs {
+      display:flex; background:#f5f5f8; border-radius:12px;
+      padding:4px; margin-bottom:24px; gap:4px;
+    }
+    .tab {
+      flex:1; padding:10px; border-radius:9px; border:none;
+      font-size:14px; font-weight:700; cursor:pointer;
+      transition:all 0.2s; background:none; color:var(--text2);
+    }
+    .tab.active {
+      background:white; color:var(--text);
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .form-group { margin-bottom:16px; }
+    label {
+      display:block; font-size:12px; font-weight:800;
+      color:var(--text2); text-transform:uppercase;
+      letter-spacing:0.8px; margin-bottom:6px;
+    }
+    input {
+      width:100%; padding:13px 16px; border-radius:12px;
+      border:2px solid var(--border); background:var(--bg);
+      font-size:15px; outline:none; color:var(--text);
+      transition:border 0.2s; font-family:inherit;
+    }
+    input:focus { border-color:var(--orange); }
+    input::placeholder { color:#c0c8d8; }
+
+    .btn {
+      width:100%; padding:15px; border-radius:50px;
+      border:none; font-size:16px; font-weight:800;
+      cursor:pointer; transition:all 0.2s; font-family:inherit;
+      background:linear-gradient(135deg,var(--orange),var(--navy));
+      color:white; box-shadow:0 6px 20px rgba(216,75,126,0.4);
+      margin-top:8px;
+    }
+    .btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(216,75,126,0.5); }
+    .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+    .error-msg {
+      background:#fff0f3; border:1.5px solid #ffc0cb;
+      border-radius:10px; padding:10px 14px;
+      font-size:13px; font-weight:700; color:#e94560;
+      margin-bottom:14px; display:none;
+    }
+    .success-msg {
+      background:#f0fff8; border:1.5px solid #a0e4c0;
+      border-radius:10px; padding:10px 14px;
+      font-size:13px; font-weight:700; color:#06a870;
+      margin-bottom:14px; display:none;
+    }
+    .divider {
+      text-align:center; font-size:12px; color:var(--text2);
+      font-weight:600; margin:16px 0; position:relative;
+    }
+    .divider::before, .divider::after {
+      content:''; position:absolute; top:50%;
+      width:calc(50% - 24px); height:1px; background:var(--border);
+    }
+    .divider::before { left:0; }
+    .divider::after { right:0; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-wrap">
+    <!-- Camera icon SVG -->
+    <svg width="64" height="64" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="32" width="84" height="52" rx="10" fill="#E5B842"/>
+      <rect x="36" y="22" width="28" height="14" rx="5" fill="#E5B842"/>
+      <rect x="14" y="26" width="14" height="8" rx="3" fill="#D84B7E"/>
+      <circle cx="50" cy="58" r="20" fill="#1D3557"/>
+      <circle cx="50" cy="58" r="14" fill="#0f2035"/>
+      <circle cx="50" cy="58" r="8" fill="#1D3557"/>
+      <circle cx="44" cy="52" r="3" fill="rgba(255,255,255,0.2)"/>
+      <circle cx="78" cy="38" r="6" fill="#D84B7E"/>
+    </svg>
+    <div class="logo-title" id="cardTitle">Selamat Datang</div>
+    <div class="logo-sub" id="cardSub">Login ke dashboard photobooth kamu</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabLogin" onclick="switchTab('login')">Login</button>
+    <button class="tab" id="tabRegister" onclick="switchTab('register')">Daftar</button>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="success-msg" id="successMsg"></div>
+
+  <!-- LOGIN FORM -->
+  <div id="formLogin">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="email@kamu.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn" id="btnLogin" onclick="doLogin()">🔓 Login</button>
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div id="formRegister" style="display:none">
+    <div class="form-group">
+      <label>Nama Photobooth</label>
+      <input type="text" id="regName" placeholder="Contoh: LUX Photobooth">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="regEmail" placeholder="email@kamu.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="regPassword" placeholder="Min. 6 karakter" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter') doRegister()">
+    </div>
+    <button class="btn" id="btnRegister" onclick="doRegister()">✨ Daftar Sekarang</button>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+
+  // Cek kalau sudah login, langsung redirect
+  const session = localStorage.getItem('sb_session');
+  if (session) {
+    try {
+      const s = JSON.parse(session);
+      if (s.access_token && s.expires_at > Date.now()/1000) {
+        window.location.href = '/';
+      }
+    } catch(e) { localStorage.removeItem('sb_session'); }
+  }
+
+  function switchTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('tabLogin').classList.toggle('active', isLogin);
+    document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+    document.getElementById('formLogin').style.display = isLogin ? 'block' : 'none';
+    document.getElementById('formRegister').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('cardTitle').textContent = isLogin ? 'Selamat Datang' : 'Buat Akun Baru';
+    document.getElementById('cardSub').textContent = isLogin
+      ? 'Login ke dashboard photobooth kamu'
+      : 'Daftar dan mulai kelola photobooth kamu';
+    hideMessages();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = '❌ ' + msg; el.style.display = 'block';
+    document.getElementById('successMsg').style.display = 'none';
+  }
+  function showSuccess(msg) {
+    const el = document.getElementById('successMsg');
+    el.textContent = '✅ ' + msg; el.style.display = 'block';
+    document.getElementById('errorMsg').style.display = 'none';
+  }
+  function hideMessages() {
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'none';
+  }
+
+  async function doLogin() {
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) return showError('Email dan password harus diisi');
+    const btn = document.getElementById('btnLogin');
+    btn.disabled = true; btn.textContent = '⏳ Loading...';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error_description || data.msg || 'Login gagal');
+      // Simpan session
+      localStorage.setItem('sb_session', JSON.stringify(data));
+      localStorage.setItem('sb_user_id', data.user.id);
+      localStorage.setItem('sb_user_email', data.user.email);
+      // Load profile
+      await loadProfile(data.access_token, data.user.id);
+      window.location.href = '/';
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '🔓 Login';
+    }
+  }
+
+  async function doRegister() {
+    const name     = document.getElementById('regName').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!name) return showError('Nama photobooth harus diisi');
+    if (!email) return showError('Email harus diisi');
+    if (password.length < 6) return showError('Password minimal 6 karakter');
+    const btn = document.getElementById('btnRegister');
+    btn.disabled = true; btn.textContent = '⏳ Mendaftar...';
+    try {
+      // 1. Register user
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, data: { booth_name: name } })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error_description || data.msg || 'Registrasi gagal');
+
+      if (data.session) {
+        // Auto-login (email confirmation disabled)
+        localStorage.setItem('sb_session', JSON.stringify(data.session));
+        localStorage.setItem('sb_user_id', data.user.id);
+        localStorage.setItem('sb_user_email', data.user.email);
+        // Update booth name di profile
+        await updateBoothName(data.session.access_token, data.user.id, name);
+        await loadProfile(data.session.access_token, data.user.id);
+        window.location.href = '/';
+      } else {
+        // Email confirmation required
+        showSuccess('Cek email kamu untuk konfirmasi akun!');
+      }
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '✨ Daftar Sekarang';
+    }
+  }
+
+  async function updateBoothName(token, userId, name) {
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ booth_name: name })
+    });
+  }
+
+  async function loadProfile(token, userId) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data && data[0]) {
+        localStorage.setItem('sb_profile', JSON.stringify(data[0]));
+      }
+    } catch(e) {}
+  }
+</script>
+</body>
+</html>

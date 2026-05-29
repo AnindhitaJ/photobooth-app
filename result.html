@@ -180,6 +180,7 @@
       padding: 14px 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
   </style>
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -407,7 +408,7 @@
       }
 
       // ── Teks "LUX PHOTOBOOTH" di area bawah (hanya template custom) ──
-      if (!isBasicTemplate && slots.length > 0) {
+      if (!isBasicTemplate && slots.length > 0 && Auth.showWatermark()) {
         try {
           const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
           const gapH = tmplH - bottomOfLastSlot;
@@ -445,7 +446,11 @@
             ctx.textBaseline = 'middle';
             ctx.letterSpacing = '3px';
             ctx.fillStyle = `rgb(${textR},${textG},${textB})`;
-            ctx.fillText('LUX PHOTOBOOTH', centerX, centerY);
+            // Pakai nama booth dari profil, kalau watermark enabled
+            if (Auth.showWatermark()) {
+              const boothName = Auth.getBoothName().toUpperCase();
+              ctx.fillText(boothName, centerX, centerY);
+            }
             ctx.restore();
           }
         } catch(e) {
@@ -1253,7 +1258,7 @@
 
   function fotoLagi() {
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    window.location.href = 'index.html';
+    window.location.href = '/index';
   }
 
   generateResult();

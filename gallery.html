@@ -505,75 +505,62 @@
   // ── LOAD & GROUP ─────────────────────────────────────────────────────
   async function loadPhotos() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prefix: 'results/', limit: 1000, offset: 0, sortBy: { column: 'created_at', order: 'desc' } })
-      });
+      const session = Auth.getSession();
+      const token   = session?.access_token || SUPABASE_ANON;
+
+      // Baca dari tabel photo_sessions (per user)
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/photo_sessions?select=*&order=created_at.desc`,
+        {
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const files = await res.json();
-      if (!Array.isArray(files)) throw new Error('Respons tidak valid');
+      const rows = await res.json();
+      if (!Array.isArray(rows)) throw new Error('Respons tidak valid');
 
-      // Pakai currentUserId yang disimpan saat reAuth (lebih reliable)
-      const myUserId = currentUserId || Auth.getSession()?.user?.id;
-      console.log('[gallery] myUserId:', myUserId);
-
-      // Group by session — support 2 format:
-      // Baru: {userId}_{timestamp}_{filename}
-      // Lama: {timestamp}_{filename}
+      // Group by sesi — pakai timestamp dari nama file sebagai session key
       const sessMap = {};
-      files.forEach(f => {
-        if (!f.name) return;
-        const parts = f.name.split('_');
+      rows.forEach(row => {
+        const path = row.file_path; // contoh: results/1780108564751_strip.jpg
+        if (!path) return;
 
-        let userId, ts, rest;
+        const fname = path.split('/').pop();
 
-        // Cek format baru: UUID(36char)_{ts}_{rest}
-        // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (ada tanda -)
-        if (parts[0].includes('-') || (parts.length >= 3 && parts[1].length === 13 && !isNaN(parseInt(parts[1])))) {
-          // Format baru: {userId}_{ts}_{filename}
-          // userId bisa punya - jadi kita cari ts dari belakang
-          // nama: ed3c3794-e330-45b1-b286-eedb18cc55fa_1748391234567_strip.jpg
-          const uuidMatch = f.name.match(/^([a-f0-9-]{36})_(\d{13})_(.+)$/);
-          if (uuidMatch) {
-            userId = uuidMatch[1];
-            ts     = parseInt(uuidMatch[2]);
-            rest   = uuidMatch[3];
-          } else return;
+        let ts, rest;
+        // Format baru: {userId}_{ts}_{rest} (UUID 36 char)
+        const newFmt = fname.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_(\d{13})_(.+)$/);
+        // Format lama: {ts}_{rest}
+        const oldFmt = fname.match(/^(\d{13})_(.+)$/);
+
+        if (newFmt) {
+          ts   = parseInt(newFmt[1]);
+          rest = newFmt[2];
+        } else if (oldFmt) {
+          ts   = parseInt(oldFmt[1]);
+          rest = oldFmt[2];
         } else {
-          // Format lama: {timestamp}_{filename}
-          ts     = parseInt(parts[0]);
-          userId = 'legacy';
-          rest   = parts.slice(1).join('_');
+          return; // skip file tidak dikenal
         }
 
-        if (!ts || ts < 1000000000000) return;
+        const key = ts;
+        if (!sessMap[key]) sessMap[key] = { ts, strip: null, individuals: [], gif: null };
 
-        // Filter: hanya tampilkan foto milik user ini + foto legacy (semua bisa lihat)
-        if (userId !== 'legacy' && userId !== myUserId) return;
+        const url = `${SUPABASE_URL}/storage/v1/object/public/photobooth/${path}`;
 
-        const key = `${userId}_${ts}`;
-        if (!sessMap[key]) sessMap[key] = { ts, userId, strip: null, individuals: [], gif: null };
-
-        const url  = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/results/${f.name}`;
-        const path = `results/${f.name}`;
-
-        if (rest.startsWith('strip')) {
-          sessMap[key].strip = { url, path };
+        if (rest.startsWith('strip') || rest.startsWith('foto.')) {
+          if (!sessMap[key].strip) sessMap[key].strip = { url, path };
         } else if (rest.startsWith('foto-')) {
           sessMap[key].individuals.push({ url, path, name: rest });
         } else if (rest.startsWith('animated')) {
           sessMap[key].gif = { url, path };
-        } else if (rest.startsWith('foto.')) {
-          if (!sessMap[key].strip) sessMap[key].strip = { url, path };
         }
       });
 
-      // Sort individuals by name
+      // Sort individuals
       Object.values(sessMap).forEach(s => {
         s.individuals.sort((a, b) => a.name.localeCompare(b.name));
       });

@@ -81,7 +81,7 @@ const Auth = {
   // Update profile
   async updateProfile(updates) {
     const session = this.getSession();
-    if (!session) return false;
+    if (!session) { console.error('updateProfile: no session'); return false; }
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, {
         method: 'PATCH',
@@ -93,13 +93,22 @@ const Auth = {
         },
         body: JSON.stringify({ ...updates, updated_at: new Date().toISOString() })
       });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('updateProfile error:', res.status, errText);
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
       const data = await res.json();
       if (data && data[0]) {
         localStorage.setItem('sb_profile', JSON.stringify(data[0]));
         return data[0];
       }
-      return false;
-    } catch(e) { return false; }
+      // Kalau return kosong tapi status ok, fetch ulang
+      return await this.refreshProfile();
+    } catch(e) { 
+      console.error('updateProfile exception:', e);
+      return false; 
+    }
   },
 
   // Upload logo ke Supabase Storage
@@ -125,15 +134,42 @@ const Auth = {
   }
 };
 
-// Auto-inject logo di semua elemen [data-auth-logo]
-document.addEventListener('DOMContentLoaded', () => {
-  const logoUrl = Auth.getLogoUrl();
+// Auto-inject logo dan booth name di semua elemen
+document.addEventListener('DOMContentLoaded', async () => {
+  // Refresh profile dulu biar data terbaru
+  await Auth.refreshProfile();
+
+  const logoUrl   = Auth.getLogoUrl();
+  const boothName = Auth.getBoothName();
+
+  // Update semua img logo
   document.querySelectorAll('[data-auth-logo]').forEach(el => {
     if (el.tagName === 'IMG') el.src = logoUrl;
   });
+
+  // Update semua teks booth name
   document.querySelectorAll('[data-auth-boothname]').forEach(el => {
-    el.textContent = Auth.getBoothName();
+    el.textContent = boothName;
   });
+
+  // Update semua teks yang contain "LUX PHOTOBOOTH" atau "My Photobooth" jadi booth name
+  document.querySelectorAll('.logo-text span, .header-title span:not([style]), .hud-logo').forEach(el => {
+    if (el.textContent.includes('LUX PHOTOBOOTH') || el.textContent.includes('My Photobooth')) {
+      el.textContent = boothName;
+    }
+  });
+
+  // Update footer
+  document.querySelectorAll('.footer').forEach(el => {
+    if (el.textContent.includes('LUX PHOTOBOOTH')) {
+      el.innerHTML = el.innerHTML.replace('LUX PHOTOBOOTH', boothName);
+    }
+  });
+
+  // Update page title
+  if (document.title.includes('LUX')) {
+    document.title = document.title.replace('LUX Photobooth', boothName);
+  }
 });
 
 // ── PLAN HELPERS ────────────────────────────────────────────────────────

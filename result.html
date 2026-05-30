@@ -185,7 +185,7 @@
 <body>
 
   <div style="text-align:center;margin-bottom:18px;">
-    <div class="logo-text" style="display:flex;align-items:center;gap:8px;"><img src="/logo.png" alt="LUX Photobooth" style="height:36px;width:36px;border-radius:50%;object-fit:cover;"><span>LUX PHOTOBOOTH</span></div>
+    <div class="logo-text" style="display:flex;align-items:center;gap:8px;"><img data-auth-logo src="/logo.png" alt="LUX Photobooth" style="height:36px;width:36px;border-radius:50%;object-fit:cover;"><span>LUX PHOTOBOOTH</span></div>
     <h2>Hasil Fotomu 🎉</h2>
     <p class="sub">Download satuan atau semua sekaligus</p>
   </div>
@@ -310,7 +310,28 @@
       console.error('Supabase upload error:', res.status, errText);
       throw new Error(`Upload gagal (${res.status}): ${errText}`);
     }
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+
+    // Insert metadata ke photo_sessions
+    if (userId !== 'anon') {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            user_id:    userId,
+            file_path:  path,
+          })
+        });
+      } catch(e) { console.warn('Insert photo_sessions gagal:', e); }
+    }
+
+    return publicUrl;
   }
 
   // ─── State ───
@@ -575,8 +596,15 @@
       // Build QR URL
       const params = new URLSearchParams({ photo: finalPublicURL });
       if (gifURL) params.set('gif', gifURL);
-      // Kirim URLs foto individual sebagai JSON (untuk keperluan galeri/future)
-      // Tidak perlu ditampilkan di QR — sudah tersimpan di Supabase dengan prefix sama
+      // Simpan semua path ke tabel photo_sessions
+      const _allURLs = [finalPublicURL, ...individualURLs.filter(Boolean)];
+      if (gifURL) _allURLs.push(gifURL);
+      const _pathsOnly = _allURLs.map(u => {
+        const marker = '/object/public/photobooth/';
+        const idx = u.indexOf(marker);
+        return idx > -1 ? u.slice(idx + marker.length) : null;
+      }).filter(Boolean);
+      savePhotoSession(_pathsOnly); // fire and forget
 
       const downloadPageURL = window.location.origin + '/download.html?' + params.toString();
       const qrBox = document.getElementById('qrcodeModal');

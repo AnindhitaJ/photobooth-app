@@ -495,19 +495,7 @@
         }
         ctx.restore();
 
-        // Strip kecil di bawah dengan info kontak
-        ctx.save();
-        ctx.globalAlpha = 0.88;
-        ctx.fillStyle = 'rgba(29,53,87,0.85)';
-        const stripH = Math.floor(h * 0.04);
-        ctx.fillRect(0, h - stripH, w, stripH);
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#E5B842';
-        ctx.font = `700 ${Math.floor(stripH * 0.55)}px 'Segoe UI', Arial, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('IG/TikTok: @luxphotobooth.id  •  Hubungi untuk hapus watermark', w/2, h - stripH/2);
-        ctx.restore();
+
       }
 
       finalDataURL = canvas.toDataURL('image/jpeg', 0.97);

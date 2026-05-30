@@ -290,12 +290,16 @@
   const BUCKET        = 'photobooth';
 
   async function uploadToSupabase(blob, filename) {
-    const path = `results/${Date.now()}_${filename}`;
+    const session  = Auth.getSession();
+    const token    = Auth.getToken();
+    const userId   = session?.user?.id || 'anon';
+    const ts       = Date.now();
+    const path     = `results/${userId}_${ts}_${filename}`;
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': blob.type || 'image/jpeg',
         'x-upsert': 'true',
       },
@@ -459,24 +463,50 @@
         }
       }
 
-      // ── Watermark "Property of LUX" untuk non-PRO ──
+      // ── Watermark tiled diagonal untuk non-PRO (Shutterstock style) ──
       if (!Auth.isPro() && !Auth.isSuperAdmin()) {
-        const wCtx = canvas;
         const w = canvas.width, h = canvas.height;
-        // Banner di bagian atas foto
         ctx.save();
-        ctx.globalAlpha = 0.82;
-        ctx.fillStyle = '#1D3557';
-        ctx.fillRect(0, 0, w, 72);
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#E5B842';
-        ctx.font = `900 ${Math.floor(w * 0.055)}px 'Segoe UI', Arial, sans-serif`;
+
+        // Tiled diagonal text
+        const fontSize = Math.max(22, Math.floor(w * 0.055));
+        ctx.font = `800 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('PROPERTY OF LUX PHOTOBOOTH', w/2, 24);
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.font = `600 ${Math.floor(w * 0.038)}px 'Segoe UI', Arial, sans-serif`;
-        ctx.fillText('IG/TikTok: @luxphotobooth.id  •  Hubungi untuk hapus watermark', w/2, 50);
+
+        const text    = 'PROPERTY OF LUX PHOTOBOOTH';
+        const angle   = -Math.PI / 6; // -30 derajat
+        const spacing = fontSize * 4;
+
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate(angle);
+
+        const diagLen = Math.sqrt(w * w + h * h);
+        const cols = Math.ceil(diagLen / (ctx.measureText(text).width + spacing)) + 2;
+        const rows = Math.ceil(diagLen / spacing) + 2;
+
+        for (let r = -rows; r <= rows; r++) {
+          for (let c = -cols; c <= cols; c++) {
+            const x = c * (ctx.measureText(text).width + spacing * 1.5);
+            const y = r * spacing;
+            ctx.fillText(text, x, y);
+          }
+        }
+        ctx.restore();
+
+        // Strip kecil di bawah dengan info kontak
+        ctx.save();
+        ctx.globalAlpha = 0.88;
+        ctx.fillStyle = 'rgba(29,53,87,0.85)';
+        const stripH = Math.floor(h * 0.04);
+        ctx.fillRect(0, h - stripH, w, stripH);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#E5B842';
+        ctx.font = `700 ${Math.floor(stripH * 0.55)}px 'Segoe UI', Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('IG/TikTok: @luxphotobooth.id  •  Hubungi untuk hapus watermark', w/2, h - stripH/2);
         ctx.restore();
       }
 
@@ -605,8 +635,12 @@
     const RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
     function getTs() {
       if (finalPublicURL) {
-        const m = finalPublicURL.match(/results\/(\d{13})_/);
+        // Format baru: results/{userId}_{timestamp}_{filename}
+        const m = finalPublicURL.match(/results\/[^_]+_(\d{13})_/);
         if (m) return parseInt(m[1]);
+        // Format lama: results/{timestamp}_{filename}
+        const m2 = finalPublicURL.match(/results\/(\d{13})_/);
+        if (m2) return parseInt(m2[1]);
       }
       return Date.now();
     }

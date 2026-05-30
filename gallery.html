@@ -509,29 +509,58 @@
       const files = await res.json();
       if (!Array.isArray(files)) throw new Error('Respons tidak valid');
 
-      // Group by timestamp prefix
+      // Ambil user_id dari session untuk filter
+      const session  = Auth.getSession();
+      const myUserId = session?.user?.id;
+
+      // Group by session — support 2 format:
+      // Baru: {userId}_{timestamp}_{filename}
+      // Lama: {timestamp}_{filename}
       const sessMap = {};
       files.forEach(f => {
         if (!f.name) return;
         const parts = f.name.split('_');
-        const ts = parseInt(parts[0]);
+
+        let userId, ts, rest;
+
+        // Cek format baru: UUID(36char)_{ts}_{rest}
+        // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (ada tanda -)
+        if (parts[0].includes('-') || (parts.length >= 3 && parts[1].length === 13 && !isNaN(parseInt(parts[1])))) {
+          // Format baru: {userId}_{ts}_{filename}
+          // userId bisa punya - jadi kita cari ts dari belakang
+          // nama: ed3c3794-e330-45b1-b286-eedb18cc55fa_1748391234567_strip.jpg
+          const uuidMatch = f.name.match(/^([a-f0-9-]{36})_(\d{13})_(.+)$/);
+          if (uuidMatch) {
+            userId = uuidMatch[1];
+            ts     = parseInt(uuidMatch[2]);
+            rest   = uuidMatch[3];
+          } else return;
+        } else {
+          // Format lama: {timestamp}_{filename}
+          ts     = parseInt(parts[0]);
+          userId = 'legacy';
+          rest   = parts.slice(1).join('_');
+        }
+
         if (!ts || ts < 1000000000000) return;
 
-        if (!sessMap[ts]) sessMap[ts] = { ts, strip: null, individuals: [], gif: null };
+        // Filter: hanya tampilkan foto milik user ini + foto legacy (semua bisa lihat)
+        if (userId !== 'legacy' && userId !== myUserId) return;
+
+        const key = `${userId}_${ts}`;
+        if (!sessMap[key]) sessMap[key] = { ts, userId, strip: null, individuals: [], gif: null };
 
         const url  = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/results/${f.name}`;
         const path = `results/${f.name}`;
-        const rest = parts.slice(1).join('_');
 
         if (rest.startsWith('strip')) {
-          sessMap[ts].strip = { url, path };
+          sessMap[key].strip = { url, path };
         } else if (rest.startsWith('foto-')) {
-          sessMap[ts].individuals.push({ url, path, name: rest });
+          sessMap[key].individuals.push({ url, path, name: rest });
         } else if (rest.startsWith('animated')) {
-          sessMap[ts].gif = { url, path };
+          sessMap[key].gif = { url, path };
         } else if (rest.startsWith('foto.')) {
-          // legacy: foto.jpg (sebelum ada foto individual)
-          if (!sessMap[ts].strip) sessMap[ts].strip = { url, path };
+          if (!sessMap[key].strip) sessMap[key].strip = { url, path };
         }
       });
 
@@ -541,7 +570,7 @@
       });
 
       allSessions = Object.values(sessMap)
-        .filter(s => s.strip) // hanya tampilkan sesi yang punya strip
+        .filter(s => s.strip)
         .sort((a, b) => b.ts - a.ts)
         .map(s => {
           const d = new Date(s.ts);

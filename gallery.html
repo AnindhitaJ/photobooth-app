@@ -486,7 +486,8 @@
         localStorage.setItem('sb_session', JSON.stringify(data));
         localStorage.setItem('sb_user_id', data.user.id);
         localStorage.setItem('sb_user_email', data.user.email);
-        currentUserId = data.user.id; // set langsung tanpa perlu getSession lagi
+        currentUserId = data.user?.id || data.user?.sub || data.access_token ? 
+          JSON.parse(atob(data.access_token.split('.')[1])).sub : null;
         await Auth.refreshProfile();
         document.getElementById('lockScreen').style.display = 'none';
         document.getElementById('galleryScreen').style.display = 'block';
@@ -507,8 +508,14 @@
     try {
       const session = Auth.getSession();
       const token   = session?.access_token || SUPABASE_ANON;
+      // Pastikan currentUserId ter-set dari berbagai sumber
+      if (!currentUserId) {
+        currentUserId = session?.user?.id 
+                     || session?.user?.sub
+                     || localStorage.getItem('sb_user_id');
+      }
 
-      // Baca dari tabel photo_sessions (per user)
+      // Baca dari tabel photo_sessions (per user, RLS otomatis filter)
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/photo_sessions?select=*&order=created_at.desc`,
         {

@@ -331,7 +331,7 @@
   <div class="lock-sub">Masukkan password untuk melihat semua foto</div>
   <div class="lock-card">
     <label class="lock-label">Password</label>
-    <input type="password" id="pwInput" class="lock-input" placeholder="••••••" maxlength="10"
+    <input type="password" id="pwInput" class="lock-input" placeholder="••••••" maxlength="64"
       autocomplete="current-password" onkeydown="if(event.key==='Enter') checkPass()">
     <div class="lock-error" id="pwError">❌ Password salah. Coba lagi.</div>
     <button class="btn-unlock" onclick="checkPass()">🔓 Buka Galeri</button>
@@ -451,8 +451,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
   const BUCKET   = 'photobooth';
   const PASSWORD = '123456';
 
@@ -475,9 +473,9 @@
     const email = localStorage.getItem('sb_user_email');
     const err = document.getElementById('pwError');
     try {
-      const res = await fetch('https://eguiubpsijwjwxaxvkhi.supabase.co/auth/v1/token?grant_type=password', {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
-        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o', 'Content-Type': 'application/json' },
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
       if (res.ok) {

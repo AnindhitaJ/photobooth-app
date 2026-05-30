@@ -472,25 +472,11 @@
   function kembali() { window.location.href = '/index'; }
 
   function bukaAdmin() {
-    document.getElementById('modalOverlay').classList.add('show');
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('modalError').textContent = '';
-    setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+    window.location.href = '/admin';
   }
 
   function tutupModal() { document.getElementById('modalOverlay').classList.remove('show'); }
-
-  function cekPassword() {
-    const pw = document.getElementById('passwordInput').value;
-    if (pw === '123456') {
-      tutupModal();
-      window.location.href = '/admin';
-    } else {
-      document.getElementById('modalError').textContent = 'Password salah. Coba lagi.';
-      document.getElementById('passwordInput').value = '';
-      document.getElementById('passwordInput').focus();
-    }
-  }
+  function cekPassword() { bukaAdmin(); }
 
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modalOverlay')) tutupModal();

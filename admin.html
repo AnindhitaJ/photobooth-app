@@ -274,7 +274,7 @@
   <div class="al-sub">Masukkan password login untuk mengakses admin</div>
   <div class="al-card">
     <label class="al-label" for="adminPin">Password Login</label>
-    <input type="password" id="adminPin" class="al-input" placeholder="••••••" maxlength="10"
+    <input type="password" id="adminPin" class="al-input" placeholder="••••••" maxlength="64"
       autocomplete="current-password" onkeydown="if(event.key==='Enter') checkAdminPin()">
     <div class="al-error" id="adminPinError">❌ PIN salah. Coba lagi.</div>
     <button class="al-btn" onclick="checkAdminPin()">🔓 Masuk</button>
@@ -848,9 +848,9 @@
     const err = document.getElementById('adminPinError');
     const email = localStorage.getItem('sb_user_email');
     try {
-      const res = await fetch(`${Auth_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
-        headers: { 'apikey': Auth_SUPABASE_ANON, 'Content-Type': 'application/json' },
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
       if (res.ok) {
@@ -858,18 +858,17 @@
         document.getElementById('adminContent').style.display = 'block';
         loadProfile();
       } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('reAuth failed:', errData);
         err.style.display = 'block';
         document.getElementById('adminPin').value = '';
         setTimeout(() => { err.style.display = 'none'; }, 3000);
       }
     } catch(e) {
-      err.textContent = '❌ Gagal verifikasi';
+      err.textContent = '❌ Gagal verifikasi: ' + e.message;
       err.style.display = 'block';
     }
   }
-
-  const Auth_SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-  const Auth_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
 
   // Cek session saat load
   window.addEventListener('DOMContentLoaded', () => {

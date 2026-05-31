@@ -48,6 +48,10 @@
   ],
   "rewrites": [
     {
+      "source": "/reset-password",
+      "destination": "/reset-password.html"
+    },
+    {
       "source": "/cms",
       "destination": "/cms.html"
     },

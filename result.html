@@ -434,7 +434,7 @@
       }
 
       // ── Teks "LUX PHOTOBOOTH" di area bawah (hanya template custom) ──
-      if (!isBasicTemplate && slots.length > 0 && Auth.showWatermark()) {
+      if (slots.length > 0 && Auth.showWatermark()) {
         try {
           const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
           const gapH = tmplH - bottomOfLastSlot;

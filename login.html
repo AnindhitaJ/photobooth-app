@@ -125,6 +125,7 @@
   <div class="tabs">
     <button class="tab active" id="tabLogin" onclick="switchTab('login')">Login</button>
     <button class="tab" id="tabRegister" onclick="switchTab('register')">Daftar</button>
+    <button class="tab" id="tabForgot" onclick="switchTab('forgot')">Lupa Password</button>
   </div>
 
   <div class="error-msg" id="errorMsg"></div>
@@ -142,6 +143,16 @@
         onkeydown="if(event.key==='Enter') doLogin()">
     </div>
     <button class="btn" id="btnLogin" onclick="doLogin()">🔓 Login</button>
+  </div>
+
+  <!-- FORGOT PASSWORD FORM -->
+  <div id="formForgot" style="display:none">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="forgotEmail" placeholder="email@kamu.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter') doForgot()">
+    </div>
+    <button class="btn" id="btnForgot" onclick="doForgot()">📧 Kirim Link Reset</button>
   </div>
 
   <!-- REGISTER FORM -->
@@ -179,15 +190,19 @@
   }
 
   function switchTab(tab) {
-    const isLogin = tab === 'login';
-    document.getElementById('tabLogin').classList.toggle('active', isLogin);
-    document.getElementById('tabRegister').classList.toggle('active', !isLogin);
-    document.getElementById('formLogin').style.display = isLogin ? 'block' : 'none';
-    document.getElementById('formRegister').style.display = isLogin ? 'none' : 'block';
-    document.getElementById('cardTitle').textContent = isLogin ? 'Selamat Datang' : 'Buat Akun Baru';
-    document.getElementById('cardSub').textContent = isLogin
-      ? 'Login ke dashboard photobooth kamu'
-      : 'Daftar dan mulai kelola photobooth kamu';
+    ['tabLogin','tabRegister','tabForgot'].forEach(id => {
+      document.getElementById(id).classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+    });
+    document.getElementById('formLogin').style.display    = tab === 'login'    ? 'block' : 'none';
+    document.getElementById('formRegister').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('formForgot').style.display   = tab === 'forgot'   ? 'block' : 'none';
+    const titles = {
+      login:    ['Selamat Datang',   'Login ke dashboard photobooth kamu'],
+      register: ['Buat Akun Baru',   'Daftar dan mulai kelola photobooth kamu'],
+      forgot:   ['Lupa Password?',   'Masukkan email untuk kirim link reset'],
+    };
+    document.getElementById('cardTitle').textContent = titles[tab][0];
+    document.getElementById('cardSub').textContent   = titles[tab][1];
     hideMessages();
   }
 
@@ -296,6 +311,34 @@
         localStorage.setItem('sb_profile', JSON.stringify(data[0]));
       }
     } catch(e) {}
+  }
+
+  async function doForgot() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) return showError('Masukkan email kamu dulu');
+    const btn = document.getElementById('btnForgot');
+    btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email,
+          redirect_to: window.location.origin + '/reset-password'
+        })
+      });
+      if (res.ok) {
+        showSuccess('Link reset password sudah dikirim ke email kamu! Cek inbox atau folder spam.');
+        document.getElementById('forgotEmail').value = '';
+      } else {
+        const d = await res.json();
+        throw new Error(d.error_description || d.msg || 'Gagal mengirim email');
+      }
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '📧 Kirim Link Reset';
+    }
   }
 </script>
 </body>

@@ -212,14 +212,16 @@
 <script>
   // ─── Frame Basic: 4 slot (5×15cm = 591×1772px) ───
   const FRAME_COLORS = [
-    { label: 'Putih',    bg: '#ffffff', text: '#1D3557' },
-    { label: 'Hitam',    bg: '#1D3557', text: '#ffffff' },
-    { label: 'Merah',    bg: '#e94560', text: '#ffffff' },
-    { label: 'Emas',     bg: '#f5a623', text: '#1D3557' },
-    { label: 'Pink',     bg: '#f472b6', text: '#ffffff' },
-    { label: 'Biru',     bg: '#3b82f6', text: '#ffffff' },
-    { label: 'Hijau',    bg: '#22c55e', text: '#1D3557' },
-    { label: 'Ungu',     bg: '#8b5cf6', text: '#ffffff' },
+    { label: 'Putih',     bg: '#ffffff',   text: '#1D3557' },
+    { label: 'Hitam',     bg: '#1D3557',   text: '#ffffff' },
+    { label: 'Pink',      bg: '#D84B7E',   text: '#ffffff' },
+    { label: 'Merah',     bg: '#e94560',   text: '#ffffff' },
+    { label: 'Gold',      bg: '#E5B842',   text: '#1D3557' },
+    { label: 'Emas',      bg: '#f5a623',   text: '#1D3557' },
+    { label: 'Biru',      bg: '#3b82f6',   text: '#ffffff' },
+    { label: 'Hijau',     bg: '#22c55e',   text: '#1D3557' },
+    { label: 'Ungu',      bg: '#8b5cf6',   text: '#ffffff' },
+    { label: 'Krem',      bg: '#f5f0e8',   text: '#1D3557' },
   ];
   let selectedFrameColor = FRAME_COLORS[0];
 
@@ -229,7 +231,8 @@
     const PADDING = 20;
     const GAP = 12;
     const N_SLOTS = 4;
-    const FOOTER_H = 60;
+    // Gap bawah lebih besar untuk watermark dinamis (sama kayak template custom)
+    const FOOTER_H = 90;
     const slotH = Math.floor((H - PADDING * 2 - GAP * (N_SLOTS - 1) - FOOTER_H) / N_SLOTS);
     const slotW = W - PADDING * 2;
 
@@ -241,21 +244,13 @@
     ctx.fillStyle = colorObj.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Slot placeholders (will be filled by result.html)
-    // Just draw placeholder rectangles — the transparent area
-    ctx.fillStyle = 'rgba(0,0,0,0)';
+    // Clear slot areas (transparent untuk foto)
     for (let i = 0; i < N_SLOTS; i++) {
       const y = PADDING + i * (slotH + GAP);
       ctx.clearRect(PADDING, y, slotW, slotH);
     }
 
-    // Footer text
-    ctx.fillStyle = colorObj.text;
-    ctx.font = `bold 22px 'Segoe UI', sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.letterSpacing = '4px';
-    ctx.fillText('LUX PHOTOBOOTH', W / 2, H - FOOTER_H / 2);
+    // Tidak ada footer text statis — watermark dinamis ditangani result.html
 
     return { src: c.toDataURL('image/png'), slots: generateBasicSlots(), w: W, h: H };
   }
@@ -265,7 +260,7 @@
     const PADDING = 20;
     const GAP = 12;
     const N_SLOTS = 4;
-    const FOOTER_H = 60;
+    const FOOTER_H = 90;
     const slotH = Math.floor((H - PADDING * 2 - GAP * (N_SLOTS - 1) - FOOTER_H) / N_SLOTS);
     const slotW = W - PADDING * 2;
     const slots = [];
@@ -275,7 +270,25 @@
     return slots;
   }
 
-  // Generate basic frame template object
+  // Generate semua basic template (1 per warna)
+  function getAllBasicTemplates() {
+    return FRAME_COLORS.map((colorObj, i) => {
+      const data = generateBasicFrameSrc(colorObj);
+      return {
+        id: `__basic_${i}__`,
+        name: `Basic ${colorObj.label}`,
+        category: '__basic__',
+        isBasic: true,
+        src: data.src,
+        slots: data.slots,
+        frameColor: colorObj,
+        w: data.w,
+        h: data.h
+      };
+    });
+  }
+
+  // Legacy: getBasicTemplate pakai warna yang dipilih
   function getBasicTemplate() {
     const data = generateBasicFrameSrc(selectedFrameColor);
     return {
@@ -435,12 +448,11 @@
     document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedTemplate = tmpl;
-    // Update color picker visibility based on selected template
-    const isBasicSel = tmpl && tmpl.isBasic;
-    document.getElementById('frameColorPicker').classList.toggle('show', isBasicSel);
+    // Sembunyikan color picker
+    document.getElementById('frameColorPicker').classList.remove('show');
 
-    // For basic template, regenerate with current color
-    const t = tmpl.isBasic ? getBasicTemplate() : tmpl;
+    // Langsung pakai template yang dipilih (sudah include warna)
+    const t = tmpl;
     selectedTemplate = t;
 
     localStorage.setItem('templateSrc', t.src);

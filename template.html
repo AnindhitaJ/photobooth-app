@@ -389,22 +389,18 @@
   function renderTemplates() {
     const grid = document.getElementById('templateGrid');
     const saved = getSavedTemplates();
-    const basicTmpl = getBasicTemplate();
-
     let templates = [];
+    const basicTemplates = getAllBasicTemplates();
     if (currentCat === 'all') {
-      templates = [basicTmpl, ...saved];
+      templates = [...basicTemplates, ...saved];
     } else if (currentCat === '__basic__') {
-      templates = [basicTmpl];
+      templates = basicTemplates;
     } else {
       templates = saved.filter(t => t.category === currentCat);
     }
 
-    // Show/hide frame color picker
-    // Picker hanya muncul kalau template Basic yang sedang DIPILIH
-    const showPicker = selectedTemplate && selectedTemplate.isBasic;
-    document.getElementById('frameColorPicker').classList.toggle('show', showPicker);
-    if (showPicker) renderColorSwatches();
+    // Sembunyikan color picker permanen
+    document.getElementById('frameColorPicker').classList.remove('show');
 
     if (templates.length === 0) {
       grid.innerHTML = `

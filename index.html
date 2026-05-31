@@ -134,6 +134,16 @@
   <div class="footer"><img data-auth-logo src="/logo.png" alt="LUX" style="height:22px;width:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">LUX PHOTOBOOTH</div>
 
   <script>
+    // Cek kalau ini redirect dari email reset password
+    const _hash = new URLSearchParams(window.location.hash.substring(1));
+    const _query = new URLSearchParams(window.location.search);
+    const _recToken = _hash.get('access_token') || _query.get('access_token');
+    const _recType  = _hash.get('type') || _query.get('type');
+    if (_recToken && _recType === 'recovery') {
+      // Redirect ke reset-password dengan token
+      window.location.href = '/reset-password' + window.location.hash + window.location.search;
+    }
+
     // Cek auth
     if (!Auth.getSession()) { window.location.href = '/login'; }
 

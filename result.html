@@ -292,7 +292,7 @@
   async function uploadToSupabase(blob, filename) {
     const token  = Auth.getToken();
     const userId = Auth.getUserId() || 'anon';
-    console.log('[upload] userId:', userId, 'token:', token?.substring(0,20));
+
     const ts       = Date.now();
     const path     = `results/${userId}_${ts}_${filename}`;
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
@@ -548,6 +548,9 @@
       if (!canGif) document.getElementById('gifHint').textContent = 'Butuh minimal 2 foto';
 
       uploadForQR();
+      // Generate GIF & Live Photo otomatis di background
+      autoGenerateGif();
+      autoGenerateLive();
       // Tampilkan plan banner
       showPlanBanner();
 
@@ -563,10 +566,6 @@
     const btnQR    = document.getElementById('btnQR');
     const btnLabel = document.getElementById('btnQRLabel');
     qrStatus.textContent = '⏫ Mengupload foto strip...';
-    // DEBUG sementara
-    const _uid = Auth.getUserId();
-    const _tok = Auth.getToken();
-    document.getElementById('btnQRLabel').textContent = 'uid:' + (_uid||'null') + ' tok:' + (_tok ? _tok.substring(0,15) : 'null');
     try {
       // Upload foto strip (composite)
       const photoBlob = dataURLtoBlob(finalDataURL);
@@ -594,7 +593,7 @@
       let gifURL = '';
       if (gifBlob) {
         qrStatus.textContent = '⏫ Mengupload GIF...';
-        try { gifURL = await uploadToSupabase(gifBlob, 'animated.gif'); } catch(e) {}
+        try { gifURL = await uploadToSupabase(gifBlob, 'animated.gif'); gifUploaded = true; } catch(e) {}
       }
 
       // Build QR URL
@@ -619,7 +618,109 @@
       qrStatus.textContent = e.message || 'Upload gagal';
       btnQR.disabled = true;
       // Tampilkan error di label biar keliatan di HP
-      btnLabel.textContent = String(e.message || e).substring(0, 80);
+      btnLabel.textContent = 'QR Tidak Tersedia';
+    }
+  }
+
+  // ─── Auto Generate GIF ───
+  async function autoGenerateGif() {
+    if (gifBlob) return; // sudah ada
+    if (filteredPhotos.length < 2) return; // butuh minimal 2 foto
+    try {
+      gifBlob = await makeGif();
+      console.log('[auto] GIF generated, size:', gifBlob.size);
+      // Update tombol GIF
+      const btnGif = document.getElementById('btnGif');
+      if (btnGif) btnGif.disabled = false;
+      // Kalau uploadForQR sudah selesai tapi belum upload GIF, upload sekarang
+      if (finalPublicURL && !gifUploaded) {
+        try {
+          const gifURL = await uploadToSupabase(gifBlob, 'animated.gif');
+          gifUploaded = true;
+          // Update QR URL dengan gif
+          const qrBox = document.getElementById('qrcodeModal');
+          if (qrBox && finalPublicURL) {
+            const params = new URLSearchParams({ photo: finalPublicURL, gif: gifURL });
+            const downloadPageURL = window.location.origin + '/download?' + params.toString();
+            qrBox.innerHTML = '';
+            new QRCode(qrBox, {
+              text: downloadPageURL, width: 220, height: 220,
+              colorDark: '#1D3557', colorLight: '#ffffff',
+            });
+          }
+        } catch(e) { console.warn('Auto GIF upload gagal:', e); }
+      }
+    } catch(e) {
+      console.warn('[auto] GIF generation gagal:', e);
+    }
+  }
+
+  // ─── Auto Generate Live Photo ───
+  async function autoGenerateLive() {
+    if (liveMP4URL) return; // sudah ada
+    const validLives = livePhotos.filter(Boolean);
+    if (!validLives.length) return; // tidak ada live photo
+    try {
+      // Panggil downloadLive tapi tanpa trigger download
+      const btn = document.getElementById('btnLive');
+      if (btn) { btn.disabled = true; }
+
+      const videoEls = await Promise.all(livePhotos.map((src, i) => {
+        return new Promise(res => {
+          if (!src) { res(null); return; }
+          const v = document.createElement('video');
+          v.src = src; v.muted = true; v.playsInline = true;
+          v.onloadedmetadata = () => res(v);
+          v.onerror = () => res(null);
+        });
+      }));
+
+      const validVids = videoEls.filter(Boolean);
+      if (!validVids.length) return;
+
+      const canvas = document.createElement('canvas');
+      const W = validVids[0].videoWidth || 960;
+      const H = validVids[0].videoHeight || 720;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      const stream = canvas.captureStream(30);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+      recorder.start(100);
+      for (const vid of validVids) {
+        await new Promise(res => {
+          vid.currentTime = 0;
+          vid.play();
+          vid.ontimeupdate = () => {
+            ctx.drawImage(vid, 0, 0, W, H);
+            if (vid.ended || vid.currentTime >= vid.duration) { vid.pause(); res(); }
+          };
+          vid.onended = () => { vid.pause(); res(); };
+          setTimeout(res, 5000); // max 5 detik per video
+        });
+      }
+      recorder.stop();
+
+      await new Promise(res => { recorder.onstop = res; });
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      liveMP4URL = URL.createObjectURL(blob);
+
+      if (btn) btn.disabled = false;
+      console.log('[auto] Live photo generated');
+
+      // Upload ke Supabase kalau belum
+      if (finalPublicURL && !liveUploaded) {
+        try {
+          await uploadToSupabase(blob, 'live.webm');
+          liveUploaded = true;
+          console.log('[auto] Live photo uploaded');
+        } catch(e) { console.warn('Auto live upload gagal:', e); }
+      }
+    } catch(e) {
+      console.warn('[auto] Live generation gagal:', e);
     }
   }
 
@@ -844,6 +945,8 @@
   // ─── GIF (pure canvas, no external encoder) ───
   // Pakai canvas + requestAnimationFrame → capture frames → encode manual
   let gifBlob = null;
+  let gifUploaded = false;
+  let liveUploaded = false;
 
   async function downloadGif() {
     if (gifBlob) {
@@ -1347,7 +1450,7 @@
 
   function fotoLagi() {
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    window.location.href = '/index';
+    window.location.href = '/';
   }
 
   generateResult();

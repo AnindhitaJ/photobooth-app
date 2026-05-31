@@ -618,7 +618,8 @@
       qrStatus.style.color = '#e94560';
       qrStatus.textContent = e.message || 'Upload gagal';
       btnQR.disabled = true;
-      btnLabel.textContent = 'QR Tidak Tersedia';
+      // Tampilkan error di label biar keliatan di HP
+      btnLabel.textContent = String(e.message || e).substring(0, 80);
     }
   }
 

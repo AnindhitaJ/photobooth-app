@@ -292,6 +292,7 @@
   async function uploadToSupabase(blob, filename) {
     const token  = Auth.getToken();
     const userId = Auth.getUserId() || 'anon';
+    console.log('[upload] userId:', userId, 'token:', token?.substring(0,20));
     const ts       = Date.now();
     const path     = `results/${userId}_${ts}_${filename}`;
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
@@ -562,6 +563,10 @@
     const btnQR    = document.getElementById('btnQR');
     const btnLabel = document.getElementById('btnQRLabel');
     qrStatus.textContent = '⏫ Mengupload foto strip...';
+    // DEBUG sementara
+    const _uid = Auth.getUserId();
+    const _tok = Auth.getToken();
+    document.getElementById('btnQRLabel').textContent = 'uid:' + (_uid||'null') + ' tok:' + (_tok ? _tok.substring(0,15) : 'null');
     try {
       // Upload foto strip (composite)
       const photoBlob = dataURLtoBlob(finalDataURL);

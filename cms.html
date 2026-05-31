@@ -293,8 +293,9 @@
   function getPlanStatus(u) {
     const now = new Date();
     if (!u.is_active) return 'inactive';
-    if (u.plan === 'pro' && u.pro_ends_at && new Date(u.pro_ends_at) > now) return 'pro';
-    if (u.plan === 'trial' && u.trial_ends_at && new Date(u.trial_ends_at) > now) return 'trial';
+    if (u.pro_ends_at && new Date(u.pro_ends_at) > now) {
+      return u.plan === 'trial' ? 'trial' : 'pro';
+    }
     return 'expired';
   }
 
@@ -328,9 +329,8 @@
       };
       const badge = badgeMap[status] || '';
 
-      const proEnd = u.pro_ends_at ? new Date(u.pro_ends_at).toLocaleDateString('id-ID') : '—';
-      const trialEnd = u.trial_ends_at ? new Date(u.trial_ends_at).toLocaleDateString('id-ID') : '—';
-      const endInfo = status === 'pro' ? `PRO s/d ${proEnd}` : status === 'trial' ? `Trial s/d ${trialEnd}` : '—';
+      const endDate = u.pro_ends_at ? new Date(u.pro_ends_at).toLocaleDateString('id-ID') : '—';
+      const endInfo = (status === 'pro' || status === 'trial') ? `s/d ${endDate}` : '—';
 
       const activeBtn = u.is_active
         ? `<button class="btn-sm btn-deactivate" onclick="toggleActive('${u.id}', false)">⛔ Nonaktifkan</button>`
@@ -399,7 +399,7 @@
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ plan: 'trial', trial_ends_at: trialEnd, pro_ends_at: null })
+        body: JSON.stringify({ plan: 'trial', pro_ends_at: trialEnd })
       });
       showToast('🔄 Trial direset 7 hari', 'success');
       loadUsers();

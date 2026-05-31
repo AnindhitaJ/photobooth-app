@@ -484,8 +484,8 @@
         }
       }
 
-      // ── Watermark tiled diagonal untuk non-PRO (Shutterstock style) ──
-      if (!Auth.isPro() && !Auth.isSuperAdmin()) {
+      // ── Watermark tiled diagonal hanya untuk expired/nonaktif ──
+      if (!Auth.hasAccess() && !Auth.isSuperAdmin()) {
         const w = canvas.width, h = canvas.height;
         ctx.save();
 
@@ -736,8 +736,8 @@
       banner.innerHTML = `<div style="background:#d1fae5;border:2px solid #a7f3d0;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#059669;display:flex;align-items:center;gap:8px;">⭐ Akun PRO aktif — ${days} hari lagi</div>`;
     } else if (status === 'trial') {
       banner.style.display = 'block';
-      banner.innerHTML = `<div style="background:#fef3c7;border:2px solid #fde68a;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#d97706;display:flex;align-items:center;gap:8px;">🔄 Free Trial — ${days} hari lagi • <a href='https://instagram.com/luxphotobooth.id' target='_blank' style='color:var(--orange);text-decoration:underline'>Upgrade ke PRO</a></div>`;
-    } else if (status === 'expired') {
+      banner.innerHTML = `<div style="background:#fef3c7;border:2px solid #fde68a;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#d97706;display:flex;align-items:center;gap:8px;">🔄 Free Trial — ${days} hari lagi • <a href='https://instagram.com/luxphotobooth.id' target='_blank' style='color:var(--orange);text-decoration:underline'>Hubungi untuk upgrade PRO</a></div>`;
+    } else if (status === 'expired' || status === 'inactive') {
       banner.style.display = 'block';
       banner.innerHTML = `<div style="background:#fee2e2;border:2px solid #fca5a5;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:8px;">⏰ Akses kamu sudah habis — <a href='https://instagram.com/luxphotobooth.id' target='_blank' style='color:var(--orange);text-decoration:underline'>Hubungi @luxphotobooth.id</a> untuk perpanjang</div>`;
     }

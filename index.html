@@ -104,6 +104,18 @@
       font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
     }
   </style>
+  <script>
+    // Intersep recovery token SEBELUM auth.js jalan
+    (function() {
+      const h = new URLSearchParams(window.location.hash.substring(1));
+      const q = new URLSearchParams(window.location.search);
+      const t = h.get('access_token') || q.get('access_token');
+      const y = h.get('type') || q.get('type');
+      if (t && y === 'recovery') {
+        window.location.replace('/reset-password' + window.location.hash + window.location.search);
+      }
+    })();
+  </script>
   <script src="/auth.js"></script>
 </head>
 <body>
@@ -156,8 +168,8 @@
       if (status === 'pro') {
         badge.innerHTML = `<span style="background:#d1fae5;color:#059669;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">⭐ PRO · ${days} hari lagi</span>`;
       } else if (status === 'trial') {
-        badge.innerHTML = `<span style="background:#fef3c7;color:#d97706;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">🔄 Free Trial · ${days} hari lagi</span>`;
-      } else if (status === 'expired') {
+        badge.innerHTML = `<span style="background:#fef3c7;color:#d97706;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">🔄 Trial · ${days} hari lagi</span>`;
+      } else if (status === 'expired' || status === 'inactive') {
         badge.innerHTML = `<span style="background:#fee2e2;color:#dc2626;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">⏰ Akses Habis</span>`;
       }
 

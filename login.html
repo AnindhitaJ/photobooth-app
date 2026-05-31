@@ -178,6 +178,15 @@
   const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
 
+  // Cek kalau ini redirect dari email reset password
+  const _hash = new URLSearchParams(window.location.hash.substring(1));
+  const _query = new URLSearchParams(window.location.search);
+  const _recToken = _hash.get('access_token') || _query.get('access_token');
+  const _recType  = _hash.get('type') || _query.get('type');
+  if (_recToken && _recType === 'recovery') {
+    window.location.href = '/reset-password' + window.location.hash + window.location.search;
+  }
+
   // Cek kalau sudah login, langsung redirect
   const session = localStorage.getItem('sb_session');
   if (session) {
@@ -278,8 +287,31 @@
         await loadProfile(data.session.access_token, data.user.id);
         window.location.href = '/';
       } else {
-        // Email confirmation required
-        showSuccess('Cek email kamu untuk konfirmasi akun!');
+        // Supabase minta konfirmasi email — tapi harusnya sudah dimatikan
+        // Coba login langsung
+        try {
+          const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const loginData = await loginRes.json();
+          if (loginRes.ok) {
+            localStorage.setItem('sb_session', JSON.stringify(loginData));
+            localStorage.setItem('sb_user_id', loginData.user.id);
+            localStorage.setItem('sb_user_email', loginData.user.email);
+            await updateBoothName(loginData.access_token, loginData.user.id, name);
+            await loadProfile(loginData.access_token, loginData.user.id);
+            window.location.href = '/';
+          } else {
+            showSuccess('Akun berhasil dibuat! Silakan login.');
+            switchTab('login');
+            document.getElementById('loginEmail').value = email;
+          }
+        } catch(e2) {
+          showSuccess('Akun berhasil dibuat! Silakan login.');
+          switchTab('login');
+        }
       }
     } catch(e) {
       showError(e.message);

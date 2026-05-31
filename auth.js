@@ -28,19 +28,20 @@ const Auth = {
   },
 
   getUserId() {
-    const s = this.getSession();
-    // Coba dari berbagai sumber
-    const fromSession = s?.user?.id || s?.user?.sub || s?.session?.user?.id;
-    if (fromSession) return fromSession;
-    // Decode dari JWT token
+    // Prioritas 1: sb_user_id yang disimpan saat login
+    const stored = localStorage.getItem("sb_user_id");
+    if (stored) return stored;
+    // Prioritas 2: decode dari JWT token
     const token = this.getToken();
     if (token && token !== SUPABASE_ANON) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        return payload.sub;
+        if (payload.sub) return payload.sub;
       } catch(e) {}
     }
-    return localStorage.getItem("sb_user_id") || null;
+    // Prioritas 3: dari session object
+    const s = this.getSession();
+    return s?.user?.id || s?.user?.sub || s?.session?.user?.id || null;
   },
 
   // Ambil profile dari localStorage
@@ -151,6 +152,22 @@ const Auth = {
     } catch(e) { return null; }
   }
 };
+
+// Auto-fix sb_user_id kalau belum ada
+(function() {
+  try {
+    if (!localStorage.getItem('sb_user_id')) {
+      const s = JSON.parse(localStorage.getItem('sb_session') || 'null');
+      const token = s?.access_token;
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.sub) {
+          localStorage.setItem('sb_user_id', payload.sub);
+        }
+      }
+    }
+  } catch(e) {}
+})();
 
 // Auto-inject logo dan booth name di semua elemen
 document.addEventListener('DOMContentLoaded', async () => {

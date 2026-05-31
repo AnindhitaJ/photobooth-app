@@ -486,8 +486,10 @@
         localStorage.setItem('sb_session', JSON.stringify(data));
         localStorage.setItem('sb_user_id', data.user.id);
         localStorage.setItem('sb_user_email', data.user.email);
-        currentUserId = data.user?.id || data.user?.sub || data.access_token ? 
-          JSON.parse(atob(data.access_token.split('.')[1])).sub : null;
+        // Simpan session baru lalu ambil userId dari JWT
+        localStorage.setItem('sb_session', JSON.stringify(data));
+        localStorage.setItem('sb_user_id', data.user?.id || '');
+        currentUserId = Auth.getUserId();
         await Auth.refreshProfile();
         document.getElementById('lockScreen').style.display = 'none';
         document.getElementById('galleryScreen').style.display = 'block';
@@ -510,9 +512,7 @@
       const token   = session?.access_token || SUPABASE_ANON;
       // Pastikan currentUserId ter-set dari berbagai sumber
       if (!currentUserId) {
-        currentUserId = session?.user?.id 
-                     || session?.user?.sub
-                     || localStorage.getItem('sb_user_id');
+        currentUserId = Auth.getUserId();
       }
 
       // Baca dari tabel photo_sessions (per user, RLS otomatis filter)

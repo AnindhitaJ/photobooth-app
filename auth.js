@@ -22,7 +22,25 @@ const Auth = {
 
   // Ambil token
   getToken() {
-    return this.getSession()?.access_token || SUPABASE_ANON;
+    const s = this.getSession();
+    // Support berbagai format response Supabase
+    return s?.access_token || s?.session?.access_token || SUPABASE_ANON;
+  },
+
+  getUserId() {
+    const s = this.getSession();
+    // Coba dari berbagai sumber
+    const fromSession = s?.user?.id || s?.user?.sub || s?.session?.user?.id;
+    if (fromSession) return fromSession;
+    // Decode dari JWT token
+    const token = this.getToken();
+    if (token && token !== SUPABASE_ANON) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return payload.sub;
+      } catch(e) {}
+    }
+    return localStorage.getItem("sb_user_id") || null;
   },
 
   // Ambil profile dari localStorage

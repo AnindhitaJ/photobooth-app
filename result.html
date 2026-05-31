@@ -290,13 +290,8 @@
   const BUCKET        = 'photobooth';
 
   async function uploadToSupabase(blob, filename) {
-    const session  = Auth.getSession();
-    const token    = Auth.getToken();
-    // Ambil userId dari berbagai sumber (session format bisa berbeda)
-    const userId   = session?.user?.id 
-                  || session?.user?.sub
-                  || localStorage.getItem('sb_user_id') 
-                  || 'anon';
+    const token  = Auth.getToken();
+    const userId = Auth.getUserId() || 'anon';
     const ts       = Date.now();
     const path     = `results/${userId}_${ts}_${filename}`;
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
@@ -600,15 +595,6 @@
       // Build QR URL
       const params = new URLSearchParams({ photo: finalPublicURL });
       if (gifURL) params.set('gif', gifURL);
-      // Simpan semua path ke tabel photo_sessions
-      const _allURLs = [finalPublicURL, ...individualURLs.filter(Boolean)];
-      if (gifURL) _allURLs.push(gifURL);
-      const _pathsOnly = _allURLs.map(u => {
-        const marker = '/object/public/photobooth/';
-        const idx = u.indexOf(marker);
-        return idx > -1 ? u.slice(idx + marker.length) : null;
-      }).filter(Boolean);
-      savePhotoSession(_pathsOnly); // fire and forget
 
       const downloadPageURL = window.location.origin + '/download.html?' + params.toString();
       const qrBox = document.getElementById('qrcodeModal');

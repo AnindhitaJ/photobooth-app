@@ -1008,11 +1008,11 @@
     btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
     try {
       const token = Auth.getToken();
-      const res = await fetch(, {
+      const res = await fetch(Auth_SUPABASE_URL + '/auth/v1/user', {
         method: 'PUT',
         headers: {
           'apikey': Auth_SUPABASE_ANON,
-          'Authorization': ,
+          'Authorization': 'Bearer ' + token,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ password: newPw })

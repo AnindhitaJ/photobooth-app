@@ -383,6 +383,24 @@
   </div>
   <button class="btn-save-profile" id="btnSaveProfile" onclick="saveProfile()">💾 Simpan Perubahan</button>
   <div class="profile-status" id="profileStatus"></div>
+
+  <!-- Ganti Password -->
+  <div style="margin-top:20px;padding-top:20px;border-top:2px solid var(--border);">
+    <div class="profile-title" style="margin-bottom:14px;">🔐 Ganti Password</div>
+    <div class="profile-fields">
+      <div class="profile-field">
+        <label>Password Baru</label>
+        <input type="password" id="newPassword" placeholder="Min. 6 karakter" autocomplete="new-password">
+      </div>
+      <div class="profile-field">
+        <label>Konfirmasi Password Baru</label>
+        <input type="password" id="confirmNewPassword" placeholder="Ulangi password baru" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter') gantiPassword()">
+      </div>
+    </div>
+    <button class="btn-save-profile" id="btnGantiPassword" onclick="gantiPassword()" style="background:linear-gradient(135deg,#1D3557,#D84B7E);margin-top:14px;">🔐 Ganti Password</button>
+    <div class="profile-status" id="passwordStatus"></div>
+  </div>
 </div>
 
 <div class="header">
@@ -964,6 +982,57 @@
     const reader = new FileReader();
     reader.onload = e => { document.getElementById('logoPreview').src = e.target.result; };
     reader.readAsDataURL(file);
+  }
+
+  // Ganti password
+  async function gantiPassword() {
+    const newPw  = document.getElementById('newPassword').value;
+    const confPw = document.getElementById('confirmNewPassword').value;
+    const status = document.getElementById('passwordStatus');
+    status.style.display = 'none';
+
+    if (newPw.length < 6) {
+      status.textContent = '❌ Password minimal 6 karakter';
+      status.className = 'profile-status err';
+      status.style.display = 'block';
+      return;
+    }
+    if (newPw !== confPw) {
+      status.textContent = '❌ Password tidak cocok';
+      status.className = 'profile-status err';
+      status.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('btnGantiPassword');
+    btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+    try {
+      const token = Auth.getToken();
+      const res = await fetch(, {
+        method: 'PUT',
+        headers: {
+          'apikey': Auth_SUPABASE_ANON,
+          'Authorization': ,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: newPw })
+      });
+      if (res.ok) {
+        status.textContent = '✅ Password berhasil diubah!';
+        status.className = 'profile-status ok';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+      } else {
+        const d = await res.json();
+        throw new Error(d.error_description || d.msg || 'Gagal mengubah password');
+      }
+    } catch(e) {
+      status.textContent = '❌ ' + e.message;
+      status.className = 'profile-status err';
+    } finally {
+      status.style.display = 'block';
+      btn.disabled = false; btn.textContent = '🔐 Ganti Password';
+    }
   }
 
   // Save profile

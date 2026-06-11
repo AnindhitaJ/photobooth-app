@@ -145,15 +145,15 @@
     <a class="btn-back" href="/" title="Kembali">←</a>
     <div style="flex:1;">
       <div class="header-title">📅 Photobooth Kalender</div>
-      <div class="header-sub">Kalender custom 4R / 10×15 cm siap cetak</div>
+      <div class="header-sub">10 tema kalender 4R / 10×15 cm siap cetak</div>
     </div>
     <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 2px 8px rgba(216,75,126,.25);">
   </div>
 
   <main class="page">
     <section class="hero">
-      <h1>Bikin kalender photobooth custom ✨</h1>
-      <p>Pilih mode tahunan atau bulanan, pilih tema, masukin foto, lalu download hasil 4R ukuran 10×15 cm. Tanggal merah 2026 dibaca dari JSON lokal, hari minggu otomatis merah.</p>
+      <h1>Bikin kalender photobooth 4R ✨</h1>
+      <p>Pilih tema seperti dummy reference: Minimal Clean, Pastel Soft, Retro Film, Korean Photobooth, Botanical Soft, Pink Diary, Bold Pop, Elegant Dark, Nusantara Modern, dan Seasonal Festive.</p>
     </section>
 
     <section>
@@ -302,16 +302,56 @@
   };
 
   const THEMES = {
-    minimalClean: { name:'Minimal Clean', desc:'rapi premium', bg:'#FAFAF7', text:'#222222', muted:'#777', accent:'#D84C4C', secondary:'#EAEAEA', red:'#D84C4C', leave:'#F7A8A8', photo:'#ffffff', deco:'none', swatch:'linear-gradient(135deg,#FAFAF7,#EAEAEA)' },
-    pastelCute: { name:'Pastel Cute', desc:'soft sticker', bg:'#FFF0F7', text:'#4A3A44', muted:'#8A6F7D', accent:'#FF7FA8', secondary:'#C8B6FF', red:'#E6396D', leave:'#FFB3CF', photo:'#ffffff', deco:'stickers', swatch:'linear-gradient(135deg,#ffcce1,#c8b6ff,#bde0fe)' },
-    retroFilm: { name:'Retro Film', desc:'analog warm', bg:'#F7E7CE', text:'#4B3428', muted:'#806457', accent:'#A16207', secondary:'#E8C89E', red:'#B91C1C', leave:'#D98B69', photo:'#FFF7ED', deco:'film', swatch:'linear-gradient(135deg,#7c2d12,#f7e7ce,#a16207)' },
-    koreanPhoto: { name:'Korean Photobooth', desc:'heart doodle', bg:'#FFF8FB', text:'#3F3A4A', muted:'#867B91', accent:'#FB7185', secondary:'#A7F3D0', red:'#E11D48', leave:'#FDA4AF', photo:'#ffffff', deco:'korean', swatch:'linear-gradient(135deg,#fff8fb,#fb7185,#a7f3d0)' },
-    botanicalSoft: { name:'Botanical Soft', desc:'sage floral', bg:'#F5F3E7', text:'#384434', muted:'#75836A', accent:'#6B8F71', secondary:'#D8E2C8', red:'#B91C1C', leave:'#E6A7A7', photo:'#FFFFF8', deco:'leaf', swatch:'linear-gradient(135deg,#f5f3e7,#6b8f71)' },
-    pinkDiary: { name:'Pink Diary', desc:'scrapbook', bg:'#FFEAF4', text:'#4A3340', muted:'#9C6A80', accent:'#EC4899', secondary:'#F9A8D4', red:'#DB2777', leave:'#FBCFE8', photo:'#FFF7FB', deco:'diary', swatch:'linear-gradient(135deg,#ffeaf4,#ec4899,#f9a8d4)' },
-    boldPop: { name:'Bold Pop', desc:'fun kontras', bg:'#FEF3C7', text:'#172554', muted:'#475569', accent:'#2563EB', secondary:'#FACC15', red:'#EF4444', leave:'#FB7185', photo:'#ffffff', deco:'pop', swatch:'linear-gradient(135deg,#ef4444,#facc15,#2563eb)' },
-    elegantDark: { name:'Elegant Dark', desc:'dark gold', bg:'#111827', text:'#FFF7ED', muted:'#D6C7A1', accent:'#D4AF37', secondary:'#293241', red:'#F87171', leave:'#FBBF24', photo:'#1F2937', deco:'gold', swatch:'linear-gradient(135deg,#111827,#d4af37)' },
-    nusantaraModern: { name:'Nusantara Modern', desc:'batik halus', bg:'#FFF7ED', text:'#3B2517', muted:'#8A5A44', accent:'#B45309', secondary:'#FED7AA', red:'#DC2626', leave:'#FDBA74', photo:'#FFFBF4', deco:'batik', swatch:'linear-gradient(135deg,#fff7ed,#b45309,#dc2626)' },
-    seasonalFestive: { name:'Seasonal Festive', desc:'event vibes', bg:'#EFF6FF', text:'#1E3A8A', muted:'#64748B', accent:'#D84B7E', secondary:'#E5B842', red:'#DC2626', leave:'#F9A8D4', photo:'#ffffff', deco:'festive', swatch:'linear-gradient(135deg,#eff6ff,#d84b7e,#e5b842)' }
+    minimalClean: {
+      name:'Minimal Clean', desc:'clean white', bg:'#FBFAF7', panel:'#FFFFFF', text:'#2B2B2B', muted:'#6F6F6F',
+      accent:'#2B2B2B', secondary:'#E8E5DE', red:'#E53935', leave:'#F4A6A6', photo:'#F7F4EF', deco:'minimal',
+      tagline:'Keep life simple.', swatch:'linear-gradient(135deg,#ffffff,#eeeae2)'
+    },
+    pastelCute: {
+      name:'Pastel Soft', desc:'lavender cloud', bg:'#F8F3FF', panel:'#FFF8FF', text:'#7463A8', muted:'#8274A6',
+      accent:'#A998E5', secondary:'#E3D8FF', red:'#FF6F9F', leave:'#FFB4CE', photo:'#FFFFFF', deco:'pastelCloud',
+      tagline:'Soft days, happy ways ♡', swatch:'linear-gradient(135deg,#fff8ff,#d9ccff,#f9c7df)'
+    },
+    retroFilm: {
+      name:'Retro Film', desc:'analog frame', bg:'#EBD8B7', panel:'#F6E6C9', text:'#4B3428', muted:'#7A5C45',
+      accent:'#4B3428', secondary:'#C99A63', red:'#D12B2B', leave:'#D98B69', photo:'#FFF7ED', deco:'film',
+      tagline:'memories like film', swatch:'linear-gradient(135deg,#3b2a20,#c99a63,#f6e6c9)'
+    },
+    koreanPhoto: {
+      name:'Korean Photobooth', desc:'sticker booth', bg:'#FFF9FC', panel:'#FFFFFF', text:'#F37AA1', muted:'#A8778D',
+      accent:'#FF8BB0', secondary:'#FDD7E5', red:'#FF5C8A', leave:'#FDA4AF', photo:'#FFFFFF', deco:'koreanSticker',
+      tagline:'good things are coming ♡', swatch:'linear-gradient(135deg,#fff9fc,#ff8bb0,#fdd7e5)'
+    },
+    botanicalSoft: {
+      name:'Botanical Soft', desc:'sage floral', bg:'#F4F2E7', panel:'#FFFDF5', text:'#73845F', muted:'#8A957D',
+      accent:'#7F9A64', secondary:'#D9E3C9', red:'#B91C1C', leave:'#E6A7A7', photo:'#FFFFF8', deco:'botanical',
+      tagline:'Bloom where you are planted.', swatch:'linear-gradient(135deg,#fffdf5,#d9e3c9,#7f9a64)'
+    },
+    pinkDiary: {
+      name:'Pink Diary', desc:'scrapbook diary', bg:'#FFEFF4', panel:'#FFF7FA', text:'#D95170', muted:'#9C6A80',
+      accent:'#F28AA7', secondary:'#FFD3DE', red:'#FF4F78', leave:'#FBCFE8', photo:'#FFF7FB', deco:'pinkDiary',
+      tagline:'Collect beautiful moments. ♡', swatch:'linear-gradient(135deg,#fff7fa,#ffd3de,#f28aa7)'
+    },
+    boldPop: {
+      name:'Bold Pop', desc:'bright fun', bg:'#FFF6D3', panel:'#FFFFFF', text:'#0D47A1', muted:'#163F7A',
+      accent:'#0D47A1', secondary:'#FFC72C', red:'#FF3131', leave:'#FF6B6B', photo:'#FFFFFF', deco:'boldPop',
+      tagline:'GOOD VIBES ONLY!', swatch:'linear-gradient(135deg,#ff3131,#ffc72c,#0d47a1)'
+    },
+    elegantDark: {
+      name:'Elegant Dark', desc:'black gold', bg:'#0F0F0F', panel:'#151515', text:'#E6C873', muted:'#D6C7A1',
+      accent:'#D4AF37', secondary:'#2B2B2B', red:'#F87171', leave:'#FBBF24', photo:'#1F1F1F', deco:'elegantGold',
+      tagline:'Make it count.', swatch:'linear-gradient(135deg,#0f0f0f,#d4af37)'
+    },
+    nusantaraModern: {
+      name:'Nusantara Modern', desc:'batik corner', bg:'#FFF7ED', panel:'#FFF8EF', text:'#7A3E1D', muted:'#8A5A44',
+      accent:'#B45309', secondary:'#E8C2A0', red:'#DC2626', leave:'#FDBA74', photo:'#FFFBF4', deco:'nusantara',
+      tagline:'Bersama, selalu istimewa. ✧', swatch:'linear-gradient(135deg,#fff7ed,#b45309,#dc2626)'
+    },
+    seasonalFestive: {
+      name:'Seasonal Festive', desc:'party confetti', bg:'#FFFDF7', panel:'#FFFFFF', text:'#4F5FA8', muted:'#6B6FA3',
+      accent:'#6F5EC8', secondary:'#F2D36B', red:'#FF5B5B', leave:'#F9A8D4', photo:'#FFFFFF', deco:'festiveParty',
+      tagline:'Celebrate every moment!', swatch:'linear-gradient(135deg,#fffdf7,#6f5ec8,#f2d36b)'
+    }
   };
 
   const canvas = document.getElementById('calendarCanvas');
@@ -483,36 +523,184 @@
     strokeRound(ctx, x, y, w, h, radius || 32, THEMES[state.theme].accent, Math.max(4, w * 0.006));
   }
 
-  function drawDecorations(W, H, t) {
+
+  function drawStickerText(txt, x, y, size, color, rot = 0, font = 'Segoe UI Emoji, Apple Color Emoji, Segoe UI, sans-serif') {
     ctx.save();
-    if (t.deco === 'stickers' || t.deco === 'korean' || t.deco === 'diary') {
-      const stickers = t.deco === 'diary' ? ['♡','✿','tape','♥'] : ['♡','✦','★','✿'];
-      ctx.fillStyle = t.accent; ctx.globalAlpha = 0.25;
-      ctx.font = `900 ${Math.round(W * 0.055)}px Segoe UI, sans-serif`;
-      [[.08,.08],[.9,.1],[.08,.92],[.9,.9]].forEach(([px,py],i)=>ctx.fillText(stickers[i], W*px, H*py));
-      if (t.deco === 'diary') { fillRound(ctx, W*.06, H*.055, W*.22, H*.025, 10, t.secondary); fillRound(ctx, W*.72, H*.92, W*.2, H*.025, 10, t.secondary); }
-    }
-    if (t.deco === 'film') {
-      ctx.fillStyle = 'rgba(75,52,40,.12)';
-      for (let i=0;i<14;i++){ fillRound(ctx, W*.035 + i*W*.068, H*.025, W*.028, H*.018, 5, 'rgba(75,52,40,.16)'); fillRound(ctx, W*.035 + i*W*.068, H*.955, W*.028, H*.018, 5, 'rgba(75,52,40,.16)'); }
-    }
-    if (t.deco === 'leaf' || t.deco === 'batik') {
-      ctx.strokeStyle = t.accent; ctx.lineWidth = 4; ctx.globalAlpha = 0.16;
-      for(let i=0;i<7;i++){ ctx.beginPath(); ctx.arc(W*(.08+i*.14), H*.08, W*.035, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(W*(.08+i*.14), H*.92, W*.035, 0, Math.PI*2); ctx.stroke(); }
-    }
-    if (t.deco === 'pop' || t.deco === 'festive') {
-      ctx.globalAlpha = 0.16;
-      fillRound(ctx, -W*.03, H*.08, W*.22, W*.22, 40, t.accent);
-      fillRound(ctx, W*.83, H*.76, W*.22, W*.22, 40, t.secondary);
-      fillRound(ctx, W*.78, H*.05, W*.12, W*.12, 24, t.red);
-    }
-    if (t.deco === 'gold') {
-      ctx.strokeStyle = t.accent; ctx.lineWidth = 6; ctx.globalAlpha = 0.55;
-      ctx.strokeRect(W*.035, H*.035, W*.93, H*.93);
-      ctx.strokeRect(W*.055, H*.055, W*.89, H*.89);
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.fillStyle = color;
+    ctx.font = `900 ${size}px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(txt, 0, 0);
+    ctx.restore();
+  }
+
+  function drawLeafStem(x, y, len, color, scale = 1, rot = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 3 * scale;
+    ctx.globalAlpha = 0.78;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(18 * scale, -len * 0.32, 0, -len);
+    ctx.stroke();
+    for (let i = 1; i <= 5; i++) {
+      const yy = -len * i / 6;
+      const side = i % 2 ? 1 : -1;
+      ctx.beginPath();
+      ctx.ellipse(side * 18 * scale, yy, 16 * scale, 7 * scale, side * 0.45, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
+
+  function drawTape(x, y, w, h, color, rot = 0) {
+    ctx.save();
+    ctx.translate(x + w/2, y + h/2);
+    ctx.rotate(rot);
+    ctx.globalAlpha = 0.74;
+    ctx.fillStyle = color;
+    fillRound(ctx, -w/2, -h/2, w, h, 6, color);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawBatikCorner(x, y, s, color, mirrorX = false, mirrorY = false) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(mirrorX ? -1 : 1, mirrorY ? -1 : 1);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = Math.max(2, s * 0.018);
+    ctx.globalAlpha = 0.78;
+    for (let i = 0; i < 4; i++) {
+      const r = s * (0.14 + i * 0.08);
+      ctx.beginPath();
+      ctx.arc(s * .1 + i * s * .14, s * .1, r, 0, Math.PI * 1.35);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(s * .1, s * .1 + i * s * .14, r, Math.PI * 1.5, Math.PI * 2.85);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.arc(s * (0.14 + i * 0.12), s * (0.12 + (i%3)*0.11), s * 0.018, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawDecorations(W, H, t) {
+    ctx.save();
+
+    if (t.deco === 'minimal') {
+      ctx.globalAlpha = 0.28;
+      fillRound(ctx, W*.04, H*.035, W*.92, H*.93, 20, 'rgba(255,255,255,.72)');
+      strokeRound(ctx, W*.04, H*.035, W*.92, H*.93, 20, 'rgba(0,0,0,.05)', 2);
+    }
+
+    if (t.deco === 'pastelCloud') {
+      ctx.globalAlpha = 0.45;
+      [['#DFD5FF', -.08, .04, .42], ['#EEDCFF', .80, -.05, .34], ['#E3D8FF', -.10, .70, .34], ['#D7CEFF', .72, .76, .38]].forEach(([color,x,y,s]) => fillRound(ctx, W*x, H*y, W*s, W*s*.65, W*.07, color));
+      ctx.globalAlpha = 0.9;
+      drawStickerText('✦', W*.08, H*.12, W*.045, '#ffffff');
+      drawStickerText('✦', W*.90, H*.20, W*.035, '#ffffff');
+      drawStickerText('♡', W*.55, H*.90, W*.032, t.accent);
+    }
+
+    if (t.deco === 'film') {
+      fillRound(ctx, W*.075, H*.055, W*.85, H*.38, 10, '#3C2A1C');
+      ctx.fillStyle = '#F2D7A4';
+      for (let i=0;i<11;i++) {
+        fillRound(ctx, W*.095 + i*W*.073, H*.072, W*.027, H*.018, 4, '#F2D7A4');
+        fillRound(ctx, W*.095 + i*W*.073, H*.360, W*.027, H*.018, 4, '#F2D7A4');
+      }
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = '#5D3B24';
+      for (let i=0;i<18;i++) ctx.fillRect(Math.random()*W, Math.random()*H, 2, 2);
+    }
+
+    if (t.deco === 'koreanSticker') {
+      drawStickerText('♡', W*.08, H*.09, W*.060, t.accent, -.18);
+      drawStickerText('☺', W*.90, H*.30, W*.060, t.accent, .15);
+      drawStickerText('✿', W*.13, H*.30, W*.030, '#FFB3C7');
+      drawStickerText('✧', W*.89, H*.12, W*.032, '#FFB3C7');
+      drawStickerText('♡', W*.50, H*.91, W*.030, t.accent);
+    }
+
+    if (t.deco === 'botanical') {
+      drawLeafStem(W*.10, H*.33, H*.22, t.accent, W/1200, -.15);
+      drawLeafStem(W*.90, H*.26, H*.25, t.accent, W/1200, .30);
+      drawLeafStem(W*.88, H*.90, H*.13, t.accent, W/1200, .9);
+      ctx.globalAlpha = 0.20;
+      fillRound(ctx, 0, H*.82, W, H*.18, 0, '#DCE8D0');
+    }
+
+    if (t.deco === 'pinkDiary') {
+      ctx.globalAlpha = 0.38;
+      for (let y=0; y<H; y+=Math.max(42, H*.032)) {
+        ctx.strokeStyle = '#F9C9D6'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(W*.06, y); ctx.lineTo(W*.94, y); ctx.stroke();
+      }
+      drawTape(W*.08, H*.07, W*.22, H*.035, '#FBC3BE', -.22);
+      drawTape(W*.66, H*.08, W*.20, H*.035, '#F8D8A8', .20);
+      drawTape(W*.14, H*.82, W*.20, H*.035, '#FBC3BE', .14);
+      drawStickerText('♡', W*.88, H*.30, W*.05, t.accent);
+      drawStickerText('🐻', W*.14, H*.90, W*.055, '#B9796C');
+    }
+
+    if (t.deco === 'boldPop') {
+      const shapes = [
+        ['#FF5630', -.06,.10,.23], ['#FFB703', .80,.07,.23], ['#00A8E8', -.07,.72,.23], ['#7C3AED', .74,.78,.25]
+      ];
+      ctx.globalAlpha = 0.92;
+      shapes.forEach(([color,x,y,s]) => fillRound(ctx, W*x, H*y, W*s, W*s, W*.04, color));
+      drawStickerText('★', W*.14, H*.15, W*.05, '#FFD60A', .4);
+      drawStickerText('☺', W*.82, H*.86, W*.07, '#FFD60A', -.2);
+      drawStickerText('✦', W*.90, H*.15, W*.04, '#FF7A59');
+    }
+
+    if (t.deco === 'elegantGold') {
+      ctx.strokeStyle = t.accent; ctx.lineWidth = 3; ctx.globalAlpha = 0.75;
+      ctx.strokeRect(W*.045, H*.045, W*.91, H*.91);
+      ctx.strokeRect(W*.07, H*.07, W*.86, H*.86);
+      drawLeafStem(W*.12, H*.88, H*.16, t.accent, W/1200, -2.1);
+      drawLeafStem(W*.88, H*.18, H*.12, t.accent, W/1200, .8);
+      drawStickerText('✦', W*.86, H*.73, W*.03, t.accent);
+    }
+
+    if (t.deco === 'nusantara') {
+      drawBatikCorner(W*.04, H*.04, W*.28, t.accent, false, false);
+      drawBatikCorner(W*.96, H*.04, W*.24, t.accent, true, false);
+      drawBatikCorner(W*.04, H*.96, W*.24, t.accent, false, true);
+      drawBatikCorner(W*.96, H*.96, W*.30, t.accent, true, true);
+      ctx.globalAlpha = 0.12;
+      fillRound(ctx, W*.07, H*.07, W*.86, H*.86, W*.04, '#E6C7AA');
+    }
+
+    if (t.deco === 'festiveParty') {
+      const colors = ['#F59E0B','#60A5FA','#F472B6','#A78BFA','#34D399'];
+      ctx.globalAlpha = 0.9;
+      for(let i=0;i<48;i++) {
+        ctx.fillStyle = colors[i%colors.length];
+        const x = W*(0.05 + Math.random()*0.9), y = H*(0.06 + Math.random()*0.84);
+        ctx.save(); ctx.translate(x,y); ctx.rotate(Math.random()*Math.PI);
+        ctx.fillRect(-W*.007,-W*.007,W*.014,W*.014);
+        ctx.restore();
+      }
+      ctx.strokeStyle = '#F472B6'; ctx.lineWidth = 5; ctx.globalAlpha = 0.6;
+      ctx.beginPath(); ctx.moveTo(W*.08,H*.12); ctx.quadraticCurveTo(W*.5,H*.20,W*.92,H*.12); ctx.stroke();
+      drawStickerText('🎉', W*.22, H*.16, W*.05, '#000');
+      drawStickerText('🎈', W*.84, H*.22, W*.045, '#000');
+    }
+
+    ctx.restore();
+  }
+
 
   function drawTitle(text, x, y, w, size, t, align = 'center') {
     ctx.save();
@@ -521,6 +709,42 @@
     ctx.font = `900 ${size}px Segoe UI, system-ui, sans-serif`;
     ctx.fillText(text, align === 'center' ? x + w / 2 : x, y);
     ctx.restore();
+  }
+
+
+  function drawCalendarTagline(text, x, y, w, t) {
+    ctx.save();
+    ctx.fillStyle = t.deco === 'elegantGold' ? t.accent : t.muted;
+    ctx.font = `700 ${Math.max(20, w * .028)}px Segoe UI, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + w/2, y);
+    ctx.restore();
+  }
+
+  function drawThemePhotoFrame(img, x, y, w, h, radius, t) {
+    if (t.deco === 'film') {
+      fillRound(ctx, x - w*.045, y - h*.06, w*1.09, h*1.14, 10, '#3C2A1C');
+      for(let i=0;i<8;i++) {
+        fillRound(ctx, x - w*.02 + i*w*.13, y - h*.04, w*.045, h*.030, 4, '#F2D7A4');
+        fillRound(ctx, x - w*.02 + i*w*.13, y + h*1.01, w*.045, h*.030, 4, '#F2D7A4');
+      }
+      drawCoverImage(img, x, y, w, h, 4);
+      return;
+    }
+    if (t.deco === 'pinkDiary') {
+      fillRound(ctx, x - 18, y - 18, w + 36, h + 36, 10, 'rgba(255,255,255,.72)');
+      drawTape(x + w*.04, y - 26, w*.22, 30, '#FBC3BE', -.2);
+      drawTape(x + w*.74, y - 24, w*.20, 28, '#F8D8A8', .18);
+      drawCoverImage(img, x, y, w, h, radius);
+      return;
+    }
+    if (t.deco === 'elegantGold') {
+      drawCoverImage(img, x, y, w, h, 0);
+      strokeRound(ctx, x - 14, y - 14, w + 28, h + 28, 0, t.accent, 2);
+      return;
+    }
+    drawCoverImage(img, x, y, w, h, radius);
   }
 
   function drawMonthCalendar(x, y, w, h, year, month, opts = {}) {
@@ -655,17 +879,48 @@
     const portrait = W < H;
     const margin = Math.round(Math.min(W, H) * .055);
     if (portrait) {
-      drawCoverImage(state.photoImg, margin, margin, W - margin * 2, 560, 34);
-      drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, margin, 690, W - margin * 2, 64, t);
-      drawMonthCalendar(margin, 760, W - margin * 2, 610, state.year, state.month, { compact:false, showTitle:false });
-      drawHolidayList(margin, 1390, W - margin * 2, H - 1390 - margin, state.year, state.month);
+      const panelX = Math.round(W * .065);
+      const panelY = Math.round(H * .055);
+      const panelW = W - panelX * 2;
+      const panelH = H - panelY * 2;
+      fillRound(ctx, panelX, panelY, panelW, panelH, 26, t.panel || 'rgba(255,255,255,.78)');
+      strokeRound(ctx, panelX, panelY, panelW, panelH, 26, t.secondary, t.deco === 'elegantGold' ? 2 : 3);
+
+      const photoX = panelX + Math.round(panelW * .07);
+      const photoY = panelY + Math.round(panelH * .045);
+      const photoW = panelW - Math.round(panelW * .14);
+      const photoH = Math.round(panelH * .36);
+      drawThemePhotoFrame(state.photoImg, photoX, photoY, photoW, photoH, t.deco === 'minimal' ? 0 : 10, t);
+
+      const titleY = photoY + photoH + Math.round(panelH * .075);
+      drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, panelX + panelW*.07, titleY, panelW*.86, Math.round(panelW * .072), t);
+
+      const calY = titleY + Math.round(panelH * .065);
+      drawMonthCalendar(panelX + panelW*.09, calY, panelW*.82, Math.round(panelH * .34), state.year, state.month, { compact:false, showTitle:false });
+
+      const tagY = panelY + panelH - Math.round(panelH * .055);
+      if (t.deco === 'boldPop') {
+        fillRound(ctx, panelX + panelW*.28, tagY - 26, panelW*.44, 52, 16, '#FFFFFF');
+        strokeRound(ctx, panelX + panelW*.28, tagY - 26, panelW*.44, 52, 16, t.accent, 3);
+        drawCalendarTagline(t.tagline, panelX + panelW*.28, tagY, panelW*.44, t);
+      } else if (t.deco === 'festiveParty') {
+        fillRound(ctx, panelX + panelW*.24, tagY - 28, panelW*.52, 56, 4, '#7C64D5');
+        ctx.save(); ctx.fillStyle = '#fff'; ctx.font = `800 ${Math.round(panelW*.038)}px Segoe UI, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t.tagline, panelX + panelW/2, tagY); ctx.restore();
+      } else {
+        drawCalendarTagline(t.tagline, panelX, tagY, panelW, t);
+      }
     } else {
-      drawCoverImage(state.photoImg, margin, margin, 680, H - margin * 2, 34);
-      drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, 790, 95, W - 850, 62, t, 'left');
-      drawMonthCalendar(790, 165, W - 790 - margin, 650, state.year, state.month, { compact:false, showTitle:false });
-      drawHolidayList(790, 845, W - 790 - margin, H - 845 - margin, state.year, state.month);
+      // landscape keeps same theme language, but packs photo + calendar side-by-side.
+      const panelX = margin, panelY = margin, panelW = W - margin*2, panelH = H - margin*2;
+      fillRound(ctx, panelX, panelY, panelW, panelH, 26, t.panel || 'rgba(255,255,255,.78)');
+      strokeRound(ctx, panelX, panelY, panelW, panelH, 26, t.secondary, 3);
+      drawThemePhotoFrame(state.photoImg, panelX + 44, panelY + 44, panelW*.40, panelH - 88, t.deco === 'minimal' ? 0 : 14, t);
+      drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, panelX + panelW*.49, panelY + 90, panelW*.45, 62, t, 'left');
+      drawMonthCalendar(panelX + panelW*.49, panelY + 160, panelW*.44, panelH*.58, state.year, state.month, { compact:false, showTitle:false });
+      drawCalendarTagline(t.tagline, panelX + panelW*.49, panelY + panelH - 74, panelW*.44, t);
     }
   }
+
 
   function drawLegend(x, y, w, t) {
     ctx.save();

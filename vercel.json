@@ -98,6 +98,10 @@
     {
       "source": "/ganci",
       "destination": "/ganci.html"
+    },
+    {
+      "source": "/kalender",
+      "destination": "/kalender.html"
     }
   ]
 }

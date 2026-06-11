@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1D3557">
+  <title>Photobooth Kalender</title>
+  <style>
+    :root {
+      --pink:#D84B7E; --yellow:#E5B842; --navy:#1D3557;
+      --bg:#FFF8FC; --card:#ffffff; --border:#f5c6da;
+      --text:#1D3557; --muted:#6b7fa3;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      min-height:100vh; background:var(--bg); color:var(--text);
+      font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+      padding-bottom:40px;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:-1;
+      background-image:radial-gradient(circle, rgba(216,75,126,.07) 1px, transparent 1px);
+      background-size:28px 28px;
+    }
+    .header {
+      position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
+      background:white; border-bottom:2px solid var(--border); padding:14px 20px;
+      box-shadow:0 2px 14px rgba(216,75,126,.10);
+    }
+    .btn-back {
+      width:40px; height:40px; display:grid; place-items:center; border-radius:50px;
+      border:2px solid var(--border); background:#fff8fc; color:var(--text);
+      text-decoration:none; font-size:18px; font-weight:900;
+    }
+    .header-title {
+      font-size:18px; font-weight:900; letter-spacing:-.4px;
+      background:linear-gradient(135deg,var(--pink),var(--yellow));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .header-sub { font-size:12px; color:var(--muted); font-weight:600; margin-top:1px; }
+    .page {
+      max-width:1240px; margin:0 auto; padding:22px 16px;
+      display:grid; grid-template-columns:minmax(360px, 465px) 1fr; gap:20px;
+    }
+    @media (max-width:940px) { .page { grid-template-columns:1fr; } .preview-card { position:static!important; } }
+    .hero {
+      grid-column:1/-1; border:2px solid var(--border); border-radius:22px;
+      background:linear-gradient(135deg,#fff0f7,#fffbea); padding:18px 20px;
+      box-shadow:0 4px 18px rgba(216,75,126,.07);
+    }
+    .hero h1 { font-size:24px; line-height:1.15; margin-bottom:6px; letter-spacing:-.7px; }
+    .hero p { color:var(--muted); font-size:13px; line-height:1.55; font-weight:600; }
+    .card {
+      background:white; border:2px solid var(--border); border-radius:20px; padding:18px;
+      box-shadow:0 4px 20px rgba(216,75,126,.07); margin-bottom:14px;
+    }
+    .card-title {
+      display:flex; align-items:center; gap:8px; margin-bottom:13px;
+      font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted);
+    }
+    .card-title::after { content:''; flex:1; height:2px; background:linear-gradient(90deg,var(--border),transparent); }
+    .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .mode-card, .theme-card, .toggle-btn {
+      border:2px solid var(--border); border-radius:16px; background:#fff; cursor:pointer;
+      color:var(--text); transition:.18s ease; text-align:left;
+    }
+    .mode-card { padding:14px; min-height:112px; }
+    .mode-card:hover, .theme-card:hover, .toggle-btn:hover { border-color:var(--pink); transform:translateY(-1px); }
+    .mode-card.active, .theme-card.active, .toggle-btn.active {
+      border-color:var(--pink); background:#fff0f6; box-shadow:0 0 0 3px rgba(216,75,126,.12);
+    }
+    .mode-icon { font-size:28px; margin-bottom:6px; }
+    .mode-name { font-weight:900; font-size:14px; margin-bottom:4px; }
+    .mode-desc { color:var(--muted); font-size:11px; line-height:1.45; font-weight:600; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    .form-row.one { grid-template-columns:1fr; }
+    label { display:block; font-size:12px; font-weight:800; color:var(--text); margin-bottom:7px; }
+    select {
+      width:100%; border:2px solid var(--border); border-radius:13px; padding:11px 13px;
+      color:var(--text); font-weight:800; outline:none; background:white; font-size:13px;
+      appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7fa3' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center; padding-right:34px;
+    }
+    select:focus { border-color:var(--pink); }
+    .toggle-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .toggle-btn { flex:1; min-width:110px; padding:10px 12px; text-align:center; font-weight:900; font-size:13px; }
+    .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+    @media (max-width:520px) { .mode-grid,.theme-grid,.form-row { grid-template-columns:1fr; } }
+    .theme-card { padding:10px; display:flex; align-items:center; gap:9px; min-height:58px; }
+    .theme-swatch { width:36px; height:36px; border-radius:12px; border:2px solid rgba(255,255,255,.8); box-shadow:0 2px 8px rgba(0,0,0,.12); flex-shrink:0; }
+    .theme-name { font-size:12px; font-weight:900; line-height:1.15; }
+    .theme-desc { font-size:10px; color:var(--muted); font-weight:700; margin-top:3px; }
+    .photo-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .btn-primary, .btn-secondary, .btn-danger {
+      border:none; border-radius:999px; padding:13px 14px; font-size:13px; font-weight:900; cursor:pointer;
+      transition:.18s ease; display:inline-flex; justify-content:center; align-items:center; gap:7px;
+    }
+    .btn-primary { background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; box-shadow:0 8px 22px rgba(216,75,126,.28); }
+    .btn-secondary { background:white; border:2px solid var(--border); color:var(--text); }
+    .btn-danger { background:#fee2e2; color:#dc2626; border:2px solid #fecaca; }
+    .btn-primary:hover, .btn-secondary:hover, .btn-danger:hover { transform:translateY(-1px); }
+    .note { margin-top:10px; font-size:11px; color:var(--muted); font-weight:700; line-height:1.45; }
+    .data-note { margin-top:8px; padding:9px 11px; border-radius:13px; background:#f8fafc; color:var(--muted); font-size:11px; font-weight:700; border:1px solid #e2e8f0; }
+    .data-note.ok { background:#ecfdf5; color:#059669; border-color:#bbf7d0; }
+    .data-note.warn { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .preview-card { position:sticky; top:86px; }
+    .preview-shell {
+      background:#f0f0f0; border:2px solid var(--border); border-radius:20px; padding:18px;
+      min-height:520px; display:flex; align-items:center; justify-content:center;
+      background-image:repeating-conic-gradient(#e8e8e8 0% 25%, #f7f7f7 0% 50%); background-size:22px 22px;
+    }
+    #calendarCanvas {
+      display:block; width:auto; height:auto; max-width:100%; max-height:680px;
+      border-radius:14px; box-shadow:0 12px 36px rgba(29,53,87,.18); background:white;
+    }
+    .preview-meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .chip { border:2px solid var(--border); background:white; border-radius:999px; padding:5px 11px; font-size:11px; font-weight:800; color:var(--muted); }
+    .chip span { color:var(--pink); }
+    .preview-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+    .camera-modal {
+      position:fixed; inset:0; z-index:999; display:none; align-items:center; justify-content:center; padding:18px;
+      background:rgba(0,0,0,.78); backdrop-filter:blur(8px);
+    }
+    .camera-modal.show { display:flex; }
+    .camera-box { width:min(760px,100%); background:#111827; border-radius:22px; padding:16px; border:1px solid rgba(255,255,255,.15); }
+    #cameraVideo { width:100%; max-height:68vh; object-fit:cover; border-radius:16px; transform:scaleX(-1); background:#000; }
+    .camera-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .hidden-file { display:none; }
+  </style>
+  <script src="/auth.js"></script>
+</head>
+<body>
+  <div class="header">
+    <a class="btn-back" href="/" title="Kembali">←</a>
+    <div style="flex:1;">
+      <div class="header-title">📅 Photobooth Kalender</div>
+      <div class="header-sub">Kalender custom 4R / 10×15 cm siap cetak</div>
+    </div>
+    <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;box-shadow:0 2px 8px rgba(216,75,126,.25);">
+  </div>
+
+  <main class="page">
+    <section class="hero">
+      <h1>Bikin kalender photobooth custom ✨</h1>
+      <p>Pilih mode tahunan atau bulanan, pilih tema, masukin foto, lalu download hasil 4R ukuran 10×15 cm. Tanggal merah 2026 dibaca dari JSON lokal, hari minggu otomatis merah.</p>
+    </section>
+
+    <section>
+      <div class="card">
+        <div class="card-title">1. Pilih Mode Kalender</div>
+        <div class="mode-grid">
+          <button class="mode-card active" data-mode="yearly" onclick="setMode('yearly')">
+            <div class="mode-icon">🗓️</div>
+            <div class="mode-name">Kalender Tahunan</div>
+            <div class="mode-desc">12 bulan dalam 1 desain 4R. Compact, rapi, cocok buat souvenir.</div>
+          </button>
+          <button class="mode-card" data-mode="monthly" onclick="setMode('monthly')">
+            <div class="mode-icon">📆</div>
+            <div class="mode-name">Kalender Bulanan</div>
+            <div class="mode-desc">1 bulan besar + keterangan tanggal merah yang lebih jelas.</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">2. Setting Kalender</div>
+        <div class="form-row" id="monthRow" style="display:none;">
+          <div>
+            <label for="monthSelect">Pilih Bulan</label>
+            <select id="monthSelect" onchange="onSettingChange()"></select>
+          </div>
+          <div>
+            <label for="yearSelectMonthly">Pilih Tahun</label>
+            <select id="yearSelectMonthly" onchange="onYearChange(this.value)"></select>
+          </div>
+        </div>
+        <div class="form-row one" id="yearRow">
+          <div>
+            <label for="yearSelect">Pilih Tahun</label>
+            <select id="yearSelect" onchange="onYearChange(this.value)"></select>
+          </div>
+        </div>
+        <label>Pilih Orientasi 4R</label>
+        <div class="toggle-row">
+          <button class="toggle-btn active" data-orientation="portrait" onclick="setOrientation('portrait')">Portrait</button>
+          <button class="toggle-btn" data-orientation="landscape" onclick="setOrientation('landscape')">Landscape</button>
+        </div>
+        <div class="data-note" id="holidayNote">Memuat data libur...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">3. Pilih Tema</div>
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">4. Foto Kalender</div>
+        <div class="photo-actions">
+          <button class="btn-primary" onclick="openCamera()">📷 Ambil Foto</button>
+          <button class="btn-secondary" onclick="document.getElementById('photoInput').click()">⬆️ Upload Foto</button>
+        </div>
+        <input class="hidden-file" id="photoInput" type="file" accept="image/*" onchange="handleUpload(this)">
+        <div class="photo-actions" style="margin-top:10px;">
+          <button class="btn-secondary" onclick="openCamera()">↺ Retake</button>
+          <button class="btn-danger" onclick="clearPhoto()">🗑️ Hapus Foto</button>
+        </div>
+        <p class="note">Kalau belum ada foto, preview pakai placeholder kamera. Download akan minta konfirmasi dulu kalau foto masih kosong.</p>
+      </div>
+    </section>
+
+    <section class="preview-card">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">👁️ Preview Real-time</div>
+        <div class="preview-shell">
+          <canvas id="calendarCanvas" width="1200" height="1800"></canvas>
+        </div>
+        <div class="preview-meta" id="previewMeta"></div>
+        <div class="preview-actions">
+          <button class="btn-primary" onclick="downloadCalendar()">⬇️ Download PNG</button>
+          <button class="btn-secondary" onclick="renderCalendar()">🔄 Refresh Preview</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="camera-modal" id="cameraModal">
+    <div class="camera-box">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <div class="camera-actions">
+        <button class="btn-secondary" onclick="closeCamera()">Batal</button>
+        <button class="btn-primary" onclick="capturePhoto()">📸 Pakai Foto Ini</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login';
+
+  const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const WEEKDAYS = ['Sn','Sl','Rb','Km','Jm','Sb','Mg'];
+  const state = {
+    mode: 'yearly',
+    month: new Date().getMonth(),
+    year: 2026,
+    orientation: 'portrait',
+    theme: 'minimalClean',
+    holidays: [],
+    holidayMap: {},
+    holidayAvailable: false,
+    photoImg: null,
+    photoSrc: null,
+    stream: null
+  };
+
+  const THEMES = {
+    minimalClean: { name:'Minimal Clean', desc:'rapi premium', bg:'#FAFAF7', text:'#222222', muted:'#777', accent:'#D84C4C', secondary:'#EAEAEA', red:'#D84C4C', leave:'#F7A8A8', photo:'#ffffff', deco:'none', swatch:'linear-gradient(135deg,#FAFAF7,#EAEAEA)' },
+    pastelCute: { name:'Pastel Cute', desc:'soft sticker', bg:'#FFF0F7', text:'#4A3A44', muted:'#8A6F7D', accent:'#FF7FA8', secondary:'#C8B6FF', red:'#E6396D', leave:'#FFB3CF', photo:'#ffffff', deco:'stickers', swatch:'linear-gradient(135deg,#ffcce1,#c8b6ff,#bde0fe)' },
+    retroFilm: { name:'Retro Film', desc:'analog warm', bg:'#F7E7CE', text:'#4B3428', muted:'#806457', accent:'#A16207', secondary:'#E8C89E', red:'#B91C1C', leave:'#D98B69', photo:'#FFF7ED', deco:'film', swatch:'linear-gradient(135deg,#7c2d12,#f7e7ce,#a16207)' },
+    koreanPhoto: { name:'Korean Photobooth', desc:'heart doodle', bg:'#FFF8FB', text:'#3F3A4A', muted:'#867B91', accent:'#FB7185', secondary:'#A7F3D0', red:'#E11D48', leave:'#FDA4AF', photo:'#ffffff', deco:'korean', swatch:'linear-gradient(135deg,#fff8fb,#fb7185,#a7f3d0)' },
+    botanicalSoft: { name:'Botanical Soft', desc:'sage floral', bg:'#F5F3E7', text:'#384434', muted:'#75836A', accent:'#6B8F71', secondary:'#D8E2C8', red:'#B91C1C', leave:'#E6A7A7', photo:'#FFFFF8', deco:'leaf', swatch:'linear-gradient(135deg,#f5f3e7,#6b8f71)' },
+    pinkDiary: { name:'Pink Diary', desc:'scrapbook', bg:'#FFEAF4', text:'#4A3340', muted:'#9C6A80', accent:'#EC4899', secondary:'#F9A8D4', red:'#DB2777', leave:'#FBCFE8', photo:'#FFF7FB', deco:'diary', swatch:'linear-gradient(135deg,#ffeaf4,#ec4899,#f9a8d4)' },
+    boldPop: { name:'Bold Pop', desc:'fun kontras', bg:'#FEF3C7', text:'#172554', muted:'#475569', accent:'#2563EB', secondary:'#FACC15', red:'#EF4444', leave:'#FB7185', photo:'#ffffff', deco:'pop', swatch:'linear-gradient(135deg,#ef4444,#facc15,#2563eb)' },
+    elegantDark: { name:'Elegant Dark', desc:'dark gold', bg:'#111827', text:'#FFF7ED', muted:'#D6C7A1', accent:'#D4AF37', secondary:'#293241', red:'#F87171', leave:'#FBBF24', photo:'#1F2937', deco:'gold', swatch:'linear-gradient(135deg,#111827,#d4af37)' },
+    nusantaraModern: { name:'Nusantara Modern', desc:'batik halus', bg:'#FFF7ED', text:'#3B2517', muted:'#8A5A44', accent:'#B45309', secondary:'#FED7AA', red:'#DC2626', leave:'#FDBA74', photo:'#FFFBF4', deco:'batik', swatch:'linear-gradient(135deg,#fff7ed,#b45309,#dc2626)' },
+    seasonalFestive: { name:'Seasonal Festive', desc:'event vibes', bg:'#EFF6FF', text:'#1E3A8A', muted:'#64748B', accent:'#D84B7E', secondary:'#E5B842', red:'#DC2626', leave:'#F9A8D4', photo:'#ffffff', deco:'festive', swatch:'linear-gradient(135deg,#eff6ff,#d84b7e,#e5b842)' }
+  };
+
+  const canvas = document.getElementById('calendarCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function dateKey(year, month, day) { return `${year}-${pad(month + 1)}-${pad(day)}`; }
+  function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function fillRound(ctx, x, y, w, h, r, color) { ctx.save(); roundRect(ctx, x, y, w, h, r); ctx.fillStyle = color; ctx.fill(); ctx.restore(); }
+  function strokeRound(ctx, x, y, w, h, r, color, lineWidth) { ctx.save(); roundRect(ctx, x, y, w, h, r); ctx.strokeStyle = color; ctx.lineWidth = lineWidth || 2; ctx.stroke(); ctx.restore(); }
+
+  function initControls() {
+    const years = [2026, 2027, 2028, 2029, 2030];
+    document.getElementById('yearSelect').innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    document.getElementById('yearSelectMonthly').innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    document.getElementById('monthSelect').innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+    document.getElementById('yearSelect').value = state.year;
+    document.getElementById('yearSelectMonthly').value = state.year;
+    document.getElementById('monthSelect').value = state.month;
+    renderThemes();
+  }
+
+  function renderThemes() {
+    const grid = document.getElementById('themeGrid');
+    grid.innerHTML = Object.entries(THEMES).map(([key, t]) => `
+      <button class="theme-card ${key === state.theme ? 'active' : ''}" data-theme="${key}" onclick="setTheme('${key}')">
+        <span class="theme-swatch" style="background:${t.swatch}"></span>
+        <span><span class="theme-name">${t.name}</span><span class="theme-desc">${t.desc}</span></span>
+      </button>
+    `).join('');
+  }
+
+  async function loadHolidays(year) {
+    const note = document.getElementById('holidayNote');
+    note.className = 'data-note';
+    note.textContent = `Memuat data libur ${year}...`;
+    try {
+      const res = await fetch(`/holidays/${year}.json`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('not found');
+      const data = await res.json();
+      state.holidays = Array.isArray(data) ? data : [];
+      state.holidayMap = {};
+      state.holidays.forEach(item => {
+        state.holidayMap[item.date] = { name: item.name, type: item.type };
+      });
+      state.holidayAvailable = true;
+      note.className = 'data-note ok';
+      note.textContent = `Data libur nasional/cuti bersama ${year} aktif (${state.holidays.length} tanggal).`;
+    } catch(e) {
+      state.holidays = [];
+      state.holidayMap = {};
+      state.holidayAvailable = false;
+      note.className = 'data-note warn';
+      note.textContent = `Data libur nasional untuk ${year} belum tersedia. Hari minggu tetap otomatis merah.`;
+    }
+    renderCalendar();
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    document.querySelectorAll('.mode-card').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+    document.getElementById('monthRow').style.display = mode === 'monthly' ? 'grid' : 'none';
+    document.getElementById('yearRow').style.display = mode === 'yearly' ? 'grid' : 'none';
+    renderCalendar();
+  }
+  function setOrientation(orientation) {
+    state.orientation = orientation;
+    document.querySelectorAll('.toggle-btn[data-orientation]').forEach(btn => btn.classList.toggle('active', btn.dataset.orientation === orientation));
+    renderCalendar();
+  }
+  function setTheme(theme) { state.theme = theme; renderThemes(); renderCalendar(); }
+  function onSettingChange() {
+    state.month = parseInt(document.getElementById('monthSelect').value, 10) || 0;
+    renderCalendar();
+  }
+  function onYearChange(value) {
+    state.year = parseInt(value, 10) || 2026;
+    document.getElementById('yearSelect').value = state.year;
+    document.getElementById('yearSelectMonthly').value = state.year;
+    loadHolidays(state.year);
+  }
+
+  function drawCoverImage(img, x, y, w, h, radius) {
+    ctx.save();
+    roundRect(ctx, x, y, w, h, radius || 32);
+    ctx.clip();
+    if (img) {
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      const scale = Math.max(w / iw, h / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      ctx.drawImage(img, x + w / 2 - dw / 2, y + h / 2 - dh / 2, dw, dh);
+    } else {
+      const t = THEMES[state.theme];
+      const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+      grad.addColorStop(0, t.secondary);
+      grad.addColorStop(1, t.photo || '#ffffff');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = t.text;
+      ctx.globalAlpha = 0.72;
+      ctx.font = `800 ${Math.round(Math.min(w, h) * 0.13)}px Segoe UI, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('📷', x + w / 2, y + h / 2 - 28);
+      ctx.font = `800 ${Math.round(Math.min(w, h) * 0.045)}px Segoe UI, sans-serif`;
+      ctx.fillText('ambil / upload foto', x + w / 2, y + h / 2 + 58);
+    }
+    ctx.restore();
+    strokeRound(ctx, x, y, w, h, radius || 32, THEMES[state.theme].accent, Math.max(4, w * 0.006));
+  }
+
+  function drawDecorations(W, H, t) {
+    ctx.save();
+    if (t.deco === 'stickers' || t.deco === 'korean' || t.deco === 'diary') {
+      const stickers = t.deco === 'diary' ? ['♡','✿','tape','♥'] : ['♡','✦','★','✿'];
+      ctx.fillStyle = t.accent; ctx.globalAlpha = 0.25;
+      ctx.font = `900 ${Math.round(W * 0.055)}px Segoe UI, sans-serif`;
+      [[.08,.08],[.9,.1],[.08,.92],[.9,.9]].forEach(([px,py],i)=>ctx.fillText(stickers[i], W*px, H*py));
+      if (t.deco === 'diary') { fillRound(ctx, W*.06, H*.055, W*.22, H*.025, 10, t.secondary); fillRound(ctx, W*.72, H*.92, W*.2, H*.025, 10, t.secondary); }
+    }
+    if (t.deco === 'film') {
+      ctx.fillStyle = 'rgba(75,52,40,.12)';
+      for (let i=0;i<14;i++){ fillRound(ctx, W*.035 + i*W*.068, H*.025, W*.028, H*.018, 5, 'rgba(75,52,40,.16)'); fillRound(ctx, W*.035 + i*W*.068, H*.955, W*.028, H*.018, 5, 'rgba(75,52,40,.16)'); }
+    }
+    if (t.deco === 'leaf' || t.deco === 'batik') {
+      ctx.strokeStyle = t.accent; ctx.lineWidth = 4; ctx.globalAlpha = 0.16;
+      for(let i=0;i<7;i++){ ctx.beginPath(); ctx.arc(W*(.08+i*.14), H*.08, W*.035, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(W*(.08+i*.14), H*.92, W*.035, 0, Math.PI*2); ctx.stroke(); }
+    }
+    if (t.deco === 'pop' || t.deco === 'festive') {
+      ctx.globalAlpha = 0.16;
+      fillRound(ctx, -W*.03, H*.08, W*.22, W*.22, 40, t.accent);
+      fillRound(ctx, W*.83, H*.76, W*.22, W*.22, 40, t.secondary);
+      fillRound(ctx, W*.78, H*.05, W*.12, W*.12, 24, t.red);
+    }
+    if (t.deco === 'gold') {
+      ctx.strokeStyle = t.accent; ctx.lineWidth = 6; ctx.globalAlpha = 0.55;
+      ctx.strokeRect(W*.035, H*.035, W*.93, H*.93);
+      ctx.strokeRect(W*.055, H*.055, W*.89, H*.89);
+    }
+    ctx.restore();
+  }
+
+  function drawTitle(text, x, y, w, size, t, align = 'center') {
+    ctx.save();
+    ctx.fillStyle = t.text;
+    ctx.textAlign = align; ctx.textBaseline = 'middle';
+    ctx.font = `900 ${size}px Segoe UI, system-ui, sans-serif`;
+    ctx.fillText(text, align === 'center' ? x + w / 2 : x, y);
+    ctx.restore();
+  }
+
+  function drawMonthCalendar(x, y, w, h, year, month, opts = {}) {
+    const t = THEMES[state.theme];
+    const compact = opts.compact;
+    const showTitle = opts.showTitle !== false;
+    const titleH = showTitle ? h * (compact ? 0.16 : 0.14) : 0;
+    const headH = h * (compact ? 0.11 : 0.10);
+    const gridY = y + titleH + headH;
+    const gridH = h - titleH - headH;
+    const cellW = w / 7;
+    const cellH = gridH / 6;
+    if (showTitle) drawTitle(compact ? MONTHS_SHORT[month] : `${MONTHS[month]} ${year}`, x, y + titleH * .48, w, compact ? Math.max(18, h * .09) : Math.max(44, h * .08), t);
+
+    ctx.save();
+    ctx.font = `800 ${Math.max(compact ? 12 : 22, h * (compact ? .045 : .035))}px Segoe UI, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t.muted;
+    WEEKDAYS.forEach((d, i) => ctx.fillText(d, x + cellW * (i + .5), y + titleH + headH * .52));
+    ctx.restore();
+
+    const dim = daysInMonth(year, month);
+    const first = new Date(year, month, 1).getDay();
+    const offset = (first + 6) % 7;
+    const fontSize = Math.max(compact ? 12 : 26, Math.min(cellW, cellH) * (compact ? .38 : .42));
+
+    for (let day = 1; day <= dim; day++) {
+      const idx = offset + day - 1;
+      const col = idx % 7;
+      const row = Math.floor(idx / 7);
+      const cx = x + col * cellW + cellW / 2;
+      const cy = gridY + row * cellH + cellH / 2;
+      const key = dateKey(year, month, day);
+      const holiday = state.holidayMap[key];
+      const isSunday = new Date(year, month, day).getDay() === 0;
+      const type = holiday ? holiday.type : (isSunday ? 'sunday' : 'normal');
+      let color = t.text;
+      if (type === 'holiday' || type === 'sunday') color = t.red;
+      if (type === 'leave') color = t.leave;
+      if (holiday && !compact) {
+        ctx.save();
+        ctx.globalAlpha = type === 'leave' ? .22 : .15;
+        fillRound(ctx, cx - cellW * .34, cy - cellH * .35, cellW * .68, cellH * .70, Math.min(cellW, cellH) * .22, color);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = `900 ${fontSize}px Segoe UI, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(day), cx, cy);
+      if (holiday) {
+        ctx.fillStyle = type === 'leave' ? t.leave : t.red;
+        ctx.beginPath(); ctx.arc(cx, cy + cellH * .30, Math.max(compact ? 2.5 : 4, cellH * .045), 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  function monthHolidayList(year, month) {
+    return state.holidays.filter(item => item.date.startsWith(`${year}-${pad(month + 1)}-`)).sort((a,b) => a.date.localeCompare(b.date));
+  }
+
+  function drawHolidayList(x, y, w, h, year, month) {
+    const t = THEMES[state.theme];
+    const list = monthHolidayList(year, month);
+    fillRound(ctx, x, y, w, h, 24, t.photo || 'rgba(255,255,255,.55)');
+    strokeRound(ctx, x, y, w, h, 24, t.secondary, 3);
+    ctx.save();
+    ctx.fillStyle = t.text;
+    ctx.font = `900 ${Math.max(24, h * .12)}px Segoe UI, sans-serif`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('Tanggal merah:', x + w * .045, y + h * .08);
+    if (!list.length) {
+      ctx.fillStyle = t.muted;
+      ctx.font = `700 ${Math.max(20, h * .09)}px Segoe UI, sans-serif`;
+      ctx.fillText('Tidak ada libur/cuti bersama di data JSON bulan ini.', x + w * .045, y + h * .30);
+      ctx.restore(); return;
+    }
+    const fs = Math.max(16, Math.min(28, (h * .72) / list.length));
+    ctx.font = `800 ${fs}px Segoe UI, sans-serif`;
+    let yy = y + h * .25;
+    list.forEach(item => {
+      const day = parseInt(item.date.slice(8,10), 10);
+      const shortName = item.name.length > 44 ? item.name.slice(0, 42) + '…' : item.name;
+      ctx.fillStyle = item.type === 'leave' ? t.leave : t.red;
+      ctx.fillText(`${day} ${MONTHS_SHORT[month]} - ${shortName}`, x + w * .045, yy);
+      yy += fs * 1.28;
+    });
+    ctx.restore();
+  }
+
+  function renderCalendar() {
+    const t = THEMES[state.theme];
+    const portrait = state.orientation === 'portrait';
+    const W = portrait ? 1200 : 1800;
+    const H = portrait ? 1800 : 1200;
+    canvas.width = W; canvas.height = H;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = t.bg; ctx.fillRect(0,0,W,H);
+    drawDecorations(W, H, t);
+
+    if (state.mode === 'yearly') renderYearly(W, H, t);
+    else renderMonthly(W, H, t);
+
+    updateMeta(W, H);
+  }
+
+  function renderYearly(W, H, t) {
+    const portrait = W < H;
+    const margin = Math.round(Math.min(W, H) * .055);
+    if (portrait) {
+      drawCoverImage(state.photoImg, margin, margin, W - margin * 2, 560, 34);
+      drawTitle(`KALENDER ${state.year}`, margin, 700, W - margin * 2, 68, t);
+      const gridX = margin, gridY = 775, gridW = W - margin * 2, gridH = H - gridY - margin - 70;
+      const cols = 3, rows = 4, gap = 18;
+      const mw = (gridW - gap * (cols - 1)) / cols;
+      const mh = (gridH - gap * (rows - 1)) / rows;
+      for (let m=0;m<12;m++) drawMonthCalendar(gridX + (m%cols)*(mw+gap), gridY + Math.floor(m/cols)*(mh+gap), mw, mh, state.year, m, { compact:true });
+      drawLegend(margin, H - margin - 36, W - margin * 2, t);
+    } else {
+      drawCoverImage(state.photoImg, margin, margin, 650, H - margin * 2, 34);
+      drawTitle(`KALENDER ${state.year}`, 760, 92, W - 810, 60, t, 'left');
+      const gridX = 760, gridY = 150, gridW = W - gridX - margin, gridH = H - gridY - margin - 55;
+      const cols = 4, rows = 3, gap = 16;
+      const mw = (gridW - gap * (cols - 1)) / cols;
+      const mh = (gridH - gap * (rows - 1)) / rows;
+      for (let m=0;m<12;m++) drawMonthCalendar(gridX + (m%cols)*(mw+gap), gridY + Math.floor(m/cols)*(mh+gap), mw, mh, state.year, m, { compact:true });
+      drawLegend(gridX, H - margin - 32, gridW, t);
+    }
+  }
+
+  function renderMonthly(W, H, t) {
+    const portrait = W < H;
+    const margin = Math.round(Math.min(W, H) * .055);
+    if (portrait) {
+      drawCoverImage(state.photoImg, margin, margin, W - margin * 2, 560, 34);
+      drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, margin, 690, W - margin * 2, 64, t);
+      drawMonthCalendar(margin, 760, W - margin * 2, 610, state.year, state.month, { compact:false, showTitle:false });
+      drawHolidayList(margin, 1390, W - margin * 2, H - 1390 - margin, state.year, state.month);
+    } else {
+      drawCoverImage(state.photoImg, margin, margin, 680, H - margin * 2, 34);
+      drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, 790, 95, W - 850, 62, t, 'left');
+      drawMonthCalendar(790, 165, W - 790 - margin, 650, state.year, state.month, { compact:false, showTitle:false });
+      drawHolidayList(790, 845, W - 790 - margin, H - 845 - margin, state.year, state.month);
+    }
+  }
+
+  function drawLegend(x, y, w, t) {
+    ctx.save();
+    ctx.fillStyle = t.muted;
+    ctx.font = `800 ${Math.max(18, w * .018)}px Segoe UI, sans-serif`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('● libur nasional / cuti bersama  ·  merah = minggu / tanggal merah', x, y);
+    ctx.fillStyle = t.red; ctx.beginPath(); ctx.arc(x - 16, y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function updateMeta(W, H) {
+    const meta = document.getElementById('previewMeta');
+    meta.innerHTML = `
+      <div class="chip">Mode: <span>${state.mode === 'yearly' ? 'Tahunan' : 'Bulanan'}</span></div>
+      <div class="chip">Periode: <span>${state.mode === 'yearly' ? state.year : MONTHS[state.month] + ' ' + state.year}</span></div>
+      <div class="chip">Orientasi: <span>${state.orientation}</span></div>
+      <div class="chip">Tema: <span>${THEMES[state.theme].name}</span></div>
+      <div class="chip">Canvas: <span>${W}×${H}px</span></div>
+    `;
+  }
+
+  function handleUpload(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => loadPhoto(e.target.result);
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  function loadPhoto(src) {
+    const img = new Image();
+    img.onload = () => { state.photoImg = img; state.photoSrc = src; renderCalendar(); };
+    img.onerror = () => alert('Foto gagal dimuat. Coba file lain ya.');
+    img.src = src;
+  }
+
+  function clearPhoto() { state.photoImg = null; state.photoSrc = null; renderCalendar(); }
+
+  async function openCamera() {
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('cameraVideo');
+    modal.classList.add('show');
+    try {
+      if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+      state.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} }, audio:false });
+      video.srcObject = state.stream;
+      await video.play();
+    } catch(e) {
+      alert('Kamera tidak bisa diakses. Pakai upload foto dulu ya.');
+      closeCamera();
+    }
+  }
+
+  function closeCamera() {
+    document.getElementById('cameraModal').classList.remove('show');
+    const video = document.getElementById('cameraVideo');
+    video.pause(); video.srcObject = null;
+    if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+    state.stream = null;
+  }
+
+  function capturePhoto() {
+    const video = document.getElementById('cameraVideo');
+    const temp = document.createElement('canvas');
+    temp.width = video.videoWidth || 1280;
+    temp.height = video.videoHeight || 960;
+    const c = temp.getContext('2d');
+    c.save(); c.translate(temp.width, 0); c.scale(-1, 1); c.drawImage(video, 0, 0, temp.width, temp.height); c.restore();
+    const data = temp.toDataURL('image/jpeg', .92);
+    closeCamera();
+    loadPhoto(data);
+  }
+
+  function downloadCalendar() {
+    if (!state.photoImg) {
+      const ok = confirm('Foto belum ditambahkan. Mau lanjut download dengan placeholder?');
+      if (!ok) return;
+    }
+    renderCalendar();
+    canvas.toBlob(blob => {
+      if (!blob) return alert('Gagal membuat file PNG.');
+      const a = document.createElement('a');
+      const period = state.mode === 'yearly' ? state.year : `${MONTHS[state.month].toLowerCase()}-${state.year}`;
+      a.download = `photobooth-kalender-${period}.png`;
+      a.href = URL.createObjectURL(blob);
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  }
+
+  initControls();
+  setMode('yearly');
+  loadHolidays(state.year);
+</script>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

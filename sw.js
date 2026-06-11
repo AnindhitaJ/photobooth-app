@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v8';
+const CACHE_NAME = 'lux-photobooth-v9';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,9 +10,11 @@ const ASSETS = [
   '/download.html',
   '/admin.html',
   '/ganci.html',
+  '/kalender.html',
   '/ganci-utils.js',
   '/ganci-print.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/holidays/2026.json'
 ];
 
 self.addEventListener('install', e => {

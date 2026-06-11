@@ -238,14 +238,14 @@
             bentuk: ganciState.bentuk || 'persegi',
             frame: ganciState.frame || 'polos',
             photo: photoImg,
-            hook: true
+            hook: false
           });
           window.GanciFrames.drawFrame(ctx, {
             x: x + panelWpx + betweenPairPx, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
             frame: ganciState.frame || 'polos',
             photo: logoPanelCvs,
-            hook: true
+            hook: false
           });
           drawn++;
         }

@@ -632,11 +632,10 @@
           bentuk: state.bentuk,
           frame: state.frame,
           showPlaceholder: true,
-          hook: true
+          hook: false
         });
       } else {
         drawFrameDecor(ctx, pad, pad + hookPad, frameW, frameH, state.bentuk, state.frame);
-        drawHook(ctx, pad + frameW / 2, pad + hookPad, frameW);
       }
 
       updateInfoChips();

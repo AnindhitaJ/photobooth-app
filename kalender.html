@@ -102,6 +102,15 @@
     .btn-danger { background:#fee2e2; color:#dc2626; border:2px solid #fecaca; }
     .btn-primary:hover, .btn-secondary:hover, .btn-danger:hover { transform:translateY(-1px); }
     .note { margin-top:10px; font-size:11px; color:var(--muted); font-weight:700; line-height:1.45; }
+    .filter-section { margin-top:12px; }
+    .filter-label { font-size:11px; color:var(--muted); font-weight:900; text-transform:uppercase; letter-spacing:1px; margin:12px 0 8px; }
+    .filter-pill-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .filter-pill {
+      border:2px solid var(--border); background:white; color:var(--muted); border-radius:999px;
+      padding:8px 12px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s ease;
+    }
+    .filter-pill:hover { border-color:var(--pink); color:var(--pink); transform:translateY(-1px); }
+    .filter-pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
     .data-note { margin-top:8px; padding:9px 11px; border-radius:13px; background:#f8fafc; color:var(--muted); font-size:11px; font-weight:700; border:1px solid #e2e8f0; }
     .data-note.ok { background:#ecfdf5; color:#059669; border-color:#bbf7d0; }
     .data-note.warn { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
@@ -208,6 +217,41 @@
         </div>
         <p class="note">Kalau belum ada foto, preview pakai placeholder kamera. Download akan minta konfirmasi dulu kalau foto masih kosong.</p>
       </div>
+
+      <div class="card">
+        <div class="card-title">5. Filter Foto</div>
+        <div class="filter-section">
+          <div class="filter-label">Tone Warna</div>
+          <div class="filter-pill-row" data-filter-group="tone">
+            <button class="filter-pill active" data-value="normal" onclick="setPhotoFilter('tone','normal')">Normal</button>
+            <button class="filter-pill" data-value="bw" onclick="setPhotoFilter('tone','bw')">B&W</button>
+            <button class="filter-pill" data-value="sepia" onclick="setPhotoFilter('tone','sepia')">Sepia</button>
+            <button class="filter-pill" data-value="vintage" onclick="setPhotoFilter('tone','vintage')">Vintage</button>
+            <button class="filter-pill" data-value="cool" onclick="setPhotoFilter('tone','cool')">Cool</button>
+            <button class="filter-pill" data-value="warm" onclick="setPhotoFilter('tone','warm')">Warm</button>
+            <button class="filter-pill" data-value="fade" onclick="setPhotoFilter('tone','fade')">Fade</button>
+            <button class="filter-pill" data-value="drama" onclick="setPhotoFilter('tone','drama')">Drama</button>
+            <button class="filter-pill" data-value="matte" onclick="setPhotoFilter('tone','matte')">Matte</button>
+          </div>
+
+          <div class="filter-label">Cerahkan Foto</div>
+          <div class="filter-pill-row" data-filter-group="brightness">
+            <button class="filter-pill active" data-value="0" onclick="setPhotoFilter('brightness',0)">Off</button>
+            <button class="filter-pill" data-value="8" onclick="setPhotoFilter('brightness',8)">Natural</button>
+            <button class="filter-pill" data-value="16" onclick="setPhotoFilter('brightness',16)">Medium</button>
+            <button class="filter-pill" data-value="26" onclick="setPhotoFilter('brightness',26)">Bright</button>
+          </div>
+
+          <div class="filter-label">Haluskan Foto</div>
+          <div class="filter-pill-row" data-filter-group="smooth">
+            <button class="filter-pill active" data-value="0" onclick="setPhotoFilter('smooth',0)">Off</button>
+            <button class="filter-pill" data-value="1.5" onclick="setPhotoFilter('smooth',1.5)">Soft</button>
+            <button class="filter-pill" data-value="2.8" onclick="setPhotoFilter('smooth',2.8)">Medium</button>
+            <button class="filter-pill" data-value="4.2" onclick="setPhotoFilter('smooth',4.2)">Smooth</button>
+          </div>
+        </div>
+        <p class="note">Filter hanya diterapkan ke foto di layout kalender. Tema, tanggal merah, dan teks kalender tetap tajam.</p>
+      </div>
     </section>
 
     <section class="preview-card">
@@ -219,6 +263,7 @@
         <div class="preview-meta" id="previewMeta"></div>
         <div class="preview-actions">
           <button class="btn-primary" onclick="downloadCalendar()">⬇️ Download PNG</button>
+          <button class="btn-secondary" onclick="shareCalendar()">📤 Share PNG</button>
           <button class="btn-secondary" onclick="renderCalendar()">🔄 Refresh Preview</button>
         </div>
       </div>
@@ -252,6 +297,7 @@
     holidayAvailable: false,
     photoImg: null,
     photoSrc: null,
+    filter: { tone: 'normal', brightness: 0, smooth: 0 },
     stream: null
   };
 
@@ -358,17 +404,66 @@
     loadHolidays(state.year);
   }
 
+  function setPhotoFilter(type, value) {
+    if (type === 'brightness' || type === 'smooth') value = parseFloat(value) || 0;
+    state.filter[type] = value;
+    const group = document.querySelector(`[data-filter-group="${type}"]`);
+    if (group) {
+      group.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.toggle('active', String(btn.dataset.value) === String(value));
+      });
+    }
+    renderCalendar();
+  }
+
+  function getPhotoFilterCSS(extraBlur = 0) {
+    const f = state.filter || { tone: 'normal', brightness: 0, smooth: 0 };
+    const brightness = 100 + (Number(f.brightness) || 0);
+    const blur = extraBlur ? ` blur(${extraBlur}px)` : '';
+    const toneMap = {
+      normal: `brightness(${brightness}%) contrast(100%) saturate(100%)`,
+      bw: `brightness(${brightness}%) grayscale(100%) contrast(108%)`,
+      sepia: `brightness(${brightness}%) sepia(82%) contrast(104%) saturate(92%)`,
+      vintage: `brightness(${brightness + 4}%) sepia(38%) contrast(94%) saturate(82%)`,
+      cool: `brightness(${brightness + 2}%) saturate(108%) contrast(104%) hue-rotate(184deg)`,
+      warm: `brightness(${brightness + 3}%) sepia(24%) saturate(118%) contrast(103%)`,
+      fade: `brightness(${brightness + 8}%) contrast(86%) saturate(76%)`,
+      drama: `brightness(${brightness}%) contrast(124%) saturate(112%)`,
+      matte: `brightness(${brightness + 5}%) contrast(92%) saturate(88%)`
+    };
+    return (toneMap[f.tone] || toneMap.normal) + blur;
+  }
+
+  function drawCoverPhotoWithFilter(img, x, y, w, h) {
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const scale = Math.max(w / iw, h / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    const dx = x + w / 2 - dw / 2;
+    const dy = y + h / 2 - dh / 2;
+
+    ctx.save();
+    ctx.filter = getPhotoFilterCSS(0);
+    ctx.drawImage(img, dx, dy, dw, dh);
+    ctx.restore();
+
+    const smooth = Number(state.filter?.smooth || 0);
+    if (smooth > 0) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.34, 0.14 + smooth * 0.045);
+      ctx.filter = getPhotoFilterCSS(smooth);
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+    }
+  }
+
   function drawCoverImage(img, x, y, w, h, radius) {
     ctx.save();
     roundRect(ctx, x, y, w, h, radius || 32);
     ctx.clip();
     if (img) {
-      const iw = img.naturalWidth || img.width;
-      const ih = img.naturalHeight || img.height;
-      const scale = Math.max(w / iw, h / ih);
-      const dw = iw * scale;
-      const dh = ih * scale;
-      ctx.drawImage(img, x + w / 2 - dw / 2, y + h / 2 - dh / 2, dw, dh);
+      drawCoverPhotoWithFilter(img, x, y, w, h);
     } else {
       const t = THEMES[state.theme];
       const grad = ctx.createLinearGradient(x, y, x + w, y + h);
@@ -589,6 +684,7 @@
       <div class="chip">Periode: <span>${state.mode === 'yearly' ? state.year : MONTHS[state.month] + ' ' + state.year}</span></div>
       <div class="chip">Orientasi: <span>${state.orientation}</span></div>
       <div class="chip">Tema: <span>${THEMES[state.theme].name}</span></div>
+      <div class="chip">Filter: <span>${state.filter.tone}${state.filter.brightness ? ' +' + state.filter.brightness : ''}</span></div>
       <div class="chip">Canvas: <span>${W}×${H}px</span></div>
     `;
   }
@@ -646,21 +742,74 @@
     loadPhoto(data);
   }
 
-  function downloadCalendar() {
-    if (!state.photoImg) {
-      const ok = confirm('Foto belum ditambahkan. Mau lanjut download dengan placeholder?');
-      if (!ok) return;
-    }
+  function calendarPeriodSlug() {
+    return state.mode === 'yearly' ? state.year : `${MONTHS[state.month].toLowerCase()}-${state.year}`;
+  }
+
+  function calendarFilename() {
+    return `photobooth-kalender-${calendarPeriodSlug()}.png`;
+  }
+
+  function ensurePhotoOrConfirm() {
+    if (state.photoImg) return true;
+    return confirm('Foto belum ditambahkan. Mau lanjut dengan placeholder?');
+  }
+
+  function calendarBlob() {
     renderCalendar();
-    canvas.toBlob(blob => {
-      if (!blob) return alert('Gagal membuat file PNG.');
-      const a = document.createElement('a');
-      const period = state.mode === 'yearly' ? state.year : `${MONTHS[state.month].toLowerCase()}-${state.year}`;
-      a.download = `photobooth-kalender-${period}.png`;
-      a.href = URL.createObjectURL(blob);
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    }, 'image/png');
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function downloadCalendar() {
+    if (!ensurePhotoOrConfirm()) return;
+    const blob = await calendarBlob();
+    if (!blob) return alert('Gagal membuat file PNG.');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = calendarFilename();
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function shareCalendar() {
+    if (!ensurePhotoOrConfirm()) return;
+    const blob = await calendarBlob();
+    if (!blob) return alert('Gagal membuat file PNG.');
+    const file = new File([blob], calendarFilename(), { type: 'image/png' });
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Photobooth Kalender',
+          text: 'Kalender photobooth 4R siap cetak',
+          files: [file]
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = calendarFilename();
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        alert('Browser belum support Share file, jadi PNG langsung didownload.');
+      }
+    } catch (e) {
+      if (e && e.name !== 'AbortError') {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = calendarFilename();
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        alert('Share gagal, jadi PNG langsung didownload.');
+      }
+    }
   }
 
   initControls();

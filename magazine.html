@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#D84B7E">
+  <title>Magazine Cover - Photobooth</title>
+  <style>
+    :root {
+      --pink:#D84B7E; --yellow:#E5B842; --navy:#1D3557;
+      --bg:#FFF8FC; --card:#fff; --border:#f5c6da;
+      --text:#1D3557; --text2:#6b7fa3;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { min-height:100vh; font-family:'Segoe UI', system-ui, sans-serif; background:var(--bg); color:var(--text); padding-bottom:40px; }
+    body::before { content:''; position:fixed; inset:0; z-index:-1; background-image:radial-gradient(circle, rgba(216,75,126,.07) 1px, transparent 1px); background-size:28px 28px; }
+    .header { position:sticky; top:0; z-index:50; background:white; border-bottom:2px solid var(--border); padding:14px 18px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 14px rgba(216,75,126,.1); }
+    .btn-back { width:40px; height:40px; border-radius:999px; border:2px solid var(--border); background:#fff8fc; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text); font-size:20px; font-weight:950; }
+    .header-main { flex:1; }
+    .header-title { font-size:18px; font-weight:950; letter-spacing:-.5px; background:linear-gradient(135deg,var(--pink),var(--yellow)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .header-sub { font-size:12px; color:var(--text2); font-weight:750; margin-top:1px; }
+    .wrap { max-width:1320px; margin:0 auto; padding:20px 16px; display:grid; grid-template-columns:430px 1fr; gap:20px; }
+    @media(max-width:900px){ .wrap{grid-template-columns:1fr;} .preview-card{position:static!important; order:-1;} .action-bar-mobile{position:sticky;bottom:8px;z-index:20;} }
+    .card { background:white; border:2px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 4px 22px rgba(216,75,126,.07); }
+    .card + .card { margin-top:15px; }
+    .card-title { font-size:13px; color:var(--text2); font-weight:950; letter-spacing:1.7px; text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+    .card-title::after { content:''; height:2px; flex:1; background:linear-gradient(90deg,var(--border),transparent); }
+    .theme-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+    .theme-btn { border:2px solid var(--border); background:white; border-radius:15px; padding:10px; cursor:pointer; text-align:left; transition:.18s; min-height:68px; }
+    .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); }
+    .theme-target { font-size:10px; color:var(--text2); font-weight:800; margin-top:2px; }
+    .swatch { height:20px; border-radius:999px; margin-bottom:7px; border:1px solid rgba(0,0,0,.06); }
+    .filter-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+    .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; }
+    .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
+    label { display:block; font-size:12px; font-weight:900; color:var(--text); margin-bottom:7px; }
+    .field { margin-bottom:12px; }
+    input, textarea { width:100%; border:2px solid var(--border); border-radius:14px; padding:10px 12px; font-size:14px; font-weight:700; color:var(--text); background:white; outline:none; font-family:inherit; transition:.18s; }
+    textarea { min-height:70px; resize:vertical; }
+    input:focus, textarea:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
+    .photo-controls { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .btn-primary, .btn-outline { border-radius:999px; padding:12px 14px; font-size:14px; font-weight:950; cursor:pointer; width:100%; }
+    .btn-primary { border:0; background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; box-shadow:0 8px 24px rgba(216,75,126,.28); }
+    .btn-outline { border:2px solid var(--border); background:white; color:var(--text); }
+    .mini-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:9px; }
+    .mini-row button { border:2px solid var(--border); border-radius:999px; padding:8px; background:white; font-size:12px; font-weight:900; color:var(--text2); cursor:pointer; }
+    .preview-card { position:sticky; top:84px; }
+    .canvas-shell { background:#f1f5f9; border:2px solid var(--border); border-radius:22px; padding:18px; display:flex; align-items:center; justify-content:center; min-height:650px; background-image:repeating-conic-gradient(#f7f7f7 0% 25%,#eeeeee 0% 50%); background-size:22px 22px; }
+    #coverCanvas { width:100%; max-width:460px; aspect-ratio:2/3; border-radius:8px; box-shadow:0 18px 45px rgba(29,53,87,.18); background:white; }
+    .preview-meta { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+    .chip { border:2px solid var(--border); border-radius:999px; padding:6px 10px; background:white; color:var(--text2); font-size:12px; font-weight:850; }
+    .chip span { color:var(--pink); }
+    .final-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+    .camera-modal { display:none; position:fixed; inset:0; z-index:999; background:#050505; align-items:center; justify-content:center; flex-direction:column; padding:18px; }
+    .camera-modal.show { display:flex; }
+    #cameraVideo { max-width:100%; max-height:72vh; border-radius:22px; object-fit:cover; transform:scaleX(-1); box-shadow:0 20px 70px rgba(0,0,0,.5); }
+    .camera-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:center; }
+    .camera-actions button { border:0; border-radius:999px; padding:13px 18px; font-size:14px; font-weight:950; cursor:pointer; }
+    .camera-actions .capture { background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; }
+    .camera-actions .close { background:white; color:#111827; }
+    .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:white; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,.2); transition:.25s; z-index:1200; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+  </style>
+  <script src="/auth.js"></script>
+  <script src="/cover-maker.js"></script>
+</head>
+<body>
+  <div class="header">
+    <a class="btn-back" href="/" title="Kembali">←</a>
+    <div class="header-main">
+      <div class="header-title">📰 Magazine Cover</div>
+      <div class="header-sub">4R portrait · 10×15 cm · save & cetak</div>
+    </div>
+    <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+  </div>
+
+  <div class="wrap">
+    <div class="controls">
+      <div class="card">
+        <div class="card-title">🎨 Pilih Tema</div>
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📸 Foto</div>
+        <div class="photo-controls">
+          <button class="btn-primary" onclick="openCamera()">📷 Ambil Foto</button>
+          <button class="btn-outline" onclick="retakePhoto()">↺ Retake</button>
+        </div>
+        <div class="mini-row">
+          <button onclick="adjustPhoto('zoomIn')">Zoom +</button>
+          <button onclick="adjustPhoto('zoomOut')">Zoom -</button>
+          <button onclick="adjustPhoto('reset')">Reset</button>
+          <button onclick="adjustPhoto('left')">←</button>
+          <button onclick="adjustPhoto('up')">↑</button>
+          <button onclick="adjustPhoto('right')">→</button>
+          <button onclick="adjustPhoto('down')">↓</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✨ Filter Foto</div>
+        <div class="filter-grid" id="filterGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📝 Teks Cover</div>
+        <div id="formFields"></div>
+        <button class="btn-outline" onclick="resetText()">Reset Text to Theme Default</button>
+      </div>
+
+      <div class="card action-bar-mobile">
+        <div class="card-title">✅ Final</div>
+        <div class="final-actions">
+          <button class="btn-primary" onclick="saveCover()">Save</button>
+          <button class="btn-outline" onclick="cetakCover()">Cetak</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <div class="card">
+        <div class="card-title">👁️ Live Preview</div>
+        <div class="canvas-shell">
+          <canvas id="coverCanvas" width="1200" height="1800"></canvas>
+        </div>
+        <div class="preview-meta">
+          <div class="chip">Output: <span>4R Portrait</span></div>
+          <div class="chip">Size: <span>1200×1800 px</span></div>
+          <div class="chip">Tombol: <span>Save / Cetak</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-modal" id="cameraModal">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <canvas id="cameraCanvas" style="display:none;"></canvas>
+    <div class="camera-actions">
+      <button class="capture" onclick="capturePhoto()">📷 Capture</button>
+      <button class="close" onclick="closeCamera()">Tutup</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login';
+
+    const COVER_TYPE = 'magazine';
+    const FIELDS = [{"key": "magazineName", "label": "Magazine Name", "max": 34}, {"key": "headline", "label": "Headline", "max": 96}, {"key": "subheadline", "label": "Subheadline", "max": 120}, {"key": "name", "label": "Name / Group Name", "max": 42}, {"key": "date", "label": "Edition Date", "max": 42}, {"key": "teaser1", "label": "Short Teaser 1", "max": 60}, {"key": "teaser2", "label": "Short Teaser 2", "max": 60}, {"key": "teaser3", "label": "Short Teaser 3", "max": 60}];
+    const DEFAULT_FILE_PREFIX = 'magazine-cover';
+
+    const canvas = document.getElementById('coverCanvas');
+    const ctx = canvas.getContext('2d');
+    const state = CoverMaker.createState(COVER_TYPE, canvas, ctx);
+    let stream = null;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function getThemes() {
+      return COVER_TYPE === 'magazine' ? CoverMaker.MAGAZINE_THEMES : CoverMaker.NEWSPAPER_THEMES;
+    }
+
+    function buildThemeGrid() {
+      const themes = getThemes();
+      document.getElementById('themeGrid').innerHTML = themes.map(t => `
+        <button class="theme-btn ${state.selectedTheme === t.id ? 'active' : ''}" onclick="setTheme('${t.id}')">
+          <div class="swatch" style="background:linear-gradient(135deg,${t.colors.bg},${t.colors.accent2 || t.colors.secondary || t.colors.bg},${t.colors.accent});"></div>
+          <div class="theme-name">${escapeHtml(t.name)}</div>
+          <div class="theme-target">${escapeHtml(t.target || '')}</div>
+        </button>
+      `).join('');
+    }
+
+    function buildFilterGrid() {
+      document.getElementById('filterGrid').innerHTML = Object.entries(CoverMaker.FILTERS).map(([key, f]) => `
+        <button class="pill ${state.filter === key ? 'active' : ''}" onclick="setFilter('${key}')">${escapeHtml(f.label)}</button>
+      `).join('');
+    }
+
+    function buildForm() {
+      const form = document.getElementById('formFields');
+      form.innerHTML = FIELDS.map(field => {
+        const val = state.text[field.key] || '';
+        const tag = field.long ? 'textarea' : 'input';
+        return `<div class="field">
+          <label>${escapeHtml(field.label)}</label>
+          ${tag === 'textarea'
+            ? `<textarea id="field_${field.key}" oninput="updateText('${field.key}')" maxlength="${field.max || 240}">${escapeHtml(val)}</textarea>`
+            : `<input id="field_${field.key}" oninput="updateText('${field.key}')" value="${escapeHtml(val)}" maxlength="${field.max || 80}">`
+          }
+        </div>`;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+    }
+
+    function setTheme(id) {
+      const oldTheme = CoverMaker.byId(getThemes(), state.selectedTheme);
+      const oldDefaults = oldTheme.defaultText;
+      const next = CoverMaker.byId(getThemes(), id);
+      state.selectedTheme = id;
+      state.filter = next.recommendedFilter || state.filter || 'original';
+
+      Object.entries(next.defaultText).forEach(([key, val]) => {
+        if (!state.edited[key] || state.text[key] === oldDefaults[key]) {
+          state.text[key] = val;
+          state.edited[key] = false;
+        }
+      });
+      buildThemeGrid();
+      buildFilterGrid();
+      buildForm();
+      render();
+    }
+
+    function setFilter(key) {
+      state.filter = key;
+      buildFilterGrid();
+      render();
+    }
+
+    function updateText(key) {
+      const el = document.getElementById('field_' + key);
+      state.text[key] = el.value;
+      state.edited[key] = true;
+      render();
+    }
+
+    function resetText() {
+      const t = CoverMaker.byId(getThemes(), state.selectedTheme);
+      state.text = { ...t.defaultText };
+      state.edited = {};
+      buildForm();
+      render();
+    }
+
+    function render() {
+      CoverMaker.render(state);
+    }
+
+    async function openCamera() {
+      try {
+        closeCamera();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode:'user', width:{ideal:1280}, height:{ideal:960} },
+          audio:false
+        });
+        const video = document.getElementById('cameraVideo');
+        video.srcObject = stream;
+        document.getElementById('cameraModal').classList.add('show');
+      } catch(e) {
+        showToast('Kamera tidak bisa diakses.');
+      }
+    }
+
+    function closeCamera() {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      document.getElementById('cameraModal').classList.remove('show');
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const c = document.getElementById('cameraCanvas');
+      c.width = 1200;
+      c.height = 1600;
+      const cc = c.getContext('2d');
+      const vW = video.videoWidth || 1200, vH = video.videoHeight || 900;
+      const scale = Math.max(c.width / vW, c.height / vH);
+      const dw = vW * scale, dh = vH * scale;
+      const dx = (c.width - dw) / 2, dy = (c.height - dh) / 2;
+      cc.save();
+      cc.translate(c.width, 0);
+      cc.scale(-1, 1);
+      cc.drawImage(video, 0, 0, vW, vH, dx, dy, dw, dh);
+      cc.restore();
+      state.photo = c.toDataURL('image/jpeg', .92);
+      const img = new Image();
+      img.onload = () => {
+        state.photoImg = img;
+        state.zoom = 1; state.photoX = 0; state.photoY = 0;
+        render();
+      };
+      img.src = state.photo;
+      closeCamera();
+    }
+
+    function retakePhoto() {
+      openCamera();
+    }
+
+    function adjustPhoto(action) {
+      if (action === 'zoomIn') state.zoom = Math.min(2, state.zoom + .08);
+      if (action === 'zoomOut') state.zoom = Math.max(.7, state.zoom - .08);
+      if (action === 'left') state.photoX -= 22;
+      if (action === 'right') state.photoX += 22;
+      if (action === 'up') state.photoY -= 22;
+      if (action === 'down') state.photoY += 22;
+      if (action === 'reset') { state.zoom = 1; state.photoX = 0; state.photoY = 0; }
+      render();
+    }
+
+    function timestamp() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+    }
+
+    function saveCover() {
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${DEFAULT_FILE_PREFIX}-${timestamp()}.png`;
+      a.click();
+      showToast('Cover berhasil disimpan ✓');
+    }
+
+    function dataUrlToFile(dataUrl, filename) {
+      const parts = dataUrl.split(',');
+      const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
+      const bin = atob(parts[1]);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new File([arr], filename, { type:mime });
+    }
+
+    async function cetakCover() {
+      const url = canvas.toDataURL('image/png');
+      const file = dataUrlToFile(url, `${DEFAULT_FILE_PREFIX}-${timestamp()}.png`);
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
+          await navigator.share({ title:'Magazine Cover', text:'File cover 4R siap cetak', files:[file] });
+          showToast('File dikirim ke native print/share app ✓');
+        } else {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.name;
+          a.click();
+          showToast('Cetak belum terhubung langsung, file cover didownload.');
+        }
+      } catch(e) {
+        if (e.name !== 'AbortError') {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.name;
+          a.click();
+          showToast('Cetak gagal dibuka, file didownload.');
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      buildThemeGrid();
+      buildFilterGrid();
+      buildForm();
+      render();
+    });
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  </script>
+</body>
+</html>

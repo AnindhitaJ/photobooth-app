@@ -119,6 +119,39 @@
     }
     .btn-kalender:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(216,75,126,0.38); }
     .btn-kalender:active { transform: scale(0.98); }
+    .btn-idcard {
+      background: linear-gradient(135deg, #c084fc, #D84B7E);
+      color: white; border: none; padding: 13px 48px;
+      font-size: 16px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(192,132,252,0.35);
+      letter-spacing: -0.3px; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-idcard:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(192,132,252,0.48); }
+    .btn-idcard:active { transform: scale(0.98); }
+    .btn-magazine {
+      background: linear-gradient(135deg, #ec4899, #f59e0b);
+      color: white; border: none; padding: 13px 48px;
+      font-size: 16px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(236,72,153,0.34);
+      letter-spacing: -0.3px; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-magazine:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(236,72,153,0.46); }
+    .btn-magazine:active { transform: scale(0.98); }
+    .btn-newspaper {
+      background: linear-gradient(135deg, #111827, #64748b);
+      color: white; border: none; padding: 13px 48px;
+      font-size: 16px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(17,24,39,0.30);
+      letter-spacing: -0.3px; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-newspaper:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(17,24,39,0.42); }
+    .btn-newspaper:active { transform: scale(0.98); }
     .btn-group { display: flex; flex-direction: column; align-items: center; gap: 0; }
     .footer {
       position: fixed; bottom: 20px;
@@ -166,6 +199,9 @@
     <button class="btn-ganci" onclick="bukaGanci()">🪝 Ganci Photo Insert</button>
     <button class="btn-kalender" onclick="bukaKalender()">📅 Photobooth Kalender</button>
     <button class="btn-galeri" onclick="bukaGaleri()">🖼️ Galeri Foto</button>
+    <button class="btn-idcard" onclick="bukaIdCard()">🪪 ID Card</button>
+    <button class="btn-magazine" onclick="bukaMagazine()">📰 Magazine Cover</button>
+    <button class="btn-newspaper" onclick="bukaNewspaper()">🗞️ Newspaper Cover</button>
   </div>
   <div class="footer"><img data-auth-logo src="/logo.png" alt="LUX" style="height:22px;width:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">LUX PHOTOBOOTH</div>
 
@@ -220,6 +256,9 @@
     function bukaGanci() { window.location.href = '/ganci'; }
     function bukaKalender() { window.location.href = '/kalender'; }
     function bukaGaleri() { window.location.href = '/gallery'; }
+    function bukaIdCard() { window.location.href = '/idcard'; }
+    function bukaMagazine() { window.location.href = '/magazine'; }
+    function bukaNewspaper() { window.location.href = '/newspaper'; }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

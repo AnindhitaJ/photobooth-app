@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#D84B7E">
+  <title>ID Card Photobooth</title>
+  <style>
+    :root {
+      --pink:#D84B7E; --yellow:#E5B842; --navy:#1D3557;
+      --bg:#FFF8FC; --card:#fff; --border:#f5c6da;
+      --text:#1D3557; --text2:#6b7fa3;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      min-height:100vh; font-family:'Segoe UI', system-ui, sans-serif;
+      background:var(--bg); color:var(--text); padding-bottom:50px;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:-1;
+      background-image:radial-gradient(circle, rgba(216,75,126,.07) 1px, transparent 1px);
+      background-size:28px 28px;
+    }
+    .header {
+      position:sticky; top:0; z-index:30; background:white;
+      border-bottom:2px solid var(--border); padding:14px 18px;
+      display:flex; align-items:center; gap:12px; box-shadow:0 2px 14px rgba(216,75,126,.1);
+    }
+    .btn-back {
+      width:40px; height:40px; border-radius:999px; border:2px solid var(--border);
+      background:#fff8fc; display:flex; align-items:center; justify-content:center;
+      text-decoration:none; color:var(--text); font-size:20px; font-weight:900;
+    }
+    .header-main { flex:1; }
+    .header-title {
+      font-size:18px; font-weight:950; letter-spacing:-.5px;
+      background:linear-gradient(135deg,var(--pink),var(--yellow));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .header-sub { font-size:12px; color:var(--text2); font-weight:700; margin-top:1px; }
+    .wrap {
+      max-width:1280px; margin:0 auto; padding:22px 16px;
+      display:grid; grid-template-columns:420px 1fr; gap:20px;
+    }
+    @media(max-width:900px){ .wrap{grid-template-columns:1fr;} .preview-card{position:static!important;} }
+
+    .card {
+      background:white; border:2px solid var(--border); border-radius:22px;
+      padding:20px; box-shadow:0 4px 22px rgba(216,75,126,.07);
+    }
+    .card + .card { margin-top:16px; }
+    .card-title {
+      font-size:13px; color:var(--text2); font-weight:950; letter-spacing:1.7px;
+      text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:16px;
+    }
+    .card-title::after { content:''; height:2px; flex:1; background:linear-gradient(90deg,var(--border),transparent); }
+    .hero-card {
+      grid-column:1/-1; padding:18px 20px;
+      background:linear-gradient(135deg,#fff0f6,#fffbea); border-color:#f4b6d1;
+      display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    }
+    .hero-copy h2 { font-size:23px; font-weight:950; letter-spacing:-.6px; margin-bottom:4px; }
+    .hero-copy p { font-size:13px; color:var(--text2); line-height:1.55; font-weight:650; max-width:760px; }
+    .pill-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+    .pill {
+      border:2px solid var(--border); background:white; color:var(--text2);
+      border-radius:999px; padding:9px 13px; font-size:13px; font-weight:900;
+      cursor:pointer; transition:.18s;
+    }
+    .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
+    label { display:block; font-size:12px; font-weight:900; color:var(--text); margin-bottom:7px; }
+    .field { margin-bottom:14px; }
+    input, select, textarea {
+      width:100%; border:2px solid var(--border); border-radius:14px;
+      padding:11px 13px; font-size:14px; font-weight:750; color:var(--text);
+      background:white; outline:none; transition:.18s; font-family:inherit;
+    }
+    textarea { min-height:72px; resize:vertical; }
+    input:focus, select:focus, textarea:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .inline-row { display:flex; gap:8px; align-items:center; }
+    .inline-row input, .inline-row select { flex:1; }
+    .small-btn {
+      border:0; background:linear-gradient(135deg,var(--pink),var(--yellow));
+      color:white; border-radius:999px; padding:10px 12px; font-size:13px; font-weight:950;
+      cursor:pointer; white-space:nowrap; box-shadow:0 5px 15px rgba(216,75,126,.22);
+    }
+    .ghost-btn {
+      border:2px solid var(--border); background:white; color:var(--text2);
+      border-radius:999px; padding:10px 12px; font-size:13px; font-weight:900; cursor:pointer;
+    }
+    .btn-primary {
+      width:100%; border:0; border-radius:999px; padding:14px 16px; cursor:pointer;
+      background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white;
+      font-size:15px; font-weight:950; box-shadow:0 8px 24px rgba(216,75,126,.32);
+    }
+    .btn-outline {
+      width:100%; border:2px solid var(--border); border-radius:999px; padding:12px 16px; cursor:pointer;
+      background:white; color:var(--text); font-size:14px; font-weight:900;
+    }
+    .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .photo-box {
+      border:2px dashed var(--border); background:#fff8fc; border-radius:18px; padding:14px; text-align:center;
+    }
+    .photo-status { font-size:12px; color:var(--text2); font-weight:800; margin-top:8px; }
+    .theme-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+    .theme-btn {
+      border:2px solid var(--border); background:white; border-radius:15px; padding:10px;
+      cursor:pointer; text-align:left; transition:.18s; min-height:64px;
+    }
+    .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
+    .theme-swatch { height:20px; border-radius:999px; margin-bottom:7px; border:1px solid rgba(0,0,0,.06); }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); }
+    .theme-sub { font-size:10px; color:var(--text2); font-weight:750; margin-top:1px; }
+    .preview-card { position:sticky; top:86px; }
+    .canvas-wrap {
+      background:#f1f5f9; border:2px solid var(--border); border-radius:20px;
+      padding:18px; display:flex; align-items:center; justify-content:center;
+      min-height:430px; overflow:hidden;
+      background-image:repeating-conic-gradient(#f7f7f7 0% 25%,#eeeeee 0% 50%);
+      background-size:22px 22px;
+    }
+    #idCanvas { width:100%; max-width:760px; border-radius:18px; box-shadow:0 18px 45px rgba(29,53,87,.18); background:white; }
+    .preview-meta {
+      margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .chip { border:2px solid var(--border); border-radius:999px; padding:6px 10px; background:white; color:var(--text2); font-size:12px; font-weight:850; }
+    .chip span { color:var(--pink); }
+    .history-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .history-item { border:2px solid var(--border); border-radius:18px; padding:10px; background:#fff8fc; }
+    .history-item img { width:100%; border-radius:12px; display:block; background:white; }
+    .history-title { font-size:12px; font-weight:950; margin:8px 0 2px; }
+    .history-date { font-size:10px; color:var(--text2); font-weight:800; margin-bottom:8px; }
+    .history-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .history-actions button { border:0; border-radius:999px; padding:8px 8px; font-size:11px; font-weight:900; cursor:pointer; }
+    .history-actions .print { background:var(--pink); color:white; }
+    .history-actions .delete { background:#fee2e2; color:#dc2626; }
+    .camera-modal {
+      display:none; position:fixed; inset:0; z-index:1000; background:#050505;
+      align-items:center; justify-content:center; flex-direction:column; padding:18px;
+    }
+    .camera-modal.show { display:flex; }
+    #cameraVideo {
+      max-width:100%; max-height:72vh; border-radius:22px; object-fit:cover;
+      transform:scaleX(-1); box-shadow:0 20px 70px rgba(0,0,0,.5);
+    }
+    .camera-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:center; }
+    .camera-actions button {
+      border:0; border-radius:999px; padding:13px 18px; font-size:14px; font-weight:950; cursor:pointer;
+    }
+    .camera-actions .capture { background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; }
+    .camera-actions .close { background:white; color:#111827; }
+    .toast {
+      position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px);
+      background:var(--navy); color:white; border-radius:999px; padding:12px 18px;
+      font-size:13px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,.2);
+      transition:.25s; z-index:1200;
+    }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+  </style>
+  <script src="/auth.js"></script>
+</head>
+<body>
+  <div class="header">
+    <a class="btn-back" href="/" title="Kembali">←</a>
+    <div class="header-main">
+      <div class="header-title">🪪 ID Card Photobooth</div>
+      <div class="header-sub">collectible pastel card · kamera langsung · print 10×15</div>
+    </div>
+    <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+  </div>
+
+  <div class="wrap">
+    <div class="card hero-card">
+      <div class="hero-copy">
+        <h2 id="heroTitle">Buat ID Card Kamu</h2>
+        <p id="heroSub">Ambil foto langsung dari kamera, isi data lucu, pilih warna, lalu export/print sebagai kartu 10×15 siap share.</p>
+      </div>
+      <div class="pill-tabs">
+        <button class="pill active" id="tabCreate" onclick="setView('create')">Create ID Card</button>
+        <button class="pill" id="tabHistory" onclick="setView('history')">Created ID Cards</button>
+      </div>
+    </div>
+
+    <div id="createPanel">
+      <div class="card">
+        <div class="card-title">🌐 Language / Bahasa</div>
+        <div class="pill-tabs">
+          <button class="pill active" id="langId" onclick="setLang('id')">Indonesia</button>
+          <button class="pill" id="langEn" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📸 Photo Input</div>
+        <div class="photo-box">
+          <button class="btn-primary" id="btnTakePicture" onclick="openCamera()">📷 Ambil Foto</button>
+          <div class="photo-status" id="photoStatus">Belum ada foto. Foto akan masuk ke area kanan kartu.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📝 Data Card</div>
+        <div class="field">
+          <label id="labelNickname">Nama Panggilan</label>
+          <input id="nickname" maxlength="20" placeholder="contoh: Dhita" oninput="handleNicknameInput()">
+        </div>
+        <div class="field">
+          <label id="labelIdNumber">Nomor ID</label>
+          <div class="inline-row">
+            <input id="idNumber" readonly>
+            <button class="small-btn" onclick="randomizeId()">Random</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="labelRole">Peran</label>
+          <div class="inline-row">
+            <select id="roleSelect" onchange="setSelectOrCustom('role')"></select>
+            <button class="small-btn" onclick="randomizeField('role')">🎲</button>
+          </div>
+          <input id="roleCustom" style="display:none;margin-top:8px;" placeholder="Tulis sendiri" oninput="setCustomValue('role')">
+        </div>
+
+        <div class="field">
+          <label id="labelMood">Mood</label>
+          <div class="inline-row">
+            <select id="moodSelect" onchange="setSelectOrCustom('mood')"></select>
+            <button class="small-btn" onclick="randomizeField('mood')">🎲</button>
+          </div>
+          <input id="moodCustom" style="display:none;margin-top:8px;" placeholder="Tulis sendiri" oninput="setCustomValue('mood')">
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label id="labelFunFact">Fakta Unik</label>
+          <div class="inline-row">
+            <select id="funFactSelect" onchange="setSelectOrCustom('funFact')"></select>
+            <button class="small-btn" onclick="randomizeField('funFact')">🎲</button>
+          </div>
+          <textarea id="funFactCustom" style="display:none;margin-top:8px;" placeholder="Tulis sendiri" oninput="setCustomValue('funFact')"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎨 Color Theme</div>
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <div class="card">
+        <div class="card-title">👁️ Live Preview</div>
+        <div class="canvas-wrap">
+          <canvas id="idCanvas" width="1012" height="638"></canvas>
+        </div>
+        <div class="preview-meta">
+          <div class="chip">Size: <span>85.6×53.98 mm</span></div>
+          <div class="chip">Export: <span>PNG/JPG</span></div>
+          <div class="chip">Print: <span>10×15 cm</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" id="btnExport" onclick="exportIdCard('png')">⬇️ Export PNG</button>
+          <button class="btn-outline" onclick="exportIdCard('jpg')">⬇️ JPG</button>
+          <button class="btn-outline" id="btnPrint" onclick="printIdCard()">🖨️ Print / Share</button>
+          <button class="btn-outline" onclick="saveCard()">💾 Save</button>
+        </div>
+      </div>
+
+      <div class="card" id="historyPanel" style="display:none;">
+        <div class="card-title">🗂️ Created ID Cards</div>
+        <div id="historyEmpty" style="font-size:13px;color:var(--text2);font-weight:800;">Belum ada ID card tersimpan.</div>
+        <div class="history-grid" id="historyGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-modal" id="cameraModal">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <canvas id="cameraCanvas" style="display:none;"></canvas>
+    <div class="camera-actions">
+      <button class="capture" onclick="capturePhoto()">📷 Capture</button>
+      <button class="close" onclick="closeCamera()">Tutup</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login';
+
+    const ID_CARD_DB_TABLE = 'id_cards';
+    const LOCAL_KEY = 'idCardHistory';
+
+    const LANG = {
+      id: {
+        heroTitle: 'Buat ID Card Kamu',
+        heroSub: 'Ambil foto langsung dari kamera, isi data lucu, pilih warna, lalu export/print sebagai kartu 10×15 siap share.',
+        create: 'Buat ID Card Kamu',
+        history: 'Created ID Cards',
+        nickname: 'Nama Panggilan',
+        idNumber: 'Nomor ID',
+        role: 'Peran',
+        mood: 'Mood',
+        funFact: 'Fakta Unik',
+        custom: 'Tulis Sendiri',
+        noPhoto: 'Belum ada foto. Foto akan masuk ke area kanan kartu.',
+        hasPhoto: 'Foto sudah masuk ke kartu ✓',
+        takePicture: '📷 Ambil Foto',
+        exportPng: '⬇️ Export PNG',
+        save: '💾 Save'
+      },
+      en: {
+        heroTitle: 'Create Your ID Card',
+        heroSub: 'Take a picture from camera, fill the playful fields, pick a color, then export/print a 10×15 share-ready card.',
+        create: 'Create Your ID Card',
+        history: 'Created ID Cards',
+        nickname: 'Nickname',
+        idNumber: 'ID Number',
+        role: 'Role',
+        mood: 'Mood',
+        funFact: 'Fun Fact',
+        custom: 'Write Your Own',
+        noPhoto: 'No photo yet. Your picture will appear on the right side of the card.',
+        hasPhoto: 'Photo added to the card ✓',
+        takePicture: '📷 Take Picture',
+        exportPng: '⬇️ Export PNG',
+        save: '💾 Save'
+      }
+    };
+
+    const OPTIONS = {
+      role: [
+        'Si Paling Ceria','Si Paling Kalem','Si Paling Gemes','Si Paling Keren','Si Paling Fotogenik',
+        'Si Paling Random','Si Paling Manis','Si Paling Santai','Si Paling Berani','Si Paling Soft',
+        'Si Paling Estetik','Si Paling Mood Booster','Si Paling Bintang','Si Paling Misterius'
+      ],
+      mood: [
+        'Happy','Excited','Chill','Percaya Diri','Gemes','Malu-malu','Ceria','Kalem','Dreamy',
+        'Kocak','Elegan','Soft','Cool','Mood Booster'
+      ],
+      funFact: [
+        'Suka foto cantik','Selalu siap difoto','Diam-diam fotogenik','Paling suka candid',
+        'Suka warna pastel','Tim foto dulu baru makan','Senyumnya mahal','Gemesnya natural',
+        'Kalem tapi menarik','Random tapi seru','Suka hal-hal kecil','Pembawa vibes positif',
+        'Sekali foto langsung jadi'
+      ]
+    };
+
+    const THEMES = {
+      pink: { name:'Pink', sub:'gemes', bg:'#fff0f6', accent:'#f472b6', accent2:'#fbcfe8', text:'#572033', photo:'#f9a8d4' },
+      lavender: { name:'Lavender', sub:'dreamy', bg:'#f5f3ff', accent:'#8b5cf6', accent2:'#ddd6fe', text:'#312e81', photo:'#c4b5fd' },
+      mint: { name:'Mint', sub:'fresh', bg:'#ecfdf5', accent:'#10b981', accent2:'#bbf7d0', text:'#064e3b', photo:'#86efac' },
+      sky: { name:'Sky Blue', sub:'soft', bg:'#eff6ff', accent:'#3b82f6', accent2:'#bfdbfe', text:'#1e3a8a', photo:'#93c5fd' },
+      butter: { name:'Butter Yellow', sub:'sunny', bg:'#fffbeb', accent:'#eab308', accent2:'#fde68a', text:'#713f12', photo:'#facc15' },
+      cream: { name:'Cream', sub:'clean', bg:'#fffaf0', accent:'#d6b56d', accent2:'#f8e7bd', text:'#5b4520', photo:'#e9d5a1' },
+      mocha: { name:'Mocha', sub:'warm', bg:'#f7efe7', accent:'#9a6b4f', accent2:'#dbc0ad', text:'#4a2d20', photo:'#b08968' },
+      gray: { name:'Soft Gray', sub:'neutral', bg:'#f8fafc', accent:'#64748b', accent2:'#e2e8f0', text:'#1e293b', photo:'#cbd5e1' },
+      navy: { name:'Navy Cream', sub:'masculine', bg:'#f8f3e8', accent:'#1D3557', accent2:'#e5d4b9', text:'#10233b', photo:'#6b7fa3' },
+      sage: { name:'Sage Green', sub:'calm', bg:'#f1f8f1', accent:'#6b8f71', accent2:'#d8ead7', text:'#29462d', photo:'#9ab89e' }
+    };
+
+    let state = {
+      lang:'id',
+      nickname:'',
+      idNumber:'',
+      role: OPTIONS.role[0],
+      mood: OPTIONS.mood[0],
+      funFact: OPTIONS.funFact[0],
+      theme:'pink',
+      photo:null,
+      savedId:null,
+      synced:false
+    };
+    let stream = null;
+    let latestIdCanvas = null;
+    let latestPrintCanvas = null;
+
+    const idCanvas = document.getElementById('idCanvas');
+    const ctx = idCanvas.getContext('2d');
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function padTextBase(input) {
+      return (input || 'GUEST').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12) || 'GUEST';
+    }
+
+    function randomCode(len=6) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let out = '';
+      crypto.getRandomValues(new Uint32Array(len)).forEach(n => out += chars[n % chars.length]);
+      return out;
+    }
+
+    function randomizeId() {
+      const base = padTextBase(state.nickname || Auth?.getBoothName?.() || 'USER');
+      state.idNumber = `${base}-${randomCode(6)}`;
+      document.getElementById('idNumber').value = state.idNumber;
+      renderPreview();
+    }
+
+    function setLang(lang) {
+      state.lang = lang;
+      document.getElementById('langId').classList.toggle('active', lang === 'id');
+      document.getElementById('langEn').classList.toggle('active', lang === 'en');
+      applyLabels();
+      buildSelects();
+      renderPreview();
+    }
+
+    function applyLabels() {
+      const l = LANG[state.lang];
+      document.getElementById('heroTitle').textContent = l.heroTitle;
+      document.getElementById('heroSub').textContent = l.heroSub;
+      document.getElementById('tabCreate').textContent = l.create;
+      document.getElementById('tabHistory').textContent = l.history;
+      document.getElementById('labelNickname').textContent = l.nickname;
+      document.getElementById('labelIdNumber').textContent = l.idNumber;
+      document.getElementById('labelRole').textContent = l.role;
+      document.getElementById('labelMood').textContent = l.mood;
+      document.getElementById('labelFunFact').textContent = l.funFact;
+      document.getElementById('btnTakePicture').textContent = l.takePicture;
+      document.getElementById('btnExport').textContent = l.exportPng;
+      document.querySelectorAll('#roleCustom,#moodCustom,#funFactCustom').forEach(el => el.placeholder = l.custom);
+      document.getElementById('photoStatus').textContent = state.photo ? l.hasPhoto : l.noPhoto;
+    }
+
+    function buildSelects() {
+      ['role','mood','funFact'].forEach(key => {
+        const sel = document.getElementById(key + 'Select');
+        const current = state[key];
+        const l = LANG[state.lang];
+        sel.innerHTML = OPTIONS[key].map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('') +
+          `<option value="__custom__">${escapeHtml(l.custom)}</option>`;
+        if (OPTIONS[key].includes(current)) {
+          sel.value = current;
+          document.getElementById(key + 'Custom').style.display = 'none';
+        } else {
+          sel.value = '__custom__';
+          const custom = document.getElementById(key + 'Custom');
+          custom.style.display = '';
+          custom.value = current;
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+    }
+
+    function handleNicknameInput() {
+      state.nickname = document.getElementById('nickname').value.slice(0, 20);
+      if (!state.idNumber || state.idNumber.startsWith('GUEST-') || state.idNumber.includes('-')) randomizeId();
+      renderPreview();
+    }
+
+    function setSelectOrCustom(key) {
+      const sel = document.getElementById(key + 'Select');
+      const custom = document.getElementById(key + 'Custom');
+      if (sel.value === '__custom__') {
+        custom.style.display = '';
+        custom.focus();
+        state[key] = custom.value || '';
+      } else {
+        custom.style.display = 'none';
+        state[key] = sel.value;
+      }
+      renderPreview();
+    }
+
+    function setCustomValue(key) {
+      const custom = document.getElementById(key + 'Custom');
+      state[key] = custom.value;
+      renderPreview();
+    }
+
+    function randomizeField(key) {
+      const arr = OPTIONS[key];
+      state[key] = arr[Math.floor(Math.random() * arr.length)];
+      buildSelects();
+      renderPreview();
+    }
+
+    function buildThemeGrid() {
+      const grid = document.getElementById('themeGrid');
+      grid.innerHTML = Object.entries(THEMES).map(([key, t]) => `
+        <button class="theme-btn ${state.theme === key ? 'active' : ''}" onclick="setTheme('${key}')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,${t.bg},${t.accent2},${t.accent});"></div>
+          <div class="theme-name">${t.name}</div>
+          <div class="theme-sub">${t.sub}</div>
+        </button>
+      `).join('');
+    }
+
+    function setTheme(key) {
+      state.theme = key;
+      buildThemeGrid();
+      renderPreview();
+    }
+
+    function setView(view) {
+      document.getElementById('tabCreate').classList.toggle('active', view === 'create');
+      document.getElementById('tabHistory').classList.toggle('active', view === 'history');
+      document.getElementById('createPanel').style.display = view === 'create' ? '' : 'none';
+      document.getElementById('historyPanel').style.display = view === 'history' ? '' : 'none';
+      if (view === 'history') renderHistory();
+    }
+
+    function drawRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawCoverImage(ctx, img, x, y, w, h) {
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      const scale = Math.max(w / iw, h / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      ctx.drawImage(img, x + w / 2 - dw / 2, y + h / 2 - dh / 2, dw, dh);
+    }
+
+    function fitFont(ctx, text, maxWidth, startPx, minPx, weight='800') {
+      let size = startPx;
+      do {
+        ctx.font = `${weight} ${size}px Segoe UI, system-ui, sans-serif`;
+        if (ctx.measureText(text || '').width <= maxWidth || size <= minPx) break;
+        size -= 2;
+      } while(size > minPx);
+      return size;
+    }
+
+    function drawLabelValue(ctx, label, value, x, y, w, theme, compact=false) {
+      ctx.fillStyle = theme.accent;
+      ctx.font = `900 ${compact ? 18 : 19}px Segoe UI, system-ui, sans-serif`;
+      ctx.fillText(label.toUpperCase(), x, y);
+      ctx.fillStyle = theme.text;
+      const size = fitFont(ctx, value || '-', w, compact ? 27 : 31, 16, '900');
+      ctx.font = `900 ${size}px Segoe UI, system-ui, sans-serif`;
+      ctx.fillText(value || '-', x, y + (compact ? 28 : 34));
+    }
+
+    function renderPreview() {
+      const theme = THEMES[state.theme];
+      const W = idCanvas.width, H = idCanvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, theme.bg);
+      bg.addColorStop(0.55, '#ffffff');
+      bg.addColorStop(1, theme.accent2);
+      ctx.fillStyle = bg;
+      drawRoundRect(ctx, 0, 0, W, H, 44);
+      ctx.fill();
+
+      // soft abstract shapes
+      ctx.save();
+      ctx.globalAlpha = 0.34;
+      ctx.fillStyle = theme.accent2;
+      ctx.beginPath(); ctx.arc(W * 0.12, H * 0.18, 130, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W * 0.82, H * 0.12, 150, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = theme.accent;
+      ctx.beginPath(); ctx.arc(W * 0.92, H * 0.86, 190, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      // inner border
+      ctx.save();
+      ctx.strokeStyle = theme.accent;
+      ctx.lineWidth = 8;
+      drawRoundRect(ctx, 24, 24, W - 48, H - 48, 36);
+      ctx.stroke();
+      ctx.restore();
+
+      // header pill
+      ctx.save();
+      ctx.fillStyle = theme.accent;
+      drawRoundRect(ctx, 50, 34, 255, 64, 32);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '950 34px Segoe UI, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ID CARD', 177, 66);
+      ctx.restore();
+
+      // logo/booth small
+      ctx.save();
+      ctx.textAlign = 'right';
+      ctx.fillStyle = theme.text;
+      ctx.globalAlpha = 0.66;
+      ctx.font = '900 18px Segoe UI, system-ui, sans-serif';
+      ctx.fillText((Auth?.getBoothName?.() || 'Photobooth').toUpperCase(), W - 50, 62);
+      ctx.restore();
+
+      const l = LANG[state.lang];
+      const leftX = 58;
+      const leftW = 520;
+      drawLabelValue(ctx, l.nickname, state.nickname || '—', leftX, 155, leftW, theme);
+      drawLabelValue(ctx, l.idNumber, state.idNumber || '—', leftX, 240, leftW, theme);
+      drawLabelValue(ctx, l.role, state.role || '—', leftX, 325, leftW, theme, true);
+      drawLabelValue(ctx, l.mood, state.mood || '—', leftX, 400, leftW, theme, true);
+
+      ctx.save();
+      ctx.fillStyle = theme.accent;
+      ctx.font = '900 18px Segoe UI, system-ui, sans-serif';
+      ctx.fillText(l.funFact.toUpperCase(), leftX, 480);
+      ctx.fillStyle = theme.text;
+      ctx.font = '850 22px Segoe UI, system-ui, sans-serif';
+      wrapText(ctx, state.funFact || '—', leftX, 512, leftW, 27, 2);
+      ctx.restore();
+
+      // right photo
+      const px = 640, py = 126, pw = 310, ph = 410;
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      drawRoundRect(ctx, px - 14, py - 14, pw + 28, ph + 28, 34);
+      ctx.fill();
+      ctx.strokeStyle = theme.photo;
+      ctx.lineWidth = 10;
+      drawRoundRect(ctx, px - 14, py - 14, pw + 28, ph + 28, 34);
+      ctx.stroke();
+      drawRoundRect(ctx, px, py, pw, ph, 24);
+      ctx.clip();
+      if (state.photo) {
+        const img = new Image();
+        img.onload = () => {
+          drawStaticIdCard();
+        };
+        img.src = state.photo;
+        // If not loaded yet, draw using cache later through drawStaticIdCard.
+        drawPlaceholderPhoto(ctx, px, py, pw, ph, theme);
+      } else {
+        drawPlaceholderPhoto(ctx, px, py, pw, ph, theme);
+      }
+      ctx.restore();
+
+      drawStaticIdCard();
+    }
+
+    function drawStaticIdCard(targetCtx = ctx, canvas = idCanvas, photoImg = null) {
+      const theme = THEMES[state.theme];
+      const W = canvas.width, H = canvas.height;
+      targetCtx.clearRect(0, 0, W, H);
+
+      const bg = targetCtx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, theme.bg);
+      bg.addColorStop(0.55, '#ffffff');
+      bg.addColorStop(1, theme.accent2);
+      targetCtx.fillStyle = bg;
+      drawRoundRect(targetCtx, 0, 0, W, H, 44);
+      targetCtx.fill();
+
+      targetCtx.save();
+      targetCtx.globalAlpha = 0.34;
+      targetCtx.fillStyle = theme.accent2;
+      targetCtx.beginPath(); targetCtx.arc(W * 0.12, H * 0.18, 130, 0, Math.PI * 2); targetCtx.fill();
+      targetCtx.beginPath(); targetCtx.arc(W * 0.82, H * 0.12, 150, 0, Math.PI * 2); targetCtx.fill();
+      targetCtx.globalAlpha = 0.22;
+      targetCtx.fillStyle = theme.accent;
+      targetCtx.beginPath(); targetCtx.arc(W * 0.92, H * 0.86, 190, 0, Math.PI * 2); targetCtx.fill();
+      targetCtx.restore();
+
+      targetCtx.save();
+      targetCtx.strokeStyle = theme.accent;
+      targetCtx.lineWidth = 8;
+      drawRoundRect(targetCtx, 24, 24, W - 48, H - 48, 36);
+      targetCtx.stroke();
+      targetCtx.restore();
+
+      targetCtx.save();
+      targetCtx.fillStyle = theme.accent;
+      drawRoundRect(targetCtx, 50, 34, 255, 64, 32);
+      targetCtx.fill();
+      targetCtx.fillStyle = '#fff';
+      targetCtx.font = '950 34px Segoe UI, system-ui, sans-serif';
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText('ID CARD', 177, 66);
+      targetCtx.restore();
+
+      targetCtx.save();
+      targetCtx.textAlign = 'right';
+      targetCtx.fillStyle = theme.text;
+      targetCtx.globalAlpha = 0.66;
+      targetCtx.font = '900 18px Segoe UI, system-ui, sans-serif';
+      targetCtx.fillText((Auth?.getBoothName?.() || 'Photobooth').toUpperCase(), W - 50, 62);
+      targetCtx.restore();
+
+      const l = LANG[state.lang];
+      const leftX = 58;
+      const leftW = 520;
+      drawLabelValue(targetCtx, l.nickname, state.nickname || '—', leftX, 155, leftW, theme);
+      drawLabelValue(targetCtx, l.idNumber, state.idNumber || '—', leftX, 240, leftW, theme);
+      drawLabelValue(targetCtx, l.role, state.role || '—', leftX, 325, leftW, theme, true);
+      drawLabelValue(targetCtx, l.mood, state.mood || '—', leftX, 400, leftW, theme, true);
+
+      targetCtx.save();
+      targetCtx.fillStyle = theme.accent;
+      targetCtx.font = '900 18px Segoe UI, system-ui, sans-serif';
+      targetCtx.fillText(l.funFact.toUpperCase(), leftX, 480);
+      targetCtx.fillStyle = theme.text;
+      targetCtx.font = '850 22px Segoe UI, system-ui, sans-serif';
+      wrapText(targetCtx, state.funFact || '—', leftX, 512, leftW, 27, 2);
+      targetCtx.restore();
+
+      const px = 640, py = 126, pw = 310, ph = 410;
+      targetCtx.save();
+      targetCtx.fillStyle = '#ffffff';
+      drawRoundRect(targetCtx, px - 14, py - 14, pw + 28, ph + 28, 34);
+      targetCtx.fill();
+      targetCtx.strokeStyle = theme.photo;
+      targetCtx.lineWidth = 10;
+      drawRoundRect(targetCtx, px - 14, py - 14, pw + 28, ph + 28, 34);
+      targetCtx.stroke();
+      drawRoundRect(targetCtx, px, py, pw, ph, 24);
+      targetCtx.clip();
+      if (photoImg) drawCoverImage(targetCtx, photoImg, px, py, pw, ph);
+      else if (state.photo) {
+        const img = new Image();
+        img.onload = () => {
+          targetCtx.save();
+          drawRoundRect(targetCtx, px, py, pw, ph, 24);
+          targetCtx.clip();
+          drawCoverImage(targetCtx, img, px, py, pw, ph);
+          targetCtx.restore();
+        };
+        img.src = state.photo;
+        drawPlaceholderPhoto(targetCtx, px, py, pw, ph, theme);
+      } else {
+        drawPlaceholderPhoto(targetCtx, px, py, pw, ph, theme);
+      }
+      targetCtx.restore();
+
+      targetCtx.save();
+      targetCtx.fillStyle = theme.accent;
+      targetCtx.globalAlpha = .9;
+      targetCtx.font = '900 24px Segoe UI, sans-serif';
+      targetCtx.fillText('✦', 340, 92);
+      targetCtx.fillText('♡', 910, 92);
+      targetCtx.fillText('✧', 92, 570);
+      targetCtx.restore();
+    }
+
+    function drawPlaceholderPhoto(c, x, y, w, h, theme) {
+      const grad = c.createLinearGradient(x, y, x+w, y+h);
+      grad.addColorStop(0, theme.accent2);
+      grad.addColorStop(1, '#ffffff');
+      c.fillStyle = grad;
+      c.fillRect(x, y, w, h);
+      c.fillStyle = 'rgba(255,255,255,.8)';
+      c.font = '80px serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('📷', x + w/2, y + h/2 - 10);
+      c.font = '900 18px Segoe UI, sans-serif';
+      c.fillStyle = theme.text;
+      c.globalAlpha = .65;
+      c.fillText(state.lang === 'id' ? 'ambil foto' : 'take picture', x + w/2, y + h/2 + 56);
+      c.globalAlpha = 1;
+    }
+
+    function wrapText(c, text, x, y, maxWidth, lineHeight, maxLines=2) {
+      const words = String(text || '').split(/\s+/);
+      let line = '';
+      let lines = [];
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (c.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      lines = lines.slice(0, maxLines);
+      lines.forEach((ln, i) => {
+        if (i === maxLines - 1 && c.measureText(ln).width > maxWidth) {
+          while (ln.length > 3 && c.measureText(ln + '…').width > maxWidth) ln = ln.slice(0, -1);
+          ln += '…';
+        }
+        c.fillText(ln, x, y + i * lineHeight);
+      });
+    }
+
+    async function openCamera() {
+      try {
+        closeCamera();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+          audio: false
+        });
+        const video = document.getElementById('cameraVideo');
+        video.srcObject = stream;
+        document.getElementById('cameraModal').classList.add('show');
+      } catch (e) {
+        showToast('Kamera tidak bisa diakses.');
+      }
+    }
+
+    function closeCamera() {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      document.getElementById('cameraModal').classList.remove('show');
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const canvas = document.getElementById('cameraCanvas');
+      const W = 900, H = 1200;
+      canvas.width = W; canvas.height = H;
+      const c = canvas.getContext('2d');
+      const vW = video.videoWidth || W, vH = video.videoHeight || H;
+      const scale = Math.max(W / vW, H / vH);
+      const dw = vW * scale, dh = vH * scale;
+      const dx = (W - dw) / 2, dy = (H - dh) / 2;
+      c.save();
+      c.translate(W, 0);
+      c.scale(-1, 1);
+      c.drawImage(video, 0, 0, vW, vH, dx, dy, dw, dh);
+      c.restore();
+      state.photo = canvas.toDataURL('image/jpeg', .9);
+      document.getElementById('photoStatus').textContent = LANG[state.lang].hasPhoto;
+      closeCamera();
+      renderPreview();
+      saveCard(true);
+    }
+
+    function dataUrlToBlob(dataUrl) {
+      const [head, body] = dataUrl.split(',');
+      const mime = (head.match(/:(.*?);/) || [])[1] || 'image/png';
+      const bin = atob(body);
+      const arr = new Uint8Array(bin.length);
+      for (let i=0; i<bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type:mime });
+    }
+
+    function dataUrlToFile(dataUrl, filename) {
+      const blob = dataUrlToBlob(dataUrl);
+      return new File([blob], filename, { type: blob.type });
+    }
+
+    async function getIdCardDataUrl(type='png') {
+      const c = document.createElement('canvas');
+      c.width = 1012;
+      c.height = 638;
+      const cc = c.getContext('2d');
+      if (state.photo) {
+        const img = await loadImage(state.photo);
+        drawStaticIdCard(cc, c, img);
+      } else {
+        drawStaticIdCard(cc, c, null);
+      }
+      latestIdCanvas = c;
+      return c.toDataURL(type === 'jpg' ? 'image/jpeg' : 'image/png', .94);
+    }
+
+    async function getPrintDataUrl() {
+      const print = document.createElement('canvas');
+      print.width = 1200;
+      print.height = 1800;
+      const pc = print.getContext('2d');
+      pc.fillStyle = '#ffffff';
+      pc.fillRect(0, 0, print.width, print.height);
+
+      const idUrl = await getIdCardDataUrl('png');
+      const idImg = await loadImage(idUrl);
+
+      const cardW = 1040;
+      const cardH = Math.round(cardW * 638 / 1012);
+      const x = (print.width - cardW) / 2;
+      const y = 120;
+      pc.save();
+      pc.shadowColor = 'rgba(29,53,87,.22)';
+      pc.shadowBlur = 24;
+      pc.shadowOffsetY = 12;
+      drawRoundRect(pc, x, y, cardW, cardH, 40);
+      pc.fillStyle = '#fff';
+      pc.fill();
+      pc.clip();
+      pc.drawImage(idImg, x, y, cardW, cardH);
+      pc.restore();
+
+      // Logo / booth name
+      const logoUrl = Auth?.getLogoUrl?.() || '';
+      const boothName = Auth?.getBoothName?.() || 'Photobooth';
+      try {
+        const logo = logoUrl ? await loadImage(logoUrl) : null;
+        if (logo) {
+          const s = 170;
+          pc.save();
+          drawRoundRect(pc, print.width/2 - s/2, y + cardH + 110, s, s, 40);
+          pc.clip();
+          drawCoverImage(pc, logo, print.width/2 - s/2, y + cardH + 110, s, s);
+          pc.restore();
+        } else throw new Error('no logo');
+      } catch(e) {
+        pc.fillStyle = '#1D3557';
+        pc.font = '950 60px Segoe UI, sans-serif';
+        pc.textAlign = 'center';
+        pc.fillText(boothName, print.width/2, y + cardH + 190);
+      }
+
+      pc.fillStyle = '#64748b';
+      pc.font = '850 32px Segoe UI, sans-serif';
+      pc.textAlign = 'center';
+      pc.fillText('ID Card Photobooth', print.width/2, y + cardH + 345);
+      pc.font = '700 24px Segoe UI, sans-serif';
+      pc.fillText(new Date().toLocaleDateString('id-ID', { dateStyle:'long' }), print.width/2, y + cardH + 386);
+
+      latestPrintCanvas = print;
+      return print.toDataURL('image/png');
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        if (!String(src).startsWith('data:')) img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Gagal load image'));
+        img.src = src;
+      });
+    }
+
+    async function exportIdCard(type='png') {
+      if (!state.photo && !confirm('Foto belum ditambahkan. Lanjut download dengan placeholder?')) return;
+      const url = await getIdCardDataUrl(type);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `id-card-${(state.nickname || 'guest').replace(/\s+/g,'-').toLowerCase()}-${Date.now()}.${type === 'jpg' ? 'jpg' : 'png'}`;
+      a.click();
+      await saveCard(true);
+      showToast('ID Card berhasil diexport ✓');
+    }
+
+    async function printIdCard() {
+      if (!state.photo && !confirm('Foto belum ditambahkan. Lanjut print dengan placeholder?')) return;
+      const url = await getPrintDataUrl();
+      const filename = `id-card-print-10x15-${Date.now()}.png`;
+      await saveCard(true, url);
+      const file = dataUrlToFile(url, filename);
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
+          await navigator.share({ title:'ID Card Photobooth', text:'Print file 10×15 cm', files:[file] });
+          showToast('File print dibagikan ✓');
+        } else {
+          const a = document.createElement('a');
+          a.href = url; a.download = filename; a.click();
+          showToast('Browser belum support share file, jadi didownload ya.');
+        }
+      } catch(e) {
+        if (e.name !== 'AbortError') {
+          const a = document.createElement('a');
+          a.href = url; a.download = filename; a.click();
+          showToast('Share gagal, file didownload.');
+        }
+      }
+    }
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch(e) { return []; }
+    }
+
+    function setHistory(items) {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(items.slice(0, 80)));
+    }
+
+    async function saveCard(silent=false, printFileUrl=null) {
+      if (!state.idNumber) randomizeId();
+      const exportUrl = await getIdCardDataUrl('png');
+      const record = {
+        id: state.savedId || `local-${Date.now()}-${randomCode(4)}`,
+        profile_id: Auth?.getUserId?.() || null,
+        nickname: state.nickname,
+        id_number: state.idNumber,
+        role: state.role,
+        mood: state.mood,
+        fun_fact: state.funFact,
+        language: state.lang,
+        color_theme: state.theme,
+        photo_url: state.photo,
+        logo_url: Auth?.getLogoUrl?.() || null,
+        export_url: printFileUrl || exportUrl,
+        card_preview: exportUrl,
+        created_at: new Date().toISOString(),
+        synced: false
+      };
+      state.savedId = record.id;
+
+      const items = getHistory();
+      const idx = items.findIndex(x => x.id === record.id);
+      if (idx >= 0) items[idx] = { ...items[idx], ...record };
+      else items.unshift(record);
+      setHistory(items);
+
+      syncToDatabase(record).then(ok => {
+        if (ok) {
+          const latest = getHistory();
+          const found = latest.find(x => x.id === record.id);
+          if (found) found.synced = true;
+          setHistory(latest);
+        }
+      });
+
+      if (!silent) showToast('ID Card tersimpan ✓');
+      renderHistory();
+      return record;
+    }
+
+    async function syncToDatabase(record) {
+      // Supabase sync best-effort. Kalau tabel belum dibuat, app tetap aman pakai localStorage.
+      try {
+        const session = Auth?.getSession?.();
+        if (!session?.access_token || !window.SUPABASE_URL) return false;
+      } catch(e) {}
+
+      try {
+        const token = Auth.getToken();
+        const row = {
+          local_id: record.id,
+          profile_id: record.profile_id,
+          nickname: record.nickname,
+          id_number: record.id_number,
+          role: record.role,
+          mood: record.mood,
+          fun_fact: record.fun_fact,
+          language: record.language,
+          color_theme: record.color_theme,
+          photo_url: record.photo_url,
+          logo_url: record.logo_url,
+          export_url: record.export_url,
+          created_at: record.created_at
+        };
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${ID_CARD_DB_TABLE}`, {
+          method:'POST',
+          headers:{
+            apikey: SUPABASE_ANON,
+            Authorization:`Bearer ${token}`,
+            'Content-Type':'application/json',
+            Prefer:'resolution=merge-duplicates'
+          },
+          body: JSON.stringify(row)
+        });
+        return res.ok;
+      } catch(e) {
+        return false;
+      }
+    }
+
+    function renderHistory() {
+      const grid = document.getElementById('historyGrid');
+      const empty = document.getElementById('historyEmpty');
+      const items = getHistory();
+      empty.style.display = items.length ? 'none' : '';
+      grid.innerHTML = items.map(item => `
+        <div class="history-item">
+          <img src="${item.card_preview || item.export_url}" alt="ID card">
+          <div class="history-title">${escapeHtml(item.nickname || 'Guest')} · ${escapeHtml(item.id_number || '')}</div>
+          <div class="history-date">${new Date(item.created_at).toLocaleString('id-ID')} ${item.synced ? '· DB ✓' : '· Local'}</div>
+          <div class="history-actions">
+            <button class="print" onclick="printExisting('${item.id}')">Print</button>
+            <button class="delete" onclick="deleteCard('${item.id}')">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function printExisting(id) {
+      const item = getHistory().find(x => x.id === id);
+      if (!item) return;
+      const fileUrl = item.export_url || item.card_preview;
+      const file = dataUrlToFile(fileUrl, `id-card-print-${Date.now()}.png`);
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
+          await navigator.share({ title:'ID Card Photobooth', files:[file] });
+        } else {
+          const a = document.createElement('a'); a.href = fileUrl; a.download = file.name; a.click();
+        }
+      } catch(e) {}
+    }
+
+    async function deleteCard(id) {
+      if (!confirm('Hapus ID card ini?')) return;
+      setHistory(getHistory().filter(x => x.id !== id));
+      try {
+        const token = Auth.getToken();
+        await fetch(`${SUPABASE_URL}/rest/v1/${ID_CARD_DB_TABLE}?local_id=eq.${encodeURIComponent(id)}`, {
+          method:'DELETE',
+          headers:{ apikey:SUPABASE_ANON, Authorization:`Bearer ${token}` }
+        });
+      } catch(e) {}
+      renderHistory();
+      showToast('ID Card dihapus');
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      applyLabels();
+      buildSelects();
+      buildThemeGrid();
+      randomizeId();
+      renderPreview();
+      renderHistory();
+    });
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  </script>
+</body>
+</html>

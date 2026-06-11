@@ -48,6 +48,18 @@
   ],
   "rewrites": [
     {
+      "source": "/newspaper",
+      "destination": "/newspaper.html"
+    },
+    {
+      "source": "/magazine",
+      "destination": "/magazine.html"
+    },
+    {
+      "source": "/idcard",
+      "destination": "/idcard.html"
+    },
+    {
       "source": "/reset-password",
       "destination": "/reset-password.html"
     },

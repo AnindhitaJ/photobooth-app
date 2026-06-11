@@ -188,9 +188,11 @@
     const qty = Math.max(1, parseInt(ganciState.config?.jumlah || ganciState.config?.quantity || 1, 10) || 1);
     const panelWmm = Math.max(20, Number(ganciState.config?.ganciW || 55));
     const panelHmm = Math.max(20, Number(ganciState.config?.ganciH || 55));
-    const betweenPairMM = 4;
-    const gapMM = 4;
-    const marginMM = 8;
+    // Layout mentok: isi kertas dibuat semaksimal mungkin dan mulai dari atas-kiri.
+    // Jadi tidak ada lagi whitespace besar di atas karena vertical-center.
+    const betweenPairMM = 3;
+    const gapMM = 3;
+    const marginMM = 2;
     const pairWmm = panelWmm * 2 + betweenPairMM;
 
     const cols = Math.max(1, Math.floor((paper.w - marginMM * 2 + gapMM) / (pairWmm + gapMM)));
@@ -202,18 +204,34 @@
     const logoImg = await resolveLogoImage(options?.logoUrl || '/logo.png');
     const theme = buildLogoTheme(logoImg);
 
-    const panelWpx = mmToPx(panelWmm, dpi);
-    const panelHpx = mmToPx(panelHmm, dpi);
     const pageWpx = mmToPx(paper.w, dpi);
     const pageHpx = mmToPx(paper.h, dpi);
     const marginPx = mmToPx(marginMM, dpi);
     const gapPx = mmToPx(gapMM, dpi);
     const betweenPairPx = mmToPx(betweenPairMM, dpi);
-    const pairWpx = panelWpx * 2 + betweenPairPx;
-    const usedW = cols * pairWpx + Math.max(0, cols - 1) * gapPx;
-    const usedH = rows * panelHpx + Math.max(0, rows - 1) * gapPx;
-    const startX = Math.max(marginPx, Math.round((pageWpx - usedW) / 2));
-    const startY = Math.max(marginPx, Math.round((pageHpx - usedH) / 2));
+
+    // Hitung skala maksimum agar grid yang ada bisa "mentok" memenuhi area print.
+    const rawPanelWpx = mmToPx(panelWmm, dpi);
+    const rawPanelHpx = mmToPx(panelHmm, dpi);
+    const rawPairWpx = rawPanelWpx * 2 + betweenPairPx;
+    const rawUsedW = cols * rawPairWpx + Math.max(0, cols - 1) * gapPx;
+    const rawUsedH = rows * rawPanelHpx + Math.max(0, rows - 1) * gapPx;
+    const maxW = pageWpx - marginPx * 2;
+    const maxH = pageHpx - marginPx * 2;
+    const fitScale = Math.min(maxW / rawUsedW, maxH / rawUsedH);
+
+    const panelWpx = Math.floor(rawPanelWpx * fitScale);
+    const panelHpx = Math.floor(rawPanelHpx * fitScale);
+    const scaledBetweenPairPx = Math.max(1, Math.floor(betweenPairPx * fitScale));
+    const scaledGapPx = Math.max(1, Math.floor(gapPx * fitScale));
+    const pairWpx = panelWpx * 2 + scaledBetweenPairPx;
+
+    const usedW = cols * pairWpx + Math.max(0, cols - 1) * scaledGapPx;
+    const usedH = rows * panelHpx + Math.max(0, rows - 1) * scaledGapPx;
+
+    // Mentok atas-kiri dengan margin tipis. Kalau sisa ruang ada, biarin numpuk di kanan/bawah.
+    const startX = marginPx;
+    const startY = marginPx;
 
     const logoPanelCvs = createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme);
 
@@ -231,8 +249,8 @@
         for (let col = 0; col < cols; col++) {
           const globalIdx = pageIndex * capacity + drawn;
           if (globalIdx >= qty) break;
-          const x = startX + col * (pairWpx + gapPx);
-          const y = startY + row * (panelHpx + gapPx);
+          const x = startX + col * (pairWpx + scaledGapPx);
+          const y = startY + row * (panelHpx + scaledGapPx);
           window.GanciFrames.drawFrame(ctx, {
             x, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
@@ -241,7 +259,7 @@
             hook: false
           });
           window.GanciFrames.drawFrame(ctx, {
-            x: x + panelWpx + betweenPairPx, y, w: panelWpx, h: panelHpx,
+            x: x + panelWpx + scaledBetweenPairPx, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
             frame: ganciState.frame || 'polos',
             photo: logoPanelCvs,

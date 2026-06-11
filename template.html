@@ -470,6 +470,8 @@
     const slots = selectedTemplate.slots || [];
     if (slots.length === 0) { alert('Template ini belum punya slot foto.'); return; }
 
+    localStorage.removeItem('captureFlow');
+    localStorage.removeItem('ganciConfig');
     localStorage.removeItem('photos');
     localStorage.removeItem('filteredPhotos');
     localStorage.removeItem('livePhotos');

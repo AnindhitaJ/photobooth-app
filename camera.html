@@ -53,6 +53,23 @@
     #frameGuide::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
     #frameGuide::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
 
+
+    #ganciFrameCanvas {
+      position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      pointer-events: none; z-index: 16; display: none;
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,0.42));
+      transition: width 0.35s ease, height 0.35s ease, opacity 0.25s ease;
+    }
+    body.ganci-mode #slotIndicator { display: none; }
+    body.ganci-mode #photosStrip { display: none; }
+    body.ganci-mode #frameGuide {
+      border-color: rgba(255,255,255,0.28);
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.24);
+    }
+    body.ganci-mode #frameGuide::before,
+    body.ganci-mode #frameGuide::after { display: none; }
+
+
     /* REC indicator */
     #recIndicator {
       position: fixed; top: max(14px, env(safe-area-inset-top, 14px)); right: 16px;
@@ -255,6 +272,7 @@
     }
   </style>
   <script src="/auth.js"></script>
+  <script src="/ganci-utils.js"></script>
 </head>
 <body>
 
@@ -334,9 +352,17 @@
 </div>
 
 <script>
-  const slotCount    = parseInt(localStorage.getItem('slotCount') || '1');
-  const templateName = localStorage.getItem('templateName') || 'Template';
-  document.getElementById('subText').textContent = templateName + ' · ' + slotCount + ' foto';
+  const isGanciMode  = localStorage.getItem('captureFlow') === 'ganci';
+  const ganciConfig  = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
+  const slotCount    = isGanciMode ? 1 : parseInt(localStorage.getItem('slotCount') || '1');
+  const templateName = isGanciMode
+    ? ('Ganci ' + ((window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos'))
+    : (localStorage.getItem('templateName') || 'Template');
+  document.getElementById('subText').textContent = isGanciMode ? '1 foto · retake bebas' : templateName + ' · ' + slotCount + ' foto';
+  if (isGanciMode) {
+    document.body.classList.add('ganci-mode');
+    document.title = 'Kamera Ganci - LUX Photobooth';
+  }
 
   const video        = document.getElementById('video');
   const canvas       = document.getElementById('canvas');
@@ -346,6 +372,7 @@
   const btnLanjut    = document.getElementById('btnLanjut');
   const statusMsg    = document.getElementById('statusMsg');
   const recIndicator = document.getElementById('recIndicator');
+  const ganciFrameCanvas = document.getElementById('ganciFrameCanvas');
 
   let photos         = new Array(slotCount).fill(null);
   let liveVideos     = new Array(slotCount).fill(null);
@@ -367,8 +394,14 @@
 
   function updateFrameGuide() {
     const guide = document.getElementById('frameGuide');
-    const slots = JSON.parse(localStorage.getItem('templateSlots') || '[]');
-    if (!slots.length) { guide.style.opacity = '0'; return; }
+    const slots = isGanciMode
+      ? [{ x: 0, y: 0, w: ganciConfig.ganciW || 55, h: ganciConfig.ganciH || 55 }]
+      : JSON.parse(localStorage.getItem('templateSlots') || '[]');
+    if (!slots.length) {
+      guide.style.opacity = '0';
+      if (ganciFrameCanvas) ganciFrameCanvas.style.display = 'none';
+      return;
+    }
     const slot = slots[currentSlot] || slots[0];
 
     const slotAspect = slot.w / slot.h;
@@ -433,6 +466,36 @@
     guide.style.width  = guideW + 'px';
     guide.style.height = guideH + 'px';
     guide.style.opacity = '1';
+
+    if (isGanciMode) {
+      drawGanciCameraFrame(guideW, guideH);
+    } else if (ganciFrameCanvas) {
+      ganciFrameCanvas.style.display = 'none';
+    }
+  }
+
+  function drawGanciCameraFrame(guideW, guideH) {
+    if (!ganciFrameCanvas || !window.GanciFrames) return;
+    const pad = Math.max(34, Math.min(guideW, guideH) * 0.16);
+    const hookPad = Math.max(32, Math.min(guideW, guideH) * 0.14);
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = guideW + pad * 2;
+    const cssH = guideH + pad * 2 + hookPad;
+    ganciFrameCanvas.style.display = 'block';
+    ganciFrameCanvas.style.width = cssW + 'px';
+    ganciFrameCanvas.style.height = cssH + 'px';
+    ganciFrameCanvas.width = Math.round(cssW * dpr);
+    ganciFrameCanvas.height = Math.round(cssH * dpr);
+    const gctx = ganciFrameCanvas.getContext('2d');
+    gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    gctx.clearRect(0, 0, cssW, cssH);
+    window.GanciFrames.drawFrame(gctx, {
+      x: pad, y: pad + hookPad, w: guideW, h: guideH,
+      bentuk: ganciConfig.bentuk || 'persegi',
+      frame: ganciConfig.frame || 'polos',
+      overlay: true,
+      hook: true
+    });
   }
 
 
@@ -484,13 +547,15 @@
     const allDone = photos.every(p => p !== null);
     if (!allDone) {
       const next = photos.findIndex(p => p === null);
-      document.getElementById('titleText').textContent = 'Foto ' + (next+1) + '/' + slotCount;
+      document.getElementById('titleText').textContent = isGanciMode ? 'Foto Ganci' : 'Foto ' + (next+1) + '/' + slotCount;
+      btnAmbil.textContent = isGanciMode ? '📷 Ambil Foto' : '📷 Ambil';
       btnAmbil.style.display = '';
       btnLanjut.style.display = 'none';
       document.getElementById('btnSkip').style.visibility = 'hidden';
     } else {
-      document.getElementById('titleText').textContent = 'Semua selesai ✓';
+      document.getElementById('titleText').textContent = isGanciMode ? 'Foto ganci oke? ✓' : 'Semua selesai ✓';
       btnAmbil.style.display = 'none';
+      btnLanjut.textContent = isGanciMode ? 'Filter →' : 'Lanjut →';
       btnLanjut.style.display = '';
       document.getElementById('btnSkip').style.visibility = 'hidden';
     }
@@ -643,6 +708,12 @@
   // ── Preview Panel ──
   function showPreview() {
     const panel = document.getElementById('previewPanel');
+    if (isGanciMode) {
+      const backBtn = panel.querySelector('.prev-btn-back');
+      const goBtn = panel.querySelector('.prev-btn-go');
+      if (backBtn) backBtn.textContent = '↺ Retake';
+      if (goBtn) goBtn.textContent = 'Lanjut ke Filter →';
+    }
     const big   = document.getElementById('previewBig');
     const thumbs = document.getElementById('previewThumbs');
     thumbs.innerHTML = '';
@@ -665,6 +736,10 @@
 
   function closePreview() {
     document.getElementById('previewPanel').classList.remove('show');
+    if (isGanciMode) {
+      retakePhoto(0);
+      return;
+    }
     btnAmbil.style.display = captureMode === 'manual' ? '' : 'none';
     if (!stream || !stream.active) startCamera();
   }
@@ -680,6 +755,18 @@
         if (validLive.length > 0) {
           try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) {}
         }
+        if (isGanciMode) {
+          const initialState = {
+            mode: 'ganci',
+            originalPhoto: photos[0] || null,
+            frame: ganciConfig.frame || 'polos',
+            frameLabel: (window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos',
+            bentuk: ganciConfig.bentuk || 'persegi',
+            config: ganciConfig,
+            updatedAt: new Date().toISOString()
+          };
+          try { localStorage.setItem('ganciState', JSON.stringify(initialState)); } catch(e) {}
+        }
         window.location.href = '/filter';
       }, 500);
     } catch(e) {
@@ -694,13 +781,14 @@
       document.getElementById('confirmQuitModal').style.display = 'flex';
     } else {
       if (stream) stream.getTracks().forEach(t => t.stop());
-      window.location.href = '/template';
+      window.location.href = isGanciMode ? '/ganci' : '/template';
     }
   }
   function konfirmasiKeluar() {
     if (stream) stream.getTracks().forEach(t => t.stop());
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    window.location.href = '/template';
+    if (isGanciMode) localStorage.removeItem('captureFlow');
+    window.location.href = isGanciMode ? '/ganci' : '/template';
   }
   function batalKeluar() {
     document.getElementById('confirmQuitModal').style.display = 'none';
@@ -712,6 +800,12 @@
   // Init
   renderIndicators(); renderStrip(); updateTitle(); updateVideoTransform();
   window.addEventListener('resize', updateFrameGuide);
+  if (isGanciMode) {
+    document.getElementById('modeModal').style.display = 'none';
+    captureMode = 'manual';
+    countdownSec = 3;
+    startCamera().then(() => setTimeout(updateFrameGuide, 600));
+  }
 </script>
 
 <script>

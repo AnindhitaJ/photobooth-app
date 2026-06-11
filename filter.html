@@ -115,15 +115,17 @@
     .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
     .btn-primary { background: linear-gradient(135deg, var(--green), #c9972a); color: white; box-shadow: 0 6px 20px rgba(229,184,66,0.35); }
     .btn-primary:hover { transform: translateY(-2px); }
+    body.ganci-mode .photo-tabs, body.ganci-mode #applyAllRow { display: none; }
   </style>
   <script src="/auth.js"></script>
+  <script src="/ganci-utils.js"></script>
 </head>
 <body>
 
   <div style="text-align:center;margin-bottom:14px;">
     <div class="logo-text" style="display:flex;align-items:center;gap:8px;"><img data-auth-logo src="/logo.png" alt="LUX Photobooth" style="height:36px;width:36px;border-radius:50%;object-fit:cover;"><span>LUX PHOTOBOOTH</span></div>
-    <h2>Beauty Filter</h2>
-    <p class="sub">Edit tiap foto satu per satu</p>
+    <h2 id="pageTitle">Beauty Filter</h2>
+    <p class="sub" id="pageSub">Edit tiap foto satu per satu</p>
   </div>
 
   <div class="photo-tabs" id="photoTabs"></div>
@@ -223,7 +225,7 @@
         </div>
       </div>
 
-      <div class="apply-note">
+      <div class="apply-note" id="applyNote">
         Filter diterapkan ke <span>Foto <span id="currentPhotoNum">1</span></span>.
         Tiap foto bisa beda filter.
       </div>
@@ -232,12 +234,12 @@
         <button class="btn btn-ghost"  onclick="resetFilter()">↺ Reset</button>
         <button class="btn btn-apply"  onclick="simpanFoto()">✓ Simpan Foto Ini</button>
       </div>
-      <div class="btn-row">
+      <div class="btn-row" id="applyAllRow">
         <button class="btn btn-apply" style="background:linear-gradient(135deg,#E5B842,#0099cc);box-shadow:0 6px 20px rgba(229,184,66,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
       </div>
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
-        <button class="btn btn-primary"   onclick="lanjut()">Lihat Hasil →</button>
+        <button class="btn btn-primary" id="btnLanjutFilter" onclick="lanjut()">Lihat Hasil →</button>
       </div>
 
     </div>
@@ -246,6 +248,16 @@
 <script>
   const photos    = JSON.parse(localStorage.getItem('photos') || '[]');
   const slotCount = photos.length;
+  const isGanciMode = localStorage.getItem('captureFlow') === 'ganci';
+  const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
+  if (isGanciMode) {
+    document.body.classList.add('ganci-mode');
+    document.title = 'Filter Ganci - LUX Photobooth';
+    document.getElementById('pageTitle').textContent = 'Filter Ganci';
+    document.getElementById('pageSub').textContent = 'Edit 1 foto ganci, lalu simpan ke state Ganci';
+    document.getElementById('applyNote').innerHTML = 'Filter diterapkan ke <span>foto Ganci</span>.';
+    document.getElementById('btnLanjutFilter').textContent = 'Simpan Ganci ✓';
+  }
 
   let filterStates   = photos.map(() => ({ tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' }));
   let filteredPhotos = [...photos];
@@ -867,6 +879,29 @@
   window.lanjut = function() {
     simpanFotoSilent();
     localStorage.setItem('filteredPhotos', JSON.stringify(filteredPhotos));
+
+    if (isGanciMode) {
+      const frame = ganciConfig.frame || 'polos';
+      const frameLabel = (window.GanciFrames?.labels?.[frame]) || ganciConfig.frameLabel || frame;
+      const ganciState = {
+        mode: 'ganci',
+        photo: filteredPhotos[0] || photos[0] || null,
+        originalPhoto: photos[0] || null,
+        frame,
+        frameLabel,
+        bentuk: ganciConfig.bentuk || 'persegi',
+        filter: filterStates[0] || { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' },
+        config: ganciConfig,
+        updatedAt: new Date().toISOString()
+      };
+      try { localStorage.setItem('ganciState', JSON.stringify(ganciState)); } catch(e) {
+        alert('Storage penuh. Foto ganci belum bisa disimpan.');
+        return;
+      }
+      window.location.href = '/ganci?done=1';
+      return;
+    }
+
     window.location.href = '/result';
   };
 
@@ -875,7 +910,8 @@
   };
   window.konfirmasiKeluar = function() {
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    window.location.href = '/template';
+    if (isGanciMode) localStorage.removeItem('captureFlow');
+    window.location.href = isGanciMode ? '/ganci' : '/template';
   };
   window.batalKeluar = function() {
     document.getElementById('confirmQuitModal').style.display = 'none';

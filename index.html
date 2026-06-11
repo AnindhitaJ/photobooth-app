@@ -97,6 +97,17 @@
     }
     .btn-galeri:hover { border-color: #D84B7E; color: #D84B7E; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(216,75,126,0.18); }
     .btn-galeri:active { transform: scale(0.98); }
+    .btn-ganci {
+      background: linear-gradient(135deg, #E5B842, #f7c948);
+      color: white; border: none; padding: 13px 48px;
+      font-size: 16px; font-weight: 800; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(229,184,66,0.45);
+      letter-spacing: -0.3px; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-ganci:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(229,184,66,0.6); }
+    .btn-ganci:active { transform: scale(0.98); }
     .btn-group { display: flex; flex-direction: column; align-items: center; gap: 0; }
     .footer {
       position: fixed; bottom: 20px;
@@ -141,6 +152,7 @@
 </div>
 <div class="btn-group">
     <button class="btn-mulai" onclick="mulai()">✨ Mulai Sekarang</button>
+    <button class="btn-ganci" onclick="bukaGanci()">🪝 Ganci Photo Insert</button>
     <button class="btn-galeri" onclick="bukaGaleri()">🖼️ Galeri Foto</button>
   </div>
   <div class="footer"><img data-auth-logo src="/logo.png" alt="LUX" style="height:22px;width:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">LUX PHOTOBOOTH</div>
@@ -193,6 +205,7 @@
       }
     });
     function mulai() { window.location.href = '/template'; }
+    function bukaGanci() { window.location.href = '/ganci'; }
     function bukaGaleri() { window.location.href = '/gallery'; }
   </script>
   <script>

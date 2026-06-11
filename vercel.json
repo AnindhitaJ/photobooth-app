@@ -94,6 +94,10 @@
     {
       "source": "/admin",
       "destination": "/admin.html"
+    },
+    {
+      "source": "/ganci",
+      "destination": "/ganci.html"
     }
   ]
 }

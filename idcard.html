@@ -151,6 +151,27 @@
     }
     .camera-actions .capture { background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; }
     .camera-actions .close { background:white; color:#111827; }
+    .print-modal {
+      display:none; position:fixed; inset:0; z-index:1100;
+      background:rgba(15,23,42,.62); align-items:center; justify-content:center;
+      padding:18px;
+    }
+    .print-modal.show { display:flex; }
+    .print-dialog {
+      width:min(420px,100%); background:white; border:2px solid var(--border);
+      border-radius:24px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.25);
+      text-align:center;
+    }
+    .print-dialog h3 { font-size:20px; font-weight:950; margin-bottom:8px; color:var(--text); }
+    .print-dialog p { font-size:13px; font-weight:750; color:var(--text2); line-height:1.5; margin-bottom:16px; }
+    .print-choice { display:grid; gap:10px; }
+    .print-choice button {
+      border-radius:18px; padding:14px; border:2px solid var(--border);
+      background:#fff8fc; cursor:pointer; font-size:14px; font-weight:950; color:var(--text);
+      text-align:left;
+    }
+    .print-choice button strong { display:block; color:var(--pink); margin-bottom:3px; }
+    .print-choice button span { display:block; color:var(--text2); font-size:12px; line-height:1.35; }
     .toast {
       position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px);
       background:var(--navy); color:white; border-radius:999px; padding:12px 18px;
@@ -262,7 +283,7 @@
         <div class="btn-row">
           <button class="btn-primary" id="btnExport" onclick="exportIdCard('png')">⬇️ Export PNG</button>
           <button class="btn-outline" onclick="exportIdCard('jpg')">⬇️ JPG</button>
-          <button class="btn-outline" id="btnPrint" onclick="printIdCard()">🖨️ Print / Share</button>
+          <button class="btn-outline" id="btnPrint" onclick="printIdCard()">🖨️ Cetak</button>
           <button class="btn-outline" onclick="saveCard()">💾 Save</button>
         </div>
       </div>
@@ -281,6 +302,24 @@
     <div class="camera-actions">
       <button class="capture" onclick="capturePhoto()">📷 Capture</button>
       <button class="close" onclick="closeCamera()">Tutup</button>
+    </div>
+  </div>
+
+  <div class="print-modal" id="printSizeModal">
+    <div class="print-dialog">
+      <h3>Pilih ukuran cetak</h3>
+      <p>Save tetap ukuran ID Card asli. Untuk cetak, pilih mau file asli atau ditaruh di canvas 4R.</p>
+      <div class="print-choice">
+        <button onclick="confirmPrintSize('original')">
+          <strong>Ukuran Asli</strong>
+          <span>Export/cetak ID Card sesuai ukuran kartu saja.</span>
+        </button>
+        <button onclick="confirmPrintSize('4r')">
+          <strong>4R 10×15 cm</strong>
+          <span>ID Card ukuran asli ditempatkan di kiri atas canvas 4R. Sisa putih memang dibiarkan.</span>
+        </button>
+        <button onclick="closePrintSizeModal()" style="text-align:center;background:white;">Batal</button>
+      </div>
     </div>
   </div>
 
@@ -919,30 +958,23 @@
       const idUrl = await getIdCardDataUrl('png');
       const idImg = await loadImage(idUrl);
 
-      // Print file tetap 10×15 cm / 4R portrait, tapi ID Card ditempatkan di kiri atas.
-      // Save/export biasa tetap ukuran ID Card saja.
-      const margin = 40;
-      const cardW = 1012;
-      const cardH = 638;
+      // 4R portrait canvas. ID Card ditaruh di kiri atas dengan ukuran fisik asli KTP.
+      // 4R = 10×15 cm. ID Card = 85.6×53.98 mm, jadi skalanya tidak memenuhi 4R.
+      const margin = 36;
+      const cardW = Math.round(print.width * 0.856); // 85.6mm dari lebar 100mm
+      const cardH = Math.round(cardW * 638 / 1012);
       const x = margin;
       const y = margin;
 
       pc.save();
-      pc.shadowColor = 'rgba(29,53,87,.16)';
-      pc.shadowBlur = 14;
-      pc.shadowOffsetY = 6;
-      drawRoundRect(pc, x, y, cardW, cardH, 34);
+      pc.shadowColor = 'rgba(29,53,87,.10)';
+      pc.shadowBlur = 8;
+      pc.shadowOffsetY = 3;
+      drawRoundRect(pc, x, y, cardW, cardH, 24);
       pc.fillStyle = '#fff';
       pc.fill();
       pc.clip();
       pc.drawImage(idImg, x, y, cardW, cardH);
-      pc.restore();
-
-      pc.save();
-      pc.fillStyle = 'rgba(100,116,139,.58)';
-      pc.font = '700 20px Segoe UI, sans-serif';
-      pc.textAlign = 'left';
-      pc.fillText('4R print file · ID Card positioned top-left', margin, y + cardH + 34);
       pc.restore();
 
       latestPrintCanvas = print;
@@ -970,26 +1002,40 @@
       showToast('ID Card berhasil diexport ✓');
     }
 
-    async function printIdCard() {
+    function printIdCard() {
       if (!state.photo && !confirm('Foto belum ditambahkan. Lanjut print dengan placeholder?')) return;
-      const url = await getPrintDataUrl();
-      const filename = `id-card-print-10x15-${Date.now()}.png`;
+      document.getElementById('printSizeModal').classList.add('show');
+    }
+
+    function closePrintSizeModal() {
+      document.getElementById('printSizeModal').classList.remove('show');
+    }
+
+    async function confirmPrintSize(size) {
+      closePrintSizeModal();
+      const is4R = size === '4r';
+      const url = is4R ? await getPrintDataUrl() : await getIdCardDataUrl('png');
+      const filename = is4R ? `id-card-print-4r-${Date.now()}.png` : `id-card-original-${Date.now()}.png`;
       await saveCard(true, url);
       const file = dataUrlToFile(url, filename);
       try {
         if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
-          await navigator.share({ title:'ID Card Photobooth', text:'Print file 10×15 cm', files:[file] });
-          showToast('File print dibagikan ✓');
+          await navigator.share({
+            title:'ID Card Photobooth',
+            text: is4R ? 'File ID Card di canvas 4R siap cetak' : 'File ID Card ukuran asli siap cetak',
+            files:[file]
+          });
+          showToast('File cetak dibuka ✓');
         } else {
           const a = document.createElement('a');
           a.href = url; a.download = filename; a.click();
-          showToast('Browser belum support share file, jadi didownload ya.');
+          showToast('Native cetak belum tersedia, file didownload.');
         }
       } catch(e) {
         if (e.name !== 'AbortError') {
           const a = document.createElement('a');
           a.href = url; a.download = filename; a.click();
-          showToast('Share gagal, file didownload.');
+          showToast('Cetak gagal dibuka, file didownload.');
         }
       }
     }

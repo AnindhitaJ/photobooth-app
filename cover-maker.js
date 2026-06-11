@@ -412,6 +412,132 @@
     ctx.globalAlpha = 1;
   }
 
+
+  const SIDE_STORY_POOL = {
+    id: {
+      friendship: [
+        'Warga sekitar melaporkan kadar ketawa meningkat 300% setelah sesi foto dimulai.',
+        'Tim anti jaim kembali gagal menjaga image di depan kamera.',
+        'Penelitian lokal menyebut candid lebih ampuh daripada pose serius.'
+      ],
+      love: [
+        'Publik meminta pasangan ini berhenti terlalu gemes, namun permintaan ditolak.',
+        'Pakar hubungan mendeteksi chemistry kuat sejak hitungan pertama.',
+        'Saksi menyebut suasana mendadak manis tanpa aba-aba.'
+      ],
+      family: [
+        'Rumah terasa lebih ramai setelah semua senyum berhasil diamankan.',
+        'Sumber keluarga menyebut foto ini akan dikirim ke grup besar.',
+        'Momen sederhana kembali terbukti paling berharga.'
+      ],
+      breaking: [
+        'Warga panik melihat aura percaya diri muncul tanpa peringatan.',
+        'Tim dokumentasi kewalahan karena pose terlalu iconic.',
+        'Sumber terpercaya menyebut ini bukan sekadar foto biasa.'
+      ],
+      vintage: [
+        'Arsip lama menerima tambahan kenangan yang sangat layak disimpan.',
+        'Nuansa nostalgia mendadak memenuhi lokasi pemotretan.',
+        'Kolektor momen menyebut foto ini punya nilai sentimental tinggi.'
+      ],
+      campus: [
+        'Mahasiswa terpantau bahagia sebelum deadline kembali menyerang.',
+        'Saksi menyebut outfit hari ini berada di atas rata-rata kelas.',
+        'Yearbook committee dikabarkan langsung mengamankan halaman khusus.'
+      ],
+      wedding: [
+        'Keluarga sepakat momen ini wajib masuk album utama.',
+        'Garis emas dan senyum hangat mendominasi laporan hari ini.',
+        'Tamu undangan menyebut vibes acara sangat layak dikenang.'
+      ],
+      birthday: [
+        'Stok kue menurun drastis, kebahagiaan meningkat tajam.',
+        'Wish list bocor: isinya bahagia terus dan foto bagus.',
+        'Lilin ulang tahun dikabarkan sempat kewalahan.'
+      ],
+      travel: [
+        'Peta lokal menandai lokasi ini sebagai titik kenangan baru.',
+        'Postcard hari ini resmi naik level jadi front page.',
+        'Tim jalan-jalan menyatakan perjalanan ini layak diulang.'
+      ],
+      classic: [
+        'Catatan resmi menyebut momen ini sederhana tapi sulit dilupakan.',
+        'Dokumentasi hari ini masuk arsip kenangan penting.',
+        'Pembaca setuju: beberapa momen memang pantas dicetak.'
+      ]
+    },
+    en: {
+      friendship: [
+        'Local sources report laughter levels rose by 300% after the camera started.',
+        'The no-shame committee failed to stay serious in front of the lens.',
+        'A local study claims candid shots beat serious poses every time.'
+      ],
+      love: [
+        'The public asked this couple to stop being adorable. Request denied.',
+        'Relationship experts detected strong chemistry before the countdown ended.',
+        'Witnesses say the room suddenly became suspiciously sweet.'
+      ],
+      family: [
+        'The room reportedly felt warmer after every smile was safely captured.',
+        'Family sources confirm this photo is heading straight to the group chat.',
+        'Simple moments have once again proven to be the most meaningful.'
+      ],
+      breaking: [
+        'Residents were shocked as main character energy appeared without warning.',
+        'The documentation team struggled to handle this level of iconic behavior.',
+        'Trusted sources confirm this was not just another photo.'
+      ],
+      vintage: [
+        'The archive received a new memory worthy of long-term preservation.',
+        'A wave of nostalgia reportedly entered the scene during the session.',
+        'Memory collectors described the photo as sentimentally valuable.'
+      ],
+      campus: [
+        'Students were seen happy shortly before deadlines returned to attack.',
+        'Witnesses claim today’s outfits were above classroom average.',
+        'The yearbook committee reportedly reserved a special page immediately.'
+      ],
+      wedding: [
+        'Families agreed this moment belongs in the main album.',
+        'Gold accents and warm smiles dominated today’s report.',
+        'Guests described the celebration vibes as highly memorable.'
+      ],
+      birthday: [
+        'Cake supplies dropped sharply while happiness levels continued rising.',
+        'A leaked wish list shows the top request: more joy and better photos.',
+        'Birthday candles were reportedly overwhelmed by the excitement.'
+      ],
+      travel: [
+        'Local maps marked this spot as a newly discovered memory point.',
+        'Today’s postcard officially graduated into front-page material.',
+        'The travel team confirms this adventure deserves a repeat.'
+      ],
+      classic: [
+        'Official records describe this moment as simple but hard to forget.',
+        'Today’s documentation has entered the archive of important memories.',
+        'Readers agree some moments are simply worth printing.'
+      ]
+    }
+  };
+
+  function sideStory(theme, lang, idx) {
+    const list = SIDE_STORY_POOL[lang]?.[theme.id] || SIDE_STORY_POOL.en[theme.id] || [];
+    return list[idx % Math.max(1, list.length)] || '';
+  }
+
+  function drawPhotoCell(ctx, img, x, y, w, h, state, c, label) {
+    ctx.save();
+    ctx.strokeStyle = c.line || c.text;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, w, h);
+    ctx.beginPath();
+    ctx.rect(x + 7, y + 7, w - 14, h - 14);
+    ctx.clip();
+    if (img) applyPhotoFilter(ctx, img, x + 7, y + 7, w - 14, h - 14, state.filter, state.zoom, state.photoX, state.photoY);
+    else drawPlaceholder(ctx, x + 7, y + 7, w - 14, h - 14, c, label || 'take photo');
+    ctx.restore();
+  }
+
   function drawNewspaper(state, photoImg) {
     const ctx = state.ctx;
     const theme = byId(NEWSPAPER_THEMES, state.selectedTheme);
@@ -466,16 +592,21 @@
     drawWrapped(ctx, t.subheadline, W/2, 535, 960, 36, 2, 'center');
     ctx.restore();
 
-    // Photo
+    // Photo area — hero photo or 4-photo recap grid.
     const px = 100, py = 645, pw = 1000, ph = 600;
-    ctx.save();
-    ctx.strokeStyle = c.line;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(px, py, pw, ph);
-    ctx.beginPath(); ctx.rect(px+8, py+8, pw-16, ph-16); ctx.clip();
-    if (photoImg) applyPhotoFilter(ctx, photoImg, px+8, py+8, pw-16, ph-16, state.filter, state.zoom, state.photoX, state.photoY);
-    else drawPlaceholder(ctx, px+8, py+8, pw-16, ph-16, c, 'take a photo for the front page');
-    ctx.restore();
+    if (state.photoLayout === 'quad') {
+      const gap = 18;
+      const cw = (pw - gap) / 2;
+      const ch = (ph - gap) / 2;
+      const imgs = state.photoImgs || [];
+      const label = state.lang === 'id' ? 'ambil foto' : 'take photo';
+      drawPhotoCell(ctx, imgs[0], px, py, cw, ch, state, c, label + ' 1');
+      drawPhotoCell(ctx, imgs[1], px + cw + gap, py, cw, ch, state, c, label + ' 2');
+      drawPhotoCell(ctx, imgs[2], px, py + ch + gap, cw, ch, state, c, label + ' 3');
+      drawPhotoCell(ctx, imgs[3], px + cw + gap, py + ch + gap, cw, ch, state, c, label + ' 4');
+    } else {
+      drawPhotoCell(ctx, photoImg, px, py, pw, ph, state, c, state.lang === 'id' ? 'ambil foto untuk halaman depan' : 'take a photo for the front page');
+    }
 
     // Caption
     ctx.save();
@@ -500,12 +631,12 @@
     ctx.font = '900 26px Georgia, Times New Roman, serif';
     drawWrapped(ctx, (t.side1 || '').toUpperCase(), 462, 1375, 300, 32, 3);
     ctx.font = '500 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, state.lang === 'id' ? 'Laporan ini langsung ramai dibahas karena momennya terlalu niat untuk tidak masuk halaman depan.' : 'The report quickly became the talk of the day, printed here as proof that some moments deserve the front page.', 462, 1490, 300, 30, 5);
+    drawWrapped(ctx, sideStory(theme, state.lang || 'id', 0), 462, 1490, 300, 30, 5);
     ctx.beginPath(); ctx.moveTo(790,1370); ctx.lineTo(790,1665); ctx.stroke();
     ctx.font = '900 26px Georgia, Times New Roman, serif';
     drawWrapped(ctx, (t.side2 || '').toUpperCase(), 822, 1375, 300, 32, 3);
     ctx.font = '500 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, state.lang === 'id' ? 'Pembaca disarankan menyimpan edisi ini baik-baik karena momennya resmi iconic.' : 'Collectors are advised to keep this issue safely because the memory is officially iconic.', 822, 1490, 300, 30, 5);
+    drawWrapped(ctx, sideStory(theme, state.lang || 'id', 1), 822, 1490, 300, 30, 5);
     ctx.restore();
 
     drawNewspaperDecor(ctx, theme);
@@ -603,6 +734,10 @@
       filter: themes[0].recommendedFilter || 'original',
       photo: null,
       photoImg: null,
+      photos: [],
+      photoImgs: [],
+      photoLayout: type === 'newspaper' ? 'hero' : 'hero',
+      nextPhotoSlot: 0,
       zoom: 1,
       photoX: 0,
       photoY: 0,

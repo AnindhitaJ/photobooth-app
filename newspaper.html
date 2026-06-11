@@ -110,6 +110,18 @@
       </div>
 
       <div class="card">
+        <div class="card-title">🗞️ Layout Foto Koran</div>
+        <div class="filter-grid">
+          <button class="pill active" id="layoutHero" onclick="setPhotoLayout('hero')">1 Foto Hero</button>
+          <button class="pill" id="layoutQuad" onclick="setPhotoLayout('quad')">4 Foto Recap</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);font-weight:800;margin-top:10px;line-height:1.45;">
+          Mode 4 foto cocok buat bestie, birthday, campus, family, atau recap moment. Klik Ambil Foto sampai 4 kali untuk mengisi grid.
+        </div>
+        <div style="font-size:12px;color:var(--pink);font-weight:900;margin-top:8px;" id="photoSlotInfo">Foto terisi: 0/4</div>
+      </div>
+
+      <div class="card">
         <div class="card-title">✨ Filter Foto</div>
         <div class="filter-grid" id="filterGrid"></div>
       </div>
@@ -283,6 +295,25 @@
 
     function render() {
       CoverMaker.render(state);
+      updatePhotoSlotInfo();
+    }
+
+    function setPhotoLayout(layout) {
+      state.photoLayout = layout;
+      document.getElementById('layoutHero').classList.toggle('active', layout === 'hero');
+      document.getElementById('layoutQuad').classList.toggle('active', layout === 'quad');
+      updatePhotoSlotInfo();
+      render();
+    }
+
+    function updatePhotoSlotInfo() {
+      const el = document.getElementById('photoSlotInfo');
+      if (!el) return;
+      if (state.photoLayout === 'quad') {
+        el.textContent = `Foto terisi: ${(state.photoImgs || []).filter(Boolean).length}/4`;
+      } else {
+        el.textContent = state.photoImg ? 'Foto hero sudah terisi' : 'Foto hero belum terisi';
+      }
     }
 
     async function openCamera() {
@@ -319,14 +350,26 @@
       cc.scale(-1, 1);
       cc.drawImage(video, 0, 0, vW, vH);
       cc.restore();
-      state.photo = c.toDataURL('image/jpeg', .92);
+      const dataUrl = c.toDataURL('image/jpeg', .92);
       const img = new Image();
       img.onload = () => {
-        state.photoImg = img;
+        if (state.photoLayout === 'quad') {
+          const slot = state.nextPhotoSlot || 0;
+          state.photos[slot] = dataUrl;
+          state.photoImgs[slot] = img;
+          state.nextPhotoSlot = (slot + 1) % 4;
+          if (!state.photoImg) {
+            state.photo = dataUrl;
+            state.photoImg = img;
+          }
+        } else {
+          state.photo = dataUrl;
+          state.photoImg = img;
+        }
         state.zoom = 1; state.photoX = 0; state.photoY = 0;
         render();
       };
-      img.src = state.photo;
+      img.src = dataUrl;
       closeCamera();
     }
 

@@ -525,6 +525,48 @@
     return list[idx % Math.max(1, list.length)] || '';
   }
 
+
+  function footerTagline(theme, lang) {
+    const map = {
+      id: {
+        friendship: 'NO RULES. JUST US. ♡',
+        love: 'LOVE IS IN THE AIR ♡',
+        family: 'LOVE • LAUGH • MEMORIES',
+        breaking: 'CHAOS TERPANTAU, VIBES AMAN.',
+        vintage: 'ARCHIVED WITH LOVE',
+        campus: 'YEARBOOK ENERGY ONLY',
+        wedding: 'A LOVE STORY IN PRINT',
+        birthday: 'TODAY WE CELEBRATE YOU! ♡',
+        travel: 'POSTCARD ENERGY ACTIVATED',
+        classic: 'A MEMORY WORTH KEEPING'
+      },
+      en: {
+        friendship: 'NO RULES. JUST US. ♡',
+        love: 'LOVE IS IN THE AIR ♡',
+        family: 'LOVE • LAUGH • MEMORIES',
+        breaking: 'CHAOS DETECTED. VIBES APPROVED.',
+        vintage: 'ARCHIVED WITH LOVE',
+        campus: 'YEARBOOK ENERGY ONLY',
+        wedding: 'A LOVE STORY IN PRINT',
+        birthday: 'TODAY WE CELEBRATE YOU! ♡',
+        travel: 'POSTCARD ENERGY ACTIVATED',
+        classic: 'A MEMORY WORTH KEEPING'
+      }
+    };
+    return map[lang]?.[theme.id] || map.en[theme.id] || 'A MEMORY WORTH KEEPING';
+  }
+
+  function sidebarHeadline(theme, lang) {
+    const map = {
+      id: {
+        friendship: 'VIBES NAIK', love: 'TOO CUTE', family: 'RUMAH', breaking: 'WASPADA', vintage: 'ARSIP', campus: 'SPOTLIGHT', wedding: 'GOLDEN', birthday: 'ANOTHER YEAR', travel: 'POSTCARD', classic: 'OFFICIAL'
+      },
+      en: {
+        friendship: 'VIBES UP', love: 'TOO CUTE', family: 'HOME', breaking: 'ALERT', vintage: 'ARCHIVE', campus: 'SPOTLIGHT', wedding: 'GOLDEN', birthday: 'ANOTHER YEAR', travel: 'POSTCARD', classic: 'OFFICIAL'
+      }
+    };
+    return map[lang]?.[theme.id] || map.en[theme.id] || 'OFFICIAL';
+  }
   function drawPhotoCell(ctx, img, x, y, w, h, state, c, label) {
     ctx.save();
     ctx.strokeStyle = c.line || c.text;
@@ -542,107 +584,164 @@
     const ctx = state.ctx;
     const theme = byId(NEWSPAPER_THEMES, state.selectedTheme);
     const c = theme.colors, t = state.text;
+    const lang = state.lang || 'en';
+    const paper = c.bg || '#f4ecdb';
+    const ink = c.text || '#141414';
+    const line = c.line || '#3a3026';
+
     ctx.clearRect(0,0,W,H);
-    ctx.fillStyle = c.bg;
+    ctx.fillStyle = paper;
     ctx.fillRect(0,0,W,H);
 
-    // paper texture
+    // subtle paper texture & stains
     ctx.save();
-    ctx.globalAlpha = .08;
-    for (let i=0;i<1400;i++) {
-      ctx.fillStyle = i % 2 ? '#000' : '#fff';
-      ctx.fillRect(Math.random()*W, Math.random()*H, 1.5, 1.5);
+    ctx.globalAlpha = .05;
+    for (let i=0;i<1800;i++) {
+      const v = 180 + (Math.random()*60|0);
+      ctx.fillStyle = `rgb(${v},${v-8},${v-18})`;
+      ctx.fillRect(Math.random()*W, Math.random()*H, 1.2, 1.2);
+    }
+    ctx.globalAlpha = .06;
+    ctx.fillStyle = c.accent || '#b9935a';
+    for (const [x,y,r] of [[140,120,76],[1040,118,62],[1080,1640,84],[150,1540,68]]) {
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
     }
     ctx.restore();
 
+    // borders
     ctx.save();
-    ctx.strokeStyle = c.line;
+    ctx.strokeStyle = line;
     ctx.lineWidth = 4;
-    ctx.strokeRect(58,58,W-116,H-116);
-    ctx.lineWidth = 2;
-    ctx.strokeRect(78,78,W-156,H-156);
+    ctx.strokeRect(28,28,W-56,H-56);
+    ctx.lineWidth = 1.7;
+    ctx.strokeRect(46,46,W-92,H-92);
     ctx.restore();
 
-    // newspaper name
+    // masthead
     ctx.save();
-    ctx.fillStyle = c.text;
+    ctx.fillStyle = ink;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    fitFont(ctx, t.newspaperName, 1060, 96, 48, '950', 'Georgia, Times New Roman, serif');
-    ctx.fillText((t.newspaperName || '').toUpperCase(), W/2, 90);
-    ctx.font = '800 24px Georgia, Times New Roman, serif';
-    ctx.fillText(`${(t.date || '').toUpperCase()}  •  NO. ${makeIssueNo(t.newspaperName)}  •  4R FRONT PAGE`, W/2, 205);
-    ctx.strokeStyle = c.line;
-    ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(72,255); ctx.lineTo(W-72,255); ctx.stroke();
+    fitFont(ctx, t.newspaperName, 980, 78, 44, '700', 'UnifrakturCook, Georgia, serif');
+    ctx.fillText(t.newspaperName || '', W/2, 56);
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(66,138); ctx.lineTo(W-66,138); ctx.stroke();
+    ctx.font = '700 13px Libre Baskerville, Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(lang === 'id' ? 'SPECIAL EDITION' : 'SPECIAL EDITION', 70, 147);
+    ctx.textAlign = 'right';
+    ctx.fillText((t.date || '').toUpperCase(), W-70, 147);
     ctx.restore();
 
-    // Headline — top baseline supaya garis header tidak nabrak teks.
+    // headline area
+    const kicker = theme.id === 'breaking' ? (lang === 'id' ? 'BERITA HEBOH!' : 'BREAKING NEWS!') : '';
     ctx.save();
-    ctx.fillStyle = c.text;
+    ctx.fillStyle = ink;
     ctx.textBaseline = 'top';
-    fitFont(ctx, t.headline, 1060, theme.decor === 'breaking' ? 82 : 70, 34, '950', 'Georgia, Times New Roman, serif');
-    const lines = wrapLines(ctx, (t.headline || '').toUpperCase(), 1060, 3);
-    ctx.textAlign = 'center';
-    const headlineY = 292;
-    const headlineLineH = theme.decor === 'breaking' ? 82 : 76;
-    lines.forEach((ln, i) => ctx.fillText(ln, W/2, headlineY + i*headlineLineH));
-    ctx.font = '700 30px Georgia, Times New Roman, serif';
-    ctx.fillStyle = c.secondary;
-    drawWrapped(ctx, t.subheadline, W/2, 535, 960, 36, 2, 'center');
+    if (kicker) {
+      ctx.font = '900 22px Arial Black, Archivo, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(kicker, 72, 176);
+    }
+    fitFont(ctx, t.headline, 780, 66, 32, '900', 'Arial Black, Archivo, sans-serif');
+    ctx.textAlign = 'left';
+    const hLines = wrapLines(ctx, (t.headline || '').toUpperCase(), 780, 4);
+    const headlineY = kicker ? 208 : 176;
+    const headlineLH = 68;
+    hLines.forEach((ln,i)=>ctx.fillText(ln, 72, headlineY + i*headlineLH));
+    ctx.font = '700 22px Libre Baskerville, Georgia, serif';
+    ctx.fillStyle = '#463833';
+    drawWrapped(ctx, t.subheadline, 74, headlineY + hLines.length*headlineLH + 14, 760, 30, 2, 'left');
     ctx.restore();
 
-    // Photo area — hero photo or 4-photo recap grid.
-    const px = 100, py = 645, pw = 1000, ph = 600;
+    // media block
+    const photoTop = 440;
+    const bottomStart = 1220;
     if (state.photoLayout === 'quad') {
-      const gap = 18;
+      const px = 70, py = photoTop, pw = 1060, ph = 620;
+      const gap = 16;
       const cw = (pw - gap) / 2;
       const ch = (ph - gap) / 2;
       const imgs = state.photoImgs || [];
-      const label = state.lang === 'id' ? 'ambil foto' : 'take photo';
+      const label = lang === 'id' ? 'ambil foto' : 'take photo';
       drawPhotoCell(ctx, imgs[0], px, py, cw, ch, state, c, label + ' 1');
       drawPhotoCell(ctx, imgs[1], px + cw + gap, py, cw, ch, state, c, label + ' 2');
       drawPhotoCell(ctx, imgs[2], px, py + ch + gap, cw, ch, state, c, label + ' 3');
       drawPhotoCell(ctx, imgs[3], px + cw + gap, py + ch + gap, cw, ch, state, c, label + ' 4');
+      ctx.save();
+      ctx.strokeStyle = line; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(70, 1088); ctx.lineTo(1130,1088); ctx.stroke();
+      ctx.font = '700 15px Libre Baskerville, Georgia, serif';
+      ctx.fillStyle = '#463833';
+      ctx.textAlign = 'center';
+      ctx.fillText(footerTagline(theme, lang), W/2, 1098);
+      ctx.restore();
     } else {
-      drawPhotoCell(ctx, photoImg, px, py, pw, ph, state, c, state.lang === 'id' ? 'ambil foto untuk halaman depan' : 'take a photo for the front page');
+      const px = 70, py = photoTop, pw = 760, ph = 600;
+      const sx = 848, sy = photoTop, sw = 282, sh = 600;
+      drawPhotoCell(ctx, photoImg, px, py, pw, ph, state, c, lang === 'id' ? 'ambil foto untuk halaman depan' : 'take a photo for the front page');
+
+      // sidebar card like inspo
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.46)';
+      ctx.strokeStyle = line; ctx.lineWidth = 2;
+      ctx.fillRect(sx, sy, sw, sh);
+      ctx.strokeRect(sx, sy, sw, sh);
+      ctx.font = '900 20px Arial Black, Archivo, sans-serif';
+      ctx.fillStyle = ink;
+      drawWrapped(ctx, sidebarHeadline(theme, lang), sx + 18, sy + 26, sw - 36, 28, 3);
+      ctx.font = '700 15px Libre Baskerville, Georgia, serif';
+      ctx.fillStyle = '#473d38';
+      drawWrapped(ctx, sideStory(theme, lang, 0), sx + 18, sy + 108, sw - 36, 23, 9);
+      ctx.font = '900 54px Segoe UI Emoji, Apple Color Emoji, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(theme.id === 'birthday' ? '🎂' : theme.id === 'family' ? '⌂' : theme.id === 'love' ? '♡' : theme.id === 'travel' ? '✈' : '☺', sx + sw/2, sy + sh - 120);
+      ctx.font = '700 15px Libre Baskerville, Georgia, serif';
+      ctx.fillStyle = line;
+      ctx.fillText(footerTagline(theme, lang), sx + sw/2, sy + sh - 58);
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = line; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(70, 1058); ctx.lineTo(1130,1058); ctx.stroke();
+      ctx.font = 'italic 15px Libre Baskerville, Georgia, serif';
+      ctx.fillStyle = '#463833';
+      ctx.textAlign = 'left';
+      drawWrapped(ctx, t.caption, 74, 1071, 740, 22, 2, 'left');
+      ctx.restore();
     }
 
-    // Caption
+    // lower articles
     ctx.save();
-    ctx.fillStyle = c.secondary;
-    ctx.font = 'italic 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, t.caption, 105, 1264, 990, 30, 2);
-    ctx.restore();
+    ctx.strokeStyle = line; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(48, bottomStart); ctx.lineTo(W-48, bottomStart); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(430,bottomStart+35); ctx.lineTo(430,1662); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(790,bottomStart+35); ctx.lineTo(790,1662); ctx.stroke();
 
-    // Article columns
-    ctx.save();
-    ctx.strokeStyle = c.line;
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(72,1345); ctx.lineTo(W-72,1345); ctx.stroke();
-    ctx.fillStyle = c.text;
-    ctx.font = '700 26px Georgia, Times New Roman, serif';
-    ctx.textAlign = 'left';
-    drawWrapped(ctx, `BY ${(t.reporter || 'STAFF').toUpperCase()}`, 82, 1375, 300, 30, 1);
-    ctx.font = '500 25px Georgia, Times New Roman, serif';
-    const article = t.article || '';
-    drawWrapped(ctx, article, 82, 1420, 330, 31, 7);
-    ctx.beginPath(); ctx.moveTo(430,1370); ctx.lineTo(430,1665); ctx.stroke();
-    ctx.font = '900 26px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, (t.side1 || '').toUpperCase(), 462, 1375, 300, 32, 3);
-    ctx.font = '500 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, sideStory(theme, state.lang || 'id', 0), 462, 1490, 300, 30, 5);
-    ctx.beginPath(); ctx.moveTo(790,1370); ctx.lineTo(790,1665); ctx.stroke();
-    ctx.font = '900 26px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, (t.side2 || '').toUpperCase(), 822, 1375, 300, 32, 3);
-    ctx.font = '500 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, sideStory(theme, state.lang || 'id', 1), 822, 1490, 300, 30, 5);
-    ctx.restore();
+    ctx.fillStyle = ink;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.font = '900 23px Libre Baskerville, Georgia, serif';
+    drawWrapped(ctx, `BY ${(t.reporter || 'STAFF').toUpperCase()}`, 66, bottomStart + 28, 320, 29, 2, 'left');
+    ctx.font = '400 22px Libre Baskerville, Georgia, serif';
+    drawWrapped(ctx, t.article || '', 66, bottomStart + 80, 320, 29, 7, 'left');
 
-    drawNewspaperDecor(ctx, theme);
+    ctx.font = '900 24px Arial Black, Archivo, sans-serif';
+    drawWrapped(ctx, (t.side1 || '').toUpperCase(), 460, bottomStart + 28, 288, 28, 3, 'left');
+    ctx.font = '400 21px Libre Baskerville, Georgia, serif';
+    drawWrapped(ctx, sideStory(theme, lang, 1), 460, bottomStart + 150, 288, 28, 6, 'left');
+
+    ctx.font = '900 24px Arial Black, Archivo, sans-serif';
+    drawWrapped(ctx, (t.side2 || '').toUpperCase(), 820, bottomStart + 28, 286, 28, 3, 'left');
+    ctx.font = '400 21px Libre Baskerville, Georgia, serif';
+    drawWrapped(ctx, sideStory(theme, lang, 2), 820, bottomStart + 150, 286, 28, 6, 'left');
+    ctx.restore();
   }
 
   function drawNewspaperDecor(ctx, theme) {
+    // styling largely handled in drawNewspaper for cleaner newspaper look.
+  }
+function drawNewspaperDecor(ctx, theme) {
     const c = theme.colors;
     ctx.save();
     ctx.fillStyle = c.accent;

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#D84B7E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Libre+Baskerville:wght@400;700&family=Archivo:wght@400;700;900&display=swap" rel="stylesheet">
   <title>Newspaper Cover - Photobooth</title>
   <style>
     :root {
@@ -442,6 +445,9 @@
       buildFilterGrid();
       buildForm();
       render();
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => render()).catch(() => {});
+      }
     });
   </script>
   <script>

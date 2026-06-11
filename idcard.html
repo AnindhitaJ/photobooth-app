@@ -1029,17 +1029,31 @@
           console.warn('Save history skipped:', saveErr);
         }
 
-        const file = dataUrlToFile(url, filename);
-        if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
-          await navigator.share({
-            title:'ID Card Photobooth',
-            text: is4R ? 'File ID Card di canvas 4R siap cetak' : 'File ID Card ukuran asli siap cetak',
-            files:[file]
-          });
-          showToast('File cetak dibuka ✓');
-        } else {
+        // Untuk 4R, langsung download dulu biar selalu works di desktop/browser.
+        // Native share sering throw AbortError kalau dialog dicancel, jadi jangan jadikan jalur utama.
+        if (is4R) {
           downloadDataUrl(url, filename);
-          showToast(is4R ? 'File 4R didownload ✓' : 'File ukuran asli didownload ✓');
+          showToast('File 4R didownload ✓');
+          return;
+        }
+
+        const file = dataUrlToFile(url, filename);
+        try {
+          if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
+            await navigator.share({
+              title:'ID Card Photobooth',
+              text:'File ID Card ukuran asli siap cetak',
+              files:[file]
+            });
+            showToast('File cetak dibuka ✓');
+          } else {
+            downloadDataUrl(url, filename);
+            showToast('File ukuran asli didownload ✓');
+          }
+        } catch(shareErr) {
+          console.warn('Native share cancelled/failed, fallback download:', shareErr);
+          downloadDataUrl(url, filename);
+          showToast('Share dibatalkan, file tetap didownload ✓');
         }
       } catch(e) {
         console.error('Cetak ID Card gagal:', e);

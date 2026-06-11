@@ -293,22 +293,28 @@
     ctx.clearRect(0,0,W,H);
     drawMagazineDecor(ctx, theme);
 
-    // Photo dominant
-    const photo = { x:90, y:310, w:1020, h:1030, r: theme.decor === 'main' || theme.decor === 'luxury' ? 0 : 44 };
+    // Real magazine-style: full-bleed cover photo, not a framed photo box.
     ctx.save();
-    if (photo.r) { drawRoundRect(ctx, photo.x, photo.y, photo.w, photo.h, photo.r); ctx.clip(); }
-    else { ctx.beginPath(); ctx.rect(photo.x, photo.y, photo.w, photo.h); ctx.clip(); }
-    if (photoImg) applyPhotoFilter(ctx, photoImg, photo.x, photo.y, photo.w, photo.h, state.filter, state.zoom, state.photoX, state.photoY);
-    else drawPlaceholder(ctx, photo.x, photo.y, photo.w, photo.h, c, 'take a photo to complete your cover');
+    if (photoImg) {
+      applyPhotoFilter(ctx, photoImg, 0, 0, W, H, state.filter, state.zoom, state.photoX, state.photoY);
+    } else {
+      drawPlaceholder(ctx, 0, 0, W, H, c, state.lang === 'id' ? 'ambil foto untuk cover majalah' : 'take a photo to complete your cover');
+    }
     ctx.restore();
 
-    // overlay readable gradient
-    const overlay = ctx.createLinearGradient(0, 1040, 0, H);
+    // readable editorial overlays
+    const topOverlay = ctx.createLinearGradient(0, 0, 0, 360);
+    topOverlay.addColorStop(0, theme.decor === 'luxury' ? 'rgba(0,0,0,.82)' : 'rgba(255,255,255,.72)');
+    topOverlay.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = topOverlay;
+    ctx.fillRect(0, 0, W, 390);
+
+    const overlay = ctx.createLinearGradient(0, 920, 0, H);
     overlay.addColorStop(0, 'rgba(0,0,0,0)');
-    overlay.addColorStop(.55, theme.decor === 'luxury' ? 'rgba(0,0,0,.65)' : 'rgba(255,255,255,.72)');
-    overlay.addColorStop(1, theme.decor === 'luxury' ? 'rgba(0,0,0,.88)' : 'rgba(255,255,255,.92)');
+    overlay.addColorStop(.50, theme.decor === 'luxury' ? 'rgba(0,0,0,.62)' : 'rgba(255,255,255,.64)');
+    overlay.addColorStop(1, theme.decor === 'luxury' ? 'rgba(0,0,0,.90)' : 'rgba(255,255,255,.94)');
     ctx.fillStyle = overlay;
-    ctx.fillRect(0, 980, W, H-980);
+    ctx.fillRect(0, 900, W, H-900);
 
     // Magazine name
     ctx.save();
@@ -445,20 +451,23 @@
     ctx.beginPath(); ctx.moveTo(72,255); ctx.lineTo(W-72,255); ctx.stroke();
     ctx.restore();
 
-    // Headline
+    // Headline — top baseline supaya garis header tidak nabrak teks.
     ctx.save();
     ctx.fillStyle = c.text;
-    fitFont(ctx, t.headline, 1060, theme.decor === 'breaking' ? 90 : 75, 38, '950', 'Georgia, Times New Roman, serif');
+    ctx.textBaseline = 'top';
+    fitFont(ctx, t.headline, 1060, theme.decor === 'breaking' ? 82 : 70, 34, '950', 'Georgia, Times New Roman, serif');
     const lines = wrapLines(ctx, (t.headline || '').toUpperCase(), 1060, 3);
     ctx.textAlign = 'center';
-    lines.forEach((ln, i) => ctx.fillText(ln, W/2, 290 + i*84));
-    ctx.font = '700 31px Georgia, Times New Roman, serif';
+    const headlineY = 292;
+    const headlineLineH = theme.decor === 'breaking' ? 82 : 76;
+    lines.forEach((ln, i) => ctx.fillText(ln, W/2, headlineY + i*headlineLineH));
+    ctx.font = '700 30px Georgia, Times New Roman, serif';
     ctx.fillStyle = c.secondary;
-    drawWrapped(ctx, t.subheadline, W/2, 535, 960, 38, 2, 'center');
+    drawWrapped(ctx, t.subheadline, W/2, 535, 960, 36, 2, 'center');
     ctx.restore();
 
     // Photo
-    const px = 100, py = 650, pw = 1000, ph = 620;
+    const px = 100, py = 645, pw = 1000, ph = 600;
     ctx.save();
     ctx.strokeStyle = c.line;
     ctx.lineWidth = 4;
@@ -472,31 +481,31 @@
     ctx.save();
     ctx.fillStyle = c.secondary;
     ctx.font = 'italic 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, t.caption, 105, 1290, 990, 30, 2);
+    drawWrapped(ctx, t.caption, 105, 1264, 990, 30, 2);
     ctx.restore();
 
     // Article columns
     ctx.save();
     ctx.strokeStyle = c.line;
     ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(72,1365); ctx.lineTo(W-72,1365); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(72,1345); ctx.lineTo(W-72,1345); ctx.stroke();
     ctx.fillStyle = c.text;
     ctx.font = '700 26px Georgia, Times New Roman, serif';
     ctx.textAlign = 'left';
-    drawWrapped(ctx, `BY ${(t.reporter || 'STAFF').toUpperCase()}`, 82, 1395, 300, 30, 1);
+    drawWrapped(ctx, `BY ${(t.reporter || 'STAFF').toUpperCase()}`, 82, 1375, 300, 30, 1);
     ctx.font = '500 25px Georgia, Times New Roman, serif';
     const article = t.article || '';
-    drawWrapped(ctx, article, 82, 1440, 330, 31, 7);
-    ctx.beginPath(); ctx.moveTo(430,1390); ctx.lineTo(430,1665); ctx.stroke();
+    drawWrapped(ctx, article, 82, 1420, 330, 31, 7);
+    ctx.beginPath(); ctx.moveTo(430,1370); ctx.lineTo(430,1665); ctx.stroke();
     ctx.font = '900 26px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, (t.side1 || '').toUpperCase(), 462, 1395, 300, 32, 3);
+    drawWrapped(ctx, (t.side1 || '').toUpperCase(), 462, 1375, 300, 32, 3);
     ctx.font = '500 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, 'The report quickly became the talk of the day, printed here as proof that some moments deserve the front page.', 462, 1510, 300, 30, 5);
-    ctx.beginPath(); ctx.moveTo(790,1390); ctx.lineTo(790,1665); ctx.stroke();
+    drawWrapped(ctx, state.lang === 'id' ? 'Laporan ini langsung ramai dibahas karena momennya terlalu niat untuk tidak masuk halaman depan.' : 'The report quickly became the talk of the day, printed here as proof that some moments deserve the front page.', 462, 1490, 300, 30, 5);
+    ctx.beginPath(); ctx.moveTo(790,1370); ctx.lineTo(790,1665); ctx.stroke();
     ctx.font = '900 26px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, (t.side2 || '').toUpperCase(), 822, 1395, 300, 32, 3);
+    drawWrapped(ctx, (t.side2 || '').toUpperCase(), 822, 1375, 300, 32, 3);
     ctx.font = '500 24px Georgia, Times New Roman, serif';
-    drawWrapped(ctx, 'Collectors are advised to keep this issue safely because the memory is officially iconic.', 822, 1510, 300, 30, 5);
+    drawWrapped(ctx, state.lang === 'id' ? 'Pembaca disarankan menyimpan edisi ini baik-baik karena momennya resmi iconic.' : 'Collectors are advised to keep this issue safely because the memory is officially iconic.', 822, 1490, 300, 30, 5);
     ctx.restore();
 
     drawNewspaperDecor(ctx, theme);
@@ -539,11 +548,58 @@
     return String((n % 900) + 100);
   }
 
+
+  const BILINGUAL_DEFAULTS = {
+    magazine: {
+      id: {
+        bestie: { magazineName:'BESTIE MAG', headline:'duo rusuh yang selalu jadi legenda', subheadline:'ketawa, chaos, tapi tetap gemes maksimal', name:'tim anti jaim', date:'EDISI BESTIE 2026', teaser1:'fit check paling niat', teaser2:'memori wajib dicetak', teaser3:'vibes: tidak tertandingi' },
+        couple: { magazineName:'LOVE ISSUE', headline:'dua hati, satu cerita lucu', subheadline:'sedikit bucin, banyak gemesnya', name:'couple spotlight', date:'EDISI SAYANG', teaser1:'couple paling niat', teaser2:'momen manis only', teaser3:'romance edit' },
+        family: { magazineName:'FAMILY JOURNAL', headline:'rumah itu tempat kita kumpul', subheadline:'momen hangat yang layak dipajang', name:'family edition', date:'EDISI KELUARGA', teaser1:'hari keluarga', teaser2:'kecil momennya besar sayangnya', teaser3:'bareng-bareng lebih seru' },
+        main: { magazineName:'ICON', headline:'hari ini auranya mahal', subheadline:'main character energy tercetak jelas', name:'cover star', date:'THE CONFIDENCE ISSUE', teaser1:'percaya diri naik 200%', teaser2:'style report', teaser3:'satu pose langsung iconic' },
+        grad: { magazineName:'GRAD ISSUE', headline:'akhirnya sampai juga di sini', subheadline:'kerja keras, drama, dan bangga jadi satu', name:'achievement unlocked', date:'EDISI BANGGA', teaser1:'achievement unlocked', teaser2:'momen paling proud', teaser3:'chapter baru dimulai' },
+        birthday: { magazineName:'BIRTHDAY STAR', headline:'hari ini semua tentang kamu', subheadline:'umur nambah, pesona juga ikut naik', name:'birthday edition', date:'PARTY ISSUE', teaser1:'birthday mood', teaser2:'wish list inside', teaser3:'party edition' },
+        kpop: { magazineName:'IDOL ZINE', headline:'era baru telah debut', subheadline:'visual hari ini tidak bisa dibantah', name:'debut team', date:'DEBUT ISSUE', teaser1:'comeback ready', teaser2:'visual of the day', teaser3:'stage presence: 100%' },
+        luxury: { magazineName:'LUXE', headline:'elegan tanpa banyak usaha', subheadline:'diam-diam mahal, terang-terangan iconic', name:'luxury edit', date:'EVENING ISSUE', teaser1:'luxury edit', teaser2:'timeless style', teaser3:'evening issue' },
+        travel: { magazineName:'TRAVEL NOTE', headline:'hari yang pantas jadi kenangan', subheadline:'petualangan kecil, ceritanya panjang', name:'postcard moment', date:'DESTINASI HARI INI', teaser1:'travel diary', teaser2:'today’s destination', teaser3:'postcard moment' },
+        softlife: { magazineName:'SOFT LIFE', headline:'romantisasi hal kecil dulu', subheadline:'momen dreamy dalam ukuran 4R', name:'soft mood', date:'DREAMY ISSUE', teaser1:'soft mood', teaser2:'pretty little things', teaser3:'gentle days' }
+      },
+      en: {}
+    },
+    newspaper: {
+      id: {
+        friendship: { newspaperName:'KORAN BESTIE RAYA', headline:'bestie lokal kembali bikin momen ikonik', subheadline:'saksi menyebut vibes hari ini tidak bisa dilawan', caption:'foto eksklusif dari kejadian yang terlalu gemes untuk dilupakan', date:'JUNI 2026', reporter:'reporter anti jaim', article:'warga sekitar melaporkan tawa, chaos kecil, dan energi persahabatan yang sangat layak masuk halaman depan.', side1:'vibes naik drastis', side2:'bestie behavior terkonfirmasi' },
+        love: { newspaperName:'HARIAN CINTA', headline:'pasangan paling gemes tertangkap kamera', subheadline:'kisah halaman depan yang ditulis pakai momen manis', caption:'potret resmi dari adegan yang bikin senyum sendiri', date:'EDISI SAYANG', reporter:'desk bucin', article:'edisi hari ini merayakan cerita yang penuh hangat, tawa kecil, dan affection yang tidak bisa disembunyikan.', side1:'laporan hati hangat', side2:'momen manis tercatat' },
+        family: { newspaperName:'WARTA KELUARGA', headline:'berita utama hari ini: kumpul bareng', subheadline:'momen keluarga yang pantas disimpan lama', caption:'diabadikan dengan senyum dan rasa hangat', date:'EDISI KELUARGA', reporter:'meja keluarga', article:'edisi spesial ini mencatat kebahagiaan sederhana yang terasa besar karena dilakukan bersama orang tersayang.', side1:'edisi rumah', side2:'kebersamaan menang' },
+        breaking: { newspaperName:'BERITA HEBOH', headline:'aura main character terdeteksi di area ini', subheadline:'para ahli memastikan momen ini terlalu iconic untuk diabaikan', caption:'bukti langka perilaku photobooth level maksimal', date:'LAPORAN LANGSUNG', reporter:'koresponden chaos', article:'publik dibuat tercengang setelah menyaksikan kombinasi percaya diri, pesona, dan sedikit drama yang sulit dilupakan.', side1:'laporan eksklusif', side2:'warga ikut teriak' },
+        vintage: { newspaperName:'POS NOSTALGIA', headline:'momen klasik berhasil diabadikan hari ini', subheadline:'tersimpan rapi di arsip kenangan yang hangat', caption:'foto arsip dari hari yang patut disimpan', date:'EDISI ARSIP', reporter:'catatan lama', article:'edisi ini mencatat satu momen sederhana tapi berarti, dibungkus nuansa nostalgia dan pesona klasik.', side1:'dari arsip lama', side2:'edisi old soul' },
+        campus: { newspaperName:'KAMPUS CHRONICLE', headline:'hari seru bersama orang-orang tak terlupakan', subheadline:'momen ini resmi layak masuk yearbook', caption:'foto hari ini edisi kampus/sekolah', date:'EDISI KAMPUS', reporter:'meja siswa', article:'cerita hari ini merekam pertemanan, pertumbuhan, dan momen yang pantas punya tempat permanen di album kenangan.', side1:'layak yearbook', side2:'campus spotlight' },
+        wedding: { newspaperName:'WARTA WEDDING', headline:'kisah cinta resmi masuk halaman depan', subheadline:'bab baru yang indah dimulai hari ini', caption:'momen berharga dari hari perayaan', date:'EDISI WEDDING', reporter:'desk selebrasi', article:'edisi spesial ini merayakan cinta, keluarga, dan awal perjalanan yang penuh makna bersama.', side1:'bab emas dimulai', side2:'keluarga merayakan' },
+        birthday: { newspaperName:'HARIAN ULANG TAHUN', headline:'bintang hari ini merayakan tahun paling iconic', subheadline:'laporan menyebut kadar bahagia dan cake energy meningkat', caption:'potret resmi birthday star hari ini', date:'EDISI BIRTHDAY', reporter:'reporter pesta', article:'edisi hari ini dipersembahkan untuk tawa, doa, kue, dan satu tahun baru yang makin bersinar.', side1:'cake energy naik', side2:'doa berdatangan' },
+        travel: { newspaperName:'TRAVEL TIMES', headline:'kenangan baru ditemukan dalam perjalanan hari ini', subheadline:'laporan spesial dari destinasi paling bahagia', caption:'dokumentasi perjalanan yang wajib dicetak', date:'LAPORAN TRAVEL', reporter:'catatan lapangan', article:'petualangan hari ini membawa penemuan kecil, teman baik, dan memori yang terlalu sayang kalau cuma disimpan di galeri.', side1:'update postcard', side2:'destinasi bahagia' },
+        classic: { newspaperName:'DAILY RECORD', headline:'sebuah momen yang pantas diingat', subheadline:'edisi hari ini mencatat cerita sederhana tapi bermakna', caption:'dokumentasi foto resmi', date:'EDISI HARIAN', reporter:'desk arsip', article:'catatan ini menyimpan satu kenangan dari hari ini, dicetak sebagai pengingat kecil untuk masa depan.', side1:'catatan resmi', side2:'momen timeless' }
+      },
+      en: {}
+    }
+  };
+
+  // English defaults mirror the original theme defaults.
+  MAGAZINE_THEMES.forEach(t => { BILINGUAL_DEFAULTS.magazine.en[t.id] = { ...t.defaultText }; });
+  NEWSPAPER_THEMES.forEach(t => { BILINGUAL_DEFAULTS.newspaper.en[t.id] = { ...t.defaultText }; });
+
+  function getDefaultText(type, themeId, lang) {
+    const list = type === 'magazine' ? MAGAZINE_THEMES : NEWSPAPER_THEMES;
+    const theme = byId(list, themeId);
+    return { ...(BILINGUAL_DEFAULTS[type]?.[lang]?.[themeId] || theme.defaultText || {}) };
+  }
+
   function createState(type, canvas, ctx) {
     const themes = type === 'magazine' ? MAGAZINE_THEMES : NEWSPAPER_THEMES;
+    const selectedTheme = themes[0].id;
+    const lang = 'id';
     return {
       type, canvas, ctx,
-      selectedTheme: themes[0].id,
+      lang,
+      selectedTheme,
       filter: themes[0].recommendedFilter || 'original',
       photo: null,
       photoImg: null,
@@ -551,7 +607,7 @@
       photoX: 0,
       photoY: 0,
       edited: {},
-      text: { ...themes[0].defaultText }
+      text: getDefaultText(type, selectedTheme, lang)
     };
   }
 
@@ -562,6 +618,6 @@
 
   window.CoverMaker = {
     W,H,FILTERS,MAGAZINE_THEMES,NEWSPAPER_THEMES,
-    createState, render, byId
+    createState, render, byId, getDefaultText
   };
 })();

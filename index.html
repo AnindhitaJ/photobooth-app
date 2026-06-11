@@ -22,9 +22,9 @@
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       background: var(--bg); color: var(--text);
-      height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 24px; overflow: hidden;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      text-align: center; padding: 34px 24px 76px; overflow-x: hidden; overflow-y: auto;
       position: relative;
     }
     /* Playful floating shapes */
@@ -48,7 +48,7 @@
       background-size: 28px 28px;
     }
     .hero-emoji {
-      font-size: 72px; margin-bottom: 16px;
+      font-size: 62px; margin-bottom: 12px;
       animation: bounce 2s ease-in-out infinite;
       filter: drop-shadow(0 8px 16px rgba(216,75,126,0.3));
     }
@@ -60,11 +60,11 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .tagline {
-      font-size: 15px; color: var(--text2); margin-bottom: 40px;
+      font-size: 15px; color: var(--text2); margin-bottom: 22px;
       line-height: 1.6; font-weight: 500;
     }
     .badge-row {
-      display: flex; gap: 8px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap;
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 22px; flex-wrap: wrap;
     }
     .badge {
       background: white; border: 2px solid var(--border); border-radius: 50px;
@@ -152,11 +152,71 @@
     }
     .btn-newspaper:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(17,24,39,0.42); }
     .btn-newspaper:active { transform: scale(0.98); }
-    .btn-group { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .home-shell {
+      width: min(760px, 100%);
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .btn-group {
+      width: 100%; max-width: 680px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .btn-mulai {
+      width: min(440px, 100%);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .feature-grid {
+      width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px; margin-top: 4px;
+    }
+    .feature-card {
+      font-family: inherit;
+      border: 2px solid var(--border);
+      background: rgba(255,255,255,0.92);
+      border-radius: 22px;
+      padding: 14px 14px 13px;
+      min-height: 92px;
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+      box-shadow: 0 6px 22px rgba(29,53,87,0.07);
+      display: flex; align-items: center; text-align: left; gap: 12px;
+    }
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--pink);
+      box-shadow: 0 12px 30px rgba(216,75,126,0.15);
+    }
+    .feature-icon {
+      width: 46px; height: 46px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 23px; flex: 0 0 auto; color: white;
+      box-shadow: 0 7px 18px rgba(0,0,0,0.12);
+    }
+    .feature-title {
+      font-size: 14px; font-weight: 950; color: var(--text);
+      line-height: 1.15; letter-spacing: -0.2px;
+    }
+    .feature-desc {
+      display: block;
+      margin-top: 4px; font-size: 11px; color: var(--text2);
+      line-height: 1.35; font-weight: 750;
+    }
+    .ganci .feature-icon { background: linear-gradient(135deg, #E5B842, #f7c948); }
+    .kalender .feature-icon { background: linear-gradient(135deg, #1D3557, #D84B7E); }
+    .galeri .feature-icon { background: linear-gradient(135deg, #ffffff, #fff0f6); color: var(--pink); border: 2px solid var(--border); }
+    .idcard .feature-icon { background: linear-gradient(135deg, #c084fc, #D84B7E); }
+    .magazine .feature-icon { background: linear-gradient(135deg, #ec4899, #f59e0b); }
+    .newspaper .feature-icon { background: linear-gradient(135deg, #111827, #64748b); }
     .footer {
-      position: fixed; bottom: 20px;
+      position: static; margin-top: 24px;
       font-size: 11px; color: #cbb8ac;
       font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    }
+    @media (max-width: 560px) {
+      body { padding: 24px 16px 64px; justify-content: flex-start; }
+      .hero-emoji { font-size: 54px; }
+      h1 { font-size: clamp(30px, 11vw, 44px); }
+      .feature-grid { grid-template-columns: 1fr; }
+      .feature-card { min-height: 84px; }
     }
   </style>
   <script>
@@ -194,16 +254,63 @@
   <div style="position:absolute;top:16px;right:16px;z-index:10;">
   <button onclick="Auth.logout()" style="background:white;border:2px solid #fad0e4;border-radius:50px;padding:7px 14px;font-size:12px;font-weight:700;color:#7a90b8;cursor:pointer;">Logout</button>
 </div>
-<div class="btn-group">
-    <button class="btn-mulai" onclick="mulai()">✨ Mulai Sekarang</button>
-    <button class="btn-ganci" onclick="bukaGanci()">🪝 Ganci Photo Insert</button>
-    <button class="btn-kalender" onclick="bukaKalender()">📅 Photobooth Kalender</button>
-    <button class="btn-galeri" onclick="bukaGaleri()">🖼️ Galeri Foto</button>
-    <button class="btn-idcard" onclick="bukaIdCard()">🪪 ID Card</button>
-    <button class="btn-magazine" onclick="bukaMagazine()">📰 Magazine Cover</button>
-    <button class="btn-newspaper" onclick="bukaNewspaper()">🗞️ Newspaper Cover</button>
+<div class="home-shell">
+    <div class="btn-group">
+      <button class="btn-mulai" onclick="mulai()">✨ Mulai Photobooth</button>
+
+      <div class="feature-grid">
+        <button class="feature-card ganci" onclick="bukaGanci()">
+          <span class="feature-icon">🪝</span>
+          <span>
+            <span class="feature-title">Ganci Photo Insert</span>
+            <span class="feature-desc">layout ganci + panel logo siap print</span>
+          </span>
+        </button>
+
+        <button class="feature-card kalender" onclick="bukaKalender()">
+          <span class="feature-icon">📅</span>
+          <span>
+            <span class="feature-title">Photobooth Kalender</span>
+            <span class="feature-desc">kalender 4R tahunan atau bulanan</span>
+          </span>
+        </button>
+
+        <button class="feature-card galeri" onclick="bukaGaleri()">
+          <span class="feature-icon">🖼️</span>
+          <span>
+            <span class="feature-title">Galeri Foto</span>
+            <span class="feature-desc">lihat dan download hasil sesi</span>
+          </span>
+        </button>
+
+        <button class="feature-card idcard" onclick="bukaIdCard()">
+          <span class="feature-icon">🪪</span>
+          <span>
+            <span class="feature-title">ID Card</span>
+            <span class="feature-desc">kartu collectible ukuran KTP</span>
+          </span>
+        </button>
+
+        <button class="feature-card magazine" onclick="bukaMagazine()">
+          <span class="feature-icon">📰</span>
+          <span>
+            <span class="feature-title">Magazine Cover</span>
+            <span class="feature-desc">foto jadi cover majalah 4R</span>
+          </span>
+        </button>
+
+        <button class="feature-card newspaper" onclick="bukaNewspaper()">
+          <span class="feature-icon">🗞️</span>
+          <span>
+            <span class="feature-title">Newspaper Cover</span>
+            <span class="feature-desc">foto jadi halaman depan koran</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div class="footer"><img data-auth-logo src="/logo.png" alt="LUX" style="height:22px;width:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">LUX PHOTOBOOTH</div>
   </div>
-  <div class="footer"><img data-auth-logo src="/logo.png" alt="LUX" style="height:22px;width:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">LUX PHOTOBOOTH</div>
 
   <script>
     // Cek kalau ini redirect dari email reset password

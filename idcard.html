@@ -330,22 +330,52 @@
     };
 
     const OPTIONS = {
-      role: [
-        'Si Paling Ceria','Si Paling Kalem','Si Paling Gemes','Si Paling Keren','Si Paling Fotogenik',
-        'Si Paling Random','Si Paling Manis','Si Paling Santai','Si Paling Berani','Si Paling Soft',
-        'Si Paling Estetik','Si Paling Mood Booster','Si Paling Bintang','Si Paling Misterius'
-      ],
-      mood: [
-        'Happy','Excited','Chill','Percaya Diri','Gemes','Malu-malu','Ceria','Kalem','Dreamy',
-        'Kocak','Elegan','Soft','Cool','Mood Booster'
-      ],
-      funFact: [
-        'Suka foto cantik','Selalu siap difoto','Diam-diam fotogenik','Paling suka candid',
-        'Suka warna pastel','Tim foto dulu baru makan','Senyumnya mahal','Gemesnya natural',
-        'Kalem tapi menarik','Random tapi seru','Suka hal-hal kecil','Pembawa vibes positif',
-        'Sekali foto langsung jadi'
-      ]
+      id: {
+        role: [
+          'Si Paling Ceria','Si Paling Kalem','Si Paling Gemes','Si Paling Keren','Si Paling Fotogenik',
+          'Si Paling Random','Si Paling Manis','Si Paling Santai','Si Paling Berani','Si Paling Soft',
+          'Si Paling Estetik','Si Paling Mood Booster','Si Paling Bintang','Si Paling Misterius'
+        ],
+        mood: [
+          'Happy','Excited','Chill','Percaya Diri','Gemes','Malu-malu','Ceria','Kalem','Dreamy',
+          'Kocak','Elegan','Soft','Cool','Mood Booster'
+        ],
+        funFact: [
+          'Suka foto cantik','Selalu siap difoto','Diam-diam fotogenik','Paling suka candid',
+          'Suka warna pastel','Tim foto dulu baru makan','Senyumnya mahal','Gemesnya natural',
+          'Kalem tapi menarik','Random tapi seru','Suka hal-hal kecil','Pembawa vibes positif',
+          'Sekali foto langsung jadi'
+        ]
+      },
+      en: {
+        role: [
+          'The Cheerful One','The Calm One','The Cutie','The Cool One','The Photogenic One',
+          'The Random One','The Sweet One','The Chill One','The Brave One','The Soft One',
+          'The Aesthetic One','The Mood Booster','The Star','The Mysterious One'
+        ],
+        mood: [
+          'Happy','Excited','Chill','Confident','Cute','Shy','Cheerful','Calm','Dreamy',
+          'Funny','Elegant','Soft','Cool','Mood Booster'
+        ],
+        funFact: [
+          'Loves pretty photos','Always ready for photos','Secretly photogenic','Loves candid shots',
+          'Loves pastel colors','Team photos before food','Has a priceless smile','Naturally adorable',
+          'Calm but charming','Random but fun','Loves little things','Brings positive vibes',
+          'One shot, perfect result'
+        ]
+      }
     };
+
+    function getOptions(key, lang = state?.lang || 'id') {
+      return (OPTIONS[lang] && OPTIONS[lang][key]) || OPTIONS.id[key] || [];
+    }
+
+    function translateOptionValue(key, fromLang, toLang, value) {
+      const from = getOptions(key, fromLang);
+      const to = getOptions(key, toLang);
+      const idx = from.indexOf(value);
+      return idx >= 0 && to[idx] ? to[idx] : value;
+    }
 
     const THEMES = {
       pink: { name:'Pink', sub:'gemes', bg:'#fff0f6', accent:'#f472b6', accent2:'#fbcfe8', text:'#572033', photo:'#f9a8d4' },
@@ -364,9 +394,9 @@
       lang:'id',
       nickname:'',
       idNumber:'',
-      role: OPTIONS.role[0],
-      mood: OPTIONS.mood[0],
-      funFact: OPTIONS.funFact[0],
+      role: OPTIONS.id.role[0],
+      mood: OPTIONS.id.mood[0],
+      funFact: OPTIONS.id.funFact[0],
       theme:'pink',
       photo:null,
       savedId:null,
@@ -399,13 +429,19 @@
     }
 
     function randomizeId() {
-      const base = padTextBase(state.nickname || Auth?.getBoothName?.() || 'USER');
-      state.idNumber = `${base}-${randomCode(6)}`;
+      // ID Number cukup 6 karakter random: huruf kapital + angka.
+      state.idNumber = randomCode(6);
       document.getElementById('idNumber').value = state.idNumber;
       renderPreview();
     }
 
     function setLang(lang) {
+      const prevLang = state.lang || 'id';
+      if (prevLang !== lang) {
+        ['role','mood','funFact'].forEach(key => {
+          state[key] = translateOptionValue(key, prevLang, lang, state[key]);
+        });
+      }
       state.lang = lang;
       document.getElementById('langId').classList.toggle('active', lang === 'id');
       document.getElementById('langEn').classList.toggle('active', lang === 'en');
@@ -436,9 +472,10 @@
         const sel = document.getElementById(key + 'Select');
         const current = state[key];
         const l = LANG[state.lang];
-        sel.innerHTML = OPTIONS[key].map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('') +
+        const optionList = getOptions(key);
+        sel.innerHTML = optionList.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('') +
           `<option value="__custom__">${escapeHtml(l.custom)}</option>`;
-        if (OPTIONS[key].includes(current)) {
+        if (optionList.includes(current)) {
           sel.value = current;
           document.getElementById(key + 'Custom').style.display = 'none';
         } else {
@@ -456,7 +493,7 @@
 
     function handleNicknameInput() {
       state.nickname = document.getElementById('nickname').value.slice(0, 20);
-      if (!state.idNumber || state.idNumber.startsWith('GUEST-') || state.idNumber.includes('-')) randomizeId();
+      if (!state.idNumber) randomizeId();
       renderPreview();
     }
 
@@ -481,7 +518,7 @@
     }
 
     function randomizeField(key) {
-      const arr = OPTIONS[key];
+      const arr = getOptions(key);
       state[key] = arr[Math.floor(Math.random() * arr.length)];
       buildSelects();
       renderPreview();
@@ -882,47 +919,31 @@
       const idUrl = await getIdCardDataUrl('png');
       const idImg = await loadImage(idUrl);
 
-      const cardW = 1040;
-      const cardH = Math.round(cardW * 638 / 1012);
-      const x = (print.width - cardW) / 2;
-      const y = 120;
+      // Print file tetap 10×15 cm / 4R portrait, tapi ID Card ditempatkan di kiri atas.
+      // Save/export biasa tetap ukuran ID Card saja.
+      const margin = 40;
+      const cardW = 1012;
+      const cardH = 638;
+      const x = margin;
+      const y = margin;
+
       pc.save();
-      pc.shadowColor = 'rgba(29,53,87,.22)';
-      pc.shadowBlur = 24;
-      pc.shadowOffsetY = 12;
-      drawRoundRect(pc, x, y, cardW, cardH, 40);
+      pc.shadowColor = 'rgba(29,53,87,.16)';
+      pc.shadowBlur = 14;
+      pc.shadowOffsetY = 6;
+      drawRoundRect(pc, x, y, cardW, cardH, 34);
       pc.fillStyle = '#fff';
       pc.fill();
       pc.clip();
       pc.drawImage(idImg, x, y, cardW, cardH);
       pc.restore();
 
-      // Logo / booth name
-      const logoUrl = Auth?.getLogoUrl?.() || '';
-      const boothName = Auth?.getBoothName?.() || 'Photobooth';
-      try {
-        const logo = logoUrl ? await loadImage(logoUrl) : null;
-        if (logo) {
-          const s = 170;
-          pc.save();
-          drawRoundRect(pc, print.width/2 - s/2, y + cardH + 110, s, s, 40);
-          pc.clip();
-          drawCoverImage(pc, logo, print.width/2 - s/2, y + cardH + 110, s, s);
-          pc.restore();
-        } else throw new Error('no logo');
-      } catch(e) {
-        pc.fillStyle = '#1D3557';
-        pc.font = '950 60px Segoe UI, sans-serif';
-        pc.textAlign = 'center';
-        pc.fillText(boothName, print.width/2, y + cardH + 190);
-      }
-
-      pc.fillStyle = '#64748b';
-      pc.font = '850 32px Segoe UI, sans-serif';
-      pc.textAlign = 'center';
-      pc.fillText('ID Card Photobooth', print.width/2, y + cardH + 345);
-      pc.font = '700 24px Segoe UI, sans-serif';
-      pc.fillText(new Date().toLocaleDateString('id-ID', { dateStyle:'long' }), print.width/2, y + cardH + 386);
+      pc.save();
+      pc.fillStyle = 'rgba(100,116,139,.58)';
+      pc.font = '700 20px Segoe UI, sans-serif';
+      pc.textAlign = 'left';
+      pc.fillText('4R print file · ID Card positioned top-left', margin, y + cardH + 34);
+      pc.restore();
 
       latestPrintCanvas = print;
       return print.toDataURL('image/png');

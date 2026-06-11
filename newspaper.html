@@ -24,6 +24,7 @@
     @media(max-width:900px){ .wrap{grid-template-columns:1fr;} .preview-card{position:static!important; order:-1;} .action-bar-mobile{position:sticky;bottom:8px;z-index:20;} }
     .card { background:white; border:2px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 4px 22px rgba(216,75,126,.07); }
     .card + .card { margin-top:15px; }
+    .lang-toggle { display:flex; gap:8px; flex-wrap:wrap; }
     .card-title { font-size:13px; color:var(--text2); font-weight:950; letter-spacing:1.7px; text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:14px; }
     .card-title::after { content:''; height:2px; flex:1; background:linear-gradient(90deg,var(--border),transparent); }
     .theme-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
@@ -78,6 +79,14 @@
 
   <div class="wrap">
     <div class="controls">
+      <div class="card">
+        <div class="card-title">🌐 Bahasa / Language</div>
+        <div class="lang-toggle">
+          <button class="pill active" id="lang_id" onclick="setLang('id')">Indonesia</button>
+          <button class="pill" id="lang_en" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">🎨 Pilih Tema</div>
         <div class="theme-grid" id="themeGrid"></div>
@@ -151,11 +160,14 @@
 
     const COVER_TYPE = 'newspaper';
     const FIELDS = [{"key": "newspaperName", "label": "Newspaper Name", "max": 42}, {"key": "headline", "label": "Headline", "max": 110}, {"key": "subheadline", "label": "Subheadline", "max": 120}, {"key": "caption", "label": "Photo Caption", "max": 110}, {"key": "date", "label": "Date", "max": 40}, {"key": "reporter", "label": "Reporter / Name / Group", "max": 42}, {"key": "article", "label": "Article Text", "max": 260, "long": true}, {"key": "side1", "label": "Small Side Headline 1", "max": 65}, {"key": "side2", "label": "Small Side Headline 2", "max": 65}];
+    const FIELD_LABELS = {"id": {"newspaperName": "Nama Koran", "headline": "Headline", "subheadline": "Subheadline", "caption": "Caption Foto", "date": "Tanggal / Edisi", "reporter": "Reporter / Nama / Grup", "article": "Teks Artikel", "side1": "Headline Kecil 1", "side2": "Headline Kecil 2"}, "en": {"newspaperName": "Newspaper Name", "headline": "Headline", "subheadline": "Subheadline", "caption": "Photo Caption", "date": "Date", "reporter": "Reporter / Name / Group", "article": "Article Text", "side1": "Small Side Headline 1", "side2": "Small Side Headline 2"}};
     const DEFAULT_FILE_PREFIX = 'newspaper-cover';
 
     const canvas = document.getElementById('coverCanvas');
     const ctx = canvas.getContext('2d');
     const state = CoverMaker.createState(COVER_TYPE, canvas, ctx);
+    state.lang = 'id';
+    state.text = CoverMaker.getDefaultText(COVER_TYPE, state.selectedTheme, state.lang);
     let stream = null;
 
     function showToast(msg) {
@@ -193,7 +205,7 @@
         const val = state.text[field.key] || '';
         const tag = field.long ? 'textarea' : 'input';
         return `<div class="field">
-          <label>${escapeHtml(field.label)}</label>
+          <label>${escapeHtml(getFieldLabel(field))}</label>
           ${tag === 'textarea'
             ? `<textarea id="field_${field.key}" oninput="updateText('${field.key}')" maxlength="${field.max || 240}">${escapeHtml(val)}</textarea>`
             : `<input id="field_${field.key}" oninput="updateText('${field.key}')" value="${escapeHtml(val)}" maxlength="${field.max || 80}">`
@@ -206,14 +218,37 @@
       return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
     }
 
+    function getFieldLabel(field) {
+      return FIELD_LABELS[state.lang]?.[field.key] || field.label;
+    }
+
+    function setLang(lang) {
+      const oldLang = state.lang || 'id';
+      if (oldLang === lang) return;
+      const oldDefaults = CoverMaker.getDefaultText(COVER_TYPE, state.selectedTheme, oldLang);
+      const newDefaults = CoverMaker.getDefaultText(COVER_TYPE, state.selectedTheme, lang);
+      Object.keys(newDefaults).forEach(key => {
+        if (!state.edited[key] || state.text[key] === oldDefaults[key]) {
+          state.text[key] = newDefaults[key];
+          state.edited[key] = false;
+        }
+      });
+      state.lang = lang;
+      document.getElementById('lang_id').classList.toggle('active', lang === 'id');
+      document.getElementById('lang_en').classList.toggle('active', lang === 'en');
+      buildForm();
+      render();
+    }
+
     function setTheme(id) {
       const oldTheme = CoverMaker.byId(getThemes(), state.selectedTheme);
-      const oldDefaults = oldTheme.defaultText;
+      const oldDefaults = CoverMaker.getDefaultText(COVER_TYPE, oldTheme.id, state.lang);
       const next = CoverMaker.byId(getThemes(), id);
       state.selectedTheme = id;
       state.filter = next.recommendedFilter || state.filter || 'original';
 
-      Object.entries(next.defaultText).forEach(([key, val]) => {
+      const nextDefaults = CoverMaker.getDefaultText(COVER_TYPE, next.id, state.lang);
+      Object.entries(nextDefaults).forEach(([key, val]) => {
         if (!state.edited[key] || state.text[key] === oldDefaults[key]) {
           state.text[key] = val;
           state.edited[key] = false;
@@ -240,7 +275,7 @@
 
     function resetText() {
       const t = CoverMaker.byId(getThemes(), state.selectedTheme);
-      state.text = { ...t.defaultText };
+      state.text = CoverMaker.getDefaultText(COVER_TYPE, t.id, state.lang);
       state.edited = {};
       buildForm();
       render();
@@ -274,17 +309,15 @@
     function capturePhoto() {
       const video = document.getElementById('cameraVideo');
       const c = document.getElementById('cameraCanvas');
-      c.width = 1200;
-      c.height = 1600;
+      const vW = video.videoWidth || 1280;
+      const vH = video.videoHeight || 720;
+      c.width = vW;
+      c.height = vH;
       const cc = c.getContext('2d');
-      const vW = video.videoWidth || 1200, vH = video.videoHeight || 900;
-      const scale = Math.max(c.width / vW, c.height / vH);
-      const dw = vW * scale, dh = vH * scale;
-      const dx = (c.width - dw) / 2, dy = (c.height - dh) / 2;
       cc.save();
       cc.translate(c.width, 0);
       cc.scale(-1, 1);
-      cc.drawImage(video, 0, 0, vW, vH, dx, dy, dw, dh);
+      cc.drawImage(video, 0, 0, vW, vH);
       cc.restore();
       state.photo = c.toDataURL('image/jpeg', .92);
       const img = new Image();

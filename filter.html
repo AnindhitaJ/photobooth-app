@@ -282,10 +282,22 @@
 
   // ── Switch foto ─────────────────────────────────────────────────────────────
   function switchPhoto(idx) {
-    simpanFotoSilent();
+    if (!photos[idx]) return;
+
+    // Simpan state foto sebelumnya hanya kalau canvas sudah pernah terisi.
+    // Di mode Ganci, beberapa elemen UI multi-photo memang tidak ditampilkan,
+    // jadi akses DOM harus aman agar filter tetap jalan.
+    if (canvas.width > 0 && canvas.height > 0) {
+      simpanFotoSilent();
+    }
+
     currentIdx = idx;
+
     document.querySelectorAll('.photo-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
-    document.getElementById('currentPhotoNum').textContent = idx + 1;
+
+    const currentPhotoNum = document.getElementById('currentPhotoNum');
+    if (currentPhotoNum) currentPhotoNum.textContent = idx + 1;
+
     loadFilterUI(filterStates[idx]);
 
     allLandmarks = [];
@@ -298,6 +310,9 @@
       statusBar.textContent = 'Mendeteksi wajah...';
       await loadMediaPipe();
       applyFilter();
+    };
+    currentImg.onerror = () => {
+      statusBar.textContent = 'Foto gagal dimuat. Silakan retake foto.';
     };
     currentImg.src = photos[idx];
   }
@@ -867,6 +882,7 @@
   };
 
   function simpanFotoSilent() {
+    if (!canvas.width || !canvas.height) return;
     filteredPhotos[currentIdx] = canvas.toDataURL('image/jpeg', 0.92);
   }
 

@@ -9,7 +9,12 @@
     sparkle: { stroke: '#fcd34d', fill: '#fffdf5', accent: '#f59e0b', shadow: 'rgba(252,211,77,0.45)', emoji: '✨' },
     neon:    { stroke: '#22d3ee', fill: '#06111f', accent: '#a78bfa', shadow: 'rgba(34,211,238,0.60)', emoji: '💿' },
     minimal: { stroke: '#111827', fill: '#f9fafb', accent: '#9ca3af', shadow: 'rgba(17,24,39,0.22)', emoji: '◽' },
-    ocean:   { stroke: '#38bdf8', fill: '#ecfeff', accent: '#0ea5e9', shadow: 'rgba(56,189,248,0.45)', emoji: '🌊' }
+    ocean:   { stroke: '#38bdf8', fill: '#ecfeff', accent: '#0ea5e9', shadow: 'rgba(56,189,248,0.45)', emoji: '🌊' },
+    purple:  { stroke: '#c084fc', fill: '#faf5ff', accent: '#8b5cf6', shadow: 'rgba(192,132,252,0.48)', emoji: '💜' },
+    korean:  { stroke: '#fb7185', fill: '#fff1f2', accent: '#f43f5e', shadow: 'rgba(251,113,133,0.44)', emoji: '🫰' },
+    batik:   { stroke: '#b45309', fill: '#fff7ed', accent: '#92400e', shadow: 'rgba(180,83,9,0.35)', emoji: '🟤' },
+    pearl:   { stroke: '#d6b56d', fill: '#fffaf0', accent: '#f8e7bd', shadow: 'rgba(214,181,109,0.42)', emoji: '🤍' },
+    comic:   { stroke: '#ef4444', fill: '#fff7ed', accent: '#2563eb', shadow: 'rgba(239,68,68,0.40)', emoji: '💥' }
   };
 
   const FRAME_LABELS = {
@@ -22,7 +27,12 @@
     sparkle: 'Sparkle',
     neon: 'Neon',
     minimal: 'Minimal',
-    ocean: 'Ocean'
+    ocean: 'Ocean',
+    purple: 'Purple Dream',
+    korean: 'Korean Sticker',
+    batik: 'Batik Modern',
+    pearl: 'Luxury Pearl',
+    comic: 'Comic Pop'
   };
 
   function getStyle(frame) {
@@ -171,7 +181,6 @@
     const bowSize = m * 0.13;
     const bowX = x + w * 0.5;
     const bowY = y + h * 0.12;
-
     ctx.beginPath();
     ctx.ellipse(bowX - bowSize * 0.45, bowY, bowSize * 0.48, bowSize * 0.30, 0.35, 0, Math.PI * 2);
     ctx.fill();
@@ -181,7 +190,6 @@
     ctx.beginPath();
     ctx.arc(bowX, bowY, bowSize * 0.18, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.globalAlpha = 0.62;
     ctx.beginPath();
     ctx.moveTo(x + w * 0.16, y + h * 0.20); ctx.lineTo(x + w * 0.84, y + h * 0.20);
@@ -233,7 +241,10 @@
       ctx.stroke();
     });
     ctx.strokeStyle = fs.accent;
-    ctx.beginPath(); ctx.moveTo(x + w * 0.18, y + h * 0.84); ctx.quadraticCurveTo(x + w * 0.5, y + h * 0.72, x + w * 0.82, y + h * 0.84); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.18, y + h * 0.84);
+    ctx.quadraticCurveTo(x + w * 0.5, y + h * 0.72, x + w * 0.82, y + h * 0.84);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -258,8 +269,7 @@
     ctx.strokeStyle = fs.accent;
     ctx.lineWidth = Math.max(2, m * 0.012);
     ctx.globalAlpha = 0.85;
-    const waves = [0.20, 0.80];
-    waves.forEach(yPct => {
+    [0.20, 0.80].forEach(yPct => {
       ctx.beginPath();
       for (let i = 0; i <= 36; i++) {
         const px = x + w * (0.18 + 0.64 * i / 36);
@@ -273,6 +283,130 @@
     ctx.restore();
   }
 
+  function drawPurple(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    ctx.strokeStyle = fs.accent;
+    ctx.fillStyle = fs.accent;
+    ctx.lineWidth = Math.max(2, m * 0.012);
+    ctx.globalAlpha = 0.85;
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.13)).forEach(([cx, cy], i) => {
+      if (i % 2 === 0) drawEmoji(ctx, '✦', cx, cy, m * 0.12, 0.95);
+      else drawEmoji(ctx, '☾', cx, cy, m * 0.12, 0.85);
+    });
+    ctx.beginPath();
+    ctx.arc(x + w * 0.5, y + h * 0.5, m * 0.43, 0, Math.PI * 2);
+    ctx.globalAlpha = 0.18;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawKorean(ctx, x, y, w, h, bentuk, fs) {
+    const m = Math.min(w, h);
+    const items = ['♡', '✧', 'luv', '★', 'ㅎㅎ', '♡'];
+    ctx.save();
+    ctx.font = `800 ${Math.max(14, m * 0.08)}px "Segoe UI", sans-serif`;
+    ctx.fillStyle = fs.accent;
+    ctx.strokeStyle = fs.accent;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.13)).forEach(([cx, cy], i) => {
+      if (items[i] === 'luv' || items[i] === 'ㅎㅎ') ctx.fillText(items[i], cx, cy);
+      else drawEmoji(ctx, items[i], cx, cy, m * 0.12, 0.92);
+    });
+    ctx.restore();
+  }
+
+  function drawBatik(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    ctx.strokeStyle = fs.accent;
+    ctx.fillStyle = fs.stroke;
+    ctx.lineWidth = Math.max(2, m * 0.01);
+    ctx.globalAlpha = 0.9;
+    const pts = roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.13));
+    pts.forEach(([cx, cy], i) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(i * Math.PI / 3);
+      ctx.beginPath();
+      ctx.arc(0, 0, m * 0.035, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-m * 0.05, 0);
+      ctx.quadraticCurveTo(0, -m * 0.08, m * 0.05, 0);
+      ctx.quadraticCurveTo(0, m * 0.08, -m * 0.05, 0);
+      ctx.stroke();
+      ctx.restore();
+    });
+    ctx.globalAlpha = 0.2;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.arc(x + w * (0.25 + i * 0.16), y + h * 0.5, m * 0.09, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPearl(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    const pts = roundedBorderPoints(x, y, w, h, bentuk, Math.max(16, m * 0.11));
+    pts.forEach(([cx, cy], i) => {
+      const grd = ctx.createRadialGradient(cx - m * 0.012, cy - m * 0.012, 1, cx, cy, m * 0.04);
+      grd.addColorStop(0, '#ffffff');
+      grd.addColorStop(0.65, '#f7e7bd');
+      grd.addColorStop(1, '#d6b56d');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(cx, cy, m * (i % 2 ? 0.032 : 0.04), 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.strokeStyle = '#d6b56d';
+    ctx.lineWidth = Math.max(1.5, m * 0.008);
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.arc(x + w / 2, y + h / 2, m * 0.42, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawComic(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    ctx.strokeStyle = '#111827';
+    ctx.fillStyle = fs.accent;
+    ctx.lineWidth = Math.max(2.5, m * 0.014);
+    ctx.globalAlpha = 0.95;
+    [[x + w * 0.22, y + h * 0.2], [x + w * 0.78, y + h * 0.2], [x + w * 0.78, y + h * 0.78], [x + w * 0.22, y + h * 0.78]].forEach(([cx, cy], i) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(i * 0.4);
+      ctx.beginPath();
+      for (let p = 0; p < 12; p++) {
+        const a = (p / 12) * Math.PI * 2;
+        const r = p % 2 ? m * 0.04 : m * 0.075;
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (p === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = '#ef4444';
+    for (let yy = 0; yy < 5; yy++) {
+      for (let xx = 0; xx < 5; xx++) {
+        ctx.beginPath();
+        ctx.arc(x + w * (0.25 + xx * 0.12), y + h * (0.27 + yy * 0.10), m * 0.009, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawPlaceholder(ctx, x, y, w, h, fs, placeholderEmoji) {
     const grad = ctx.createLinearGradient(x, y, x + w, y + h);
     if (fs === FRAME_STYLES.neon) {
@@ -283,6 +417,18 @@
       grad.addColorStop(0, '#cffafe');
       grad.addColorStop(0.55, '#e0f2fe');
       grad.addColorStop(1, '#bae6fd');
+    } else if (fs === FRAME_STYLES.batik) {
+      grad.addColorStop(0, '#ffedd5');
+      grad.addColorStop(0.55, '#fff7ed');
+      grad.addColorStop(1, '#fde68a');
+    } else if (fs === FRAME_STYLES.comic) {
+      grad.addColorStop(0, '#fef3c7');
+      grad.addColorStop(0.55, '#fee2e2');
+      grad.addColorStop(1, '#dbeafe');
+    } else if (fs === FRAME_STYLES.purple) {
+      grad.addColorStop(0, '#f3e8ff');
+      grad.addColorStop(0.55, '#fae8ff');
+      grad.addColorStop(1, '#ddd6fe');
     } else {
       grad.addColorStop(0, '#e9d5ff');
       grad.addColorStop(0.5, '#fbcfe8');
@@ -355,6 +501,11 @@
     if (frame === 'neon') drawNeon(ctx, x, y, w, h, bentuk, fs);
     if (frame === 'minimal') drawMinimal(ctx, x, y, w, h, bentuk, fs);
     if (frame === 'ocean') drawOcean(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'purple') drawPurple(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'korean') drawKorean(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'batik') drawBatik(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'pearl') drawPearl(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'comic') drawComic(ctx, x, y, w, h, bentuk, fs);
 
     if (o.hook !== false) drawHook(ctx, x + w / 2, y, Math.min(w, h), o.overlay ? 0.86 : 1);
     ctx.restore();

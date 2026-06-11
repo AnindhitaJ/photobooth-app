@@ -1014,11 +1014,22 @@
     async function confirmPrintSize(size) {
       closePrintSizeModal();
       const is4R = size === '4r';
-      const url = is4R ? await getPrintDataUrl() : await getIdCardDataUrl('png');
-      const filename = is4R ? `id-card-print-4r-${Date.now()}.png` : `id-card-original-${Date.now()}.png`;
-      await saveCard(true, url);
-      const file = dataUrlToFile(url, filename);
+
       try {
+        showToast(is4R ? 'Membuat file 4R...' : 'Membuat file ukuran asli...');
+
+        const url = is4R ? await getPrintDataUrl() : await getIdCardDataUrl('png');
+        const filename = is4R ? `id-card-print-4r-${Date.now()}.png` : `id-card-original-${Date.now()}.png`;
+
+        // Simpan history pakai preview ID Card normal saja.
+        // Jangan simpan file 4R besar ke localStorage karena bisa bikin klik 4R gagal/quota exceeded.
+        try {
+          await saveCard(true);
+        } catch (saveErr) {
+          console.warn('Save history skipped:', saveErr);
+        }
+
+        const file = dataUrlToFile(url, filename);
         if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
           await navigator.share({
             title:'ID Card Photobooth',
@@ -1027,17 +1038,22 @@
           });
           showToast('File cetak dibuka ✓');
         } else {
-          const a = document.createElement('a');
-          a.href = url; a.download = filename; a.click();
-          showToast('Native cetak belum tersedia, file didownload.');
+          downloadDataUrl(url, filename);
+          showToast(is4R ? 'File 4R didownload ✓' : 'File ukuran asli didownload ✓');
         }
       } catch(e) {
-        if (e.name !== 'AbortError') {
-          const a = document.createElement('a');
-          a.href = url; a.download = filename; a.click();
-          showToast('Cetak gagal dibuka, file didownload.');
-        }
+        console.error('Cetak ID Card gagal:', e);
+        showToast('Cetak gagal. Coba lagi atau cek console.');
       }
+    }
+
+    function downloadDataUrl(url, filename) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
 
     function getHistory() {
@@ -1045,12 +1061,22 @@
     }
 
     function setHistory(items) {
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(items.slice(0, 80)));
+      try {
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(items.slice(0, 40)));
+      } catch (e) {
+        // Fallback kalau storage penuh: simpan metadata + thumbnail kecil saja.
+        const slim = items.slice(0, 12).map(item => ({
+          ...item,
+          photo_url: null,
+          export_url: item.card_preview || null
+        }));
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(slim));
+      }
     }
 
     async function saveCard(silent=false, printFileUrl=null) {
       if (!state.idNumber) randomizeId();
-      const exportUrl = await getIdCardDataUrl('png');
+      const exportUrl = await getIdCardDataUrl('jpg');
       const record = {
         id: state.savedId || `local-${Date.now()}-${randomCode(4)}`,
         profile_id: Auth?.getUserId?.() || null,

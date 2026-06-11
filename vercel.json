@@ -48,6 +48,22 @@
   ],
   "rewrites": [
     {
+      "source": "/game-character",
+      "destination": "/game-character.html"
+    },
+    {
+      "source": "/certificate",
+      "destination": "/certificate.html"
+    },
+    {
+      "source": "/icon-portrait",
+      "destination": "/icon-portrait.html"
+    },
+    {
+      "source": "/trading-card",
+      "destination": "/trading-card.html"
+    },
+    {
       "source": "/newspaper",
       "destination": "/newspaper.html"
     },

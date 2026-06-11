@@ -206,6 +206,11 @@
     .idcard .feature-icon { background: linear-gradient(135deg, #c084fc, #D84B7E); }
     .magazine .feature-icon { background: linear-gradient(135deg, #ec4899, #f59e0b); }
     .newspaper .feature-icon { background: linear-gradient(135deg, #111827, #64748b); }
+
+    .trading .feature-icon { background: linear-gradient(135deg, #f97316, #ec4899); }
+    .portrait .feature-icon { background: linear-gradient(135deg, #8b5cf6, #d6b56d); }
+    .certificate .feature-icon { background: linear-gradient(135deg, #d6b56d, #f59e0b); }
+    .game .feature-icon { background: linear-gradient(135deg, #22d3ee, #7c3aed); }
     .footer {
       position: static; margin-top: 24px;
       font-size: 11px; color: #cbb8ac;
@@ -306,6 +311,39 @@
             <span class="feature-desc">foto jadi halaman depan koran</span>
           </span>
         </button>
+
+        <button class="feature-card trading" onclick="bukaTradingCard()">
+          <span class="feature-icon">🃏</span>
+          <span>
+            <span class="feature-title">Trading Card</span>
+            <span class="feature-desc">collectible card dengan stats & rarity</span>
+          </span>
+        </button>
+
+        <button class="feature-card portrait" onclick="bukaIconPortrait()">
+          <span class="feature-icon">👑</span>
+          <span>
+            <span class="feature-title">Icon Portrait</span>
+            <span class="feature-desc">portrait karakter ikonik premium</span>
+          </span>
+        </button>
+
+        <button class="feature-card certificate" onclick="bukaCertificate()">
+          <span class="feature-icon">📜</span>
+          <span>
+            <span class="feature-title">Certificate</span>
+            <span class="feature-desc">sertifikat lucu/aesthetic siap 4R</span>
+          </span>
+        </button>
+
+        <button class="feature-card game" onclick="bukaGameCharacter()">
+          <span class="feature-icon">🎮</span>
+          <span>
+            <span class="feature-title">Game Character</span>
+            <span class="feature-desc">profil karakter game + stats</span>
+          </span>
+        </button>
+
       </div>
     </div>
 
@@ -366,6 +404,10 @@
     function bukaIdCard() { window.location.href = '/idcard'; }
     function bukaMagazine() { window.location.href = '/magazine'; }
     function bukaNewspaper() { window.location.href = '/newspaper'; }
+    function bukaTradingCard() { window.location.href = '/trading-card'; }
+    function bukaIconPortrait() { window.location.href = '/icon-portrait'; }
+    function bukaCertificate() { window.location.href = '/certificate'; }
+    function bukaGameCharacter() { window.location.href = '/game-character'; }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

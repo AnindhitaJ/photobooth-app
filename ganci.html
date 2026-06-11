@@ -51,8 +51,9 @@
 
     /* ── Layout ── */
     .page-wrap {
-      max-width: 1100px; margin: 0 auto; padding: 24px 16px;
-      display: grid; grid-template-columns: 400px 1fr; gap: 24px;
+      max-width: 1180px; margin: 0 auto; padding: 18px 16px 28px;
+      display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 18px;
+      align-items: start;
     }
     @media (max-width: 820px) {
       .page-wrap { grid-template-columns: 1fr; }
@@ -61,24 +62,24 @@
     /* ── Hero description ── */
     .hero-desc {
       background: linear-gradient(135deg, #fff0f6, #fffbea);
-      border: 2px solid var(--border); border-radius: 20px;
-      padding: 20px; margin-bottom: 20px; grid-column: 1 / -1;
+      border: 2px solid var(--border); border-radius: 18px;
+      padding: 16px 18px; margin-bottom: 2px; grid-column: 1 / -1;
     }
     .hero-desc h2 {
-      font-size: 22px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 8px;
+      font-size: 19px; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 6px;
       display: flex; align-items: center; gap: 10px;
     }
-    .hero-desc p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+    .hero-desc p { font-size: 13px; color: var(--text2); line-height: 1.55; }
 
     /* ── Card ── */
     .card {
       background: white; border: 2px solid var(--border);
-      border-radius: 20px; padding: 24px;
+      border-radius: 18px; padding: 18px;
       box-shadow: 0 4px 20px rgba(216,75,126,0.07);
     }
     .card-title {
-      font-size: 14px; font-weight: 800; text-transform: uppercase;
-      letter-spacing: 1.5px; color: var(--text2); margin-bottom: 16px;
+      font-size: 13px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--text2); margin-bottom: 12px;
       display: flex; align-items: center; gap: 8px;
     }
     .card-title::after {
@@ -87,7 +88,7 @@
     }
 
     /* ── Form elements ── */
-    .form-group { margin-bottom: 20px; }
+    .form-group { margin-bottom: 14px; }
     label {
       display: block; font-size: 13px; font-weight: 700;
       color: var(--text); margin-bottom: 8px;
@@ -147,17 +148,17 @@
     .custom-size-box.show { display: block; }
 
     /* ── Preview panel ── */
-    .preview-panel { position: sticky; top: 90px; }
+    .preview-panel { position: sticky; top: 82px; display: grid; gap: 14px; }
     .preview-canvas-wrap {
       background: #f0f0f0;
       background-image: repeating-conic-gradient(#e8e8e8 0% 25%, #f4f4f4 0% 50%);
       background-size: 20px 20px;
       border: 2.5px solid var(--border); border-radius: 16px;
-      min-height: 340px; display: flex; align-items: center; justify-content: center;
-      overflow: hidden; position: relative; padding: 20px;
+      min-height: 250px; display: flex; align-items: center; justify-content: center;
+      overflow: hidden; position: relative; padding: 12px;
     }
     #previewCanvas {
-      display: block; max-width: 100%; max-height: 480px;
+      display: block; max-width: 100%; max-height: 320px;
     }
 
     .preview-info {
@@ -213,6 +214,29 @@
     .page-nav button:disabled { opacity:0.45; cursor:not-allowed; }
     .page-info { font-size:12px; color:var(--text2); font-weight:800; text-align:center; flex:1; }
 
+    .frame-card { padding-bottom: 16px; }
+    .frame-card .card-title { margin-bottom: 10px; }
+    .frame-card .form-group { margin-bottom: 0; }
+    #frameGroup {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+    #frameGroup .toggle-btn {
+      min-width: 0;
+      padding: 8px 6px;
+      border-radius: 11px;
+      font-size: 11px;
+      line-height: 1.15;
+    }
+    #frameGroup .toggle-btn .icon { font-size: 18px; }
+    #bentukGroup .toggle-btn { min-height: 58px; }
+    @media (max-width: 820px) {
+      .preview-panel { position: static; }
+      #frameGroup { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .preview-canvas-wrap { min-height: 220px; }
+    }
+
   </style>
   <script src="/auth.js"></script>
   <script src="/ganci-utils.js"></script>
@@ -236,10 +260,7 @@
     <div class="hero-desc">
       <h2>🪝 Apa itu Ganci Akrilik?</h2>
       <p>
-        <strong>Ganci akrilik</strong> adalah produk foto insert berbentuk gantungan kunci yang terbuat dari bahan akrilik transparan.
-        Foto disisipkan ke dalam frame akrilik berbentuk <strong>persegi</strong> atau <strong>lingkaran</strong>, kemudian dilengkapi
-        dengan ring logam di bagian atas sebagai gantungan. Cocok untuk merchandise, souvenir acara, dan kenang-kenangan foto.
-        Pilih bentuk, frame, ukuran kertas, dan jumlah ganci. Setelah foto dan filter disetujui, sistem akan bikin panel logo otomatis, layout cetak, sampai JPG siap print.
+        Pilih bentuk, ukuran, jumlah, dan tema frame. Preview kanan akan update realtime; setelah foto + filter disetujui, sistem otomatis bikin panel logo, layout cetak, dan JPG siap print.
       </p>
     </div>
 
@@ -260,99 +281,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Pilihan Frame -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-title">🖼️ Pilihan Frame</div>
-        <div class="form-group" style="margin-bottom:0;">
-          <div class="toggle-group" id="frameGroup">
-            <button class="toggle-btn active" data-value="polos" onclick="setFrame(this)">
-              <span class="icon">⬜</span> Polos
-            </button>
-            <button class="toggle-btn" data-value="cute" onclick="setFrame(this)">
-              <span class="icon">🌸</span> Cute
-            </button>
-            <button class="toggle-btn" data-value="vintage" onclick="setFrame(this)">
-              <span class="icon">🌿</span> Vintage
-            </button>
-            <button class="toggle-btn" data-value="doodle" onclick="setFrame(this)">
-              <span class="icon">✏️</span> Doodle
-            </button>
-            <button class="toggle-btn" data-value="floral" onclick="setFrame(this)">
-              <span class="icon">🌼</span> Floral
-            </button>
-            <button class="toggle-btn" data-value="ribbon" onclick="setFrame(this)">
-              <span class="icon">🎀</span> Ribbon
-            </button>
-            <button class="toggle-btn" data-value="sparkle" onclick="setFrame(this)">
-              <span class="icon">✨</span> Sparkle
-            </button>
-            <button class="toggle-btn" data-value="neon" onclick="setFrame(this)">
-              <span class="icon">💿</span> Neon
-            </button>
-            <button class="toggle-btn" data-value="minimal" onclick="setFrame(this)">
-              <span class="icon">◽</span> Minimal
-            </button>
-            <button class="toggle-btn" data-value="ocean" onclick="setFrame(this)">
-              <span class="icon">🌊</span> Ocean
-            </button>
-            <button class="toggle-btn" data-value="purple" onclick="setFrame(this)">
-              <span class="icon">💜</span> Purple
-            </button>
-            <button class="toggle-btn" data-value="korean" onclick="setFrame(this)">
-              <span class="icon">🫰</span> Korean
-            </button>
-            <button class="toggle-btn" data-value="batik" onclick="setFrame(this)">
-              <span class="icon">🟤</span> Batik
-            </button>
-            <button class="toggle-btn" data-value="pearl" onclick="setFrame(this)">
-              <span class="icon">🤍</span> Pearl
-            </button>
-            <button class="toggle-btn" data-value="comic" onclick="setFrame(this)">
-              <span class="icon">💥</span> Comic
-            </button>
-          </div>
-          </div>
-        </div>
-      </div>
-
-
-
-      <!-- Mulai Kamera Ganci -->
-      <div class="card action-card" style="margin-bottom:16px;">
-        <div class="card-title">📸 Foto Ganci</div>
-        <div class="flow-note">
-          Mode Ganci memakai kamera photobooth yang sama, tapi hanya 1 foto per sesi. Setelah foto diambil, user bisa retake berkali-kali sebelum lanjut ke filter.
-        </div>
-        <button class="btn-start-ganci" onclick="mulaiFotoGanci()">Mulai Ambil Foto Ganci →</button>
-        <div class="saved-ganci" id="savedGanciBox">
-          <div class="saved-ganci-title">✅ Ganci tersimpan di state</div>
-          <img id="savedGanciImg" alt="Preview foto ganci tersimpan">
-          <div class="saved-ganci-meta" id="savedGanciMeta"></div>
-        </div>
-      </div>
-
-      <div class="card print-card" id="printCard">
-        <div class="card-title">🖨️ Preview Hasil Cetak</div>
-        <div class="flow-note">Layout akhir akan otomatis menyusun panel foto + panel logo sesuai jumlah ganci dan ukuran kertas yang dipilih.</div>
-        <button class="btn-start-ganci" id="btnGenerateLayout" onclick="generateGanciLayout()">Generate Layout Cetak</button>
-        <div class="layout-actions">
-          <button class="btn-secondary" id="btnDownloadLayout" onclick="downloadLayout()" disabled>⬇️ Download JPG</button>
-          <button class="btn-secondary" id="btnSaveGallery" onclick="saveLayoutToGallery()" disabled>🖼️ Simpan ke Galeri</button>
-          <button class="btn-secondary" id="btnShareLayout" onclick="shareLayout()" disabled>📤 Share</button>
-          <button class="btn-secondary" id="btnOpenGallery" onclick="window.location.href='/gallery'">Buka Galeri</button>
-        </div>
-        <div class="layout-status" id="layoutStatus">Belum ada layout yang digenerate.</div>
-        <div class="print-preview-wrap" id="printPreviewWrap" style="display:none;">
-          <img id="printPreviewImg" alt="Preview hasil cetak">
-          <div class="page-nav" id="pageNav" style="display:none;">
-            <button id="btnPrevPage" onclick="changeLayoutPage(-1)">← Halaman Sebelumnya</button>
-            <div class="page-info" id="pageInfo">Halaman 1 / 1</div>
-            <button id="btnNextPage" onclick="changeLayoutPage(1)">Halaman Berikutnya →</button>
-          </div>
-        </div>
-      </div>
-
       <!-- Ukuran Kertas -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">📄 Ukuran Kertas</div>
@@ -418,11 +346,102 @@
         </div>
       </div>
 
+
+
+      <!-- Mulai Kamera Ganci -->
+      <div class="card action-card" style="margin-top:16px;margin-bottom:16px;">
+        <div class="card-title">📸 Foto Ganci</div>
+        <div class="flow-note">
+          Mode Ganci memakai kamera photobooth yang sama, tapi hanya 1 foto per sesi. Setelah foto diambil, user bisa retake berkali-kali sebelum lanjut ke filter.
+        </div>
+        <button class="btn-start-ganci" onclick="mulaiFotoGanci()">Mulai Ambil Foto Ganci →</button>
+        <div class="saved-ganci" id="savedGanciBox">
+          <div class="saved-ganci-title">✅ Ganci tersimpan di state</div>
+          <img id="savedGanciImg" alt="Preview foto ganci tersimpan">
+          <div class="saved-ganci-meta" id="savedGanciMeta"></div>
+        </div>
+      </div>
+
+      <div class="card print-card" id="printCard">
+        <div class="card-title">🖨️ Preview Hasil Cetak</div>
+        <div class="flow-note">Layout akhir akan otomatis menyusun panel foto + panel logo sesuai jumlah ganci dan ukuran kertas yang dipilih.</div>
+        <button class="btn-start-ganci" id="btnGenerateLayout" onclick="generateGanciLayout()">Generate Layout Cetak</button>
+        <div class="layout-actions">
+          <button class="btn-secondary" id="btnDownloadLayout" onclick="downloadLayout()" disabled>⬇️ Download JPG</button>
+          <button class="btn-secondary" id="btnSaveGallery" onclick="saveLayoutToGallery()" disabled>🖼️ Simpan ke Galeri</button>
+          <button class="btn-secondary" id="btnShareLayout" onclick="shareLayout()" disabled>📤 Share</button>
+          <button class="btn-secondary" id="btnOpenGallery" onclick="window.location.href='/gallery'">Buka Galeri</button>
+        </div>
+        <div class="layout-status" id="layoutStatus">Belum ada layout yang digenerate.</div>
+        <div class="print-preview-wrap" id="printPreviewWrap" style="display:none;">
+          <img id="printPreviewImg" alt="Preview hasil cetak">
+          <div class="page-nav" id="pageNav" style="display:none;">
+            <button id="btnPrevPage" onclick="changeLayoutPage(-1)">← Halaman Sebelumnya</button>
+            <div class="page-info" id="pageInfo">Halaman 1 / 1</div>
+            <button id="btnNextPage" onclick="changeLayoutPage(1)">Halaman Berikutnya →</button>
+          </div>
+        </div>
+      </div>
+
+
     </div><!-- /form column -->
 
     <!-- Preview column -->
     <div class="preview-panel">
-      <div class="card">
+      <!-- Pilihan Frame -->
+      <div class="card frame-card">
+        <div class="card-title">🖼️ Pilihan Frame</div>
+        <div class="form-group">
+          <div class="toggle-group" id="frameGroup">
+            <button class="toggle-btn active" data-value="polos" onclick="setFrame(this)">
+              <span class="icon">⬜</span> Polos
+            </button>
+            <button class="toggle-btn" data-value="cute" onclick="setFrame(this)">
+              <span class="icon">🌸</span> Cute
+            </button>
+            <button class="toggle-btn" data-value="vintage" onclick="setFrame(this)">
+              <span class="icon">🌿</span> Vintage
+            </button>
+            <button class="toggle-btn" data-value="doodle" onclick="setFrame(this)">
+              <span class="icon">✏️</span> Doodle
+            </button>
+            <button class="toggle-btn" data-value="floral" onclick="setFrame(this)">
+              <span class="icon">🌼</span> Floral
+            </button>
+            <button class="toggle-btn" data-value="ribbon" onclick="setFrame(this)">
+              <span class="icon">🎀</span> Ribbon
+            </button>
+            <button class="toggle-btn" data-value="sparkle" onclick="setFrame(this)">
+              <span class="icon">✨</span> Sparkle
+            </button>
+            <button class="toggle-btn" data-value="neon" onclick="setFrame(this)">
+              <span class="icon">💿</span> Neon
+            </button>
+            <button class="toggle-btn" data-value="minimal" onclick="setFrame(this)">
+              <span class="icon">◽</span> Minimal
+            </button>
+            <button class="toggle-btn" data-value="ocean" onclick="setFrame(this)">
+              <span class="icon">🌊</span> Ocean
+            </button>
+            <button class="toggle-btn" data-value="purple" onclick="setFrame(this)">
+              <span class="icon">💜</span> Purple
+            </button>
+            <button class="toggle-btn" data-value="korean" onclick="setFrame(this)">
+              <span class="icon">🫰</span> Korean
+            </button>
+            <button class="toggle-btn" data-value="batik" onclick="setFrame(this)">
+              <span class="icon">🟤</span> Batik
+            </button>
+            <button class="toggle-btn" data-value="pearl" onclick="setFrame(this)">
+              <span class="icon">🤍</span> Pearl
+            </button>
+            <button class="toggle-btn" data-value="comic" onclick="setFrame(this)">
+              <span class="icon">💥</span> Comic
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card preview-card">
         <div class="card-title">👁️ Preview Realtime</div>
         <div class="preview-canvas-wrap">
           <canvas id="previewCanvas" width="400" height="520"></canvas>
@@ -648,18 +667,18 @@
 
       const canvas = document.getElementById('previewCanvas');
       const ctx = canvas.getContext('2d');
-      const maxW = 380;
-      const maxH = 440;
+      const maxW = 300;
+      const maxH = 300;
       const aspect = state.ganciW / state.ganciH;
-      let frameW = aspect >= 1 ? maxW * 0.72 : maxH * 0.62 * aspect;
+      let frameW = aspect >= 1 ? maxW * 0.70 : maxH * 0.68 * aspect;
       let frameH = frameW / aspect;
       if (frameH > maxH * 0.72) {
         frameH = maxH * 0.72;
         frameW = frameH * aspect;
       }
 
-      const pad = Math.max(46, Math.min(frameW, frameH) * 0.22);
-      const hookPad = Math.max(34, Math.min(frameW, frameH) * 0.17);
+      const pad = Math.max(24, Math.min(frameW, frameH) * 0.16);
+      const hookPad = 0;
       const cW = Math.round(frameW + pad * 2);
       const cH = Math.round(frameH + pad * 2 + hookPad);
       canvas.width = cW;
@@ -669,7 +688,7 @@
       if (window.GanciFrames) {
         window.GanciFrames.drawFrame(ctx, {
           x: pad,
-          y: pad + hookPad,
+          y: pad,
           w: frameW,
           h: frameH,
           bentuk: state.bentuk,
@@ -680,7 +699,7 @@
           hook: false
         });
       } else {
-        drawFrameDecor(ctx, pad, pad + hookPad, frameW, frameH, state.bentuk, state.frame);
+        drawFrameDecor(ctx, pad, pad, frameW, frameH, state.bentuk, state.frame);
       }
 
       updateInfoChips();

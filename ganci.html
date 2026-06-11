@@ -278,6 +278,24 @@
             <button class="toggle-btn" data-value="doodle" onclick="setFrame(this)">
               <span class="icon">✏️</span> Doodle
             </button>
+            <button class="toggle-btn" data-value="floral" onclick="setFrame(this)">
+              <span class="icon">🌼</span> Floral
+            </button>
+            <button class="toggle-btn" data-value="ribbon" onclick="setFrame(this)">
+              <span class="icon">🎀</span> Ribbon
+            </button>
+            <button class="toggle-btn" data-value="sparkle" onclick="setFrame(this)">
+              <span class="icon">✨</span> Sparkle
+            </button>
+            <button class="toggle-btn" data-value="neon" onclick="setFrame(this)">
+              <span class="icon">💿</span> Neon
+            </button>
+            <button class="toggle-btn" data-value="minimal" onclick="setFrame(this)">
+              <span class="icon">◽</span> Minimal
+            </button>
+            <button class="toggle-btn" data-value="ocean" onclick="setFrame(this)">
+              <span class="icon">🌊</span> Ocean
+            </button>
           </div>
         </div>
       </div>
@@ -417,6 +435,9 @@
       jumlah: 6,
     };
 
+    let previewPhotoImg = null;
+    let previewPhotoSrc = null;
+
     // Paper sizes in mm
     const PAPER_SIZES = {
       'A4':  { w: 210, h: 297 },
@@ -427,12 +448,18 @@
       '8R':  { w: 203, h: 254 },
     };
 
-    // Frame color palettes
+    // Fallback palettes kalau ganci-utils.js gagal kebaca.
     const FRAME_STYLES = {
-      polos:   { stroke: '#e2d4da', fill: '#ffffff', accent: null, pattern: null },
+      polos:   { stroke: '#e2d4da', fill: '#ffffff', accent: '#e5e7eb', pattern: null },
       cute:    { stroke: '#f9a8d4', fill: '#fff0f9', accent: '#f472b6', pattern: 'hearts' },
       vintage: { stroke: '#a78c6e', fill: '#fdf6ec', accent: '#c4a36c', pattern: 'floral' },
       doodle:  { stroke: '#7dd3fc', fill: '#f0faff', accent: '#38bdf8', pattern: 'doodle' },
+      floral:  { stroke: '#f7b2c9', fill: '#fff6fa', accent: '#ec4899', pattern: 'floral' },
+      ribbon:  { stroke: '#c4b5fd', fill: '#f7f5ff', accent: '#8b5cf6', pattern: 'ribbon' },
+      sparkle: { stroke: '#fcd34d', fill: '#fffdf5', accent: '#f59e0b', pattern: 'sparkle' },
+      neon:    { stroke: '#22d3ee', fill: '#06111f', accent: '#a78bfa', pattern: 'neon' },
+      minimal: { stroke: '#111827', fill: '#f9fafb', accent: '#9ca3af', pattern: 'minimal' },
+      ocean:   { stroke: '#38bdf8', fill: '#ecfeff', accent: '#0ea5e9', pattern: 'ocean' },
     };
 
     // ── Setters ──
@@ -631,7 +658,9 @@
           h: frameH,
           bentuk: state.bentuk,
           frame: state.frame,
-          showPlaceholder: true,
+          photo: previewPhotoImg || null,
+          showPlaceholder: !previewPhotoImg,
+          placeholderEmoji: '📷',
           hook: false
         });
       } else {
@@ -672,6 +701,37 @@
       };
     }
 
+    function loadPreviewPhotoFromState() {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) {}
+      const src = saved?.photo || saved?.originalPhoto || null;
+
+      if (!src) {
+        previewPhotoImg = null;
+        previewPhotoSrc = null;
+        updatePreview();
+        return;
+      }
+
+      if (previewPhotoSrc === src && previewPhotoImg) {
+        updatePreview();
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        previewPhotoImg = img;
+        previewPhotoSrc = src;
+        updatePreview();
+      };
+      img.onerror = () => {
+        previewPhotoImg = null;
+        previewPhotoSrc = null;
+        updatePreview();
+      };
+      img.src = src;
+    }
+
     function mulaiFotoGanci() {
       updatePreview();
       const config = getGanciConfig();
@@ -701,6 +761,7 @@
       document.getElementById('savedGanciMeta').textContent = `Frame: ${frameLabel} · Filter: ${tone} · ${cfg.jumlah || state.jumlah || 1} set`;
       box.classList.add('show');
       document.getElementById('printCard').classList.add('show');
+      loadPreviewPhotoFromState();
     }
 
     let generatedLayout = null;
@@ -856,6 +917,7 @@
     if (existing?.config) syncInputsFromConfig(existing.config);
     updatePreview();
     renderSavedGanciState();
+    loadPreviewPhotoFromState();
     if (existing?.photo) document.getElementById('printCard').classList.add('show');
     if (params.get('done') === '1' && existing?.photo) {
       setTimeout(() => generateGanciLayout(true), 120);

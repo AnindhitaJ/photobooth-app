@@ -1,16 +1,28 @@
 (function () {
   const FRAME_STYLES = {
-    polos:   { stroke: '#ffffff', fill: '#ffffff', accent: '#e5e7eb', shadow: 'rgba(255,255,255,0.45)' },
-    cute:    { stroke: '#f9a8d4', fill: '#fff0f9', accent: '#f472b6', shadow: 'rgba(249,168,212,0.55)' },
-    vintage: { stroke: '#a78c6e', fill: '#fdf6ec', accent: '#c4a36c', shadow: 'rgba(196,163,108,0.45)' },
-    doodle:  { stroke: '#7dd3fc', fill: '#f0faff', accent: '#38bdf8', shadow: 'rgba(125,211,252,0.50)' }
+    polos:   { stroke: '#ffffff', fill: '#ffffff', accent: '#e5e7eb', shadow: 'rgba(255,255,255,0.45)', emoji: '📷' },
+    cute:    { stroke: '#f9a8d4', fill: '#fff0f9', accent: '#f472b6', shadow: 'rgba(249,168,212,0.55)', emoji: '🌸' },
+    vintage: { stroke: '#a78c6e', fill: '#fdf6ec', accent: '#c4a36c', shadow: 'rgba(196,163,108,0.45)', emoji: '🌿' },
+    doodle:  { stroke: '#7dd3fc', fill: '#f0faff', accent: '#38bdf8', shadow: 'rgba(125,211,252,0.50)', emoji: '✏️' },
+    floral:  { stroke: '#f7b2c9', fill: '#fff6fa', accent: '#ec4899', shadow: 'rgba(247,178,201,0.45)', emoji: '🌼' },
+    ribbon:  { stroke: '#c4b5fd', fill: '#f7f5ff', accent: '#8b5cf6', shadow: 'rgba(196,181,253,0.45)', emoji: '🎀' },
+    sparkle: { stroke: '#fcd34d', fill: '#fffdf5', accent: '#f59e0b', shadow: 'rgba(252,211,77,0.45)', emoji: '✨' },
+    neon:    { stroke: '#22d3ee', fill: '#06111f', accent: '#a78bfa', shadow: 'rgba(34,211,238,0.60)', emoji: '💿' },
+    minimal: { stroke: '#111827', fill: '#f9fafb', accent: '#9ca3af', shadow: 'rgba(17,24,39,0.22)', emoji: '◽' },
+    ocean:   { stroke: '#38bdf8', fill: '#ecfeff', accent: '#0ea5e9', shadow: 'rgba(56,189,248,0.45)', emoji: '🌊' }
   };
 
   const FRAME_LABELS = {
     polos: 'Polos',
     cute: 'Cute',
     vintage: 'Vintage',
-    doodle: 'Doodle'
+    doodle: 'Doodle',
+    floral: 'Floral',
+    ribbon: 'Ribbon',
+    sparkle: 'Sparkle',
+    neon: 'Neon',
+    minimal: 'Minimal',
+    ocean: 'Ocean'
   };
 
   function getStyle(frame) {
@@ -55,26 +67,36 @@
     ctx.restore();
   }
 
-  function drawCute(ctx, x, y, w, h, bentuk, fs, scale) {
+  function drawEmoji(ctx, text, x, y, size, alpha) {
     ctx.save();
-    ctx.font = `${Math.max(16, Math.min(w, h) * 0.12)}px serif`;
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.font = `${Math.max(14, size)}px serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const items = ['🌸', '💕', '⭐', '🌷', '♡', '✦'];
-    const pad = Math.max(16, Math.min(w, h) * 0.11);
-    const points = bentuk === 'lingkaran'
-      ? [
-          [x + w * 0.50, y + pad], [x + w - pad, y + h * 0.30],
-          [x + w - pad, y + h * 0.70], [x + w * 0.50, y + h - pad],
-          [x + pad, y + h * 0.70], [x + pad, y + h * 0.30]
-        ]
-      : [
-          [x + pad, y + pad], [x + w - pad, y + pad],
-          [x + w - pad, y + h - pad], [x + pad, y + h - pad],
-          [x + w * 0.50, y + pad * 0.75], [x + w * 0.50, y + h - pad * 0.75]
-        ];
-    points.forEach((p, i) => ctx.fillText(items[i % items.length], p[0], p[1]));
+    ctx.fillText(text, x, y);
     ctx.restore();
+  }
+
+  function roundedBorderPoints(x, y, w, h, bentuk, pad) {
+    if (bentuk === 'lingkaran') {
+      return [
+        [x + w * 0.50, y + pad], [x + w - pad, y + h * 0.30],
+        [x + w - pad, y + h * 0.70], [x + w * 0.50, y + h - pad],
+        [x + pad, y + h * 0.70], [x + pad, y + h * 0.30]
+      ];
+    }
+    return [
+      [x + pad, y + pad], [x + w - pad, y + pad],
+      [x + w - pad, y + h - pad], [x + pad, y + h - pad],
+      [x + w * 0.50, y + pad * 0.78], [x + w * 0.50, y + h - pad * 0.78]
+    ];
+  }
+
+  function drawCute(ctx, x, y, w, h, bentuk, fs) {
+    const m = Math.min(w, h);
+    const items = ['🌸', '💕', '⭐', '🌷', '♡', '✦'];
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(16, m * 0.11))
+      .forEach((p, i) => drawEmoji(ctx, items[i % items.length], p[0], p[1], m * 0.12));
   }
 
   function drawVintage(ctx, x, y, w, h, bentuk, fs) {
@@ -133,6 +155,148 @@
     ctx.restore();
   }
 
+  function drawFloral(ctx, x, y, w, h, bentuk, fs) {
+    const m = Math.min(w, h);
+    const items = ['🌼', '🌷', '🌸', '🌿', '🌺', '🌱'];
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.13))
+      .forEach((p, i) => drawEmoji(ctx, items[i], p[0], p[1], m * 0.12));
+  }
+
+  function drawRibbon(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    ctx.fillStyle = fs.accent;
+    ctx.strokeStyle = fs.accent;
+    ctx.lineWidth = Math.max(2, Math.min(w, h) * 0.012);
+    const m = Math.min(w, h);
+    const bowSize = m * 0.13;
+    const bowX = x + w * 0.5;
+    const bowY = y + h * 0.12;
+
+    ctx.beginPath();
+    ctx.ellipse(bowX - bowSize * 0.45, bowY, bowSize * 0.48, bowSize * 0.30, 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(bowX + bowSize * 0.45, bowY, bowSize * 0.48, bowSize * 0.30, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(bowX, bowY, bowSize * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.62;
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.16, y + h * 0.20); ctx.lineTo(x + w * 0.84, y + h * 0.20);
+    ctx.moveTo(x + w * 0.16, y + h * 0.80); ctx.lineTo(x + w * 0.84, y + h * 0.80);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSparkle(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    ctx.strokeStyle = fs.accent;
+    ctx.fillStyle = fs.accent;
+    ctx.lineWidth = Math.max(2, Math.min(w, h) * 0.01);
+    ctx.globalAlpha = 0.9;
+    const m = Math.min(w, h);
+    const items = [
+      [x + w * 0.18, y + h * 0.20, 'spark'], [x + w * 0.82, y + h * 0.20, 'star'],
+      [x + w * 0.78, y + h * 0.80, 'spark'], [x + w * 0.20, y + h * 0.78, 'star'],
+      [x + w * 0.50, y + h * 0.12, 'dot'], [x + w * 0.50, y + h * 0.88, 'dot']
+    ];
+    items.forEach(([cx, cy, type]) => {
+      if (type === 'spark') {
+        ctx.beginPath(); ctx.moveTo(cx - m * 0.038, cy); ctx.lineTo(cx + m * 0.038, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy - m * 0.038); ctx.lineTo(cx, cy + m * 0.038); ctx.stroke();
+      } else if (type === 'star') {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - m * 0.04); ctx.lineTo(cx + m * 0.014, cy - m * 0.012);
+        ctx.lineTo(cx + m * 0.04, cy); ctx.lineTo(cx + m * 0.014, cy + m * 0.012);
+        ctx.lineTo(cx, cy + m * 0.04); ctx.lineTo(cx - m * 0.014, cy + m * 0.012);
+        ctx.lineTo(cx - m * 0.04, cy); ctx.lineTo(cx - m * 0.014, cy - m * 0.012);
+        ctx.closePath(); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.arc(cx, cy, m * 0.018, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    ctx.restore();
+  }
+
+  function drawNeon(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    ctx.shadowColor = fs.stroke;
+    ctx.shadowBlur = m * 0.08;
+    ctx.strokeStyle = fs.stroke;
+    ctx.lineWidth = Math.max(2, m * 0.014);
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.15)).forEach(([cx, cy], i) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, m * (i % 2 ? 0.018 : 0.026), 0, Math.PI * 2);
+      ctx.stroke();
+    });
+    ctx.strokeStyle = fs.accent;
+    ctx.beginPath(); ctx.moveTo(x + w * 0.18, y + h * 0.84); ctx.quadraticCurveTo(x + w * 0.5, y + h * 0.72, x + w * 0.82, y + h * 0.84); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawMinimal(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    ctx.strokeStyle = fs.accent;
+    ctx.lineWidth = Math.max(1.5, m * 0.008);
+    ctx.globalAlpha = 0.9;
+    const len = m * 0.11;
+    [[x + w * 0.18, y + h * 0.18, 1, 1], [x + w * 0.82, y + h * 0.18, -1, 1], [x + w * 0.82, y + h * 0.82, -1, -1], [x + w * 0.18, y + h * 0.82, 1, -1]].forEach(([cx, cy, sx, sy]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + sy * len); ctx.lineTo(cx, cy); ctx.lineTo(cx + sx * len, cy);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function drawOcean(ctx, x, y, w, h, bentuk, fs) {
+    ctx.save();
+    const m = Math.min(w, h);
+    ctx.strokeStyle = fs.accent;
+    ctx.lineWidth = Math.max(2, m * 0.012);
+    ctx.globalAlpha = 0.85;
+    const waves = [0.20, 0.80];
+    waves.forEach(yPct => {
+      ctx.beginPath();
+      for (let i = 0; i <= 36; i++) {
+        const px = x + w * (0.18 + 0.64 * i / 36);
+        const py = y + h * yPct + Math.sin(i / 36 * Math.PI * 4) * m * 0.018;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    });
+    drawEmoji(ctx, '🐚', x + w * 0.18, y + h * 0.76, m * 0.10, 0.9);
+    drawEmoji(ctx, '🫧', x + w * 0.82, y + h * 0.24, m * 0.10, 0.9);
+    ctx.restore();
+  }
+
+  function drawPlaceholder(ctx, x, y, w, h, fs, placeholderEmoji) {
+    const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+    if (fs === FRAME_STYLES.neon) {
+      grad.addColorStop(0, '#111827');
+      grad.addColorStop(0.55, '#172554');
+      grad.addColorStop(1, '#312e81');
+    } else if (fs === FRAME_STYLES.ocean) {
+      grad.addColorStop(0, '#cffafe');
+      grad.addColorStop(0.55, '#e0f2fe');
+      grad.addColorStop(1, '#bae6fd');
+    } else {
+      grad.addColorStop(0, '#e9d5ff');
+      grad.addColorStop(0.5, '#fbcfe8');
+      grad.addColorStop(1, '#fde68a');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = fs === FRAME_STYLES.neon ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)';
+    ctx.font = `${Math.min(w, h) * 0.25}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(placeholderEmoji || '📷', x + w / 2, y + h / 2);
+  }
+
   function drawFrame(ctx, options) {
     const o = options || {};
     const x = o.x || 0;
@@ -163,17 +327,7 @@
         const dh = ih * scale;
         ctx.drawImage(img, x + w / 2 - dw / 2, y + h / 2 - dh / 2, dw, dh);
       } else {
-        const grad = ctx.createLinearGradient(x, y, x + w, y + h);
-        grad.addColorStop(0, '#e9d5ff');
-        grad.addColorStop(0.5, '#fbcfe8');
-        grad.addColorStop(1, '#fde68a');
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, y, w, h);
-        ctx.fillStyle = 'rgba(255,255,255,0.78)';
-        ctx.font = `${Math.min(w, h) * 0.25}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('📷', x + w / 2, y + h / 2);
+        drawPlaceholder(ctx, x, y, w, h, fs, o.placeholderEmoji || '📷');
       }
       ctx.restore();
     }
@@ -195,6 +349,12 @@
     if (frame === 'cute') drawCute(ctx, x, y, w, h, bentuk, fs);
     if (frame === 'vintage') drawVintage(ctx, x, y, w, h, bentuk, fs);
     if (frame === 'doodle') drawDoodle(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'floral') drawFloral(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'ribbon') drawRibbon(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'sparkle') drawSparkle(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'neon') drawNeon(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'minimal') drawMinimal(ctx, x, y, w, h, bentuk, fs);
+    if (frame === 'ocean') drawOcean(ctx, x, y, w, h, bentuk, fs);
 
     if (o.hook !== false) drawHook(ctx, x + w / 2, y, Math.min(w, h), o.overlay ? 0.86 : 1);
     ctx.restore();

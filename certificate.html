@@ -176,6 +176,8 @@
     const ctx = canvas.getContext('2d');
     const cfg = Product4R.getConfig(MENU);
     const state = Product4R.createState(MENU, canvas, ctx);
+    state.text = { name: '' };
+    state.edited = { name: true };
     let stream = null;
 
     function toast(msg) {
@@ -230,7 +232,7 @@
       document.getElementById('formFields').innerHTML = `
         <div class="field">
           <label>Nama</label>
-          <input maxlength="32" id="field_name" oninput="updateField('name')" value="${escapeHtml(val)}" placeholder="isi nama di sini">
+          <input maxlength="32" id="field_name" oninput="updateField('name')" value="${escapeHtml(val)}" placeholder="isi nama kalau mau">
         </div>
       `;
     }
@@ -276,10 +278,10 @@
       img.onload = () => {
         state.photo = src;
         state.photoImg = img;
-        state.zoom = 1;
+        state.zoom = 1.18;
         state.rotate = 0;
-        state.photoX = 0;
-        state.photoY = 0;
+        state.photoX = 18;
+        state.photoY = -6;
         render();
       };
       img.onerror = () => toast('Foto gagal dimuat.');

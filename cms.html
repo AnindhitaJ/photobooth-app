@@ -96,6 +96,8 @@
     .btn-pro:hover { background:#c9972a; color:white; }
     .btn-trial { background:#e0e7ff; color:#4f46e5; }
     .btn-trial:hover { background:#4f46e5; color:white; }
+    .btn-password { background:#f3e8ff; color:#7e22ce; }
+    .btn-password:hover { background:#7e22ce; color:white; }
 
     .btn-actions { display:flex; gap:6px; flex-wrap:wrap; }
 
@@ -129,6 +131,11 @@
       font-size:14px; outline:none; font-family:inherit; color:var(--text);
     }
     .custom-date-wrap input:focus { border-color:var(--yellow); }
+    .modal-input {
+      width:100%; padding:11px 14px; border-radius:12px; border:2px solid var(--border);
+      font-size:14px; outline:none; font-family:inherit; color:var(--text); margin-bottom:14px;
+    }
+    .modal-input:focus { border-color:var(--yellow); }
     .modal-actions { display:flex; gap:10px; }
     .btn-modal-cancel {
       flex:1; padding:12px; border-radius:50px; border:2px solid var(--border);
@@ -249,6 +256,20 @@
   </div>
 </div>
 
+
+<!-- PASSWORD MODAL -->
+<div class="modal-wrap" id="passwordModal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 Ganti Password</div>
+    <div class="modal-sub">Password baru untuk <span class="modal-user" id="passwordUserEmail">—</span></div>
+    <input type="password" class="modal-input" id="newPasswordInput" placeholder="Password baru minimal 6 karakter" autocomplete="new-password" onkeydown="if(event.key==='Enter') confirmChangePassword()">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closePasswordModal()">Batal</button>
+      <button class="btn-modal-confirm" id="btnConfirmPassword" onclick="confirmChangePassword()">Simpan Password</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -258,6 +279,7 @@
 
   let allUsers = [];
   let selectedUserId = null;
+  let selectedPasswordUserId = null;
 
   // ── AUTH CHECK ───────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', async () => {
@@ -340,12 +362,14 @@
         ? `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${u.email||''}')">⭐ Aktifkan PRO</button>`
         : `<button class="btn-sm btn-trial" onclick="setTrial('${u.id}')">🔄 Reset Trial</button>`;
 
+      const passBtn = `<button class="btn-sm btn-password" onclick="openPasswordModal('${u.id}','${(u.email||'').replace(/'/g, '&#39;')}')">🔑 Ganti Password</button>`;
+
       return `<tr>
         <td><div style="font-weight:700">${u.booth_name || '—'}</div><div style="font-size:11px;color:var(--text2)">${u.email || '—'}</div></td>
         <td>${badge}</td>
         <td style="font-size:12px;color:var(--text2)">${endInfo}</td>
         <td style="font-size:12px;color:var(--text2)">${new Date(u.created_at).toLocaleDateString('id-ID')}</td>
-        <td><div class="btn-actions">${proBtn}${activeBtn}</div></td>
+        <td><div class="btn-actions">${proBtn}${activeBtn}${passBtn}</div></td>
       </tr>`;
     }).join('');
 
@@ -404,6 +428,64 @@
       showToast('🔄 Trial direset 7 hari', 'success');
       loadUsers();
     } catch(e) { showToast('❌ Gagal: ' + e.message, 'error'); }
+  }
+
+
+  // ── CHANGE PASSWORD MODAL ────────────────────────────────────────────
+  function openPasswordModal(userId, email) {
+    selectedPasswordUserId = userId;
+    document.getElementById('passwordUserEmail').textContent = email || userId;
+    document.getElementById('newPasswordInput').value = '';
+    document.getElementById('passwordModal').classList.add('open');
+    setTimeout(() => document.getElementById('newPasswordInput').focus(), 80);
+  }
+
+  function closePasswordModal() {
+    document.getElementById('passwordModal').classList.remove('open');
+    selectedPasswordUserId = null;
+  }
+
+  async function confirmChangePassword() {
+    const password = document.getElementById('newPasswordInput').value.trim();
+    if (!selectedPasswordUserId) return;
+    if (password.length < 6) {
+      showToast('❌ Password minimal 6 karakter', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnConfirmPassword');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    try {
+      const session = Auth.getSession();
+      const res = await fetch(`${CMS_URL}/functions/v1/admin-change-password`, {
+        method: 'POST',
+        headers: {
+          'apikey': CMS_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: selectedPasswordUserId,
+          password
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      showToast('✅ Password berhasil diganti', 'success');
+      closePasswordModal();
+    } catch(e) {
+      console.error(e);
+      showToast('❌ Gagal ganti password: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Simpan Password';
+    }
   }
 
   // ── PRO MODAL ─────────────────────────────────────────────────────────

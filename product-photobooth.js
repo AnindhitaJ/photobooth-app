@@ -2,6 +2,19 @@
   const W = 1181;
   const H = 1772;
   const SAFE = 60;
+
+  const ICON_FRAME_CONFIGS = [
+    { id:'default-frame', name:'Default Frame', file:'/icon-frame/frame.png', textPosition:'bottom-center' }
+  ];
+
+  function getIconFrames() {
+    return ICON_FRAME_CONFIGS;
+  }
+
+  function getIconFrameById(id) {
+    return ICON_FRAME_CONFIGS.find(f => f.id === id) || ICON_FRAME_CONFIGS[0];
+  }
+
   const CONFIGS = {"trading-card": {"title": "Trading Card Photobooth", "emoji": "🃏", "shortTitle": "Trading Card", "path": "/trading-card", "subtitle": "Collectible card 4R dengan rarity, stats, skill, barcode, dan badge.", "filePrefix": "trading-card", "fields": [{"key": "name", "label": "Nama Kartu", "max": 42}, {"key": "role", "label": "Subtitle / Role", "max": 42}, {"key": "rarity", "label": "Rarity", "max": 38}, {"key": "skill", "label": "Skill Utama", "max": 58}, {"key": "quote", "label": "Quote Pendek", "max": 110, "long": true}, {"key": "stats", "label": "Stats: satu baris satu stat, contoh charm 98", "max": 160, "long": true}, {"key": "number", "label": "Nomor Kartu", "max": 28}, {"key": "date", "label": "Tahun / Tanggal", "max": 28}], "filters": ["Clean Glossy", "Soft Glow", "Warm Film", "Cool Studio", "High Contrast", "Pastel Shine", "Holographic", "Black Gold", "Retro Arcade", "Neon Pop"], "themes": [{"id": "idol", "name": "Idol Photocard Card", "subtitle": "glossy idol collectible", "description": "soft pink/lilac photocard", "colors": ["#fff7fb", "#f9a8d4", "#c4b5fd", "#1f2937"], "defaults": {"name": "Main Character", "role": "Limited Edition", "rarity": "Fan Favorite", "skill": "Stage Smile", "quote": "Thanks for loving this era.", "number": "AUTO", "date": "2026", "stats": "charm 98\nenergy 92\nloyalty 100\nstyle 94"}}, {"id": "battle", "name": "Game Battle Card", "subtitle": "legendary RPG battle card", "description": "bold red/blue/silver", "colors": ["#111827", "#ef4444", "#60a5fa", "#f8fafc"], "defaults": {"name": "Player One", "role": "Battle Unit", "rarity": "Legendary", "skill": "Critical Charm", "quote": "Ready for the next battle.", "number": "AUTO", "date": "2026", "stats": "attack 96\ndefense 88\npower 99\nluck 91"}}, {"id": "sport", "name": "Sport Rookie Card", "subtitle": "sporty rookie card", "description": "clean bold athletic layout", "colors": ["#f8fafc", "#2563eb", "#ef4444", "#111827"], "defaults": {"name": "Rookie Star", "role": "Team Highlight", "rarity": "Rookie", "skill": "Speed Smile", "quote": "Built for the highlight reel.", "number": "AUTO", "date": "2026", "stats": "speed 96\npower 89\nfocus 92\nteamwork 100"}}, {"id": "bestie", "name": "Bestie Chaos Card", "subtitle": "playful duo energy", "description": "stickers, chaos labels, bright color", "colors": ["#fdf2f8", "#a78bfa", "#facc15", "#1d3557"], "defaults": {"name": "Chaos Duo", "role": "Bestie Unit", "rarity": "Rare Duo", "skill": "Instant Laugh", "quote": "Two people, one braincell.", "number": "AUTO", "date": "2026", "stats": "friendship 100\nchaos 97\nsnack 92\nloyalty 100"}}, {"id": "couple", "name": "Couple Collector Card", "subtitle": "romantic collector card", "description": "soft pink cream love stats", "colors": ["#fff1f2", "#e11d48", "#fecdd3", "#4a1626"], "defaults": {"name": "Sweet Pair", "role": "Couple Edition", "rarity": "Limited Couple Edition", "skill": "Soft Launch No More", "quote": "You plus me, officially printed.", "number": "AUTO", "date": "2026", "stats": "chemistry 100\nsweetness 98\ntrust 96\ncuteness 99"}}, {"id": "office", "name": "Office Staff Card", "subtitle": "funny employee card", "description": "navy grey cream office badge", "colors": ["#f8fafc", "#1d3557", "#94a3b8", "#0f172a"], "defaults": {"name": "Office Icon", "role": "Mood Booster Department", "rarity": "Official Staff", "skill": "Survives Meetings", "quote": "Busy but still iconic.", "number": "AUTO", "date": "2026", "stats": "focus 88\ncoffee 99\nrevisi 95\nstamina 90"}}, {"id": "school", "name": "School Club Card", "subtitle": "club member card", "description": "campus badge and achievement", "colors": ["#eff6ff", "#1d4ed8", "#fde68a", "#0f172a"], "defaults": {"name": "Club Legend", "role": "School Club", "rarity": "A+ Member", "skill": "Last-Minute Genius", "quote": "Homework later, memories now.", "number": "AUTO", "date": "2026", "stats": "brain 92\nstyle 89\nfriendship 98\nenergy 94"}}, {"id": "luxury", "name": "Luxury Black Card", "subtitle": "premium membership card", "description": "black gold minimal", "colors": ["#050505", "#d6b56d", "#111827", "#fff7d6"], "defaults": {"name": "Luxury Edit", "role": "Black Card Member", "rarity": "VIP", "skill": "Expensive Aura", "quote": "Quiet luxury, loud presence.", "number": "AUTO", "date": "2026", "stats": "aura 100\nstyle 98\ncalm 92\npower 96"}}, {"id": "arcade", "name": "Retro Arcade Card", "subtitle": "90s arcade score card", "description": "pixel neon score and press start", "colors": ["#12002f", "#22d3ee", "#f97316", "#f0abfc"], "defaults": {"name": "Player One", "role": "Arcade Hero", "rarity": "Player One", "skill": "Combo Smile", "quote": "Press start to slay.", "number": "AUTO", "date": "2026", "stats": "score 99\ncombo 94\nluck 91\nenergy 96"}}, {"id": "tarot", "name": "Magical Tarot Card", "subtitle": "fantasy tarot collectible", "description": "moon star celestial gold", "colors": ["#111827", "#8b5cf6", "#d6b56d", "#e0e7ff"], "defaults": {"name": "The Star", "role": "Tarot Edition", "rarity": "Mystic Rare", "skill": "Dream Energy", "quote": "Written in the stars.", "number": "AUTO", "date": "2026", "stats": "magic 98\nintuition 95\nluck 90\naura 99"}}, {"id": "foodie", "name": "Foodie Loyalty Card", "subtitle": "cute cafe loyalty card", "description": "cream brown stamp points", "colors": ["#fff7ed", "#9a6b4f", "#f9a8d4", "#3f2a1d"], "defaults": {"name": "Snack Hunter", "role": "Cafe Member", "rarity": "Loyal Customer", "skill": "Always Orders More", "quote": "One more bite, one more memory.", "number": "AUTO", "date": "2026", "stats": "snack 100\ncoffee 92\njoy 96\nloyalty 98"}}, {"id": "meme", "name": "Meme Edition Card", "subtitle": "super playful meme card", "description": "warning badge chaos meter", "colors": ["#fef3c7", "#ef4444", "#111827", "#22c55e"], "defaults": {"name": "Too Iconic", "role": "Meme Unit", "rarity": "Too Iconic", "skill": "Creates Drama Accidentally", "quote": "No thoughts, just vibes.", "number": "AUTO", "date": "2026", "stats": "chaos 100\ndrama 98\nluck 75\nvibes 100"}}]}, "icon-portrait": {"title": "Icon Portrait Photobooth", "emoji": "👑", "shortTitle": "Icon Portrait", "path": "/icon-portrait", "subtitle": "Portrait karakter ikonik, premium, editorial, fantasy, dan collectible.", "filePrefix": "icon-portrait", "fields": [{"key": "title", "label": "Nama / Title", "max": 46}, {"key": "subtitle", "label": "Subtitle Pendek", "max": 46}, {"key": "motto", "label": "Quote / Motto", "max": 120, "long": true}, {"key": "year", "label": "Tahun / Tanggal", "max": 30}, {"key": "label", "label": "Label Karakter", "max": 42}], "filters": ["Portrait Clean", "Soft Dream", "Warm Vintage", "Dramatic Dark", "Creamy Film", "Glow Premium", "Classic Painting", "Editorial Contrast", "Pop Art Bright", "Golden Soft"], "themes": [{"id": "royal", "name": "Royal Classic", "subtitle": "gold frame palace portrait", "colors": ["#fff7ed", "#b7791f", "#5b3417", "#fffaf0"], "defaults": {"title": "Queen of Everything", "subtitle": "Portrait Edition", "motto": "Grace with a little chaos.", "year": "2026", "label": "The Icon"}}, {"id": "princess", "name": "Princess Soft", "subtitle": "pearl ribbon dreamy", "colors": ["#fff0f6", "#f9a8d4", "#c084fc", "#4c1d95"], "defaults": {"title": "Princess of My World", "subtitle": "Soft Portrait", "motto": "Soft, sweet, and secretly powerful.", "year": "2026", "label": "The Muse"}}, {"id": "darkroyal", "name": "Dark Royalty", "subtitle": "emerald gold dramatic", "colors": ["#06140f", "#d6b56d", "#047857", "#f8fafc"], "defaults": {"title": "Born to Rule", "subtitle": "Dark Royalty", "motto": "Calm face, powerful aura.", "year": "2026", "label": "The Legend"}}, {"id": "oldmoney", "name": "Old Money Portrait", "subtitle": "beige luxury classic", "colors": ["#f7efe7", "#9a6b4f", "#4a2d20", "#fffaf0"], "defaults": {"title": "Timeless Icon", "subtitle": "Old Money Edition", "motto": "Class never asks for attention.", "year": "2026", "label": "The Golden Soul"}}, {"id": "painting", "name": "Vintage Painting", "subtitle": "museum canvas frame", "colors": ["#e6d4b8", "#7c4a24", "#2d2118", "#fff8ed"], "defaults": {"title": "A Portrait to Remember", "subtitle": "Museum Print", "motto": "Made of memories and soft light.", "year": "2026", "label": "The Muse"}}, {"id": "fairy", "name": "Fairy Garden", "subtitle": "floral soft green glow", "colors": ["#ecfdf5", "#86efac", "#7c3aed", "#064e3b"], "defaults": {"title": "The Dream Bloom", "subtitle": "Garden Portrait", "motto": "Magic looks good on you.", "year": "2026", "label": "The Dreamer"}}, {"id": "celestial", "name": "Celestial Muse", "subtitle": "moon star galaxy", "colors": ["#0f172a", "#a78bfa", "#e5e7eb", "#f8fafc"], "defaults": {"title": "Written in the Stars", "subtitle": "Celestial Muse", "motto": "A little moonlight, a lot of magic.", "year": "2026", "label": "The Star"}}, {"id": "popart", "name": "Pop Art Icon", "subtitle": "comic halftone bright", "colors": ["#fef3c7", "#ef4444", "#2563eb", "#111827"], "defaults": {"title": "Pop Icon", "subtitle": "Bold Portrait", "motto": "Too loud to be ordinary.", "year": "2026", "label": "The Main Character"}}, {"id": "y2k", "name": "Y2K Diva", "subtitle": "chrome butterfly glossy", "colors": ["#e0f2fe", "#ec4899", "#22d3ee", "#312e81"], "defaults": {"title": "Digital Diva", "subtitle": "Y2K Portrait", "motto": "Loading beauty... 100%.", "year": "2026", "label": "The Star"}}, {"id": "editorial", "name": "Editorial Cover Portrait", "subtitle": "minimal fashion editorial", "colors": ["#ffffff", "#111827", "#e5e7eb", "#dc2626"], "defaults": {"title": "The New Icon", "subtitle": "Editorial Portrait", "motto": "Effortless, but make it unforgettable.", "year": "2026", "label": "The Icon"}}, {"id": "nusantara", "name": "Nusantara Icon", "subtitle": "batik modern gold", "colors": ["#fff7ed", "#b45309", "#d6b56d", "#431407"], "defaults": {"title": "Pesona Nusantara", "subtitle": "Modern Heritage", "motto": "Hangat, anggun, dan berkarakter.", "year": "2026", "label": "Nusantara Icon"}}, {"id": "warrior", "name": "Fantasy Warrior", "subtitle": "hero emblem fantasy", "colors": ["#111827", "#ef4444", "#f59e0b", "#f8fafc"], "defaults": {"title": "The Brave One", "subtitle": "Fantasy Warrior", "motto": "Built for quests, born for legends.", "year": "2026", "label": "The Legend"}}, {"id": "angel", "name": "Angel Core", "subtitle": "white cloud feather glow", "colors": ["#f8fafc", "#facc15", "#e0e7ff", "#1e293b"], "defaults": {"title": "Soft Angel Energy", "subtitle": "Cloud Portrait", "motto": "Gentle, glowing, unforgettable.", "year": "2026", "label": "The Dreamer"}}, {"id": "academia", "name": "Dark Academia", "subtitle": "book texture antique", "colors": ["#2f241c", "#c7a16a", "#f3e8d1", "#111827"], "defaults": {"title": "The Quiet Genius", "subtitle": "Dark Academia", "motto": "Romanticizing life, one page at a time.", "year": "2026", "label": "The Muse"}}, {"id": "birthday", "name": "Birthday Icon", "subtitle": "confetti crown party", "colors": ["#fff1f2", "#ec4899", "#facc15", "#4c1d95"], "defaults": {"title": "Birthday Star", "subtitle": "Party Portrait", "motto": "Another year, another iconic era.", "year": "2026", "label": "The Birthday Star"}}]}, "certificate": {"title": "Certificate Photobooth", "emoji": "📜", "shortTitle": "Certificate", "path": "/certificate", "subtitle": "Sertifikat lucu/aesthetic untuk love, bestie, family, birthday, kantor, dan meme.", "filePrefix": "certificate", "fields": [{"key": "title", "label": "Certificate Title", "max": 56}, {"key": "name", "label": "Nama Penerima / Pasangan / Grup", "max": 46}, {"key": "subtitle", "label": "Subtitle", "max": 54}, {"key": "description", "label": "Deskripsi Pendek", "max": 150, "long": true}, {"key": "date", "label": "Tanggal", "max": 32}, {"key": "signature", "label": "Signature Name", "max": 38}, {"key": "stamp", "label": "Stamp Label", "max": 38}], "filters": ["Clean Document", "Warm Paper", "Soft Pink", "Pastel Glow", "Vintage Cream", "Elegant Dark", "Bright Cute", "Gold Premium", "Office Clean", "Confetti Pop"], "themes": [{"id": "love", "name": "Certificate of Love", "subtitle": "romantic heart seal", "colors": ["#fff1f2", "#e11d48", "#fecdd3", "#4a1626"], "defaults": {"title": "Certificate of Love", "name": "Your Name", "subtitle": "This is to certify that", "description": "are officially in love with each other, no refund allowed.", "date": "Today", "signature": "Photobooth Studio", "stamp": "Love Approved"}}, {"id": "besties", "name": "Certificate of Besties", "subtitle": "lilac sparkle playful", "colors": ["#f5f3ff", "#8b5cf6", "#ddd6fe", "#312e81"], "defaults": {"title": "Certificate of Besties", "name": "Your Name", "subtitle": "This is to certify that", "description": "are officially bonded by gossip, snacks, and endless laughter.", "date": "Today", "signature": "Photobooth Studio", "stamp": "Bestie Certified"}}, {"id": "selflove", "name": "Certificate of Self-Love", "subtitle": "clean affirming calm", "colors": ["#ecfdf5", "#10b981", "#bbf7d0", "#064e3b"], "defaults": {"title": "Certificate of Self-Love", "name": "Your Name", "subtitle": "This is to certify that", "description": "is officially enough, glowing, and loved as they are.", "date": "Today", "signature": "Photobooth Studio", "stamp": "Self Approved"}}, {"id": "family", "name": "Certificate of Family", "subtitle": "warm wholesome frame", "colors": ["#eff6ff", "#3b82f6", "#bfdbfe", "#1e3a8a"], "defaults": {"title": "Certificate of Family", "name": "Your Family", "subtitle": "This is to certify that", "description": "are officially forever, always, and everything in between.", "date": "Today", "signature": "Photobooth Studio", "stamp": "Family Forever"}}, {"id": "birthday", "name": "Birthday Certificate", "subtitle": "confetti party", "colors": ["#fff7ed", "#f97316", "#fde68a", "#7c2d12"], "defaults": {"title": "Birthday Certificate", "name": "Birthday Star", "subtitle": "This is to certify that", "description": "is officially the star of today.", "date": "Today", "signature": "Photobooth Studio", "stamp": "Birthday Approved"}}, {"id": "achievement", "name": "Achievement Certificate", "subtitle": "formal gold seal", "colors": ["#fffaf0", "#d6b56d", "#f8e7bd", "#5b4520"], "defaults": {"title": "Certificate of Achievement", "name": "Your Name", "subtitle": "This is to certify that", "description": "has successfully survived, achieved, and looked iconic doing it.", "date": "Today", "signature": "Photobooth Studio", "stamp": "Achievement Unlocked"}}, {"id": "meme", "name": "Meme Certificate", "subtitle": "fake official warning", "colors": ["#fef3c7", "#ef4444", "#111827", "#facc15"], "defaults": {"title": "Certified Drama Queen", "name": "Your Name", "subtitle": "This is to certify that", "description": "has been found guilty of being too iconic in public.", "date": "Today", "signature": "Absolutely No One", "stamp": "Approved by Nobody"}}, {"id": "couplecontract", "name": "Couple Contract", "subtitle": "funny couple terms", "colors": ["#fff1f2", "#be123c", "#fecdd3", "#4a1626"], "defaults": {"title": "Couple Contract", "name": "Couple Name", "subtitle": "Terms and Conditions", "description": "wajib saling kabarin • wajib pap random • dilarang pura-pura cuek", "date": "Today", "signature": "Both Parties", "stamp": "Forever-ish"}}, {"id": "bestieagreement", "name": "Bestie Agreement", "subtitle": "playful agreement", "colors": ["#fdf2f8", "#a855f7", "#facc15", "#1d3557"], "defaults": {"title": "Bestie Agreement", "name": "Bestie Squad", "subtitle": "Official Agreement", "description": "wajib spill tea • wajib backup saat drama • wajib jajan bareng", "date": "Today", "signature": "Bestie Council", "stamp": "No Expiry Date"}}, {"id": "royal", "name": "Royal Decree", "subtitle": "kingdom wax seal", "colors": ["#f8e8c8", "#9a3412", "#d6b56d", "#3b1d0b"], "defaults": {"title": "Official Royal Decree", "name": "Your Majesty", "subtitle": "By royal authority", "description": "is hereby declared the ruler of good vibes.", "date": "Today", "signature": "Royal Court", "stamp": "Royal Seal"}}, {"id": "employee", "name": "Employee of The Month", "subtitle": "office funny badge", "colors": ["#f8fafc", "#1d3557", "#94a3b8", "#0f172a"], "defaults": {"title": "Employee of The Month", "name": "Your Name", "subtitle": "Awarded to", "description": "has survived meetings, deadlines, and random revisi.", "date": "Today", "signature": "HR Department", "stamp": "HR Approved"}}, {"id": "graduation", "name": "Graduation Honor", "subtitle": "proud moment ribbon", "colors": ["#f8fafc", "#2563eb", "#d6b56d", "#0f172a"], "defaults": {"title": "Graduation Honor", "name": "Graduate Name", "subtitle": "Presented to", "description": "has officially completed this legendary chapter.", "date": "Today", "signature": "Proud Committee", "stamp": "Proud Moment"}}, {"id": "cutest", "name": "Cutest Human License", "subtitle": "pastel license card", "colors": ["#fff0f6", "#f472b6", "#c4b5fd", "#4c1d95"], "defaults": {"title": "Cutest Human License", "name": "Your Name", "subtitle": "Licensed to be adorable", "description": "licensed to be adorable anytime, anywhere.", "date": "Today", "signature": "Cute Authority", "stamp": "Too Cute"}}, {"id": "friendship", "name": "Friendship Award", "subtitle": "award night gold", "colors": ["#fffaf0", "#d6b56d", "#f97316", "#5b4520"], "defaults": {"title": "Friendship Award", "name": "Friend Name", "subtitle": "Awarded for", "description": "outstanding performance in making memories.", "date": "Today", "signature": "Award Committee", "stamp": "Winner"}}, {"id": "goodvibes", "name": "Good Vibes Permit", "subtitle": "permit barcode stamp", "colors": ["#ecfeff", "#0891b2", "#a5f3fc", "#164e63"], "defaults": {"title": "Good Vibes Permit", "name": "Your Name", "subtitle": "Permission granted", "description": "permission granted to spread happiness without limits.", "date": "Today", "signature": "Vibes Office", "stamp": "Approved"}}]}, "game-character": {"title": "Game Character Photobooth", "emoji": "🎮", "shortTitle": "Game Character", "path": "/game-character", "subtitle": "Profil karakter game 4R dengan class, level, element, skill, ultimate, badge, dan stats.", "filePrefix": "game-character", "fields": [{"key": "name", "label": "Character Name", "max": 42}, {"key": "class", "label": "Class", "max": 38}, {"key": "level", "label": "Level", "max": 22}, {"key": "element", "label": "Element", "max": 24}, {"key": "skill", "label": "Skill Utama", "max": 54}, {"key": "ultimate", "label": "Ultimate Skill", "max": 58}, {"key": "quote", "label": "Quote Pendek", "max": 120, "long": true}, {"key": "achievement", "label": "Achievement / Badge", "max": 48}, {"key": "stats", "label": "Stats: satu baris satu stat, contoh HP 95", "max": 180, "long": true}], "filters": ["Game Clean", "Anime Soft", "Pixel Warm", "Cyber Neon", "Fantasy Glow", "Dark Contrast", "Pastel RPG", "Boss Mode", "Cozy Soft", "Horror Night"], "themes": [{"id": "rpg", "name": "RPG Hero Profile", "subtitle": "classic RPG hero UI", "colors": ["#ecfeff", "#2563eb", "#facc15", "#0f172a"], "defaults": {"name": "Player One", "class": "Hero", "level": "LV.99", "element": "Spark", "skill": "Brave Smile", "ultimate": "Main Character Strike", "quote": "Quest accepted. Drama optional.", "achievement": "Certified Icon", "stats": "HP 95\nMP 88\nCHARM 99\nLUCK 91\nCHAOS 87\nENERGY 93"}}, {"id": "pixel", "name": "Pixel Adventure", "subtitle": "8-bit border press start", "colors": ["#111827", "#22d3ee", "#f97316", "#fef3c7"], "defaults": {"name": "Pixel Player", "class": "Pixel Player", "level": "LV.88", "element": "Star", "skill": "Coin Collector", "ultimate": "Pixel Blast", "quote": "Press start to begin.", "achievement": "High Score", "stats": "HP 90\nCOIN 99\nLUCK 88\nENERGY 92"}}, {"id": "cyber", "name": "Cyber Player ID", "subtitle": "neon futuristic HUD", "colors": ["#020617", "#22d3ee", "#a78bfa", "#e0f2fe"], "defaults": {"name": "Cyber Agent", "class": "Cyber Agent", "level": "LV.77", "element": "Spark", "skill": "Neon Dash", "ultimate": "System Override", "quote": "Access granted.", "achievement": "Verified Player", "stats": "HP 88\nSPEED 99\nTECH 96\nAURA 91"}}, {"id": "magic", "name": "Magical Academy", "subtitle": "purple wand spellbook", "colors": ["#f5f3ff", "#8b5cf6", "#facc15", "#312e81"], "defaults": {"name": "Spell Caster", "class": "Spell Caster", "level": "LV.64", "element": "Moon", "skill": "Sparkle Spell", "ultimate": "Midnight Magic", "quote": "Magic is homework too.", "achievement": "Honor Student", "stats": "HP 86\nMP 99\nSPELL 96\nLUCK 90"}}, {"id": "boss", "name": "Boss Battle Card", "subtitle": "final boss dark red", "colors": ["#111827", "#dc2626", "#d6b56d", "#f8fafc"], "defaults": {"name": "Final Boss", "class": "Final Boss", "level": "LV.100", "element": "Shadow", "skill": "Intimidating Aura", "ultimate": "No Mercy Mode", "quote": "You have entered boss territory.", "achievement": "Boss Mode", "stats": "HP 100\nPOWER 99\nAURA 100\nCHAOS 95"}}, {"id": "cozy", "name": "Cozy Farming Game", "subtitle": "green daily quest", "colors": ["#ecfdf5", "#22c55e", "#fde68a", "#14532d"], "defaults": {"name": "Cozy Farmer", "class": "Cozy Farmer", "level": "LV.45", "element": "Flower", "skill": "Plant Happiness", "ultimate": "Harvest Joy", "quote": "Water 5 flowers.", "achievement": "Daily Quest Done", "stats": "HP 92\nCOZY 100\nLUCK 88\nJOY 96"}}, {"id": "idol", "name": "Idol Rhythm Game", "subtitle": "stage combo sparkle", "colors": ["#fdf2f8", "#ec4899", "#22d3ee", "#4c1d95"], "defaults": {"name": "Stage Idol", "class": "Stage Idol", "level": "LV.99", "element": "Star", "skill": "Perfect Combo", "ultimate": "Encore Shine", "quote": "Encore? Always.", "achievement": "Full Combo", "stats": "HP 90\nCHARM 100\nCOMBO 99\nENERGY 94"}}, {"id": "dating", "name": "Dating Sim Character", "subtitle": "romance affection UI", "colors": ["#fff1f2", "#fb7185", "#fecdd3", "#4a1626"], "defaults": {"name": "Love Interest", "class": "Love Interest", "level": "AFF.100", "element": "Heart", "skill": "Makes Heart Flutter", "ultimate": "Soft Smile Event", "quote": "Your affection level increased.", "achievement": "Route Unlocked", "stats": "AFFECTION 100\nCHARM 98\nLUCK 91\nSWEET 99"}}, {"id": "horror", "name": "Horror Survival Character", "subtitle": "spooky warning sign", "colors": ["#0a0a0a", "#ef4444", "#9ca3af", "#f8fafc"], "defaults": {"name": "Survivor", "class": "Survivor", "level": "LV.13", "element": "Shadow", "skill": "Runs Fast", "ultimate": "Flashlight Panic", "quote": "Survival rate: questionable.", "achievement": "Still Alive", "stats": "HP 87\nSPEED 94\nBRAVE 76\nPANIC 99"}}, {"id": "racing", "name": "Racing Player Card", "subtitle": "speed line race number", "colors": ["#f8fafc", "#ef4444", "#111827", "#facc15"], "defaults": {"name": "Speed Racer", "class": "Speed Racer", "level": "NO.01", "element": "Fire", "skill": "Turbo Smile", "ultimate": "Finish Line Flex", "quote": "Fast lane, good vibes.", "achievement": "Pole Position", "stats": "SPEED 100\nFOCUS 90\nPOWER 92\nSTYLE 96"}}, {"id": "party", "name": "Fantasy Party Mode", "subtitle": "group party profile", "colors": ["#f5f3ff", "#7c3aed", "#d6b56d", "#1e1b4b"], "defaults": {"name": "Chaos Squad", "class": "Party Mode", "level": "RANK S+", "element": "Chaos", "skill": "Shared Braincell", "ultimate": "Group Quest Complete", "quote": "Party formed successfully.", "achievement": "Party Leader", "stats": "TEAM 100\nCHAOS 96\nLOYALTY 99\nLUCK 88"}}, {"id": "hero", "name": "Superhero Profile", "subtitle": "comic action profile", "colors": ["#dbeafe", "#2563eb", "#ef4444", "#111827"], "defaults": {"name": "Superhero", "class": "Superhero", "level": "LV.99", "element": "Light", "skill": "Saves The Day", "ultimate": "Hero Entrance", "quote": "Cape optional, confidence required.", "achievement": "City Favorite", "stats": "POWER 96\nSPEED 92\nBRAVE 100\nCHARM 94"}}, {"id": "cafe", "name": "Cafe Quest Character", "subtitle": "coffee quest casual", "colors": ["#fff7ed", "#9a6b4f", "#f9a8d4", "#3f2a1d"], "defaults": {"name": "Cafe Wanderer", "class": "Cafe Wanderer", "level": "LV.32", "element": "Coffee", "skill": "Overthinking Latte", "ultimate": "Perfect Drink Found", "quote": "Quest: find the perfect drink.", "achievement": "Cafe Regular", "stats": "COFFEE 99\nCOZY 94\nLUCK 89\nVIBES 97"}}, {"id": "guild", "name": "Anime Guild Card", "subtitle": "guild rank quest", "colors": ["#eff6ff", "#1d4ed8", "#a78bfa", "#0f172a"], "defaults": {"name": "Guild Member", "class": "Guild Member", "level": "RANK A+", "element": "Wind", "skill": "Quest Partner", "ultimate": "Guild Sync", "quote": "Quest accepted together.", "achievement": "Trusted Ally", "stats": "QUEST 96\nTEAM 98\nCHARM 92\nLUCK 90"}}, {"id": "villain", "name": "Villain Mode", "subtitle": "dark dramatic purple", "colors": ["#1e102f", "#a21caf", "#ef4444", "#f8fafc"], "defaults": {"name": "The Villain", "class": "Villain", "level": "LV.99", "element": "Shadow", "skill": "Side Eye Attack", "ultimate": "Dramatic Exit", "quote": "Not evil, just well styled.", "achievement": "Plot Twist", "stats": "AURA 100\nDRAMA 96\nPOWER 94\nSTYLE 99"}}]}};
 
   const FILTER_MAP = {
@@ -73,6 +86,8 @@
     return {
       menu, canvas, ctx,
       themeId: theme.id,
+      iconFrameId: menu === 'icon-portrait' ? 'default-frame' : null,
+      iconFrameImg: null,
       filter: cfg.filters[0],
       photo: null,
       photoImg: null,
@@ -271,40 +286,257 @@
     ctx.textAlign='left'; ctx.fillText(t.date || '', 145, 1605);
   }
 
-  function drawIcon(state, theme) {
-    const ctx = state.ctx, t = state.text, c = theme.colors;
-    bg(ctx, c);
-    deco(ctx, theme, .7);
-    ctx.save();
-    ctx.shadowColor='rgba(15,23,42,.22)'; ctx.shadowBlur=28; ctx.shadowOffsetY=16;
-    ctx.fillStyle='rgba(255,255,255,.55)';
-    roundRect(ctx,80,120,W-160,H-240,52); ctx.fill();
-    ctx.restore();
-    ctx.strokeStyle=c[1]; ctx.lineWidth=10; roundRect(ctx,80,120,W-160,H-240,52); ctx.stroke();
-    ctx.strokeStyle=c[2] || c[1]; ctx.lineWidth=3; roundRect(ctx,110,150,W-220,H-300,40); ctx.stroke();
-
-    ctx.fillStyle = c[3] || '#111827';
-    ctx.textAlign='center'; ctx.textBaseline='top';
-    fitFont(ctx, (t.label || '').toUpperCase(), 820, 34, 20, '900');
-    ctx.fillText((t.label || '').toUpperCase(), W/2, 158);
-
-    drawPhoto(ctx,state,185,250,810,1040,48);
-    ctx.strokeStyle=c[1]; ctx.lineWidth=8; roundRect(ctx,185,250,810,1040,48); ctx.stroke();
-
-    ctx.fillStyle = c[3] || '#111827';
-    fitFont(ctx, t.title, 900, 66, 32, '950', theme.id === 'royal' || theme.id === 'painting' ? 'Georgia, serif' : 'Segoe UI, sans-serif');
-    ctx.fillText(t.title || '', W/2, 1330);
-    ctx.fillStyle = c[1];
-    ctx.font='900 30px Segoe UI, sans-serif';
-    ctx.fillText((t.subtitle || '').toUpperCase(), W/2, 1410);
-    ctx.fillStyle = c[3] || '#111827';
-    ctx.font='750 29px Segoe UI, sans-serif';
-    drawWrapped(ctx, t.motto, W/2, 1480, 820, 38, 3, 'center');
-    ctx.font='800 25px Segoe UI, sans-serif';
-    ctx.fillText(t.year || '', W/2, 1638);
+  function getProfileDisplayName() {
+    const fallback = 'ICON';
+    try {
+      const p = (typeof Auth !== 'undefined' && Auth.getProfile) ? Auth.getProfile() : null;
+      const session = (typeof Auth !== 'undefined' && Auth.getSession) ? Auth.getSession() : null;
+      const candidates = [
+        p?.display_name,
+        p?.full_name,
+        p?.name,
+        p?.username,
+        p?.booth_name,
+        session?.user?.user_metadata?.display_name,
+        session?.user?.user_metadata?.full_name,
+        session?.user?.email ? String(session.user.email).split('@')[0] : null,
+        localStorage.getItem('sb_user_email') ? String(localStorage.getItem('sb_user_email')).split('@')[0] : null
+      ];
+      return (candidates.find(v => v && String(v).trim()) || fallback).toString().trim();
+    } catch(e) {
+      return fallback;
+    }
   }
 
-  function drawSeal(ctx, x, y, r, text, color) {
+  function drawFullBleedPhoto(ctx, state) {
+    if (state.photoImg) {
+      const filter = FILTER_MAP[state.filter] || 'none';
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0,0,W,H);
+      ctx.clip();
+      ctx.filter = filter;
+      drawCoverImage(ctx, state.photoImg, 0, 0, W, H, state);
+      ctx.filter = 'none';
+      ctx.restore();
+    } else {
+      const g = ctx.createLinearGradient(0,0,W,H);
+      g.addColorStop(0, '#e0f2fe');
+      g.addColorStop(.5, '#fce7f3');
+      g.addColorStop(1, '#fef3c7');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = 'rgba(255,255,255,.86)';
+      ctx.font = '120px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('📷', W/2, H/2 - 40);
+      ctx.font = '950 42px Segoe UI, sans-serif';
+      ctx.fillText('upload / ambil foto', W/2, H/2 + 72);
+    }
+  }
+
+  function drawFallbackIconFrame(ctx, frame) {
+    // Fallback kalau PNG frame belum diupload ke /icon-frame.
+    const styles = {
+      'royal-classic': ['#d6b56d','#153047','#f8e7bd','royal'],
+      'editorial-muse': ['#111111','#c7a16a','#f9f4ec','editorial'],
+      'pop-art-icon': ['#111111','#ec4899','#facc15','pop'],
+      'princess-soft': ['#f472b6','#c084fc','#fff0f6','soft'],
+      'dark-royalty': ['#d6b56d','#0b1110','#047857','royal'],
+      'old-money': ['#9a6b4f','#f7efe7','#4a2d20','editorial'],
+      'vintage-painting': ['#7c4a24','#e6d4b8','#2d2118','royal'],
+      'fairy-garden': ['#22c55e','#ecfdf5','#7c3aed','soft'],
+      'celestial-muse': ['#a78bfa','#0f172a','#e5e7eb','royal'],
+      'y2k-diva': ['#ec4899','#22d3ee','#f0abfc','pop'],
+      'nusantara-icon': ['#b45309','#fff7ed','#d6b56d','royal'],
+      'fantasy-warrior': ['#d6b56d','#111827','#ef4444','royal'],
+      'angel-core': ['#facc15','#f8fafc','#e0e7ff','soft'],
+      'dark-academia': ['#c7a16a','#2f241c','#f3e8d1','editorial'],
+      'birthday-icon': ['#ec4899','#facc15','#fff1f2','pop']
+    };
+    const [a,b,c,mode] = styles[frame.id] || styles['royal-classic'];
+    ctx.save();
+    if (mode === 'pop') {
+      ctx.fillStyle = a;
+      ctx.fillRect(0,0,W,84);
+      ctx.fillRect(0,H-84,W,84);
+      ctx.fillStyle = b;
+      ctx.fillRect(0,0,84,H);
+      ctx.fillRect(W-84,0,84,H);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 20;
+      ctx.strokeRect(90,90,W-180,H-180);
+      ctx.strokeStyle = '#111111';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(102,102,W-204,H-204);
+      ctx.fillStyle = c;
+      ['★','✦','⚡','●','◆'].forEach((s,i) => {
+        ctx.font = `${i%2 ? 62 : 88}px Segoe UI Emoji, sans-serif`;
+        ctx.fillText(s, [40,965,55,980,520][i], [180,250,1395,1510,78][i]);
+      });
+    } else if (mode === 'editorial') {
+      ctx.strokeStyle = a;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(70,70,W-140,H-140);
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(170,65); ctx.lineTo(W-170,65); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(170,H-65); ctx.lineTo(W-170,H-65); ctx.stroke();
+      ctx.fillStyle = a;
+      ctx.font = '400 68px Georgia, serif';
+      ctx.save();
+      ctx.translate(72, H-210);
+      ctx.rotate(-Math.PI/2);
+      ctx.fillText('ICON', 0, 0);
+      ctx.restore();
+      ctx.fillStyle = b;
+      ctx.font = '56px Georgia, serif';
+      ctx.fillText('✦', W/2-18, 92);
+      ctx.fillText('✦', W/2-18, H-92);
+    } else {
+      ctx.strokeStyle = a;
+      ctx.lineWidth = 16;
+      roundRect(ctx,52,52,W-104,H-104,28);
+      ctx.stroke();
+      ctx.strokeStyle = b;
+      ctx.lineWidth = 8;
+      roundRect(ctx,86,86,W-172,H-172,18);
+      ctx.stroke();
+      ctx.fillStyle = a;
+      ctx.font = '86px Segoe UI Emoji, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('◆', 112, 112);
+      ctx.fillText('◆', W-112, 112);
+      ctx.fillText('◆', 112, H-112);
+      ctx.fillText('◆', W-112, H-112);
+      ctx.font = '110px Segoe UI Emoji, serif';
+      ctx.fillText('✦', W/2, 95);
+      ctx.fillText('✦', W/2, H-95);
+    }
+    ctx.restore();
+  }
+
+  function sampleAverageColor(ctx, x, y, w, h) {
+    const sx = Math.max(0, Math.floor(x));
+    const sy = Math.max(0, Math.floor(y));
+    const sw = Math.min(W - sx, Math.floor(w));
+    const sh = Math.min(H - sy, Math.floor(h));
+    if (sw <= 0 || sh <= 0) return { r: 255, g: 255, b: 255 };
+    const data = ctx.getImageData(sx, sy, sw, sh).data;
+    let r = 0, g = 0, b = 0, count = 0;
+    // skip beberapa pixel biar ringan
+    for (let i = 0; i < data.length; i += 16) {
+      const a = data[i + 3];
+      if (a > 20) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+    }
+    if (!count) return { r: 255, g: 255, b: 255 };
+    return { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) };
+  }
+
+  function luminance(rgb) {
+    const srgb = [rgb.r, rgb.g, rgb.b].map(v => {
+      v = v / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+  }
+
+  function pickProfileTextStyle(ctx, x, y, w, h) {
+    const avg = sampleAverageColor(ctx, x, y, w, h);
+    const lum = luminance(avg);
+    const warm = avg.r > avg.b + 18;
+    const cool = avg.b > avg.r + 18;
+
+    if (lum < 0.42) {
+      return {
+        fill: warm ? '#fff7ed' : '#f8fafc',
+        stroke: 'rgba(0,0,0,.62)',
+        shadow: 'rgba(0,0,0,.55)',
+        bg: 'rgba(255,255,255,.12)'
+      };
+    }
+
+    if (lum > 0.70) {
+      return {
+        fill: warm ? '#3b2415' : '#111827',
+        stroke: 'rgba(255,255,255,.70)',
+        shadow: 'rgba(255,255,255,.55)',
+        bg: 'rgba(0,0,0,.08)'
+      };
+    }
+
+    // mid-tone / colorful area: pilih warna yang paling kontras tapi tetap aesthetic.
+    if (cool) {
+      return { fill:'#fff7ed', stroke:'rgba(15,23,42,.55)', shadow:'rgba(0,0,0,.45)', bg:'rgba(0,0,0,.16)' };
+    }
+    return { fill:'#111827', stroke:'rgba(255,255,255,.62)', shadow:'rgba(255,255,255,.45)', bg:'rgba(255,255,255,.18)' };
+  }
+
+  function drawProfileText(ctx, frame) {
+    const name = getProfileDisplayName();
+    if (!name) return;
+    const text = name.toUpperCase();
+
+    const x = W / 2;
+    const y = H - 150;
+    const maxW = 760;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '950 44px Segoe UI, system-ui, sans-serif';
+    fitFont(ctx, text, maxW, 44, 24, '950');
+
+    const measured = ctx.measureText(text).width;
+    const padX = 34;
+    const boxW = Math.min(maxW + 70, measured + padX * 2);
+    const boxH = 72;
+    const boxX = x - boxW / 2;
+    const boxY = y - boxH / 2;
+
+    // Sample setelah foto + frame digambar, jadi warna ngikutin suasana frame di belakang text.
+    const style = pickProfileTextStyle(ctx, boxX - 18, boxY - 18, boxW + 36, boxH + 36);
+
+    ctx.fillStyle = style.bg;
+    roundRect(ctx, boxX, boxY, boxW, boxH, 36);
+    ctx.fill();
+
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = style.stroke;
+    ctx.shadowColor = style.shadow;
+    ctx.shadowBlur = 10;
+    ctx.strokeText(text, x, y);
+
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = style.fill;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function drawIcon(state, theme) {
+    const ctx = state.ctx;
+    const frame = getIconFrameById(state.iconFrameId || theme.id);
+
+    ctx.clearRect(0,0,W,H);
+    drawFullBleedPhoto(ctx, state);
+
+    if (state.iconFrameImg) {
+      ctx.drawImage(state.iconFrameImg, 0, 0, W, H);
+    } else {
+      drawFallbackIconFrame(ctx, frame);
+    }
+
+    drawProfileText(ctx, frame);
+  }
+
+    function drawSeal(ctx, x, y, r, text, color) {
     ctx.save();
     ctx.translate(x,y); ctx.rotate(-.18);
     ctx.fillStyle = color; ctx.globalAlpha = .95;
@@ -430,6 +662,8 @@
     setTheme,
     render,
     exportDataUrl,
+    getIconFrames,
+    getIconFrameById,
     randomCode
   };
 })();

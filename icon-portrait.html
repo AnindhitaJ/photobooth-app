@@ -29,6 +29,9 @@
     .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.15; }
     .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; }
     .pill-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .frame-note { margin-top:10px; font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; }
+    .profile-note { font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; }
+    .profile-note b { color:var(--pink); }
     .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; font-family:inherit; }
     .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
     label { display:block; font-size:12px; font-weight:900; color:var(--text); margin-bottom:7px; }
@@ -73,7 +76,7 @@
     <a class="btn-back" href="/" title="Kembali">←</a>
     <div class="header-main">
       <div class="header-title">👑 Icon Portrait Photobooth</div>
-      <div class="header-sub">4R portrait 10×15 cm · 1181×1772 px · 300 DPI target</div>
+      <div class="header-sub">4R full bleed · single PNG overlay · text profile auto-contrast</div>
     </div>
     <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
   </div>
@@ -103,8 +106,9 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🎨 Ganti Tema</div>
+        <div class="card-title">🖼️ Pilih Frame</div>
         <div class="theme-grid" id="themeGrid"></div>
+        <div class="frame-note">Frame selalu diambil dari <b>/icon-frame/frame.png</b>. Kalau mau ganti desain, cukup timpa file itu.</div>
       </div>
 
       <div class="card">
@@ -113,9 +117,10 @@
       </div>
 
       <div class="card">
-        <div class="card-title">📝 Custom Text</div>
-        <div id="formFields"></div>
-        <button class="btn-outline" onclick="resetText()">Reset Text</button>
+        <div class="card-title">👤 Text Otomatis</div>
+        <div class="profile-note">
+          Nama di hasil akhir otomatis mengambil dari profile user. Warna text otomatis dibuat kontras mengikuti area frame/foto di belakangnya.
+        </div>
       </div>
 
       <div class="card">
@@ -137,7 +142,7 @@
         <div class="preview-meta">
           <div class="chip">Canvas: <span>4R Portrait</span></div>
           <div class="chip">Safe Area: <span>60 px</span></div>
-          <div class="chip">Mode: <span>Icon Portrait</span></div>
+          <div class="chip">Mode: <span>Full Photo + frame.png</span></div>
         </div>
       </div>
     </div>
@@ -188,13 +193,14 @@
     }
     function render() { Product4R.render(state); }
     function buildThemes() {
-      document.getElementById('themeGrid').innerHTML = cfg.themes.map(t => `
-        <button class="theme-btn ${state.themeId === t.id ? 'active' : ''}" onclick="selectTheme('${t.id}')">
-          <div class="swatch" style="background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]},${t.colors[2] || t.colors[1]});"></div>
-          <div class="theme-name">${escapeHtml(t.name)}</div>
-          <div class="theme-sub">${escapeHtml(t.subtitle || '')}</div>
+      const frame = Product4R.getIconFrames()[0];
+      document.getElementById('themeGrid').innerHTML = `
+        <button class="theme-btn active" onclick="selectFrame('default-frame')">
+          <div class="swatch" style="background:linear-gradient(135deg,#111827,#fff8fc,#D84B7E);"></div>
+          <div class="theme-name">Default Frame</div>
+          <div class="theme-sub">/icon-frame/frame.png</div>
         </button>
-      `).join('');
+      `;
     }
     function buildFilters() {
       document.getElementById('filterGrid').innerHTML = cfg.filters.map(f => `
@@ -213,9 +219,26 @@
         </div>`;
       }).join('');
     }
-    function selectTheme(id) {
-      Product4R.setTheme(state, id);
-      buildThemes(); buildForm(); render();
+    function selectFrame(id) {
+      const frame = Product4R.getIconFrameById('default-frame');
+      state.iconFrameId = frame.id;
+      state.iconFrameImg = null;
+
+      const img = new Image();
+      img.onload = () => {
+        state.iconFrameImg = img;
+        render();
+      };
+      img.onerror = () => {
+        console.warn('Icon frame PNG belum ditemukan:', frame.file);
+        state.iconFrameImg = null;
+        render();
+      };
+      // cache-buster supaya kalau frame.png ditimpa, browser ambil versi baru
+      img.src = frame.file + '?v=' + Date.now();
+
+      buildThemes();
+      render();
     }
     function selectFilter(f) {
       state.filter = f;
@@ -311,7 +334,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      buildThemes(); buildFilters(); buildForm(); render();
+      buildThemes(); buildFilters(); selectFrame('default-frame'); render();
     });
   </script>
   <script>

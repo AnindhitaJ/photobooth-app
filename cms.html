@@ -229,11 +229,11 @@
     <div class="modal-title">⭐ Aktifkan PRO</div>
     <div class="modal-sub">Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">user</span></div>
     <div class="duration-options">
-      <label class="duration-opt" id="opt1week">
+      <label class="duration-opt selected" id="opt1week">
         <input type="radio" name="duration" value="1week" checked onchange="onDurationChange()">
         📅 1 Minggu (7 hari)
       </label>
-      <label class="duration-opt selected" id="opt1month">
+      <label class="duration-opt" id="opt1month">
         <input type="radio" name="duration" value="1month" onchange="onDurationChange()">
         📆 1 Bulan (30 hari)
       </label>
@@ -273,6 +273,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  console.log('CMS_PRO_ACTIVE_PICKER_FINAL_V44');
   const CMS_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
   const CMS_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
   const SUPER_ADMIN_EMAIL = 'luxphotobooth.id@gmail.com';
@@ -415,7 +416,12 @@
     try { data = raw ? JSON.parse(raw) : null; } catch(e) {}
 
     if (!res.ok) {
-      throw new Error((data && (data.message || data.error || data.details)) || raw || `HTTP ${res.status}`);
+      let errDetail = (data && (data.message || data.error || data.details)) || raw || `HTTP ${res.status}`;
+      // Detect RLS / permission error
+      if (res.status === 403 || (typeof errDetail === 'string' && errDetail.includes('policy'))) {
+        errDetail = 'Akses ditolak oleh Supabase (RLS policy). Pastikan super admin menggunakan service_role key atau RLS sudah dikonfigurasi untuk admin.';
+      }
+      throw new Error(errDetail);
     }
 
     if (Array.isArray(data) && data[0]) {
@@ -563,21 +569,38 @@
     btn.disabled = true; btn.textContent = '⏳ Mengaktifkan...';
     try {
       const session = Auth.getSession();
-      await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${selectedUserId}`, {
+      if (!session?.access_token) throw new Error('Session tidak ditemukan, silakan login ulang');
+      const res = await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${selectedUserId}`, {
         method: 'PATCH',
         headers: {
           'apikey': CMS_ANON,
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
+          'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ plan: 'pro', pro_ends_at: proEnd.toISOString() })
+        body: JSON.stringify({ plan: 'pro', pro_ends_at: proEnd.toISOString(), is_active: true, updated_at: new Date().toISOString() })
       });
+      const raw = await res.text();
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try { const e = JSON.parse(raw); errMsg = e.message || e.error || e.details || errMsg; } catch(_) {}
+        throw new Error(errMsg);
+      }
+      // Update local state
+      let updated = null;
+      try { const arr = JSON.parse(raw); updated = Array.isArray(arr) ? arr[0] : null; } catch(_) {}
+      const idx = allUsers.findIndex(u => u.id === selectedUserId);
+      if (idx !== -1) {
+        allUsers[idx] = { ...allUsers[idx], plan: 'pro', pro_ends_at: proEnd.toISOString(), is_active: true, ...(updated || {}) };
+      }
+      renderStats();
+      renderTable(allUsers);
       closeProModal();
       showToast(`⭐ PRO aktif s/d ${proEnd.toLocaleDateString('id-ID')}`, 'success');
-      loadUsers();
+      setTimeout(loadUsers, 600);
     } catch(e) {
-      showToast('❌ Gagal: ' + e.message, 'error');
+      console.error('confirmActivatePro error:', e);
+      showToast('❌ Gagal aktifkan PRO: ' + e.message, 'error');
     } finally {
       btn.disabled = false; btn.textContent = '⭐ Aktifkan PRO';
     }

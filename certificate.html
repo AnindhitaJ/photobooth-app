@@ -278,10 +278,10 @@
       img.onload = () => {
         state.photo = src;
         state.photoImg = img;
-        state.zoom = 1.18;
+        state.zoom = 1.28;
         state.rotate = 0;
-        state.photoX = 18;
-        state.photoY = -6;
+        state.photoX = 0;
+        state.photoY = -8;
         render();
       };
       img.onerror = () => toast('Foto gagal dimuat.');

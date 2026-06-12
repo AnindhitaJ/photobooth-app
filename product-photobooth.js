@@ -28,16 +28,16 @@
   }
 
   const CERTIFICATE_FRAME_CONFIGS = [
-    { id:'certificate-of-love', name:'Certificate Of Love', file:'/certificate-frame/Certificate Of Love.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-besties', name:'Certificate Of Besties', file:'/certificate-frame/Certificate Of Besties.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-self-love', name:'Certificate Of Self-Love', file:'/certificate-frame/Certificate Of Self-Love.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#4F6B57', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-family', name:'Certificate Of Family', file:'/certificate-frame/Certificate Of Family.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#365B83', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'birthday-certificate', name:'Birthday Certificate', file:'/certificate-frame/Birthday Certificate.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#8A4A8E', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-achievement', name:'Certificate Of Achievement', file:'/certificate-frame/Certificate Of Achievement.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#7A5A39', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certified-icon-award', name:'Certified Icon Award', file:'/certificate-frame/Certified Icon Award.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#503A88', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'couple-contract', name:'Couple Contract', file:'/certificate-frame/Couple Contract.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'bestie-agreement', name:'Bestie Agreement', file:'/certificate-frame/Bestie Agreement.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'royal-decree', name:'Royal Decree', file:'/certificate-frame/Royal Decree.png', photoRect:{x:160,y:165,w:455,h:655,r:42}, nameRect:{x:790,y:410,w:820,h:150}, nameColor:'#6A4A1E', nameStroke:'rgba(255,255,255,.72)' }
+    { id:'certificate-of-love', name:'Certificate Of Love', file:'/certificate-frame/Certificate Of Love.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-besties', name:'Certificate Of Besties', file:'/certificate-frame/Certificate Of Besties.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-self-love', name:'Certificate Of Self-Love', file:'/certificate-frame/Certificate Of Self-Love.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#4F6B57', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-family', name:'Certificate Of Family', file:'/certificate-frame/Certificate Of Family.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#365B83', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'birthday-certificate', name:'Birthday Certificate', file:'/certificate-frame/Birthday Certificate.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8A4A8E', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-achievement', name:'Certificate Of Achievement', file:'/certificate-frame/Certificate Of Achievement.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#7A5A39', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certified-icon-award', name:'Certified Icon Award', file:'/certificate-frame/Certified Icon Award.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#503A88', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'couple-contract', name:'Couple Contract', file:'/certificate-frame/Couple Contract.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'bestie-agreement', name:'Bestie Agreement', file:'/certificate-frame/Bestie Agreement.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'royal-decree', name:'Royal Decree', file:'/certificate-frame/Royal Decree.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4A1E', nameStroke:'rgba(255,255,255,.72)' }
   ];
 
   function getCertificateFrames() {
@@ -658,8 +658,8 @@
     const CH = state.canvas.height || H;
     const name = String((state.text && typeof state.text.name === 'string' ? state.text.name : '')).trim();
     const frame = getCertificateFrameById(state.certificateFrameId || CERTIFICATE_FRAME_CONFIGS[0].id);
-    const photoRect = frame.photoRect || {x:175,y:175,w:360,h:560,r:38};
-    const nameRect = frame.nameRect || {x:790,y:410,w:820,h:150};
+    const photoRect = frame.photoRect || {x:205,y:215,w:475,h:585,r:34};
+    const nameRect = frame.nameRect || {x:785,y:405,w:840,h:150};
     const paper = '#FBF6EF';
 
     ctx.clearRect(0, 0, CW, CH);
@@ -693,18 +693,15 @@
       ctx.beginPath();
       roundRect(ctx, photoRect.x, photoRect.y, photoRect.w, photoRect.h, photoRect.r || 32);
       ctx.clip();
-      const g = ctx.createLinearGradient(photoRect.x, photoRect.y, photoRect.x, photoRect.y + photoRect.h);
-      g.addColorStop(0, '#fce7f3');
-      g.addColorStop(1, '#ede9fe');
-      ctx.fillStyle = g;
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
       ctx.fillRect(photoRect.x, photoRect.y, photoRect.w, photoRect.h);
-      ctx.fillStyle = 'rgba(106,77,138,.86)';
+      ctx.fillStyle = 'rgba(106,77,138,.55)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = '110px Segoe UI Emoji, sans-serif';
-      ctx.fillText('📷', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 - 26);
-      ctx.font = '900 28px Segoe UI, sans-serif';
-      ctx.fillText('foto bestie', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 + 68);
+      ctx.font = '82px Segoe UI Emoji, sans-serif';
+      ctx.fillText('📷', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 - 18);
+      ctx.font = '900 24px Segoe UI, sans-serif';
+      ctx.fillText('upload foto', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 + 52);
       ctx.restore();
     }
 

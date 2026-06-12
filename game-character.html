@@ -25,9 +25,8 @@
     .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:475px; overflow:auto; padding-right:3px; }
     .theme-btn { border:2px solid var(--border); background:white; border-radius:16px; padding:10px; cursor:pointer; text-align:left; transition:.18s; min-height:80px; font-family:inherit; }
     .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
-    .swatch { height:20px; border-radius:999px; margin-bottom:8px; border:1px solid rgba(0,0,0,.06); }
-    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.15; }
-    .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; }
+    .swatch { width:42px; height:42px; border-radius:14px; margin-bottom:8px; border:2px solid rgba(255,255,255,.85); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10); display:grid; place-items:center; font-size:22px; }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.2; }
     .pill-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
     .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; font-family:inherit; }
     .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
@@ -187,12 +186,32 @@
       return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
     }
     function render() { Product4R.render(state); }
+
+    function themeEmoji(t) {
+      const key = String(t.id || t.name || '').toLowerCase();
+      if (key.includes('battle') || key.includes('boss')) return '⚔️';
+      if (key.includes('sport')) return '🏆';
+      if (key.includes('bestie')) return '👯';
+      if (key.includes('couple')) return '💞';
+      if (key.includes('office')) return '💼';
+      if (key.includes('school') || key.includes('club')) return '🎓';
+      if (key.includes('luxury') || key.includes('black')) return '🖤';
+      if (key.includes('arcade') || key.includes('pixel')) return '🕹️';
+      if (key.includes('tarot') || key.includes('magical')) return '🔮';
+      if (key.includes('food')) return '🍰';
+      if (key.includes('meme')) return '😂';
+      if (key.includes('rpg') || key.includes('hero')) return '🛡️';
+      if (key.includes('cyber')) return '🤖';
+      if (key.includes('horror')) return '👻';
+      if (key.includes('cozy')) return '☕';
+      return '✨';
+    }
+
     function buildThemes() {
       document.getElementById('themeGrid').innerHTML = cfg.themes.map(t => `
         <button class="theme-btn ${state.themeId === t.id ? 'active' : ''}" onclick="selectTheme('${t.id}')">
-          <div class="swatch" style="background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]},${t.colors[2] || t.colors[1]});"></div>
+          <div class="swatch">${themeEmoji(t)}</div>
           <div class="theme-name">${escapeHtml(t.name)}</div>
-          <div class="theme-sub">${escapeHtml(t.subtitle || '')}</div>
         </button>
       `).join('');
     }

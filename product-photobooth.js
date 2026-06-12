@@ -28,16 +28,16 @@
   }
 
   const CERTIFICATE_FRAME_CONFIGS = [
-    { id:'certificate-of-love', name:'Certificate Of Love', file:'/certificate-frame/Certificate Of Love.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-besties', name:'Certificate Of Besties', file:'/certificate-frame/Certificate Of Besties.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-self-love', name:'Certificate Of Self-Love', file:'/certificate-frame/Certificate Of Self-Love.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#4F6B57', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-family', name:'Certificate Of Family', file:'/certificate-frame/Certificate Of Family.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#365B83', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'birthday-certificate', name:'Birthday Certificate', file:'/certificate-frame/Birthday Certificate.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8A4A8E', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certificate-of-achievement', name:'Certificate Of Achievement', file:'/certificate-frame/Certificate Of Achievement.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#7A5A39', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'certified-icon-award', name:'Certified Icon Award', file:'/certificate-frame/Certified Icon Award.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#503A88', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'couple-contract', name:'Couple Contract', file:'/certificate-frame/Couple Contract.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'bestie-agreement', name:'Bestie Agreement', file:'/certificate-frame/Bestie Agreement.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
-    { id:'royal-decree', name:'Royal Decree', file:'/certificate-frame/Royal Decree.png', photoRect:{x:205,y:215,w:475,h:585,r:34}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4A1E', nameStroke:'rgba(255,255,255,.72)' }
+    { id:'certificate-of-love', name:'Certificate Of Love', file:'/certificate-frame/Certificate Of Love.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-besties', name:'Certificate Of Besties', file:'/certificate-frame/Certificate Of Besties.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-self-love', name:'Certificate Of Self-Love', file:'/certificate-frame/Certificate Of Self-Love.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#4F6B57', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-family', name:'Certificate Of Family', file:'/certificate-frame/Certificate Of Family.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#365B83', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'birthday-certificate', name:'Birthday Certificate', file:'/certificate-frame/Birthday Certificate.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8A4A8E', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certificate-of-achievement', name:'Certificate Of Achievement', file:'/certificate-frame/Certificate Of Achievement.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#7A5A39', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'certified-icon-award', name:'Certified Icon Award', file:'/certificate-frame/Certified Icon Award.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#503A88', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'couple-contract', name:'Couple Contract', file:'/certificate-frame/Couple Contract.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#8C3F55', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'bestie-agreement', name:'Bestie Agreement', file:'/certificate-frame/Bestie Agreement.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4D8A', nameStroke:'rgba(255,255,255,.72)' },
+    { id:'royal-decree', name:'Royal Decree', file:'/certificate-frame/Royal Decree.png', photoRect:{x:150,y:195,w:610,h:800,r:42}, nameRect:{x:785,y:405,w:840,h:150}, nameColor:'#6A4A1E', nameStroke:'rgba(255,255,255,.72)' }
   ];
 
   function getCertificateFrames() {
@@ -658,54 +658,66 @@
     const CH = state.canvas.height || H;
     const name = String((state.text && typeof state.text.name === 'string' ? state.text.name : '')).trim();
     const frame = getCertificateFrameById(state.certificateFrameId || CERTIFICATE_FRAME_CONFIGS[0].id);
-    const photoRect = frame.photoRect || {x:205,y:215,w:475,h:585,r:34};
+    const photoRect = frame.photoRect || {x:150,y:195,w:610,h:800,r:42};
     const nameRect = frame.nameRect || {x:785,y:405,w:840,h:150};
     const paper = '#FBF6EF';
+
+    function drawPhotoSlot() {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, photoRect.x, photoRect.y, photoRect.w, photoRect.h, photoRect.r || 32);
+      ctx.clip();
+
+      if (state.photoImg) {
+        ctx.filter = FILTER_MAP[state.filter] || 'none';
+        drawCoverImage(ctx, state.photoImg, photoRect.x, photoRect.y, photoRect.w, photoRect.h, state);
+        ctx.filter = 'none';
+      } else {
+        // Placeholder dibuat full area dan subtle, bukan kotak kecil.
+        ctx.fillStyle = 'rgba(255,255,255,.32)';
+        ctx.fillRect(photoRect.x, photoRect.y, photoRect.w, photoRect.h);
+        ctx.fillStyle = 'rgba(106,77,138,.55)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '82px Segoe UI Emoji, sans-serif';
+        ctx.fillText('📷', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 - 18);
+        ctx.font = '900 24px Segoe UI, sans-serif';
+        ctx.fillText('upload foto', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 + 52);
+      }
+      ctx.restore();
+
+      // Recreate a clean border on top so photo can sit above PNG without looking naked.
+      ctx.save();
+      ctx.strokeStyle = frame.nameColor || '#c9a45a';
+      ctx.globalAlpha = .75;
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, photoRect.x, photoRect.y, photoRect.w, photoRect.h, photoRect.r || 32);
+      ctx.stroke();
+      ctx.globalAlpha = .38;
+      ctx.lineWidth = 1.4;
+      roundRect(ctx, photoRect.x + 8, photoRect.y + 8, photoRect.w - 16, photoRect.h - 16, Math.max(18, (photoRect.r || 32) - 8));
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.clearRect(0, 0, CW, CH);
     ctx.fillStyle = paper;
     ctx.fillRect(0, 0, CW, CH);
 
-    // subtle paper texture
+    // Very subtle paper texture.
     ctx.save();
-    ctx.globalAlpha = .08;
-    for (let i = 0; i < 450; i++) {
+    ctx.globalAlpha = .05;
+    for (let i = 0; i < 220; i++) {
       ctx.fillStyle = i % 2 === 0 ? '#e9d8f4' : '#f7c9d6';
-      const s = Math.random() * 3 + 1;
+      const s = Math.random() * 2 + .6;
       ctx.beginPath();
       ctx.arc(Math.random() * CW, Math.random() * CH, s, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
 
-    // photo first, then overlay frame
-    if (state.photoImg) {
-      ctx.save();
-      ctx.beginPath();
-      roundRect(ctx, photoRect.x, photoRect.y, photoRect.w, photoRect.h, photoRect.r || 32);
-      ctx.clip();
-      ctx.filter = FILTER_MAP[state.filter] || 'none';
-      drawCoverImage(ctx, state.photoImg, photoRect.x, photoRect.y, photoRect.w, photoRect.h, state);
-      ctx.filter = 'none';
-      ctx.restore();
-    } else {
-      ctx.save();
-      ctx.beginPath();
-      roundRect(ctx, photoRect.x, photoRect.y, photoRect.w, photoRect.h, photoRect.r || 32);
-      ctx.clip();
-      ctx.fillStyle = 'rgba(255,255,255,.18)';
-      ctx.fillRect(photoRect.x, photoRect.y, photoRect.w, photoRect.h);
-      ctx.fillStyle = 'rgba(106,77,138,.55)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = '82px Segoe UI Emoji, sans-serif';
-      ctx.fillText('📷', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 - 18);
-      ctx.font = '900 24px Segoe UI, sans-serif';
-      ctx.fillText('upload foto', photoRect.x + photoRect.w/2, photoRect.y + photoRect.h/2 + 52);
-      ctx.restore();
-    }
-
-    // overlay png frame if available, otherwise fallback hand-drawn certificate
+    // Draw template first. Some uploaded PNG templates have opaque photo placeholders,
+    // so photo must be drawn AFTER template to fully cover the slot.
     if (state.certificateFrameImg) {
       ctx.drawImage(state.certificateFrameImg, 0, 0, CW, CH);
     } else {
@@ -731,8 +743,8 @@
       ctx.lineWidth = 3;
       roundRect(ctx, 800, 370, 780, 185, 26); ctx.stroke();
       ctx.font = 'italic 38px Georgia, serif';
-      ctx.fillText('for being my partner in laughs, adventures,', 1140, 760);
-      ctx.fillText('and unforgettable memories.', 1140, 812);
+      ctx.fillText('for sharing a bond filled with love,', 1140, 760);
+      ctx.fillText('warmth, and unforgettable moments together.', 1140, 812);
       ctx.beginPath(); ctx.moveTo(1080, 900); ctx.lineTo(1525, 900); ctx.strokeStyle = '#2f2b3a'; ctx.lineWidth=2; ctx.stroke();
       fitFont(ctx, 'Signature', 220, 56, 20, '500', '"Brush Script MT", "Lucida Handwriting", "Segoe Script", cursive');
       ctx.fillStyle='#2f2b3a'; ctx.fillText('Signature', 1300, 950);
@@ -740,20 +752,22 @@
       ctx.restore();
     }
 
-    // draw name on top of the blank name plaque area
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const family = '"Brush Script MT", "Lucida Handwriting", "Segoe Script", cursive';
+    drawPhotoSlot();
+
+    // Draw name last, so it remains visible over the template.
     if (name) {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const family = '"Brush Script MT", "Lucida Handwriting", "Segoe Script", cursive';
       fitFont(ctx, name, nameRect.w - 60, 94, 34, '700', family);
       ctx.lineWidth = 5;
       ctx.strokeStyle = frame.nameStroke || 'rgba(255,255,255,.72)';
       ctx.strokeText(name, nameRect.x + nameRect.w/2, nameRect.y + nameRect.h/2 + 6);
       ctx.fillStyle = frame.nameColor || '#6A4D8A';
       ctx.fillText(name, nameRect.x + nameRect.w/2, nameRect.y + nameRect.h/2 + 6);
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   function drawGame(state, theme) {

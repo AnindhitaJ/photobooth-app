@@ -33,9 +33,8 @@
     .theme-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
     .theme-btn { border:2px solid var(--border); background:white; border-radius:15px; padding:10px; cursor:pointer; text-align:left; transition:.18s; min-height:68px; }
     .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
-    .theme-name { font-size:12px; font-weight:950; color:var(--text); }
-    .theme-target { font-size:10px; color:var(--text2); font-weight:800; margin-top:2px; }
-    .swatch { height:20px; border-radius:999px; margin-bottom:7px; border:1px solid rgba(0,0,0,.06); }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.2; }
+    .swatch { width:42px; height:42px; border-radius:14px; margin-bottom:8px; border:2px solid rgba(255,255,255,.85); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10); display:grid; place-items:center; font-size:22px; }
     .filter-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
     .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; }
     .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
@@ -197,13 +196,28 @@
       return COVER_TYPE === 'magazine' ? CoverMaker.MAGAZINE_THEMES : CoverMaker.NEWSPAPER_THEMES;
     }
 
+
+    function coverThemeEmoji(t) {
+      const key = String(t.id || t.name || '').toLowerCase();
+      if (key.includes('bestie') || key.includes('friend')) return '👯';
+      if (key.includes('couple') || key.includes('love') || key.includes('wedding')) return '💞';
+      if (key.includes('family')) return '🏡';
+      if (key.includes('birthday')) return '🎂';
+      if (key.includes('kpop') || key.includes('idol')) return '🎤';
+      if (key.includes('luxury')) return '💎';
+      if (key.includes('travel')) return '✈️';
+      if (key.includes('campus')) return '🎓';
+      if (key.includes('classic') || key.includes('vintage')) return '📰';
+      if (key.includes('breaking')) return '🚨';
+      return '⭐';
+    }
+
     function buildThemeGrid() {
       const themes = getThemes();
       document.getElementById('themeGrid').innerHTML = themes.map(t => `
         <button class="theme-btn ${state.selectedTheme === t.id ? 'active' : ''}" onclick="setTheme('${t.id}')">
-          <div class="swatch" style="background:linear-gradient(135deg,${t.colors.bg},${t.colors.accent2 || t.colors.secondary || t.colors.bg},${t.colors.accent});"></div>
+          <div class="swatch">${coverThemeEmoji(t)}</div>
           <div class="theme-name">${escapeHtml(t.name)}</div>
-          <div class="theme-target">${escapeHtml(t.target || '')}</div>
         </button>
       `).join('');
     }

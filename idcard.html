@@ -110,9 +110,8 @@
       cursor:pointer; text-align:left; transition:.18s; min-height:64px;
     }
     .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
-    .theme-swatch { height:20px; border-radius:999px; margin-bottom:7px; border:1px solid rgba(0,0,0,.06); }
-    .theme-name { font-size:12px; font-weight:950; color:var(--text); }
-    .theme-sub { font-size:10px; color:var(--text2); font-weight:750; margin-top:1px; }
+    .theme-swatch { width:42px; height:42px; border-radius:14px; margin-bottom:8px; border:2px solid rgba(255,255,255,.85); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10); display:grid; place-items:center; font-size:22px; }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.2; }
     .preview-card { position:sticky; top:86px; }
     .canvas-wrap {
       background:#f1f5f9; border:2px solid var(--border); border-radius:20px;
@@ -563,13 +562,28 @@
       renderPreview();
     }
 
+
+    function idThemeEmoji(key, t) {
+      const text = String(key + ' ' + (t?.name || '')).toLowerCase();
+      if (text.includes('pink')) return '🩷';
+      if (text.includes('lavender') || text.includes('purple')) return '💜';
+      if (text.includes('mint')) return '🌿';
+      if (text.includes('sky') || text.includes('blue')) return '🩵';
+      if (text.includes('yellow') || text.includes('butter')) return '🌼';
+      if (text.includes('cream')) return '🤍';
+      if (text.includes('mocha') || text.includes('brown')) return '☕';
+      if (text.includes('gray') || text.includes('grey')) return '🩶';
+      if (text.includes('navy')) return '💙';
+      if (text.includes('sage')) return '🍃';
+      return '💳';
+    }
+
     function buildThemeGrid() {
       const grid = document.getElementById('themeGrid');
       grid.innerHTML = Object.entries(THEMES).map(([key, t]) => `
         <button class="theme-btn ${state.theme === key ? 'active' : ''}" onclick="setTheme('${key}')">
-          <div class="theme-swatch" style="background:linear-gradient(135deg,${t.bg},${t.accent2},${t.accent});"></div>
+          <div class="theme-swatch">${idThemeEmoji(key, t)}</div>
           <div class="theme-name">${t.name}</div>
-          <div class="theme-sub">${t.sub}</div>
         </button>
       `).join('');
     }

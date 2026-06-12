@@ -25,9 +25,8 @@
     .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:460px; overflow:auto; padding-right:3px; }
     .theme-btn { border:2px solid var(--border); background:white; border-radius:16px; padding:10px; cursor:pointer; text-align:left; transition:.18s; min-height:80px; font-family:inherit; }
     .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
-    .swatch { height:20px; border-radius:999px; margin-bottom:8px; border:1px solid rgba(0,0,0,.06); }
-    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.15; }
-    .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; word-break:break-word; }
+    .swatch { width:42px; height:42px; border-radius:14px; margin-bottom:8px; border:2px solid rgba(255,255,255,.85); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10); display:grid; place-items:center; font-size:22px; }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.2; }
     .pill-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
     .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; font-family:inherit; }
     .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
@@ -201,6 +200,22 @@
       }
     }
 
+
+    function certificateEmoji(frame) {
+      const key = String(frame.id || frame.name || '').toLowerCase();
+      if (key.includes('love') && !key.includes('self')) return '💞';
+      if (key.includes('bestie')) return '👯';
+      if (key.includes('self')) return '🌷';
+      if (key.includes('family')) return '🏡';
+      if (key.includes('birthday')) return '🎂';
+      if (key.includes('achievement')) return '🏆';
+      if (key.includes('icon')) return '👑';
+      if (key.includes('couple')) return '💍';
+      if (key.includes('agreement')) return '🤝';
+      if (key.includes('royal')) return '📜';
+      return '🏅';
+    }
+
     function buildThemes() {
       let frames = [];
       try {
@@ -214,9 +229,8 @@
       }
       document.getElementById('themeGrid').innerHTML = frames.map(frame => `
         <button class="theme-btn ${state.certificateFrameId === frame.id ? 'active' : ''}" onclick="selectTheme('${frame.id}')">
-          <div class="swatch" style="background:linear-gradient(135deg,#FBF6EF,#F6C0D8,#C49AD8);"></div>
+          <div class="swatch">${certificateEmoji(frame)}</div>
           <div class="theme-name">${escapeHtml(frame.name)}</div>
-          <div class="theme-sub">${escapeHtml(frame.file.replace('/certificate-frame/',''))}</div>
         </button>
       `).join('');
     }
@@ -278,10 +292,10 @@
       img.onload = () => {
         state.photo = src;
         state.photoImg = img;
-        state.zoom = 1.28;
+        state.zoom = 1;
         state.rotate = 0;
         state.photoX = 0;
-        state.photoY = -8;
+        state.photoY = 0;
         render();
       };
       img.onerror = () => toast('Foto gagal dimuat.');

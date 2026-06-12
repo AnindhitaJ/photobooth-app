@@ -88,10 +88,9 @@
     .toggle-btn { flex:1; min-width:110px; padding:10px 12px; text-align:center; font-weight:900; font-size:13px; }
     .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
     @media (max-width:520px) { .mode-grid,.theme-grid,.form-row { grid-template-columns:1fr; } }
-    .theme-card { padding:10px; display:flex; align-items:center; gap:9px; min-height:58px; }
-    .theme-swatch { width:36px; height:36px; border-radius:12px; border:2px solid rgba(255,255,255,.8); box-shadow:0 2px 8px rgba(0,0,0,.12); flex-shrink:0; }
-    .theme-name { font-size:12px; font-weight:900; line-height:1.15; }
-    .theme-desc { font-size:10px; color:var(--muted); font-weight:700; margin-top:3px; }
+    .theme-card { padding:12px 14px; display:flex; align-items:center; gap:12px; min-height:68px; text-align:left; }
+    .theme-emoji { width:42px; height:42px; border-radius:14px; background:#fff; border:2px solid rgba(255,255,255,.85); box-shadow:0 2px 8px rgba(0,0,0,.10); flex-shrink:0; display:grid; place-items:center; font-size:22px; }
+    .theme-name { font-size:12px; font-weight:900; line-height:1.2; display:block; }
     .photo-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .btn-primary, .btn-secondary, .btn-danger {
       border:none; border-radius:999px; padding:13px 14px; font-size:13px; font-weight:900; cursor:pointer;
@@ -303,52 +302,52 @@
 
   const THEMES = {
     minimalClean: {
-      name:'Minimal Clean', desc:'clean white', bg:'#FBFAF7', panel:'#FFFFFF', text:'#2B2B2B', muted:'#6F6F6F',
+      name:'Minimal Clean', emoji:'🤍', desc:'clean white', bg:'#FBFAF7', panel:'#FFFFFF', text:'#2B2B2B', muted:'#6F6F6F',
       accent:'#2B2B2B', secondary:'#E8E5DE', red:'#E53935', leave:'#F4A6A6', photo:'#F7F4EF', deco:'minimal',
       tagline:'Keep life simple.', swatch:'linear-gradient(135deg,#ffffff,#eeeae2)'
     },
     pastelCute: {
-      name:'Pastel Soft', desc:'lavender cloud', bg:'#F8F3FF', panel:'#FFF8FF', text:'#7463A8', muted:'#8274A6',
+      name:'Pastel Soft', emoji:'☁️', desc:'lavender cloud', bg:'#F8F3FF', panel:'#FFF8FF', text:'#7463A8', muted:'#8274A6',
       accent:'#A998E5', secondary:'#E3D8FF', red:'#FF6F9F', leave:'#FFB4CE', photo:'#FFFFFF', deco:'pastelCloud',
       tagline:'Soft days, happy ways ♡', swatch:'linear-gradient(135deg,#fff8ff,#d9ccff,#f9c7df)'
     },
     retroFilm: {
-      name:'Retro Film', desc:'analog frame', bg:'#EBD8B7', panel:'#F6E6C9', text:'#4B3428', muted:'#7A5C45',
+      name:'Retro Film', emoji:'🎞️', desc:'analog frame', bg:'#EBD8B7', panel:'#F6E6C9', text:'#4B3428', muted:'#7A5C45',
       accent:'#4B3428', secondary:'#C99A63', red:'#D12B2B', leave:'#D98B69', photo:'#FFF7ED', deco:'film',
       tagline:'memories like film', swatch:'linear-gradient(135deg,#3b2a20,#c99a63,#f6e6c9)'
     },
     koreanPhoto: {
-      name:'Korean Photobooth', desc:'sticker booth', bg:'#FFF9FC', panel:'#FFFFFF', text:'#F37AA1', muted:'#A8778D',
+      name:'Korean Photobooth', emoji:'🩷', desc:'sticker booth', bg:'#FFF9FC', panel:'#FFFFFF', text:'#F37AA1', muted:'#A8778D',
       accent:'#FF8BB0', secondary:'#FDD7E5', red:'#FF5C8A', leave:'#FDA4AF', photo:'#FFFFFF', deco:'koreanSticker',
       tagline:'good things are coming ♡', swatch:'linear-gradient(135deg,#fff9fc,#ff8bb0,#fdd7e5)'
     },
     botanicalSoft: {
-      name:'Botanical Soft', desc:'sage floral', bg:'#F4F2E7', panel:'#FFFDF5', text:'#73845F', muted:'#8A957D',
+      name:'Botanical Soft', emoji:'🌿', desc:'sage floral', bg:'#F4F2E7', panel:'#FFFDF5', text:'#73845F', muted:'#8A957D',
       accent:'#7F9A64', secondary:'#D9E3C9', red:'#B91C1C', leave:'#E6A7A7', photo:'#FFFFF8', deco:'botanical',
       tagline:'Bloom where you are planted.', swatch:'linear-gradient(135deg,#fffdf5,#d9e3c9,#7f9a64)'
     },
     pinkDiary: {
-      name:'Pink Diary', desc:'scrapbook diary', bg:'#FFEFF4', panel:'#FFF7FA', text:'#D95170', muted:'#9C6A80',
+      name:'Pink Diary', emoji:'🎀', desc:'scrapbook diary', bg:'#FFEFF4', panel:'#FFF7FA', text:'#D95170', muted:'#9C6A80',
       accent:'#F28AA7', secondary:'#FFD3DE', red:'#FF4F78', leave:'#FBCFE8', photo:'#FFF7FB', deco:'pinkDiary',
       tagline:'Collect beautiful moments. ♡', swatch:'linear-gradient(135deg,#fff7fa,#ffd3de,#f28aa7)'
     },
     boldPop: {
-      name:'Bold Pop', desc:'bright fun', bg:'#FFF6D3', panel:'#FFFFFF', text:'#0D47A1', muted:'#163F7A',
+      name:'Bold Pop', emoji:'⭐', desc:'bright fun', bg:'#FFF6D3', panel:'#FFFFFF', text:'#0D47A1', muted:'#163F7A',
       accent:'#0D47A1', secondary:'#FFC72C', red:'#FF3131', leave:'#FF6B6B', photo:'#FFFFFF', deco:'boldPop',
       tagline:'GOOD VIBES ONLY!', swatch:'linear-gradient(135deg,#ff3131,#ffc72c,#0d47a1)'
     },
     elegantDark: {
-      name:'Elegant Dark', desc:'black gold', bg:'#0F0F0F', panel:'#151515', text:'#E6C873', muted:'#D6C7A1',
+      name:'Elegant Dark', emoji:'🖤', desc:'black gold', bg:'#0F0F0F', panel:'#151515', text:'#E6C873', muted:'#D6C7A1',
       accent:'#D4AF37', secondary:'#2B2B2B', red:'#F87171', leave:'#FBBF24', photo:'#1F1F1F', deco:'elegantGold',
       tagline:'Make it count.', swatch:'linear-gradient(135deg,#0f0f0f,#d4af37)'
     },
     nusantaraModern: {
-      name:'Nusantara Modern', desc:'batik corner', bg:'#FFF7ED', panel:'#FFF8EF', text:'#7A3E1D', muted:'#8A5A44',
+      name:'Nusantara Modern', emoji:'🧡', desc:'batik corner', bg:'#FFF7ED', panel:'#FFF8EF', text:'#7A3E1D', muted:'#8A5A44',
       accent:'#B45309', secondary:'#E8C2A0', red:'#DC2626', leave:'#FDBA74', photo:'#FFFBF4', deco:'nusantara',
       tagline:'Bersama, selalu istimewa. ✧', swatch:'linear-gradient(135deg,#fff7ed,#b45309,#dc2626)'
     },
     seasonalFestive: {
-      name:'Seasonal Festive', desc:'party confetti', bg:'#FFFDF7', panel:'#FFFFFF', text:'#4F5FA8', muted:'#6B6FA3',
+      name:'Seasonal Festive', emoji:'🎉', desc:'party confetti', bg:'#FFFDF7', panel:'#FFFFFF', text:'#4F5FA8', muted:'#6B6FA3',
       accent:'#6F5EC8', secondary:'#F2D36B', red:'#FF5B5B', leave:'#F9A8D4', photo:'#FFFFFF', deco:'festiveParty',
       tagline:'Celebrate every moment!', swatch:'linear-gradient(135deg,#fffdf7,#6f5ec8,#f2d36b)'
     }
@@ -388,8 +387,8 @@
     const grid = document.getElementById('themeGrid');
     grid.innerHTML = Object.entries(THEMES).map(([key, t]) => `
       <button class="theme-card ${key === state.theme ? 'active' : ''}" data-theme="${key}" onclick="setTheme('${key}')">
-        <span class="theme-swatch" style="background:${t.swatch}"></span>
-        <span><span class="theme-name">${t.name}</span><span class="theme-desc">${t.desc}</span></span>
+        <span class="theme-emoji">${t.emoji || '📅'}</span>
+        <span class="theme-name">${t.name}</span>
       </button>
     `).join('');
   }

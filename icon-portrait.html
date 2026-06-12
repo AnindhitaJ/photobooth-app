@@ -25,9 +25,8 @@
     .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:475px; overflow:auto; padding-right:3px; }
     .theme-btn { border:2px solid var(--border); background:white; border-radius:16px; padding:10px; cursor:pointer; text-align:left; transition:.18s; min-height:80px; font-family:inherit; }
     .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
-    .swatch { height:20px; border-radius:999px; margin-bottom:8px; border:1px solid rgba(0,0,0,.06); }
-    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.15; }
-    .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; }
+    .swatch { width:42px; height:42px; border-radius:14px; margin-bottom:8px; border:2px solid rgba(255,255,255,.85); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10); display:grid; place-items:center; font-size:22px; }
+    .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.2; }
     .pill-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
     .frame-note { margin-top:10px; font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; }
     .profile-note { font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; }
@@ -192,13 +191,31 @@
       return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
     }
     function render() { Product4R.render(state); }
+
+    function frameEmoji(frame) {
+      const key = String(frame.id || frame.name || '').toLowerCase();
+      if (key.includes('angel')) return '🪽';
+      if (key.includes('birthday')) return '🎂';
+      if (key.includes('celestial')) return '🌙';
+      if (key.includes('dark')) return '🖤';
+      if (key.includes('warrior')) return '⚔️';
+      if (key.includes('crown') || key.includes('royal')) return '👑';
+      if (key === 'muse' || key.includes('muse')) return '✨';
+      if (key.includes('princess')) return '🎀';
+      if (key.includes('pop')) return '⭐';
+      if (key.includes('soft')) return '🌸';
+      if (key.includes('batik') || key.includes('traditional')) return '🧡';
+      if (key.includes('vintage')) return '🕰️';
+      if (key.includes('y2k')) return '🦋';
+      return '🖼️';
+    }
+
     function buildThemes() {
       const frames = Product4R.getIconFrames();
       document.getElementById('themeGrid').innerHTML = frames.map((frame, index) => `
         <button class="theme-btn ${state.iconFrameId === frame.id ? 'active' : ''}" onclick="selectFrame('${frame.id}')">
-          <div class="swatch" style="background:linear-gradient(135deg,#111827,#fff8fc,#D84B7E);"></div>
+          <div class="swatch">${frameEmoji(frame)}</div>
           <div class="theme-name">${escapeHtml(frame.name || ('Frame ' + (index + 1)))}</div>
-          <div class="theme-sub">${escapeHtml(frame.file.replace('/icon-frame/',''))}</div>
         </button>
       `).join('');
     }

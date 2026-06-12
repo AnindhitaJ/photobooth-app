@@ -595,14 +595,14 @@
     function buildIdFilters() {
       const grid = document.getElementById('filterGrid');
       if (!grid) return;
-      grid.innerHTML = IDCARD_FILTERS.map(f =>
-        `<button class="pill${state.filter === f.css ? ' active' : ''}" onclick="selectIdFilter('${f.css.replace(/\\/g,'\\\\').replace(/'/g,'\\'')}')">` + f.label + '</button>'
+      grid.innerHTML = IDCARD_FILTERS.map((f, i) =>
+        `<button class="pill${state.filter === f.css ? ' active' : ''}" onclick="selectIdFilter(${i})">${f.label}</button>`
       ).join('');
     }
-    function selectIdFilter(css) {
-      state.filter = css;
+    function selectIdFilter(idx) {
+      state.filter = IDCARD_FILTERS[idx].css;
       buildIdFilters();
-      renderIdCard();
+      renderPreview();
     }
 
     function buildThemeGrid() {

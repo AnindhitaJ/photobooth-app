@@ -391,43 +391,77 @@
     renderTable(filtered);
   }
 
+
+  async function patchProfile(userId, updates) {
+    const session = Auth.getSession();
+    if (!session?.access_token) throw new Error('Session tidak ditemukan');
+
+    const res = await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': CMS_ANON,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    const raw = await res.text();
+    let data = null;
+    try { data = raw ? JSON.parse(raw) : null; } catch(e) {}
+
+    if (!res.ok) {
+      throw new Error((data && (data.message || data.error || data.details)) || raw || `HTTP ${res.status}`);
+    }
+
+    if (Array.isArray(data) && data[0]) {
+      const idx = allUsers.findIndex(u => u.id === userId);
+      if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...data[0] };
+      renderStats();
+      renderTable(allUsers);
+      return data[0];
+    }
+
+    // Kalau policy return kosong tapi PATCH sukses, update local supaya UI langsung berubah.
+    const idx = allUsers.findIndex(u => u.id === userId);
+    if (idx !== -1) allUsers[idx] = { ...allUsers[idx], ...updates };
+    renderStats();
+    renderTable(allUsers);
+    setTimeout(loadUsers, 450);
+    return true;
+  }
+
   // ── TOGGLE ACTIVE ─────────────────────────────────────────────────────
   async function toggleActive(userId, active) {
     try {
-      const session = Auth.getSession();
-      await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': CMS_ANON,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({ is_active: active })
+      await patchProfile(userId, {
+        is_active: active
       });
       showToast(active ? '✅ Akun diaktifkan' : '⛔ Akun dinonaktifkan', 'success');
-      loadUsers();
-    } catch(e) { showToast('❌ Gagal: ' + e.message, 'error'); }
+    } catch(e) {
+      console.error('toggleActive error:', e);
+      showToast('❌ Gagal update status: ' + e.message, 'error');
+    }
   }
 
   // ── SET TRIAL ─────────────────────────────────────────────────────────
   async function setTrial(userId) {
     try {
-      const session = Auth.getSession();
       const trialEnd = new Date(Date.now() + 7*24*60*60*1000).toISOString();
-      await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': CMS_ANON,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({ plan: 'trial', pro_ends_at: trialEnd })
+      await patchProfile(userId, {
+        plan: 'trial',
+        is_active: true,
+        pro_ends_at: trialEnd
       });
       showToast('🔄 Trial direset 7 hari', 'success');
-      loadUsers();
-    } catch(e) { showToast('❌ Gagal: ' + e.message, 'error'); }
+    } catch(e) {
+      console.error('setTrial error:', e);
+      showToast('❌ Gagal reset trial: ' + e.message, 'error');
+    }
   }
 
 

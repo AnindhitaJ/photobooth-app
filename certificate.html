@@ -16,28 +16,27 @@
     .header-main { flex:1; }
     .header-title { font-size:18px; font-weight:950; letter-spacing:-.5px; background:linear-gradient(135deg,var(--pink),var(--yellow)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
     .header-sub { font-size:12px; color:var(--text2); font-weight:750; margin-top:2px; }
-    .wrap { max-width:1360px; margin:0 auto; padding:20px 16px; display:grid; grid-template-columns:430px 1fr; gap:20px; }
-    @media(max-width:920px){ .wrap{grid-template-columns:1fr;} .preview-card{position:static!important; order:-1;} .canvas-shell{min-height:420px!important;} }
+    .wrap { max-width:1420px; margin:0 auto; padding:20px 16px; display:grid; grid-template-columns:420px 1fr; gap:20px; }
+    @media(max-width:980px){ .wrap{grid-template-columns:1fr;} .preview-card{position:static!important; order:-1;} .canvas-shell{min-height:340px!important;} }
     .card { background:white; border:2px solid var(--border); border-radius:22px; padding:18px; box-shadow:0 4px 22px rgba(216,75,126,.07); }
     .card + .card { margin-top:15px; }
     .card-title { font-size:13px; color:var(--text2); font-weight:950; letter-spacing:1.7px; text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:14px; }
     .card-title::after { content:''; height:2px; flex:1; background:linear-gradient(90deg,var(--border),transparent); }
-    .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:475px; overflow:auto; padding-right:3px; }
+    .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:460px; overflow:auto; padding-right:3px; }
     .theme-btn { border:2px solid var(--border); background:white; border-radius:16px; padding:10px; cursor:pointer; text-align:left; transition:.18s; min-height:80px; font-family:inherit; }
     .theme-btn.active { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.12); }
     .swatch { height:20px; border-radius:999px; margin-bottom:8px; border:1px solid rgba(0,0,0,.06); }
     .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.15; }
-    .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; }
+    .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; word-break:break-word; }
     .pill-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-    .profile-note { font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; margin-top:10px; }
-    .profile-note b{ color:var(--pink); }
     .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; font-family:inherit; }
     .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
     label { display:block; font-size:12px; font-weight:900; color:var(--text); margin-bottom:7px; }
     .field { margin-bottom:12px; }
-    input, textarea { width:100%; border:2px solid var(--border); border-radius:14px; padding:10px 12px; font-size:14px; font-weight:750; color:var(--text); background:white; outline:none; font-family:inherit; transition:.18s; }
-    textarea { min-height:76px; resize:vertical; }
-    input:focus, textarea:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
+    input { width:100%; border:2px solid var(--border); border-radius:14px; padding:12px 13px; font-size:15px; font-weight:800; color:var(--text); background:white; outline:none; font-family:inherit; transition:.18s; }
+    input:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
+    .profile-note { font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; margin-top:10px; }
+    .profile-note b { color:var(--pink); }
     .photo-controls { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
     .btn-primary, .btn-outline { border-radius:999px; padding:12px 14px; font-size:14px; font-weight:950; cursor:pointer; width:100%; font-family:inherit; }
     .btn-primary { border:0; background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; box-shadow:0 8px 24px rgba(216,75,126,.28); }
@@ -45,8 +44,8 @@
     .mini-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
     .mini-row button { border:2px solid var(--border); border-radius:999px; padding:8px 6px; background:white; font-size:12px; font-weight:900; color:var(--text2); cursor:pointer; font-family:inherit; }
     .preview-card { position:sticky; top:84px; }
-    .canvas-shell { background:#f1f5f9; border:2px solid var(--border); border-radius:22px; padding:18px; display:flex; align-items:center; justify-content:center; min-height:690px; background-image:repeating-conic-gradient(#f7f7f7 0% 25%,#eeeeee 0% 50%); background-size:22px 22px; overflow:hidden; }
-    #productCanvas { width:100%; max-width:460px; aspect-ratio:1181/1772; border-radius:10px; box-shadow:0 18px 45px rgba(29,53,87,.18); background:white; }
+    .canvas-shell { background:#f1f5f9; border:2px solid var(--border); border-radius:22px; padding:18px; display:flex; align-items:center; justify-content:center; min-height:650px; background-image:repeating-conic-gradient(#f7f7f7 0% 25%,#eeeeee 0% 50%); background-size:22px 22px; overflow:hidden; }
+    #productCanvas { width:100%; max-width:840px; aspect-ratio:1772/1181; border-radius:10px; box-shadow:0 18px 45px rgba(29,53,87,.18); background:white; }
     .preview-meta { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
     .chip { border:2px solid var(--border); border-radius:999px; padding:6px 10px; background:white; color:var(--text2); font-size:12px; font-weight:850; }
     .chip span { color:var(--pink); }
@@ -75,7 +74,7 @@
     <a class="btn-back" href="/" title="Kembali">←</a>
     <div class="header-main">
       <div class="header-title">📜 Certificate Photobooth</div>
-      <div class="header-sub">4R portrait 10×15 cm · 1181×1772 px · 300 DPI target</div>
+      <div class="header-sub">4R landscape · template PNG dari /certificate-frame/ · isi nama saja</div>
     </div>
     <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
   </div>
@@ -107,18 +106,18 @@
       <div class="card">
         <div class="card-title">🖼️ Pilih Template Sertifikat</div>
         <div class="theme-grid" id="themeGrid"></div>
-        <div class="profile-note">Template diambil dari folder <b>/certificate-frame/</b>. Salah satu file default: <b>Certificate Of Besties.png</b>.</div>
+        <div class="profile-note">Template diambil dari folder <b>/certificate-frame/</b>. Contoh file: <b>Certificate Of Besties.png</b>.</div>
       </div>
 
       <div class="card">
-        <div class="card-title">✨ Filter</div>
+        <div class="card-title">✨ Filter Foto</div>
         <div class="pill-grid" id="filterGrid"></div>
       </div>
 
       <div class="card">
         <div class="card-title">📝 Nama Sertifikat</div>
         <div id="formFields"></div>
-        <button class="btn-outline" onclick="resetText()">Reset Text</button>
+        <div class="profile-note">Cuma nama yang bisa diisi. Text lain sudah dari template PNG.</div>
       </div>
 
       <div class="card">
@@ -140,7 +139,7 @@
         <div class="preview-meta">
           <div class="chip">Canvas: <span>4R Landscape</span></div>
           <div class="chip">Safe Area: <span>±47 px / 4 mm</span></div>
-          <div class="chip">Mode: <span>Certificate Template</span></div>
+          <div class="chip">Mode: <span>Certificate Frame</span></div>
         </div>
       </div>
     </div>
@@ -158,10 +157,10 @@
   <div class="print-modal" id="printModal">
     <div class="dialog">
       <h3>Pilih ukuran cetak</h3>
-      <p>Output tetap canvas 4R. Original mencetak penuh desain final. Fit to 4R menaruh desain dengan padding putih agar tidak crop.</p>
+      <p>Output sertifikat landscape 4R. Original penuh, Fit memberi border putih tipis agar aman saat cetak.</p>
       <div class="dialog-grid">
         <button onclick="confirmPrint('original')">Original 4R Landscape <span>Output penuh sesuai sertifikat landscape final.</span></button>
-        <button onclick="confirmPrint('fit')">Fit to 4R <span>Desain tetap masuk canvas 4R dengan ruang aman di sekitar.</span></button>
+        <button onclick="confirmPrint('fit')">Fit with white border <span>Masuk 4R landscape dengan border putih tipis.</span></button>
         <button onclick="closePrintModal()" style="text-align:center;background:white;">Batal</button>
       </div>
     </div>
@@ -186,12 +185,31 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => t.classList.remove('show'), 2200);
     }
+
     function escapeHtml(str) {
       return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
     }
-    function render() { Product4R.render(state); }
+
+    function render() {
+      try {
+        Product4R.render(state);
+      } catch (e) {
+        console.error('Render certificate gagal:', e);
+        toast('Preview gagal dirender. Cek console.');
+      }
+    }
+
     function buildThemes() {
-      const frames = Product4R.getCertificateFrames();
+      let frames = [];
+      try {
+        frames = Product4R.getCertificateFrames ? Product4R.getCertificateFrames() : [];
+      } catch (e) {
+        console.error('Frame config gagal dibaca:', e);
+      }
+      if (!frames.length) {
+        document.getElementById('themeGrid').innerHTML = '<div class="profile-note">Frame config belum terbaca.</div>';
+        return;
+      }
       document.getElementById('themeGrid').innerHTML = frames.map(frame => `
         <button class="theme-btn ${state.certificateFrameId === frame.id ? 'active' : ''}" onclick="selectTheme('${frame.id}')">
           <div class="swatch" style="background:linear-gradient(135deg,#FBF6EF,#F6C0D8,#C49AD8);"></div>
@@ -200,31 +218,189 @@
         </button>
       `).join('');
     }
+
     function buildFilters() {
       document.getElementById('filterGrid').innerHTML = cfg.filters.map(f => `
         <button class="pill ${state.filter === f ? 'active' : ''}" onclick="selectFilter('${escapeHtml(f)}')">${escapeHtml(f)}</button>
       `).join('');
     }
+
     function buildForm() {
-      const form = document.getElementById('formFields');
-      form.innerHTML = cfg.fields.map(field => {
-        const val = state.text[field.key] || '';
-        return `<div class="field">
-          <label>${escapeHtml(field.label)}</label>
-          ${field.long
-            ? `<textarea maxlength="${field.max || 160}" id="field_${field.key}" oninput="updateField('${field.key}')">${escapeHtml(val)}</textarea>`
-            : `<input maxlength="${field.max || 80}" id="field_${field.key}" oninput="updateField('${field.key}')" value="${escapeHtml(val)}">`}
-        </div>`;
-      }).join('');
-    }
-    function selectTheme(id) {
-      state.certificateFrameId = id;
-      state.certificateFrameImg = null;
-      const img = new Image();
-      const frame = Product4R.getCertificateFrameById(id);
-      img.onload = () => { state.certificateFrameImg = img; buildThemes(); render(); };
-      img.onerror = () => { console.warn('Certificate frame PNG belum ditemukan:', frame.file); state.certificateFrameImg = null; buildThemes(); render(); };
-      img.src = frame.file + '?v=' + Date.now();
+      const val = state.text?.name || '';
+      document.getElementById('formFields').innerHTML = `
+        <div class="field">
+          <label>Nama</label>
+          <input maxlength="32" id="field_name" oninput="updateField('name')" value="${escapeHtml(val)}" placeholder="isi nama di sini">
+        </div>
+      `;
     }
 
->
+    function selectTheme(id) {
+      const frame = Product4R.getCertificateFrameById ? Product4R.getCertificateFrameById(id) : null;
+      if (!frame) return;
+      state.certificateFrameId = frame.id;
+      state.certificateFrameImg = null;
+      buildThemes();
+
+      const img = new Image();
+      img.onload = () => {
+        state.certificateFrameImg = img;
+        render();
+      };
+      img.onerror = () => {
+        console.warn('Certificate frame PNG belum ditemukan:', frame.file);
+        state.certificateFrameImg = null;
+        render();
+      };
+      img.src = frame.file + '?v=' + Date.now();
+      render();
+    }
+
+    function selectFilter(f) {
+      state.filter = f;
+      buildFilters();
+      render();
+    }
+
+    function updateField(key) {
+      const el = document.getElementById('field_' + key);
+      if (!state.text) state.text = {};
+      state.text[key] = el.value;
+      state.edited = state.edited || {};
+      state.edited[key] = true;
+      render();
+    }
+
+    function loadPhoto(src) {
+      const img = new Image();
+      img.onload = () => {
+        state.photo = src;
+        state.photoImg = img;
+        state.zoom = 1;
+        state.rotate = 0;
+        state.photoX = 0;
+        state.photoY = 0;
+        render();
+      };
+      img.onerror = () => toast('Foto gagal dimuat.');
+      img.src = src;
+    }
+
+    function uploadPhoto(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => loadPhoto(e.target.result);
+      reader.readAsDataURL(file);
+      ev.target.value = '';
+    }
+
+    async function openCamera() {
+      try {
+        closeCamera();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} },
+          audio:false
+        });
+        document.getElementById('cameraVideo').srcObject = stream;
+        document.getElementById('cameraModal').classList.add('show');
+      } catch(e) {
+        console.error(e);
+        toast('Kamera tidak bisa diakses.');
+      }
+    }
+
+    function closeCamera() {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      document.getElementById('cameraModal').classList.remove('show');
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const c = document.getElementById('cameraCanvas');
+      const vw = video.videoWidth || 1280;
+      const vh = video.videoHeight || 960;
+      c.width = vw;
+      c.height = vh;
+      const cc = c.getContext('2d');
+      cc.save();
+      cc.translate(c.width, 0);
+      cc.scale(-1, 1);
+      cc.drawImage(video, 0, 0, vw, vh);
+      cc.restore();
+      loadPhoto(c.toDataURL('image/jpeg', .92));
+      closeCamera();
+    }
+
+    function adjustPhoto(action) {
+      if (action === 'zoomIn') state.zoom = Math.min(2.4, state.zoom + .08);
+      if (action === 'zoomOut') state.zoom = Math.max(.55, state.zoom - .08);
+      if (action === 'left') state.photoX -= 18;
+      if (action === 'right') state.photoX += 18;
+      if (action === 'up') state.photoY -= 18;
+      if (action === 'down') state.photoY += 18;
+      if (action === 'rotL') state.rotate = Math.max(-15, state.rotate - 2);
+      if (action === 'rotR') state.rotate = Math.min(15, state.rotate + 2);
+      if (action === 'reset') { state.zoom = 1; state.rotate = 0; state.photoX = 0; state.photoY = 0; }
+      render();
+    }
+
+    function download(url, filename) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function timestamp() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+    }
+
+    function exportCertificateUrl(mode = 'original') {
+      render();
+      if (mode !== 'fit') return canvas.toDataURL('image/png');
+
+      const out = document.createElement('canvas');
+      out.width = 1772;
+      out.height = 1181;
+      const o = out.getContext('2d');
+      o.fillStyle = '#ffffff';
+      o.fillRect(0, 0, out.width, out.height);
+      const pad = 24;
+      o.drawImage(canvas, pad, pad, out.width - pad * 2, out.height - pad * 2);
+      return out.toDataURL('image/png');
+    }
+
+    function saveOutput() {
+      download(exportCertificateUrl('original'), `${cfg.filePrefix}-${timestamp()}.png`);
+      toast('File certificate berhasil disimpan ✓');
+    }
+
+    function openPrintModal() { document.getElementById('printModal').classList.add('show'); }
+    function closePrintModal() { document.getElementById('printModal').classList.remove('show'); }
+
+    function confirmPrint(mode) {
+      closePrintModal();
+      const url = exportCertificateUrl(mode);
+      download(url, `${cfg.filePrefix}-${mode}-4r-${timestamp()}.png`);
+      toast(mode === 'fit' ? 'Fit 4R didownload ✓' : 'Original 4R didownload ✓');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      buildThemes();
+      buildFilters();
+      buildForm();
+      selectTheme(state.certificateFrameId || (Product4R.getCertificateFrames?.()[0]?.id));
+      render();
+    });
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  </script>
+</body>
+</html>

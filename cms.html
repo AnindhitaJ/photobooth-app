@@ -447,19 +447,22 @@
       const session = Auth.getSession();
       if (!session?.access_token) throw new Error('Session tidak ditemukan, silakan login ulang');
 
-      const res = await fetch(`${CMS_URL}/functions/v1/admin-toggle-active`, {
-        method: 'POST',
+      const res = await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
         headers: {
           'apikey': CMS_ANON,
           'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ user_id: userId, is_active: active })
+        body: JSON.stringify({ is_active: active, updated_at: new Date().toISOString() })
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || `HTTP ${res.status}`);
+      if (!res.ok) {
+        const raw = await res.text();
+        let msg = `HTTP ${res.status}`;
+        try { const e = JSON.parse(raw); msg = e.message || e.error || e.details || msg; } catch(_) {}
+        throw new Error(msg);
       }
 
       // Update local state langsung
@@ -468,6 +471,7 @@
       renderStats();
       renderTable(allUsers);
       showToast(active ? '✅ Akun diaktifkan' : '⛔ Akun dinonaktifkan', 'success');
+      setTimeout(loadUsers, 600);
     } catch(e) {
       console.error('toggleActive error:', e);
       showToast('❌ Gagal update status: ' + e.message, 'error');

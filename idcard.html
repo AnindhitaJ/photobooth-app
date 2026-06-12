@@ -428,6 +428,19 @@
       sage: { name:'Sage Green', sub:'calm', bg:'#f1f8f1', accent:'#6b8f71', accent2:'#d8ead7', text:'#29462d', photo:'#9ab89e' }
     };
 
+    const IDCARD_FILTERS = [
+      { label:'Normal', css:'none' },
+      { label:'Warm', css:'sepia(.22) brightness(1.06) contrast(.97) saturate(1.05)' },
+      { label:'Cool', css:'hue-rotate(15deg) saturate(1.1) brightness(1.04)' },
+      { label:'Soft', css:'brightness(1.12) contrast(.90) saturate(.90)' },
+      { label:'Vivid', css:'saturate(1.45) contrast(1.08) brightness(1.03)' },
+      { label:'Matte', css:'contrast(.88) brightness(1.06) saturate(.80)' },
+      { label:'Sepia', css:'sepia(.60) brightness(1.04)' },
+      { label:'B&W', css:'grayscale(1) contrast(1.08)' },
+      { label:'Vintage', css:'sepia(.30) contrast(.94) brightness(1.03)' },
+      { label:'Dreamy', css:'brightness(1.15) contrast(.88) saturate(1.12) blur(0.3px)' },
+    ];
+
     let state = {
       lang:'id',
       nickname:'',
@@ -436,6 +449,7 @@
       mood: OPTIONS.id.mood[0],
       funFact: OPTIONS.id.funFact[0],
       theme:'pink',
+      filter:'none',
       photo:null,
       savedId:null,
       synced:false
@@ -576,6 +590,19 @@
       if (text.includes('navy')) return '💙';
       if (text.includes('sage')) return '🍃';
       return '💳';
+    }
+
+    function buildIdFilters() {
+      const grid = document.getElementById('filterGrid');
+      if (!grid) return;
+      grid.innerHTML = IDCARD_FILTERS.map(f =>
+        `<button class="pill${state.filter === f.css ? ' active' : ''}" onclick="selectIdFilter('${f.css.replace(/\\/g,'\\\\').replace(/'/g,'\\'')}')">` + f.label + '</button>'
+      ).join('');
+    }
+    function selectIdFilter(css) {
+      state.filter = css;
+      buildIdFilters();
+      renderIdCard();
     }
 
     function buildThemeGrid() {
@@ -820,14 +847,20 @@
       targetCtx.stroke();
       drawRoundRect(targetCtx, px, py, pw, ph, 24);
       targetCtx.clip();
-      if (photoImg) drawCoverImage(targetCtx, photoImg, px, py, pw, ph);
+      if (photoImg) {
+        targetCtx.filter = state.filter || 'none';
+        drawCoverImage(targetCtx, photoImg, px, py, pw, ph);
+        targetCtx.filter = 'none';
+      }
       else if (state.photo) {
         const img = new Image();
         img.onload = () => {
           targetCtx.save();
           drawRoundRect(targetCtx, px, py, pw, ph, 24);
           targetCtx.clip();
+          targetCtx.filter = state.filter || 'none';
           drawCoverImage(targetCtx, img, px, py, pw, ph);
+          targetCtx.filter = 'none';
           targetCtx.restore();
         };
         img.src = state.photo;
@@ -1043,26 +1076,16 @@
           console.warn('Save history skipped:', saveErr);
         }
 
-        // Untuk 4R, langsung download dulu biar selalu works di desktop/browser.
-        // Native share sering throw AbortError kalau dialog dicancel, jadi jangan jadikan jalur utama.
-        if (is4R) {
-          downloadDataUrl(url, filename);
-          showToast('File 4R didownload ✓');
-          return;
-        }
-
         const file = dataUrlToFile(url, filename);
+        const shareTitle = is4R ? 'ID Card Print 4R' : 'ID Card Photobooth';
+        const shareText  = is4R ? 'File ID Card ukuran 4R siap cetak' : 'File ID Card ukuran asli siap cetak';
         try {
           if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
-            await navigator.share({
-              title:'ID Card Photobooth',
-              text:'File ID Card ukuran asli siap cetak',
-              files:[file]
-            });
-            showToast('File cetak dibuka ✓');
+            await navigator.share({ title: shareTitle, text: shareText, files:[file] });
+            showToast('File siap cetak dibuka ✓');
           } else {
             downloadDataUrl(url, filename);
-            showToast('File ukuran asli didownload ✓');
+            showToast(is4R ? 'File 4R didownload ✓' : 'File ukuran asli didownload ✓');
           }
         } catch(shareErr) {
           console.warn('Native share cancelled/failed, fallback download:', shareErr);
@@ -1235,6 +1258,7 @@
       applyLabels();
       buildSelects();
       buildThemeGrid();
+      buildIdFilters();
       randomizeId();
       renderPreview();
       renderHistory();

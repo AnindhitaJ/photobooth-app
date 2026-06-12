@@ -64,6 +64,14 @@
     .dialog-grid span { display:block; color:var(--text2); font-size:12px; margin-top:3px; line-height:1.35; }
     .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:white; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,.2); transition:.25s; z-index:1200; }
     .toast.show { transform:translateX(-50%) translateY(0); }
+
+    .timer-row { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .timer-opt { flex:1; min-width:56px; border:2px solid var(--border); border-radius:999px; padding:9px 8px; background:white; font-size:13px; font-weight:900; color:var(--text2); cursor:pointer; font-family:inherit; transition:.18s; }
+    .timer-opt.sel { border-color:var(--pink); background:rgba(216,75,126,0.13); color:var(--pink); }
+    #timerOverlay { display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,.72); align-items:center; justify-content:center; }
+    #timerOverlay.show { display:flex; }
+    #timerCount { font-size:160px; font-weight:950; color:white; text-shadow:0 0 60px rgba(216,75,126,.9); line-height:1; animation:pulse .9s infinite alternate; }
+    @keyframes pulse { from{transform:scale(1)} to{transform:scale(1.18)} }
   </style>
   <script src="/auth.js"></script>
   <script src="/product-photobooth.js"></script>
@@ -148,7 +156,7 @@
     <video id="cameraVideo" autoplay playsinline></video>
     <canvas id="cameraCanvas" style="display:none;"></canvas>
     <div class="camera-actions">
-      <button class="capture" onclick="capturePhoto()">📷 Capture</button>
+      <button class="capture" onclick="runTimerThenCapture()">📷 Capture</button>
       <button class="close" onclick="closeCamera()">Tutup</button>
     </div>
   </div>
@@ -164,7 +172,9 @@
       </div>
     </div>
   </div>
-
+  <div id="timerOverlay">
+    <span id="timerCount">3</span>
+  </div>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -414,6 +424,31 @@
       selectTheme(state.certificateFrameId || (Product4R.getCertificateFrames?.()[0]?.id));
       render();
     });
+    let timerSec = 3;
+    function setTimerSec(s) {
+      timerSec = s;
+      ['tOff','t3','t5','t10'].forEach(id => document.getElementById(id)?.classList.remove('sel'));
+      const map = {0:'tOff',3:'t3',5:'t5',10:'t10'};
+      document.getElementById(map[s])?.classList.add('sel');
+    }
+    function runTimerThenCapture() {
+      if (timerSec <= 0) { capturePhoto(); return; }
+      const overlay = document.getElementById('timerOverlay');
+      const countEl = document.getElementById('timerCount');
+      overlay.classList.add('show');
+      let n = timerSec;
+      countEl.textContent = n;
+      const iv = setInterval(() => {
+        n--;
+        if (n <= 0) {
+          clearInterval(iv);
+          overlay.classList.remove('show');
+          capturePhoto();
+        } else {
+          countEl.textContent = n;
+        }
+      }, 1000);
+    }
   </script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

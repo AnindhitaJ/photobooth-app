@@ -148,7 +148,7 @@
     .custom-size-box.show { display: block; }
 
     /* ── Preview panel ── */
-    .preview-panel { position: sticky; top: 82px; display: grid; gap: 14px; }
+    .preview-panel { position: sticky; top: 82px; display: grid; gap: 14px; max-height: calc(100vh - 100px); overflow-y: auto; }
     .preview-canvas-wrap {
       background: #f0f0f0;
       background-image: repeating-conic-gradient(#e8e8e8 0% 25%, #f4f4f4 0% 50%);

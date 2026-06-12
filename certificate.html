@@ -29,6 +29,8 @@
     .theme-name { font-size:12px; font-weight:950; color:var(--text); line-height:1.15; }
     .theme-sub { font-size:10px; color:var(--text2); font-weight:780; margin-top:3px; line-height:1.25; }
     .pill-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .profile-note { font-size:12px; color:var(--text2); font-weight:780; line-height:1.45; margin-top:10px; }
+    .profile-note b{ color:var(--pink); }
     .pill { border:2px solid var(--border); background:white; color:var(--text2); border-radius:999px; padding:9px 10px; font-size:12px; font-weight:900; cursor:pointer; transition:.18s; font-family:inherit; }
     .pill.active { border-color:var(--pink); background:#fff0f6; color:var(--pink); box-shadow:0 0 0 3px rgba(216,75,126,.10); }
     label { display:block; font-size:12px; font-weight:900; color:var(--text); margin-bottom:7px; }
@@ -103,8 +105,9 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🎨 Ganti Tema</div>
+        <div class="card-title">🖼️ Pilih Template Sertifikat</div>
         <div class="theme-grid" id="themeGrid"></div>
+        <div class="profile-note">Template diambil dari folder <b>/certificate-frame/</b>. Salah satu file default: <b>Certificate Of Besties.png</b>.</div>
       </div>
 
       <div class="card">
@@ -113,7 +116,7 @@
       </div>
 
       <div class="card">
-        <div class="card-title">📝 Custom Text</div>
+        <div class="card-title">📝 Nama Sertifikat</div>
         <div id="formFields"></div>
         <button class="btn-outline" onclick="resetText()">Reset Text</button>
       </div>
@@ -132,12 +135,12 @@
       <div class="card">
         <div class="card-title">👁️ Preview Real-time</div>
         <div class="canvas-shell">
-          <canvas id="productCanvas" width="1181" height="1772"></canvas>
+          <canvas id="productCanvas" width="1772" height="1181"></canvas>
         </div>
         <div class="preview-meta">
-          <div class="chip">Canvas: <span>4R Portrait</span></div>
-          <div class="chip">Safe Area: <span>60 px</span></div>
-          <div class="chip">Mode: <span>Certificate</span></div>
+          <div class="chip">Canvas: <span>4R Landscape</span></div>
+          <div class="chip">Safe Area: <span>±47 px / 4 mm</span></div>
+          <div class="chip">Mode: <span>Certificate Template</span></div>
         </div>
       </div>
     </div>
@@ -157,7 +160,7 @@
       <h3>Pilih ukuran cetak</h3>
       <p>Output tetap canvas 4R. Original mencetak penuh desain final. Fit to 4R menaruh desain dengan padding putih agar tidak crop.</p>
       <div class="dialog-grid">
-        <button onclick="confirmPrint('original')">Original 4R <span>Output penuh sesuai canvas 4R final.</span></button>
+        <button onclick="confirmPrint('original')">Original 4R Landscape <span>Output penuh sesuai sertifikat landscape final.</span></button>
         <button onclick="confirmPrint('fit')">Fit to 4R <span>Desain tetap masuk canvas 4R dengan ruang aman di sekitar.</span></button>
         <button onclick="closePrintModal()" style="text-align:center;background:white;">Batal</button>
       </div>
@@ -188,11 +191,12 @@
     }
     function render() { Product4R.render(state); }
     function buildThemes() {
-      document.getElementById('themeGrid').innerHTML = cfg.themes.map(t => `
-        <button class="theme-btn ${state.themeId === t.id ? 'active' : ''}" onclick="selectTheme('${t.id}')">
-          <div class="swatch" style="background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]},${t.colors[2] || t.colors[1]});"></div>
-          <div class="theme-name">${escapeHtml(t.name)}</div>
-          <div class="theme-sub">${escapeHtml(t.subtitle || '')}</div>
+      const frames = Product4R.getCertificateFrames();
+      document.getElementById('themeGrid').innerHTML = frames.map(frame => `
+        <button class="theme-btn ${state.certificateFrameId === frame.id ? 'active' : ''}" onclick="selectTheme('${frame.id}')">
+          <div class="swatch" style="background:linear-gradient(135deg,#FBF6EF,#F6C0D8,#C49AD8);"></div>
+          <div class="theme-name">${escapeHtml(frame.name)}</div>
+          <div class="theme-sub">${escapeHtml(frame.file.replace('/certificate-frame/',''))}</div>
         </button>
       `).join('');
     }
@@ -214,108 +218,13 @@
       }).join('');
     }
     function selectTheme(id) {
-      Product4R.setTheme(state, id);
-      buildThemes(); buildForm(); render();
-    }
-    function selectFilter(f) {
-      state.filter = f;
-      buildFilters(); render();
-    }
-    function updateField(key) {
-      const el = document.getElementById('field_' + key);
-      state.text[key] = el.value;
-      state.edited[key] = true;
-      render();
-    }
-    function resetText() {
-      const t = Product4R.getTheme(MENU, state.themeId);
-      Product4R.setTheme(state, state.themeId);
-      state.edited = {};
-      buildForm(); render();
-    }
-    function loadPhoto(src) {
+      state.certificateFrameId = id;
+      state.certificateFrameImg = null;
       const img = new Image();
-      img.onload = () => {
-        state.photo = src;
-        state.photoImg = img;
-        state.zoom = 1; state.rotate = 0; state.photoX = 0; state.photoY = 0;
-        render();
-      };
-      img.src = src;
-    }
-    function uploadPhoto(ev) {
-      const file = ev.target.files && ev.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => loadPhoto(e.target.result);
-      reader.readAsDataURL(file);
-    }
-    async function openCamera() {
-      try {
-        closeCamera();
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} }, audio:false });
-        document.getElementById('cameraVideo').srcObject = stream;
-        document.getElementById('cameraModal').classList.add('show');
-      } catch(e) { toast('Kamera tidak bisa diakses.'); }
-    }
-    function closeCamera() {
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      stream = null;
-      document.getElementById('cameraModal').classList.remove('show');
-    }
-    function capturePhoto() {
-      const video = document.getElementById('cameraVideo');
-      const c = document.getElementById('cameraCanvas');
-      const vw = video.videoWidth || 1280, vh = video.videoHeight || 960;
-      c.width = vw; c.height = vh;
-      const cc = c.getContext('2d');
-      cc.save(); cc.translate(c.width,0); cc.scale(-1,1); cc.drawImage(video,0,0,vw,vh); cc.restore();
-      loadPhoto(c.toDataURL('image/jpeg', .92));
-      closeCamera();
-    }
-    function adjustPhoto(action) {
-      if (action === 'zoomIn') state.zoom = Math.min(2.4, state.zoom + .08);
-      if (action === 'zoomOut') state.zoom = Math.max(.55, state.zoom - .08);
-      if (action === 'left') state.photoX -= 18;
-      if (action === 'right') state.photoX += 18;
-      if (action === 'up') state.photoY -= 18;
-      if (action === 'down') state.photoY += 18;
-      if (action === 'rotL') state.rotate = Math.max(-15, state.rotate - 2);
-      if (action === 'rotR') state.rotate = Math.min(15, state.rotate + 2);
-      if (action === 'reset') { state.zoom = 1; state.rotate = 0; state.photoX = 0; state.photoY = 0; }
-      render();
-    }
-    function download(url, filename) {
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-    }
-    function timestamp() {
-      const d = new Date();
-      const pad = n => String(n).padStart(2,'0');
-      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
-    }
-    function saveOutput() {
-      render();
-      download(canvas.toDataURL('image/png'), `${cfg.filePrefix}-${timestamp()}.png`);
-      toast('File 4R berhasil disimpan ✓');
-    }
-    function openPrintModal() { document.getElementById('printModal').classList.add('show'); }
-    function closePrintModal() { document.getElementById('printModal').classList.remove('show'); }
-    function confirmPrint(mode) {
-      closePrintModal();
-      render();
-      const url = Product4R.exportDataUrl(state, mode);
-      download(url, `${cfg.filePrefix}-${mode}-4r-${timestamp()}.png`);
-      toast(mode === 'fit' ? 'Fit to 4R didownload ✓' : 'Original 4R didownload ✓');
+      const frame = Product4R.getCertificateFrameById(id);
+      img.onload = () => { state.certificateFrameImg = img; buildThemes(); render(); };
+      img.onerror = () => { console.warn('Certificate frame PNG belum ditemukan:', frame.file); state.certificateFrameImg = null; buildThemes(); render(); };
+      img.src = frame.file + '?v=' + Date.now();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      buildThemes(); buildFilters(); buildForm(); render();
-    });
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-  </script>
-</body>
-</html>
+>

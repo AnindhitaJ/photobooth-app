@@ -835,6 +835,75 @@
     ctx.restore();
   }
 
+
+  function drawMonthlyHolidayNotes(x, y, w, h, year, month) {
+    const t = THEMES[state.theme];
+    const list = monthHolidayList(year, month);
+    if (h < 54) return;
+
+    fillRound(ctx, x, y, w, h, 18, t.photo || 'rgba(255,255,255,.55)');
+    strokeRound(ctx, x, y, w, h, 18, t.secondary, 2);
+
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = t.text;
+    ctx.font = `900 ${Math.max(17, Math.min(24, h * .18))}px Segoe UI, sans-serif`;
+    ctx.fillText('Tanggal merah:', x + w * .04, y + h * .10);
+
+    if (!list.length) {
+      ctx.fillStyle = t.muted;
+      ctx.font = `700 ${Math.max(14, Math.min(20, h * .15))}px Segoe UI, sans-serif`;
+      const msg = state.holidayAvailable
+        ? 'Tidak ada libur nasional/cuti bersama di bulan ini.'
+        : 'Data libur belum tersedia. Minggu tetap merah otomatis.';
+      drawWrappedCalendarText(msg, x + w * .04, y + h * .42, w * .90, Math.max(18, h * .16), 2);
+      ctx.restore();
+      return;
+    }
+
+    const maxItems = Math.max(1, Math.min(list.length, Math.floor((h * .60) / 22)));
+    const shown = list.slice(0, maxItems);
+    const fs = Math.max(13, Math.min(20, (h * .58) / Math.max(1, shown.length)));
+    ctx.font = `800 ${fs}px Segoe UI, sans-serif`;
+
+    let yy = y + h * .37;
+    shown.forEach(item => {
+      const day = parseInt(item.date.slice(8,10), 10);
+      const rawName = item.name || 'Libur nasional';
+      const maxChars = w < 620 ? 34 : 52;
+      const shortName = rawName.length > maxChars ? rawName.slice(0, maxChars - 1) + '…' : rawName;
+      ctx.fillStyle = item.type === 'leave' ? t.leave : t.red;
+      ctx.fillText(`${day} ${MONTHS_SHORT[month]} - ${shortName}`, x + w * .04, yy);
+      yy += fs * 1.28;
+    });
+
+    if (list.length > shown.length) {
+      ctx.fillStyle = t.muted;
+      ctx.font = `800 ${Math.max(12, fs * .82)}px Segoe UI, sans-serif`;
+      ctx.fillText(`+${list.length - shown.length} tanggal lainnya`, x + w * .04, y + h - fs * 1.2);
+    }
+    ctx.restore();
+  }
+
+  function drawWrappedCalendarText(text, x, y, maxW, lineH, maxLines = 2) {
+    const words = String(text || '').split(/\s+/).filter(Boolean);
+    let line = '';
+    let lines = [];
+    words.forEach(word => {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    });
+    if (line) lines.push(line);
+    lines = lines.slice(0, maxLines);
+    lines.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineH));
+  }
+
   function renderCalendar() {
     const t = THEMES[state.theme];
     const portrait = state.orientation === 'portrait';
@@ -896,9 +965,14 @@
       drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, panelX + panelW*.07, titleY, panelW*.86, Math.round(panelW * .072), t);
 
       const calY = titleY + Math.round(panelH * .065);
-      drawMonthCalendar(panelX + panelW*.09, calY, panelW*.82, Math.round(panelH * .34), state.year, state.month, { compact:false, showTitle:false });
+      const calH = Math.round(panelH * .31);
+      drawMonthCalendar(panelX + panelW*.09, calY, panelW*.82, calH, state.year, state.month, { compact:false, showTitle:false });
 
       const tagY = panelY + panelH - Math.round(panelH * .055);
+      const noteY = calY + calH + Math.round(panelH * .020);
+      const noteH = Math.max(92, tagY - noteY - Math.round(panelH * .050));
+      drawMonthlyHolidayNotes(panelX + panelW*.09, noteY, panelW*.82, noteH, state.year, state.month);
+
       if (t.deco === 'boldPop') {
         fillRound(ctx, panelX + panelW*.28, tagY - 26, panelW*.44, 52, 16, '#FFFFFF');
         strokeRound(ctx, panelX + panelW*.28, tagY - 26, panelW*.44, 52, 16, t.accent, 3);
@@ -916,8 +990,15 @@
       strokeRound(ctx, panelX, panelY, panelW, panelH, 26, t.secondary, 3);
       drawThemePhotoFrame(state.photoImg, panelX + 44, panelY + 44, panelW*.40, panelH - 88, t.deco === 'minimal' ? 0 : 14, t);
       drawTitle(`${MONTHS[state.month].toUpperCase()} ${state.year}`, panelX + panelW*.49, panelY + 90, panelW*.45, 62, t, 'left');
-      drawMonthCalendar(panelX + panelW*.49, panelY + 160, panelW*.44, panelH*.58, state.year, state.month, { compact:false, showTitle:false });
-      drawCalendarTagline(t.tagline, panelX + panelW*.49, panelY + panelH - 74, panelW*.44, t);
+      const calX = panelX + panelW*.49;
+      const calY = panelY + 160;
+      const calW = panelW*.44;
+      const calH = panelH*.48;
+      drawMonthCalendar(calX, calY, calW, calH, state.year, state.month, { compact:false, showTitle:false });
+      const tagY = panelY + panelH - 74;
+      const noteY = calY + calH + 24;
+      drawMonthlyHolidayNotes(calX, noteY, calW, Math.max(92, tagY - noteY - 42), state.year, state.month);
+      drawCalendarTagline(t.tagline, calX, tagY, calW, t);
     }
   }
 

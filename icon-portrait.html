@@ -76,7 +76,7 @@
     <a class="btn-back" href="/" title="Kembali">←</a>
     <div class="header-main">
       <div class="header-title">👑 Icon Portrait Photobooth</div>
-      <div class="header-sub">4R full bleed · single PNG overlay · text profile auto-contrast</div>
+      <div class="header-sub">4R full bleed · multi PNG overlay · text profile auto-contrast</div>
     </div>
     <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
   </div>
@@ -108,7 +108,7 @@
       <div class="card">
         <div class="card-title">🖼️ Pilih Frame</div>
         <div class="theme-grid" id="themeGrid"></div>
-        <div class="frame-note">Frame selalu diambil dari <b>/icon-frame/frame.png</b>. Kalau mau ganti desain, cukup timpa file itu.</div>
+        <div class="frame-note">Semua PNG yang ada di list config bisa jadi option frame. File diambil dari folder <b>/icon-frame/</b>.</div>
       </div>
 
       <div class="card">
@@ -142,7 +142,7 @@
         <div class="preview-meta">
           <div class="chip">Canvas: <span>4R Portrait</span></div>
           <div class="chip">Safe Area: <span>60 px</span></div>
-          <div class="chip">Mode: <span>Full Photo + frame.png</span></div>
+          <div class="chip">Mode: <span>Full Photo + pilihan frame PNG</span></div>
         </div>
       </div>
     </div>
@@ -193,14 +193,14 @@
     }
     function render() { Product4R.render(state); }
     function buildThemes() {
-      const frame = Product4R.getIconFrames()[0];
-      document.getElementById('themeGrid').innerHTML = `
-        <button class="theme-btn active" onclick="selectFrame('default-frame')">
+      const frames = Product4R.getIconFrames();
+      document.getElementById('themeGrid').innerHTML = frames.map((frame, index) => `
+        <button class="theme-btn ${state.iconFrameId === frame.id ? 'active' : ''}" onclick="selectFrame('${frame.id}')">
           <div class="swatch" style="background:linear-gradient(135deg,#111827,#fff8fc,#D84B7E);"></div>
-          <div class="theme-name">Default Frame</div>
-          <div class="theme-sub">/icon-frame/frame.png</div>
+          <div class="theme-name">${escapeHtml(frame.name || ('Frame ' + (index + 1)))}</div>
+          <div class="theme-sub">${escapeHtml(frame.file.replace('/icon-frame/',''))}</div>
         </button>
-      `;
+      `).join('');
     }
     function buildFilters() {
       document.getElementById('filterGrid').innerHTML = cfg.filters.map(f => `
@@ -220,7 +220,7 @@
       }).join('');
     }
     function selectFrame(id) {
-      const frame = Product4R.getIconFrameById('default-frame');
+      const frame = Product4R.getIconFrameById(id || state.iconFrameId || 'frame');
       state.iconFrameId = frame.id;
       state.iconFrameImg = null;
 
@@ -234,7 +234,6 @@
         state.iconFrameImg = null;
         render();
       };
-      // cache-buster supaya kalau frame.png ditimpa, browser ambil versi baru
       img.src = frame.file + '?v=' + Date.now();
 
       buildThemes();
@@ -334,7 +333,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      buildThemes(); buildFilters(); selectFrame('default-frame'); render();
+      buildThemes(); buildFilters(); selectFrame(state.iconFrameId); render();
     });
   </script>
   <script>

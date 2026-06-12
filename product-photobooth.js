@@ -4,7 +4,19 @@
   const SAFE = 60;
 
   const ICON_FRAME_CONFIGS = [
-    { id:'default-frame', name:'Default Frame', file:'/icon-frame/frame.png', textPosition:'bottom-center' }
+    { id:'angel-core', name:'Angel Core', file:'/icon-frame/Angel Core.png', textPosition:'bottom-center' },
+    { id:'birthday-girl', name:'Birthday Girl', file:'/icon-frame/Birthday Girl.png', textPosition:'bottom-center' },
+    { id:'celestial-muse', name:'Celestial Muse', file:'/icon-frame/Celestial Muse.png', textPosition:'bottom-center' },
+    { id:'dark-royalty', name:'Dark Royalty', file:'/icon-frame/Dark Royalty.png', textPosition:'bottom-center' },
+    { id:'fantasy-warrior', name:'Fantasy Warrior', file:'/icon-frame/Fantasy Warrior.png', textPosition:'bottom-center' },
+    { id:'gold-crown', name:'Gold Crown', file:'/icon-frame/Gold Crown.png', textPosition:'bottom-center' },
+    { id:'muse', name:'Muse', file:'/icon-frame/Muse.png', textPosition:'bottom-center' },
+    { id:'pink-princess', name:'Pink Princess', file:'/icon-frame/Pink Princess.png', textPosition:'bottom-center' },
+    { id:'pop-art-icon', name:'Pop Art Icon', file:'/icon-frame/Pop Art Icon.png', textPosition:'bottom-center' },
+    { id:'soft-potrait', name:'Soft Potrait', file:'/icon-frame/Soft Potrait.png', textPosition:'bottom-center' },
+    { id:'traditional-batik', name:'Traditional Batik', file:'/icon-frame/Traditional Batik.png', textPosition:'bottom-center' },
+    { id:'vintage-frame', name:'Vintage Frame', file:'/icon-frame/Vintage Frame.png', textPosition:'bottom-center' },
+    { id:'y2k-diva', name:'Y2K Diva', file:'/icon-frame/Y2K Diva.png', textPosition:'bottom-center' }
   ];
 
   function getIconFrames() {
@@ -86,7 +98,7 @@
     return {
       menu, canvas, ctx,
       themeId: theme.id,
-      iconFrameId: menu === 'icon-portrait' ? 'default-frame' : null,
+      iconFrameId: menu === 'icon-portrait' ? ICON_FRAME_CONFIGS[0].id : null,
       iconFrameImg: null,
       filter: cfg.filters[0],
       photo: null,

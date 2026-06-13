@@ -58,34 +58,6 @@
     .final-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
     .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:white; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,.2); transition:.25s; z-index:1200; }
     .toast.show { transform:translateX(-50%) translateY(0); } to{transform:scale(1.18)} }
-  
-    /* ── LOCAL CAMERA MODAL (5s TIMER) ── */
-    .local-camera-modal {
-      display:none; position:fixed; inset:0; z-index:99999;
-      background:rgba(0,0,0,.82); align-items:center; justify-content:center;
-      flex-direction:column; padding:18px;
-    }
-    .local-camera-modal.show { display:flex; }
-    .local-camera-box { position:relative; width:min(920px,100%); display:flex; justify-content:center; }
-    .local-camera-video {
-      width:100%; max-height:74vh; border-radius:24px; object-fit:cover;
-      transform:scaleX(-1); box-shadow:0 20px 70px rgba(0,0,0,.55); background:#111;
-    }
-    .local-camera-countdown {
-      position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-      font-size:clamp(90px,18vw,220px); font-weight:950; color:white;
-      text-shadow:0 10px 30px rgba(0,0,0,.55);
-      pointer-events:none;
-    }
-    .local-camera-countdown.show { display:flex; }
-    .local-camera-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:center; }
-    .local-camera-actions button {
-      border:0; border-radius:999px; padding:13px 18px; font-size:14px; font-weight:950;
-      cursor:pointer; font-family:inherit;
-    }
-    .local-camera-actions .capture { background:linear-gradient(135deg,#D84B7E,#E5B842); color:white; }
-    .local-camera-actions .close { background:white; color:#111827; }
-
   </style>
   <script src="/auth.js"></script>
   <script src="/cover-maker.js"></script>
@@ -179,18 +151,6 @@
     </div>
   </div>
 
-  </div>
-
-  
-  <div class="local-camera-modal" id="localCameraModal">
-    <div class="local-camera-box">
-      <video class="local-camera-video" id="localCameraVideo" autoplay playsinline></video>
-      <div class="local-camera-countdown" id="localCameraCountdown">5</div>
-    </div>
-    <div class="local-camera-actions">
-      <button class="capture" id="localCameraCaptureBtn" onclick="startLocalCameraTimer()">📷 Mulai Timer 5 Detik</button>
-      <button class="close" onclick="closeCamera()">Tutup</button>
-    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -360,27 +320,35 @@
 
 
     function mulaiAmbilFoto() {
-      openCamera();
+      LocalCamera.open({
+        seconds: 5,
+        onCapture: (photo) => loadPhoto(photo)
+      });
     }
 
 
     function loadPhoto(src) {
       const img = new Image();
       img.onload = () => {
-        state.photo = src;
-        state.photoImg = img;
-        if (COVER_TYPE === 'newspaper' && state.photoLayout === 'quad') {
+        if (state.photoLayout === 'quad') {
           state.photos = state.photos || [];
           state.photoImgs = state.photoImgs || [];
-          const idx = state.nextPhotoSlot || 0;
+          let idx = state.photoImgs.findIndex(item => !item);
+          if (idx < 0) idx = Number.isInteger(state.nextPhotoSlot) ? state.nextPhotoSlot : 0;
+          idx = Math.max(0, Math.min(3, idx));
           state.photos[idx] = src;
           state.photoImgs[idx] = img;
           state.nextPhotoSlot = (idx + 1) % 4;
+        } else {
+          state.photo = src;
+          state.photoImg = img;
         }
-        if (typeof updatePhotoSlotInfo === 'function') updatePhotoSlotInfo();
+        state.zoom = 1;
+        state.photoX = 0;
+        state.photoY = 0;
         render();
       };
-      img.onerror = () => showToast('Foto gagal dimuat.');
+      img.onerror = () => alert('Foto gagal dimuat. Coba ulangi ya.');
       img.src = src;
     }
 
@@ -460,109 +428,10 @@
         document.fonts.ready.then(() => render()).catch(() => {});
       }
     });
-  
-
-    let localCameraStream = null;
-    let localCameraTimer = null;
-    let localCameraCounting = false;
-
-    function localCameraMessage(msg) {
-      if (typeof showToast === 'function') showToast(msg);
-      else if (typeof toast === 'function') toast(msg);
-      else alert(msg);
-    }
-
-    async function openCamera() {
-      const modal = document.getElementById('localCameraModal');
-      const video = document.getElementById('localCameraVideo');
-      const countdown = document.getElementById('localCameraCountdown');
-      const btn = document.getElementById('localCameraCaptureBtn');
-      if (!modal || !video) return localCameraMessage('Camera modal belum tersedia.');
-
-      clearInterval(localCameraTimer);
-      localCameraCounting = false;
-      if (countdown) { countdown.textContent = '5'; countdown.classList.remove('show'); }
-      if (btn) { btn.disabled = false; btn.textContent = '📷 Mulai Timer 5 Detik'; }
-
-      modal.classList.add('show');
-      try {
-        if (localCameraStream) localCameraStream.getTracks().forEach(t => t.stop());
-        localCameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode:'user', width:{ideal:1280}, height:{ideal:960} },
-          audio: false
-        });
-        video.srcObject = localCameraStream;
-        await video.play();
-      } catch(e) {
-        console.error(e);
-        localCameraMessage('Kamera tidak bisa diakses. Coba cek permission browser.');
-        closeCamera();
-      }
-    }
-
-    function closeCamera() {
-      clearInterval(localCameraTimer);
-      localCameraTimer = null;
-      localCameraCounting = false;
-      const modal = document.getElementById('localCameraModal');
-      const video = document.getElementById('localCameraVideo');
-      const countdown = document.getElementById('localCameraCountdown');
-      const btn = document.getElementById('localCameraCaptureBtn');
-      if (modal) modal.classList.remove('show');
-      if (countdown) countdown.classList.remove('show');
-      if (btn) { btn.disabled = false; btn.textContent = '📷 Mulai Timer 5 Detik'; }
-      if (video) { video.pause(); video.srcObject = null; }
-      if (localCameraStream) localCameraStream.getTracks().forEach(t => t.stop());
-      localCameraStream = null;
-    }
-
-    function startLocalCameraTimer() {
-      if (localCameraCounting) return;
-      const countdown = document.getElementById('localCameraCountdown');
-      const btn = document.getElementById('localCameraCaptureBtn');
-      let sec = 5;
-      localCameraCounting = true;
-      if (btn) { btn.disabled = true; btn.textContent = 'Tunggu...'; }
-      if (countdown) { countdown.textContent = sec; countdown.classList.add('show'); }
-
-      clearInterval(localCameraTimer);
-      localCameraTimer = setInterval(() => {
-        sec -= 1;
-        if (countdown) countdown.textContent = sec;
-        if (sec <= 0) {
-          clearInterval(localCameraTimer);
-          localCameraTimer = null;
-          captureLocalCameraPhoto();
-        }
-      }, 1000);
-    }
-
-    function captureLocalCameraPhoto() {
-      const video = document.getElementById('localCameraVideo');
-      if (!video) return;
-      const temp = document.createElement('canvas');
-      temp.width = video.videoWidth || 1280;
-      temp.height = video.videoHeight || 960;
-      const c = temp.getContext('2d');
-      c.save();
-      c.translate(temp.width, 0);
-      c.scale(-1, 1);
-      c.drawImage(video, 0, 0, temp.width, temp.height);
-      c.restore();
-      const data = temp.toDataURL('image/jpeg', .92);
-      closeCamera();
-
-      if (typeof handleLocalCameraPhoto === 'function') handleLocalCameraPhoto(data);
-      else if (typeof loadPhoto === 'function') loadPhoto(data);
-      else {
-        localStorage.setItem('productPhoto', data);
-        localCameraMessage('Foto sudah diambil.');
-      }
-    }
-
   </script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
+<script src="/local-camera.js"></script>
 </body>
 </html>

@@ -23,7 +23,8 @@ const ASSETS = [
   '/ganci-utils.js',
   '/ganci-print.js',
   '/manifest.json',
-  '/holidays/2026.json'
+  '/holidays/2026.json',
+  '/local-camera.js',
 ];
 
 self.addEventListener('install', e => {

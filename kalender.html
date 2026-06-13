@@ -136,15 +136,6 @@
     #cameraVideo { width:100%; max-height:68vh; object-fit:cover; border-radius:16px; transform:scaleX(-1); background:#000; }
     .camera-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
     .hidden-file { display:none; }
-  
-    .calendar-camera-countdown {
-      position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-      font-size:clamp(90px,18vw,220px); font-weight:950; color:white;
-      text-shadow:0 10px 30px rgba(0,0,0,.55); pointer-events:none;
-    }
-    .calendar-camera-countdown.show { display:flex; }
-    .camera-stage { position:relative; }
-
   </style>
   <script src="/auth.js"></script>
 </head>
@@ -1052,49 +1043,18 @@
   function clearPhoto() { state.photoImg = null; state.photoSrc = null; renderCalendar(); }
 
   async function openCamera() {
-    const modal = document.getElementById('cameraModal');
-    const video = document.getElementById('cameraVideo');
-    const countdown = document.getElementById('calendarCameraCountdown');
-    modal.classList.add('show');
-    if (countdown) { countdown.textContent = '5'; countdown.classList.remove('show'); }
-    try {
-      if (state.stream) state.stream.getTracks().forEach(t => t.stop());
-      state.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} }, audio:false });
-      video.srcObject = state.stream;
-      await video.play();
-    } catch(e) {
-      alert('Kamera tidak bisa diakses. Pakai upload foto dulu ya.');
-      closeCamera();
-    }
+    LocalCamera.open({
+      seconds: 5,
+      onCapture: (photo) => loadPhoto(photo)
+    });
   }
 
   function closeCamera() {
-    clearInterval(state.cameraTimer);
-    state.cameraTimer = null;
     document.getElementById('cameraModal').classList.remove('show');
-    const countdown = document.getElementById('calendarCameraCountdown');
-    if (countdown) countdown.classList.remove('show');
     const video = document.getElementById('cameraVideo');
     video.pause(); video.srcObject = null;
     if (state.stream) state.stream.getTracks().forEach(t => t.stop());
     state.stream = null;
-  }
-
-
-  function startCalendarCameraTimer() {
-    const countdown = document.getElementById('calendarCameraCountdown');
-    let sec = 5;
-    if (countdown) { countdown.textContent = sec; countdown.classList.add('show'); }
-    clearInterval(state.cameraTimer);
-    state.cameraTimer = setInterval(() => {
-      sec -= 1;
-      if (countdown) countdown.textContent = sec;
-      if (sec <= 0) {
-        clearInterval(state.cameraTimer);
-        state.cameraTimer = null;
-        capturePhoto();
-      }
-    }, 1000);
   }
 
   function capturePhoto() {
@@ -1186,5 +1146,6 @@
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
+<script src="/local-camera.js"></script>
 </body>
 </html>

@@ -960,27 +960,68 @@
       }
     };
 
+
+    function loadImageForShare(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Gagal memuat gambar untuk share.'));
+        img.src = src;
+      });
+    }
+
+    async function addSharePaddingMm(dataUrl, paddingMm = 3, dpi = 300) {
+      const img = await loadImageForShare(dataUrl);
+      const pad = Math.round((paddingMm / 25.4) * dpi);
+      const out = document.createElement('canvas');
+      out.width = img.naturalWidth + pad * 2;
+      out.height = img.naturalHeight + pad * 2;
+      const ctx = out.getContext('2d');
+
+      // Padding abu-abu muda 3mm di tiap sisi. Isi layout lama tetap 100% ukuran aslinya di tengah.
+      ctx.fillStyle = '#f2f2f2';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(img, pad, pad, img.naturalWidth, img.naturalHeight);
+
+      return out.toDataURL('image/jpeg', 0.96);
+    }
+
+
     window.shareLayout = async function() {
       if (!generatedLayout?.pages?.length) return;
       const page = generatedLayout.pages[currentLayoutPage];
-      const filename = `ganci-${generatedLayout.paper.label.toLowerCase()}-page-${currentLayoutPage + 1}.jpg`;
-      const file = window.GanciPrint.dataUrlToFile(page.dataUrl, filename);
+      const filename = `ganci-${generatedLayout.paper.label.toLowerCase()}-share-3mm-page-${currentLayoutPage + 1}.jpg`;
+      const status = document.getElementById('layoutStatus');
+
       try {
+        status.textContent = 'Menyiapkan file share dengan padding abu-abu 3mm...';
+        const shareDataUrl = await addSharePaddingMm(page.dataUrl, 3, 300);
+        const file = window.GanciPrint.dataUrlToFile(shareDataUrl, filename);
+
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: 'Hasil cetak Ganci',
-            text: 'JPG siap print dari flow Ganci',
+            text: 'JPG siap print dari flow Ganci dengan padding abu-abu 3mm',
             files: [file]
           });
-          document.getElementById('layoutStatus').textContent = 'File berhasil dibagikan.';
+          status.textContent = 'File berhasil dibagikan dengan padding abu-abu 3mm.';
         } else {
-          window.GanciPrint.downloadDataUrl(page.dataUrl, filename);
-          document.getElementById('layoutStatus').textContent = 'Browser belum support Web Share API untuk file. Jadi langsung didownload ya.';
+          window.GanciPrint.downloadDataUrl(shareDataUrl, filename);
+          status.textContent = 'Browser belum support Web Share API untuk file. File share dengan padding abu-abu 3mm langsung didownload ya.';
         }
       } catch (e) {
-        if (e && e.name !== 'AbortError') {
-          window.GanciPrint.downloadDataUrl(page.dataUrl, filename);
-          document.getElementById('layoutStatus').textContent = 'Share gagal, jadi file langsung didownload.';
+        if (e && e.name === 'AbortError') {
+          status.textContent = 'Share dibatalkan.';
+          return;
+        }
+        console.error('Share ganci gagal:', e);
+        try {
+          const shareDataUrl = await addSharePaddingMm(page.dataUrl, 3, 300);
+          window.GanciPrint.downloadDataUrl(shareDataUrl, filename);
+          status.textContent = 'Share gagal, jadi file dengan padding abu-abu 3mm langsung didownload.';
+        } catch (fallbackError) {
+          console.error('Fallback download ganci gagal:', fallbackError);
+          status.textContent = 'Gagal membuat file share: ' + (fallbackError.message || fallbackError);
         }
       }
     };

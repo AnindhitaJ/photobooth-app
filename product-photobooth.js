@@ -944,16 +944,18 @@
   function drawDetective(state, theme) {
     const ctx = state.ctx, t = state.text || {}, c = theme.colors || ['#f7ecd9','#8c5a2b','#24160f','#7a5231','#c53929'];
     ctx.clearRect(0, 0, W, H);
+
     const bgGradient = ctx.createLinearGradient(0, 0, W, H);
     bgGradient.addColorStop(0, c[0]);
-    bgGradient.addColorStop(.5, '#fdf8f1');
+    bgGradient.addColorStop(.52, '#fff9ef');
     bgGradient.addColorStop(1, c[3] || '#c9b08b');
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, W, H);
 
+    // subtle deterministic paper dust, no random flicker on every render
     ctx.save();
-    ctx.globalAlpha = .08;
-    for (let i = 0; i < 280; i++) {
+    ctx.globalAlpha = .07;
+    for (let i = 0; i < 320; i++) {
       ctx.fillStyle = i % 2 ? c[1] : c[3];
       const x = (i * 97) % W;
       const y = (i * 157) % H;
@@ -964,127 +966,174 @@
     }
     ctx.restore();
 
-    const boardX = 62, boardY = 72, boardW = W - 124, boardH = H - 144;
+    // dibuat lebih mepet ke canvas biar hasilnya nggak kecil
+    const boardX = 36, boardY = 46, boardW = W - 72, boardH = H - 92;
     ctx.save();
     ctx.shadowColor = 'rgba(15,23,42,.18)';
     ctx.shadowBlur = 32;
     ctx.shadowOffsetY = 14;
     ctx.fillStyle = c[3] || '#8b6a49';
-    roundRect(ctx, boardX, boardY, boardW, boardH, 28);
+    roundRect(ctx, boardX, boardY, boardW, boardH, 32);
     ctx.fill();
     ctx.restore();
 
-    const paperX = boardX + 28, paperY = boardY + 34, paperW = boardW - 56, paperH = boardH - 66;
+    const paperX = boardX + 26, paperY = boardY + 30, paperW = boardW - 52, paperH = boardH - 58;
     ctx.fillStyle = '#fbf4e7';
-    roundRect(ctx, paperX, paperY, paperW, paperH, 18);
+    roundRect(ctx, paperX, paperY, paperW, paperH, 20);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.08)';
+    ctx.strokeStyle = 'rgba(0,0,0,.09)';
     ctx.lineWidth = 2;
-    roundRect(ctx, paperX, paperY, paperW, paperH, 18);
+    roundRect(ctx, paperX, paperY, paperW, paperH, 20);
     ctx.stroke();
 
     drawDetectiveDecor(ctx, theme, paperX, paperY, paperW, paperH);
 
+    // paper clip kanan atas
     ctx.save();
-    ctx.strokeStyle = 'rgba(0,0,0,.22)';
-    ctx.lineWidth = 7;
+    ctx.strokeStyle = 'rgba(0,0,0,.24)';
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.arc(boardX + boardW - 66, boardY + 72, 18, 0, Math.PI * 2);
+    ctx.arc(boardX + boardW - 70, boardY + 76, 18, 0, Math.PI * 2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(boardX + boardW - 66, boardY + 90);
-    ctx.lineTo(boardX + boardW - 66, boardY + 148);
+    ctx.moveTo(boardX + boardW - 70, boardY + 94);
+    ctx.lineTo(boardX + boardW - 70, boardY + 154);
     ctx.stroke();
     ctx.restore();
 
+    // tab label
     ctx.fillStyle = theme.style === 'cute' || theme.style === 'love' || theme.style === 'bestie' ? c[3] : '#f7dbe5';
-    roundRect(ctx, paperX + 22, paperY - 34, 212, 42, 18);
+    roundRect(ctx, paperX + 28, paperY - 34, 235, 44, 18);
     ctx.fill();
     ctx.fillStyle = c[2] || '#111';
-    ctx.font = '900 18px Segoe UI, sans-serif';
+    ctx.font = '900 19px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText((theme.name || 'Case File').toUpperCase(), paperX + 128, paperY - 13);
+    ctx.fillText((theme.name || 'Case File').toUpperCase(), paperX + 145, paperY - 12);
 
-    ctx.fillStyle = c[2] || '#111827';
+    // header
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.font = '900 24px "Courier New", monospace';
-    ctx.fillText('CASE FILE', paperX + 36, paperY + 40);
-    ctx.font = '900 20px "Courier New", monospace';
-    ctx.fillText(String(t.number || 'DET-001').toUpperCase(), paperX + paperW - 270, paperY + 44);
-
-    fitFont(ctx, String(t.headline || 'TOO ICONIC').toUpperCase(), paperW - 72, 72, 32, '1000');
     ctx.fillStyle = c[2] || '#111827';
-    ctx.fillText(String(t.headline || 'TOO ICONIC').toUpperCase(), paperX + 36, paperY + 86);
+    ctx.font = '900 27px "Courier New", monospace';
+    ctx.fillText('CASE FILE', paperX + 38, paperY + 44);
+    ctx.font = '900 23px "Courier New", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(t.number || 'DET-001').toUpperCase(), paperX + paperW - 54, paperY + 47);
 
-    ctx.font = '800 24px Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    fitFont(ctx, String(t.headline || 'TOO ICONIC').toUpperCase(), paperW - 78, 82, 36, '1000');
+    ctx.fillStyle = c[2] || '#111827';
+    ctx.fillText(String(t.headline || 'TOO ICONIC').toUpperCase(), paperX + 38, paperY + 96);
+
+    ctx.font = '850 26px Segoe UI, sans-serif';
     ctx.fillStyle = 'rgba(36,22,15,.82)';
-    ctx.fillText('Subject: ' + (t.name || 'Main Character'), paperX + 36, paperY + 160);
+    ctx.fillText('Subject: ' + (t.name || 'Main Character'), paperX + 38, paperY + 202);
 
-    const photoX = paperX + 38, photoY = paperY + 210, photoW = 360, photoH = 492;
+    // photo card: lebih besar
+    const photoX = paperX + 38, photoY = paperY + 270, photoW = 500, photoH = 690;
     ctx.save();
     ctx.translate(photoX + photoW / 2, photoY + photoH / 2);
-    ctx.rotate(-0.018);
+    ctx.rotate(-0.012);
     ctx.fillStyle = '#fffdf9';
-    roundRect(ctx, -photoW / 2, -photoH / 2, photoW, photoH, 10);
+    roundRect(ctx, -photoW / 2, -photoH / 2, photoW, photoH, 12);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.10)';
-    ctx.lineWidth = 2;
-    roundRect(ctx, -photoW / 2, -photoH / 2, photoW, photoH, 10);
+    ctx.strokeStyle = 'rgba(0,0,0,.12)';
+    ctx.lineWidth = 2.4;
+    roundRect(ctx, -photoW / 2, -photoH / 2, photoW, photoH, 12);
     ctx.stroke();
     ctx.restore();
 
-    drawPhoto(ctx, state, photoX + 24, photoY + 22, photoW - 48, photoH - 104, 8);
-    ctx.fillStyle = 'rgba(0,0,0,.72)';
-    ctx.font = '900 18px Segoe UI, sans-serif';
+    drawPhoto(ctx, state, photoX + 24, photoY + 24, photoW - 48, photoH - 118, 10);
+
+    ctx.fillStyle = 'rgba(0,0,0,.74)';
+    ctx.font = '950 22px Segoe UI, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('PHOTO EVIDENCE', photoX + 24, photoY + photoH - 56);
-    ctx.font = '700 16px Segoe UI, sans-serif';
+    ctx.fillText('PHOTO EVIDENCE', photoX + 26, photoY + photoH - 76);
+    ctx.font = '800 18px Segoe UI, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,.52)';
-    ctx.fillText((theme.style === 'office' ? 'employee visual record' : 'suspect visual record').toUpperCase(), photoX + 24, photoY + photoH - 32);
+    ctx.fillText((theme.style === 'office' ? 'employee visual record' : 'suspect visual record').toUpperCase(), photoX + 26, photoY + photoH - 46);
 
-    drawStampedLabel(ctx, t.stamp || 'CONFIDENTIAL', paperX + 548, photoY + 82, 290, 76, c[4] || '#c53929');
+    // right content: diperbesar dan diturunkan rapi
+    const rightX = paperX + 590;
+    const rightW = paperW - 630;
 
-    const rightX = paperX + 444;
+    drawStampedLabel(ctx, t.stamp || 'CONFIDENTIAL', rightX + 48, photoY + 54, 330, 84, c[4] || '#c53929');
+
     ctx.fillStyle = c[2] || '#111827';
-    ctx.font = '900 24px Segoe UI, sans-serif';
-    ctx.fillText('STATUS:', rightX, photoY + 190);
-    ctx.fillStyle = 'rgba(15,23,42,.06)';
-    roundRect(ctx, rightX, photoY + 228, 420, 60, 18); ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 1.5; roundRect(ctx, rightX, photoY + 228, 420, 60, 18); ctx.stroke();
-    ctx.fillStyle = c[2] || '#111827';
-    ctx.font = '850 24px Segoe UI, sans-serif';
-    ctx.fillText((t.status || 'UNDER INVESTIGATION').toUpperCase(), rightX + 18, photoY + 245);
+    ctx.font = '950 27px Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('STATUS:', rightX, photoY + 210);
 
-    ctx.font = '900 24px Segoe UI, sans-serif';
-    ctx.fillText('EVIDENCE:', rightX, photoY + 330);
-    ctx.strokeStyle = 'rgba(0,0,0,.10)';
-    ctx.lineWidth = 1.5;
+    ctx.fillStyle = 'rgba(15,23,42,.065)';
+    roundRect(ctx, rightX, photoY + 252, rightW, 70, 18);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.09)';
+    ctx.lineWidth = 1.8;
+    roundRect(ctx, rightX, photoY + 252, rightW, 70, 18);
+    ctx.stroke();
+
+    ctx.fillStyle = c[2] || '#111827';
+    fitFont(ctx, String(t.status || 'UNDER INVESTIGATION').toUpperCase(), rightW - 32, 30, 18, '900');
+    ctx.fillText((t.status || 'UNDER INVESTIGATION').toUpperCase(), rightX + 18, photoY + 272);
+
+    ctx.font = '950 27px Segoe UI, sans-serif';
+    ctx.fillText('EVIDENCE:', rightX, photoY + 370);
+
+    ctx.strokeStyle = 'rgba(0,0,0,.12)';
+    ctx.lineWidth = 1.6;
     const evs = evidenceLines(t.evidence || '').slice(0, 5);
     const evidence = evs.length ? evs : ['caught stealing the spotlight','suspiciously photogenic','main character energy'];
-    let lineY = photoY + 378;
+    let lineY = photoY + 424;
     evidence.forEach((line) => {
-      ctx.beginPath(); ctx.moveTo(rightX, lineY + 28); ctx.lineTo(rightX + 430, lineY + 28); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(rightX, lineY + 36);
+      ctx.lineTo(rightX + rightW, lineY + 36);
+      ctx.stroke();
       ctx.fillStyle = c[2] || '#111827';
-      ctx.font = '800 22px Segoe UI, sans-serif';
-      ctx.fillText('• ' + line, rightX + 8, lineY);
-      lineY += 68;
+      ctx.font = '850 25px Segoe UI, sans-serif';
+      wrapLines(ctx, '• ' + line, rightW - 10, 2).slice(0, 2).forEach((ln, idx) => {
+        ctx.fillText(ln, rightX + 8, lineY + idx * 30);
+      });
+      lineY += 80;
     });
 
-    ctx.fillStyle = 'rgba(0,0,0,.65)';
-    ctx.font = '800 20px Segoe UI, sans-serif';
-    ctx.fillText('NOTES:', paperX + 36, paperY + paperH - 220);
-    ctx.strokeStyle = 'rgba(0,0,0,.12)';
-    ctx.beginPath(); ctx.moveTo(paperX + 36, paperY + paperH - 184); ctx.lineTo(paperX + paperW - 36, paperY + paperH - 184); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(paperX + 36, paperY + paperH - 144); ctx.lineTo(paperX + paperW - 36, paperY + paperH - 144); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(paperX + 36, paperY + paperH - 104); ctx.lineTo(paperX + paperW - 36, paperY + paperH - 104); ctx.stroke();
+    // bottom summary card supaya nggak kosong banget
+    const summaryY = photoY + photoH + 54;
+    const summaryH = paperY + paperH - summaryY - 118;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,.42)';
+    roundRect(ctx, paperX + 38, summaryY, paperW - 76, Math.max(170, summaryH), 22);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.08)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, paperX + 38, summaryY, paperW - 76, Math.max(170, summaryH), 22);
+    ctx.stroke();
 
+    ctx.fillStyle = 'rgba(0,0,0,.70)';
+    ctx.font = '950 23px Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('CASE NOTES:', paperX + 70, summaryY + 34);
+
+    ctx.font = '800 22px Segoe UI, sans-serif';
+    ctx.fillStyle = c[2] || '#111827';
+    const noteText = `${String(t.name || 'Subject')} has been officially documented as ${String(t.headline || 'too iconic').toLowerCase()}. Evidence remains strong and impossible to ignore.`;
+    drawWrapped(ctx, noteText, paperX + 70, summaryY + 78, paperW - 140, 32, 3);
+
+    ctx.strokeStyle = 'rgba(0,0,0,.13)';
+    for (let y = summaryY + 188; y < summaryY + Math.max(170, summaryH) - 28; y += 42) {
+      ctx.beginPath();
+      ctx.moveTo(paperX + 70, y);
+      ctx.lineTo(paperX + paperW - 70, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // footer warning lebih keliatan
     ctx.fillStyle = c[3] || '#8b6a49';
-    ctx.font = '900 30px Segoe UI, sans-serif';
-    fitFont(ctx, String(t.warning || 'warning: extremely iconic').toUpperCase(), paperW - 80, 30, 16, '950');
     ctx.textAlign = 'center';
-    ctx.fillText(String(t.warning || 'warning: extremely iconic').toUpperCase(), paperX + paperW / 2, paperY + paperH - 70);
+    fitFont(ctx, String(t.warning || 'warning: extremely iconic').toUpperCase(), paperW - 90, 40, 20, '950');
+    ctx.fillText(String(t.warning || 'warning: extremely iconic').toUpperCase(), paperX + paperW / 2, paperY + paperH - 66);
   }
 
   function render(state) {

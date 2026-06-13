@@ -353,12 +353,13 @@
 
 <script>
   const isGanciMode  = localStorage.getItem('captureFlow') === 'ganci';
+  const isProductMode = localStorage.getItem('captureFlow') === 'product';
   const ganciConfig  = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
-  const slotCount    = isGanciMode ? 1 : parseInt(localStorage.getItem('slotCount') || '1');
+  const slotCount    = (isGanciMode || isProductMode) ? 1 : parseInt(localStorage.getItem('slotCount') || '1');
   const templateName = isGanciMode
     ? ('Ganci ' + ((window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos'))
     : (localStorage.getItem('templateName') || 'Template');
-  document.getElementById('subText').textContent = isGanciMode ? '1 foto · retake bebas' : templateName + ' · ' + slotCount + ' foto';
+  document.getElementById('subText').textContent = (isGanciMode || isProductMode) ? '1 foto · retake bebas' : templateName + ' · ' + slotCount + ' foto';
   if (isGanciMode) {
     document.body.classList.add('ganci-mode');
     document.title = 'Kamera Ganci - LUX Photobooth';
@@ -555,7 +556,7 @@
     } else {
       document.getElementById('titleText').textContent = isGanciMode ? 'Foto ganci oke? ✓' : 'Semua selesai ✓';
       btnAmbil.style.display = 'none';
-      btnLanjut.textContent = isGanciMode ? 'Filter →' : 'Lanjut →';
+      btnLanjut.textContent = (isGanciMode || isProductMode) ? 'Filter →' : 'Lanjut →';
       btnLanjut.style.display = '';
       document.getElementById('btnSkip').style.visibility = 'hidden';
     }
@@ -788,6 +789,14 @@
     if (stream) stream.getTracks().forEach(t => t.stop());
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
     if (isGanciMode) localStorage.removeItem('captureFlow');
+    const _flow = localStorage.getItem('captureFlow') || '';
+    const _ret  = localStorage.getItem('captureReturnUrl') || '/template';
+    if (_flow === 'product') {
+      localStorage.removeItem('captureFlow');
+      localStorage.removeItem('captureReturnUrl');
+      window.location.href = _ret;
+      return;
+    }
     window.location.href = isGanciMode ? '/ganci' : '/template';
   }
   function batalKeluar() {

@@ -918,6 +918,23 @@
       return;
     }
 
+    // Product mode: simpan foto ke productPhoto lalu balik ke menu asal
+    const captureFlow = localStorage.getItem('captureFlow') || '';
+    const returnUrl   = localStorage.getItem('captureReturnUrl') || '/result';
+    if (captureFlow === 'product') {
+      const photo = filteredPhotos[0] || photos[0] || null;
+      if (photo) {
+        try { localStorage.setItem('productPhoto', photo); } catch(e) {
+          alert('Storage penuh. Foto belum bisa disimpan.');
+          return;
+        }
+      }
+      localStorage.removeItem('captureFlow');
+      localStorage.removeItem('captureReturnUrl');
+      window.location.href = returnUrl;
+      return;
+    }
+
     window.location.href = '/result';
   };
 
@@ -926,7 +943,15 @@
   };
   window.konfirmasiKeluar = function() {
     ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
-    if (isGanciMode) localStorage.removeItem('captureFlow');
+    const flow = localStorage.getItem('captureFlow') || '';
+    const returnUrl = localStorage.getItem('captureReturnUrl') || '/template';
+    if (flow === 'ganci') localStorage.removeItem('captureFlow');
+    if (flow === 'product') {
+      localStorage.removeItem('captureFlow');
+      localStorage.removeItem('captureReturnUrl');
+      window.location.href = returnUrl;
+      return;
+    }
     window.location.href = isGanciMode ? '/ganci' : '/template';
   };
   window.batalKeluar = function() {

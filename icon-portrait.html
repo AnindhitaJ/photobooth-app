@@ -53,11 +53,6 @@
     .final-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
     .camera-modal, .print-modal { display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.78); align-items:center; justify-content:center; flex-direction:column; padding:18px; }
     .camera-modal.show, .print-modal.show { display:flex; }
-    #cameraVideo { max-width:100%; max-height:72vh; border-radius:22px; object-fit:cover; transform:scaleX(-1); box-shadow:0 20px 70px rgba(0,0,0,.5); }
-    .camera-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:center; }
-    .camera-actions button { border:0; border-radius:999px; padding:13px 18px; font-size:14px; font-weight:950; cursor:pointer; font-family:inherit; }
-    .camera-actions .capture { background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; }
-    .camera-actions .close { background:white; color:#111827; }
     .dialog { width:min(430px,100%); background:white; border:2px solid var(--border); border-radius:24px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.25); text-align:center; }
     .dialog h3 { font-size:20px; font-weight:950; margin-bottom:8px; }
     .dialog p { color:var(--text2); font-size:13px; font-weight:760; line-height:1.45; margin-bottom:14px; }
@@ -65,15 +60,7 @@
     .dialog-grid button { border-radius:18px; border:2px solid var(--border); background:#fff8fc; padding:14px; font-size:14px; font-weight:950; color:var(--text); cursor:pointer; text-align:left; font-family:inherit; }
     .dialog-grid span { display:block; color:var(--text2); font-size:12px; margin-top:3px; line-height:1.35; }
     .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:white; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,.2); transition:.25s; z-index:1200; }
-    .toast.show { transform:translateX(-50%) translateY(0); }
-
-    .timer-row { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
-    .timer-opt { flex:1; min-width:56px; border:2px solid var(--border); border-radius:999px; padding:9px 8px; background:white; font-size:13px; font-weight:900; color:var(--text2); cursor:pointer; font-family:inherit; transition:.18s; }
-    .timer-opt.sel { border-color:var(--pink); background:rgba(216,75,126,0.13); color:var(--pink); }
-    #timerOverlay { display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,.72); align-items:center; justify-content:center; }
-    #timerOverlay.show { display:flex; }
-    #timerCount { font-size:160px; font-weight:950; color:white; text-shadow:0 0 60px rgba(216,75,126,.9); line-height:1; animation:pulse .9s infinite alternate; }
-    @keyframes pulse { from{transform:scale(1)} to{transform:scale(1.18)} }
+    .toast.show { transform:translateX(-50%) translateY(0); } to{transform:scale(1.18)} }
   </style>
   <script src="/auth.js"></script>
   <script src="/product-photobooth.js"></script>
@@ -97,7 +84,7 @@
             Upload Foto
             <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
           </label>
-          <button class="btn-outline" onclick="openCamera()">Ambil Foto</button>
+          <button class="btn-outline" onclick="mulaiAmbilFoto()">Ambil Foto</button>
         </div>
         <div class="mini-row">
           <button onclick="adjustPhoto('zoomIn')">Zoom +</button>
@@ -155,13 +142,6 @@
     </div>
   </div>
 
-  <div class="camera-modal" id="cameraModal">
-    <video id="cameraVideo" autoplay playsinline></video>
-    <canvas id="cameraCanvas" style="display:none;"></canvas>
-    <div class="camera-actions">
-      <button class="capture" onclick="runTimerThenCapture()">📷 Capture</button>
-      <button class="close" onclick="closeCamera()">Tutup</button>
-    </div>
   </div>
 
   <div class="print-modal" id="printModal">
@@ -175,20 +155,17 @@
       </div>
     </div>
   </div>
-  <div id="timerOverlay">
-    <span id="timerCount">3</span>
-  </div>
   <div class="toast" id="toast"></div>
 
   <script>
     if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login';
+    const RETURN_URL = '/icon-portrait';
 
     const MENU = 'icon-portrait';
     const canvas = document.getElementById('productCanvas');
     const ctx = canvas.getContext('2d');
     const cfg = Product4R.getConfig(MENU);
     const state = Product4R.createState(MENU, canvas, ctx);
-    let stream = null;
 
     function toast(msg) {
       const t = document.getElementById('toast');
@@ -282,6 +259,25 @@
       state.edited = {};
       buildForm(); render();
     }
+
+    function mulaiAmbilFoto() {
+      localStorage.setItem('captureFlow', 'product');
+      localStorage.setItem('captureReturnUrl', '/icon-portrait');
+      localStorage.setItem('slotCount', '1');
+      localStorage.removeItem('photos');
+      localStorage.removeItem('filteredPhotos');
+      localStorage.removeItem('livePhotos');
+      localStorage.removeItem('productPhoto');
+      window.location.href = '/camera';
+    }
+
+    function checkAndLoadProductPhoto() {
+      const photo = localStorage.getItem('productPhoto');
+      if (!photo) return;
+      localStorage.removeItem('productPhoto');
+      loadPhoto(photo);
+    }
+
     function loadPhoto(src) {
       const img = new Image();
       img.onload = () => {
@@ -298,29 +294,6 @@
       const reader = new FileReader();
       reader.onload = e => loadPhoto(e.target.result);
       reader.readAsDataURL(file);
-    }
-    async function openCamera() {
-      try {
-        closeCamera();
-        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} }, audio:false });
-        document.getElementById('cameraVideo').srcObject = stream;
-        document.getElementById('cameraModal').classList.add('show');
-      } catch(e) { toast('Kamera tidak bisa diakses.'); }
-    }
-    function closeCamera() {
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      stream = null;
-      document.getElementById('cameraModal').classList.remove('show');
-    }
-    function capturePhoto() {
-      const video = document.getElementById('cameraVideo');
-      const c = document.getElementById('cameraCanvas');
-      const vw = video.videoWidth || 1280, vh = video.videoHeight || 960;
-      c.width = vw; c.height = vh;
-      const cc = c.getContext('2d');
-      cc.save(); cc.translate(c.width,0); cc.scale(-1,1); cc.drawImage(video,0,0,vw,vh); cc.restore();
-      loadPhoto(c.toDataURL('image/jpeg', .92));
-      closeCamera();
     }
     function adjustPhoto(action) {
       if (action === 'zoomIn') state.zoom = Math.min(2.4, state.zoom + .08);
@@ -362,31 +335,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       buildThemes(); buildFilters(); selectFrame(state.iconFrameId); render();
     });
-    let timerSec = 3;
-    function setTimerSec(s) {
-      timerSec = s;
-      ['tOff','t3','t5','t10'].forEach(id => document.getElementById(id)?.classList.remove('sel'));
-      const map = {0:'tOff',3:'t3',5:'t5',10:'t10'};
-      document.getElementById(map[s])?.classList.add('sel');
-    }
-    function runTimerThenCapture() {
-      if (timerSec <= 0) { capturePhoto(); return; }
-      const overlay = document.getElementById('timerOverlay');
-      const countEl = document.getElementById('timerCount');
-      overlay.classList.add('show');
-      let n = timerSec;
-      countEl.textContent = n;
-      const iv = setInterval(() => {
-        n--;
-        if (n <= 0) {
-          clearInterval(iv);
-          overlay.classList.remove('show');
-          capturePhoto();
-        } else {
-          countEl.textContent = n;
-        }
-      }, 1000);
-    }
   </script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

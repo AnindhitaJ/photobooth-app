@@ -135,21 +135,6 @@
     .history-actions button { border:0; border-radius:999px; padding:8px 8px; font-size:11px; font-weight:900; cursor:pointer; }
     .history-actions .print { background:var(--pink); color:white; }
     .history-actions .delete { background:#fee2e2; color:#dc2626; }
-    .camera-modal {
-      display:none; position:fixed; inset:0; z-index:1000; background:#050505;
-      align-items:center; justify-content:center; flex-direction:column; padding:18px;
-    }
-    .camera-modal.show { display:flex; }
-    #cameraVideo {
-      max-width:100%; max-height:72vh; border-radius:22px; object-fit:cover;
-      transform:scaleX(-1); box-shadow:0 20px 70px rgba(0,0,0,.5);
-    }
-    .camera-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:center; }
-    .camera-actions button {
-      border:0; border-radius:999px; padding:13px 18px; font-size:14px; font-weight:950; cursor:pointer;
-    }
-    .camera-actions .capture { background:linear-gradient(135deg,var(--pink),var(--yellow)); color:white; }
-    .camera-actions .close { background:white; color:#111827; }
     .print-modal {
       display:none; position:fixed; inset:0; z-index:1100;
       background:rgba(15,23,42,.62); align-items:center; justify-content:center;
@@ -215,7 +200,7 @@
       <div class="card">
         <div class="card-title">📸 Photo Input</div>
         <div class="photo-box">
-          <button class="btn-primary" id="btnTakePicture" onclick="openCamera()">📷 Ambil Foto</button>
+          <button class="btn-primary" id="btnTakePicture" onclick="mulaiAmbilFoto()">📷 Ambil Foto</button>
           <div class="photo-status" id="photoStatus">Belum ada foto. Foto akan masuk ke area kanan kartu.</div>
         </div>
       </div>
@@ -295,13 +280,6 @@
     </div>
   </div>
 
-  <div class="camera-modal" id="cameraModal">
-    <video id="cameraVideo" autoplay playsinline></video>
-    <canvas id="cameraCanvas" style="display:none;"></canvas>
-    <div class="camera-actions">
-      <button class="capture" onclick="capturePhoto()">📷 Capture</button>
-      <button class="close" onclick="closeCamera()">Tutup</button>
-    </div>
   </div>
 
   <div class="print-modal" id="printSizeModal">
@@ -326,6 +304,7 @@
 
   <script>
     if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login';
+    const RETURN_URL = '/idcard';
 
     const ID_CARD_DB_TABLE = 'id_cards';
     const LOCAL_KEY = 'idCardHistory';
@@ -454,7 +433,6 @@
       savedId:null,
       synced:false
     };
-    let stream = null;
     let latestIdCanvas = null;
     let latestPrintCanvas = null;
 
@@ -670,6 +648,25 @@
       const size = fitFont(ctx, value || '-', w, compact ? 27 : 31, 16, '900');
       ctx.font = `900 ${size}px Segoe UI, system-ui, sans-serif`;
       ctx.fillText(value || '-', x, y + (compact ? 28 : 34));
+    }
+
+
+    function mulaiAmbilFoto() {
+      localStorage.setItem('captureFlow', 'product');
+      localStorage.setItem('captureReturnUrl', '/idcard');
+      localStorage.setItem('slotCount', '1');
+      localStorage.removeItem('photos');
+      localStorage.removeItem('filteredPhotos');
+      localStorage.removeItem('livePhotos');
+      localStorage.removeItem('productPhoto');
+      window.location.href = '/camera';
+    }
+
+    function checkAndLoadProductPhoto() {
+      const photo = localStorage.getItem('productPhoto');
+      if (!photo) return;
+      localStorage.removeItem('productPhoto');
+      loadPhoto(photo);
     }
 
     function renderPreview() {
@@ -920,49 +917,6 @@
         }
         c.fillText(ln, x, y + i * lineHeight);
       });
-    }
-
-    async function openCamera() {
-      try {
-        closeCamera();
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
-          audio: false
-        });
-        const video = document.getElementById('cameraVideo');
-        video.srcObject = stream;
-        document.getElementById('cameraModal').classList.add('show');
-      } catch (e) {
-        showToast('Kamera tidak bisa diakses.');
-      }
-    }
-
-    function closeCamera() {
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      stream = null;
-      document.getElementById('cameraModal').classList.remove('show');
-    }
-
-    function capturePhoto() {
-      const video = document.getElementById('cameraVideo');
-      const canvas = document.getElementById('cameraCanvas');
-      const W = 900, H = 1200;
-      canvas.width = W; canvas.height = H;
-      const c = canvas.getContext('2d');
-      const vW = video.videoWidth || W, vH = video.videoHeight || H;
-      const scale = Math.max(W / vW, H / vH);
-      const dw = vW * scale, dh = vH * scale;
-      const dx = (W - dw) / 2, dy = (H - dh) / 2;
-      c.save();
-      c.translate(W, 0);
-      c.scale(-1, 1);
-      c.drawImage(video, 0, 0, vW, vH, dx, dy, dw, dh);
-      c.restore();
-      state.photo = canvas.toDataURL('image/jpeg', .9);
-      document.getElementById('photoStatus').textContent = LANG[state.lang].hasPhoto;
-      closeCamera();
-      renderPreview();
-      saveCard(true);
     }
 
     function dataUrlToBlob(dataUrl) {

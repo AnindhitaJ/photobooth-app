@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v51';
+const CACHE_NAME = 'lux-photobooth-v54';
 const ASSETS = [
   '/',
   '/index.html',
@@ -16,6 +16,7 @@ const ASSETS = [
   '/certificate.html',
   '/icon-portrait.html',
   '/trading-card.html',
+  '/detective-case.html',
   '/product-photobooth.js',
   '/cover-maker.js',
   '/newspaper.html',
@@ -25,6 +26,7 @@ const ASSETS = [
   '/manifest.json',
   '/holidays/2026.json',
   '/local-camera.js',
+  '/beautify.js',
 ];
 
 self.addEventListener('install', e => {

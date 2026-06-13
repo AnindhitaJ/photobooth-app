@@ -209,8 +209,15 @@
   function applyPhotoFilter(ctx, img, x, y, w, h, filterKey, zoom=1, offsetX=0, offsetY=0) {
     const f = FILTERS[filterKey] || FILTERS.original;
     ctx.save();
-    ctx.filter = f.css;
+    ctx.filter = [f.css, (typeof Beautify !== 'undefined' && window.__currentCoverBeautify && window.__currentCoverBeautify !== 'off') ? Beautify.css(window.__currentCoverBeautify) : 'none'].filter(v => v && v !== 'none').join(' ') || 'none';
     drawCoverImage(ctx, img, x, y, w, h, zoom, offsetX, offsetY);
+    const bp = (typeof Beautify !== 'undefined' && window.__currentCoverBeautify) ? Beautify.get(window.__currentCoverBeautify) : { smooth: 0 };
+    if (bp.smooth > 0) {
+      ctx.globalAlpha = Math.min(0.30, 0.10 + bp.smooth * 0.045);
+      ctx.filter = [f.css, bp.css, `blur(${bp.smooth}px)`].filter(v => v && v !== 'none').join(' ') || 'none';
+      drawCoverImage(ctx, img, x, y, w, h, zoom, offsetX, offsetY);
+      ctx.globalAlpha = 1;
+    }
     ctx.filter = 'none';
     if (f.grain) drawGrain(ctx, x, y, w, h, .13);
     ctx.restore();
@@ -846,6 +853,7 @@ function drawNewspaperDecor(ctx, theme) {
   }
 
   function render(state) {
+    window.__currentCoverBeautify = state.beautify || 'off';
     if (state.type === 'magazine') drawMagazine(state, state.photoImg);
     else drawNewspaper(state, state.photoImg);
   }

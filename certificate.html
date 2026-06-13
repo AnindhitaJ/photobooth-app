@@ -98,6 +98,11 @@
       </div>
 
       <div class="card">
+        <div class="card-title">💄 Percantik Wajah</div>
+        <div class="pill-grid" id="beautifyGrid"></div>
+      </div>
+
+      <div class="card">
         <div class="card-title">🖼️ Pilih Template Sertifikat</div>
         <div class="theme-grid" id="themeGrid"></div>
         <div class="profile-note">Template diambil dari folder <b>/certificate-frame/</b>. Contoh file: <b>Certificate Of Besties.png</b>.</div>
@@ -220,6 +225,15 @@
           <div class="theme-name">${escapeHtml(frame.name)}</div>
         </button>
       `).join('');
+    }
+
+    function buildBeautify() {
+      if (typeof Beautify !== 'undefined') Beautify.renderControls('beautifyGrid', state.beautify || 'off', 'setBeautify');
+    }
+    function setBeautify(key) {
+      state.beautify = key || 'off';
+      buildBeautify();
+      render();
     }
 
     function buildFilters() {
@@ -383,5 +397,6 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
 <script src="/local-camera.js"></script>
+<script src="/beautify.js"></script>
 </body>
 </html>

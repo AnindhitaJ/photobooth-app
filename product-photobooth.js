@@ -121,6 +121,39 @@
       ]
     }, "game-character": {"title": "Game Character Photobooth", "emoji": "🎮", "shortTitle": "Game Character", "path": "/game-character", "subtitle": "Profil karakter game 4R dengan class, level, element, skill, ultimate, badge, dan stats.", "filePrefix": "game-character", "fields": [{"key": "name", "label": "Character Name", "max": 42}, {"key": "class", "label": "Class", "max": 38}, {"key": "level", "label": "Level", "max": 22}, {"key": "element", "label": "Element", "max": 24}, {"key": "skill", "label": "Skill Utama", "max": 54}, {"key": "ultimate", "label": "Ultimate Skill", "max": 58}, {"key": "quote", "label": "Quote Pendek", "max": 120, "long": true}, {"key": "achievement", "label": "Achievement / Badge", "max": 48}, {"key": "stats", "label": "Stats: satu baris satu stat, contoh HP 95", "max": 180, "long": true}], "filters": ["Game Clean", "Anime Soft", "Pixel Warm", "Cyber Neon", "Fantasy Glow", "Dark Contrast", "Pastel RPG", "Boss Mode", "Cozy Soft", "Horror Night"], "themes": [{"id": "rpg", "name": "RPG Hero Profile", "subtitle": "classic RPG hero UI", "colors": ["#ecfeff", "#2563eb", "#facc15", "#0f172a"], "defaults": {"name": "Player One", "class": "Hero", "level": "LV.99", "element": "Spark", "skill": "Brave Smile", "ultimate": "Main Character Strike", "quote": "Quest accepted. Drama optional.", "achievement": "Certified Icon", "stats": "HP 95\nMP 88\nCHARM 99\nLUCK 91\nCHAOS 87\nENERGY 93"}}, {"id": "pixel", "name": "Pixel Adventure", "subtitle": "8-bit border press start", "colors": ["#111827", "#22d3ee", "#f97316", "#fef3c7"], "defaults": {"name": "Pixel Player", "class": "Pixel Player", "level": "LV.88", "element": "Star", "skill": "Coin Collector", "ultimate": "Pixel Blast", "quote": "Press start to begin.", "achievement": "High Score", "stats": "HP 90\nCOIN 99\nLUCK 88\nENERGY 92"}}, {"id": "cyber", "name": "Cyber Player ID", "subtitle": "neon futuristic HUD", "colors": ["#020617", "#22d3ee", "#a78bfa", "#e0f2fe"], "defaults": {"name": "Cyber Agent", "class": "Cyber Agent", "level": "LV.77", "element": "Spark", "skill": "Neon Dash", "ultimate": "System Override", "quote": "Access granted.", "achievement": "Verified Player", "stats": "HP 88\nSPEED 99\nTECH 96\nAURA 91"}}, {"id": "magic", "name": "Magical Academy", "subtitle": "purple wand spellbook", "colors": ["#f5f3ff", "#8b5cf6", "#facc15", "#312e81"], "defaults": {"name": "Spell Caster", "class": "Spell Caster", "level": "LV.64", "element": "Moon", "skill": "Sparkle Spell", "ultimate": "Midnight Magic", "quote": "Magic is homework too.", "achievement": "Honor Student", "stats": "HP 86\nMP 99\nSPELL 96\nLUCK 90"}}, {"id": "boss", "name": "Boss Battle Card", "subtitle": "final boss dark red", "colors": ["#111827", "#dc2626", "#d6b56d", "#f8fafc"], "defaults": {"name": "Final Boss", "class": "Final Boss", "level": "LV.100", "element": "Shadow", "skill": "Intimidating Aura", "ultimate": "No Mercy Mode", "quote": "You have entered boss territory.", "achievement": "Boss Mode", "stats": "HP 100\nPOWER 99\nAURA 100\nCHAOS 95"}}, {"id": "cozy", "name": "Cozy Farming Game", "subtitle": "green daily quest", "colors": ["#ecfdf5", "#22c55e", "#fde68a", "#14532d"], "defaults": {"name": "Cozy Farmer", "class": "Cozy Farmer", "level": "LV.45", "element": "Flower", "skill": "Plant Happiness", "ultimate": "Harvest Joy", "quote": "Water 5 flowers.", "achievement": "Daily Quest Done", "stats": "HP 92\nCOZY 100\nLUCK 88\nJOY 96"}}, {"id": "idol", "name": "Idol Rhythm Game", "subtitle": "stage combo sparkle", "colors": ["#fdf2f8", "#ec4899", "#22d3ee", "#4c1d95"], "defaults": {"name": "Stage Idol", "class": "Stage Idol", "level": "LV.99", "element": "Star", "skill": "Perfect Combo", "ultimate": "Encore Shine", "quote": "Encore? Always.", "achievement": "Full Combo", "stats": "HP 90\nCHARM 100\nCOMBO 99\nENERGY 94"}}, {"id": "dating", "name": "Dating Sim Character", "subtitle": "romance affection UI", "colors": ["#fff1f2", "#fb7185", "#fecdd3", "#4a1626"], "defaults": {"name": "Love Interest", "class": "Love Interest", "level": "AFF.100", "element": "Heart", "skill": "Makes Heart Flutter", "ultimate": "Soft Smile Event", "quote": "Your affection level increased.", "achievement": "Route Unlocked", "stats": "AFFECTION 100\nCHARM 98\nLUCK 91\nSWEET 99"}}, {"id": "horror", "name": "Horror Survival Character", "subtitle": "spooky warning sign", "colors": ["#0a0a0a", "#ef4444", "#9ca3af", "#f8fafc"], "defaults": {"name": "Survivor", "class": "Survivor", "level": "LV.13", "element": "Shadow", "skill": "Runs Fast", "ultimate": "Flashlight Panic", "quote": "Survival rate: questionable.", "achievement": "Still Alive", "stats": "HP 87\nSPEED 94\nBRAVE 76\nPANIC 99"}}, {"id": "racing", "name": "Racing Player Card", "subtitle": "speed line race number", "colors": ["#f8fafc", "#ef4444", "#111827", "#facc15"], "defaults": {"name": "Speed Racer", "class": "Speed Racer", "level": "NO.01", "element": "Fire", "skill": "Turbo Smile", "ultimate": "Finish Line Flex", "quote": "Fast lane, good vibes.", "achievement": "Pole Position", "stats": "SPEED 100\nFOCUS 90\nPOWER 92\nSTYLE 96"}}, {"id": "party", "name": "Fantasy Party Mode", "subtitle": "group party profile", "colors": ["#f5f3ff", "#7c3aed", "#d6b56d", "#1e1b4b"], "defaults": {"name": "Chaos Squad", "class": "Party Mode", "level": "RANK S+", "element": "Chaos", "skill": "Shared Braincell", "ultimate": "Group Quest Complete", "quote": "Party formed successfully.", "achievement": "Party Leader", "stats": "TEAM 100\nCHAOS 96\nLOYALTY 99\nLUCK 88"}}, {"id": "hero", "name": "Superhero Profile", "subtitle": "comic action profile", "colors": ["#dbeafe", "#2563eb", "#ef4444", "#111827"], "defaults": {"name": "Superhero", "class": "Superhero", "level": "LV.99", "element": "Light", "skill": "Saves The Day", "ultimate": "Hero Entrance", "quote": "Cape optional, confidence required.", "achievement": "City Favorite", "stats": "POWER 96\nSPEED 92\nBRAVE 100\nCHARM 94"}}, {"id": "cafe", "name": "Cafe Quest Character", "subtitle": "coffee quest casual", "colors": ["#fff7ed", "#9a6b4f", "#f9a8d4", "#3f2a1d"], "defaults": {"name": "Cafe Wanderer", "class": "Cafe Wanderer", "level": "LV.32", "element": "Coffee", "skill": "Overthinking Latte", "ultimate": "Perfect Drink Found", "quote": "Quest: find the perfect drink.", "achievement": "Cafe Regular", "stats": "COFFEE 99\nCOZY 94\nLUCK 89\nVIBES 97"}}, {"id": "guild", "name": "Anime Guild Card", "subtitle": "guild rank quest", "colors": ["#eff6ff", "#1d4ed8", "#a78bfa", "#0f172a"], "defaults": {"name": "Guild Member", "class": "Guild Member", "level": "RANK A+", "element": "Wind", "skill": "Quest Partner", "ultimate": "Guild Sync", "quote": "Quest accepted together.", "achievement": "Trusted Ally", "stats": "QUEST 96\nTEAM 98\nCHARM 92\nLUCK 90"}}, {"id": "villain", "name": "Villain Mode", "subtitle": "dark dramatic purple", "colors": ["#1e102f", "#a21caf", "#ef4444", "#f8fafc"], "defaults": {"name": "The Villain", "class": "Villain", "level": "LV.99", "element": "Shadow", "skill": "Side Eye Attack", "ultimate": "Dramatic Exit", "quote": "Not evil, just well styled.", "achievement": "Plot Twist", "stats": "AURA 100\nDRAMA 96\nPOWER 94\nSTYLE 99"}}]}};
 
+
+
+  CONFIGS["detective-case"] = {
+    title: "Detective Case File",
+    emoji: "🕵️",
+    shortTitle: "Detective Case",
+    path: "/detective-case",
+    subtitle: "foto jadi berkas investigasi lucu siap cetak 4R",
+    filePrefix: "detective-case",
+    fields: [
+      { key: "name", label: "Nama / Subject", max: 42 },
+      { key: "number", label: "Nomor Kasus", max: 32 },
+      { key: "headline", label: "Judul Kasus", max: 64 },
+      { key: "status", label: "Status", max: 48 },
+      { key: "stamp", label: "Stamp", max: 28 },
+      { key: "evidence", label: "Evidence: satu baris satu poin", max: 220, long: true },
+      { key: "warning", label: "Warning / Footer", max: 80 }
+    ],
+    filters: ["Clean Document", "Portrait Clean", "Warm Paper", "Soft Pink", "Pastel Glow", "Vintage Cream", "Office Clean", "Glow Premium", "Editorial Contrast", "Elegant Dark"],
+    themes: [
+      { id: "case-file", name: "Case File", emoji: "🕵️", style: "case", colors: ["#f7ecd9", "#8c5a2b", "#24160f", "#7a5231", "#c53929"], defaults: { name: "Main Character", number: "DET-001", headline: "TOO ICONIC", status: "UNDER INVESTIGATION", stamp: "CONFIDENTIAL", evidence: "caught stealing the spotlight\nsuspiciously photogenic\nmain character energy", warning: "warning: extremely iconic" } },
+      { id: "top-secret", name: "Top Secret Dossier", emoji: "🔒", style: "secret", colors: ["#ecf0f4", "#334155", "#0f172a", "#64748b", "#dc2626"], defaults: { name: "Subject 009", number: "TS-009", headline: "TOO GLAM TO HIDE", status: "CLASSIFIED ACCESS ONLY", stamp: "TOP SECRET", evidence: "appears photogenic in every frame\nidentity protected by slay level\npublic exposure not recommended", warning: "classified level: slay" } },
+      { id: "cute-suspect", name: "Cute Suspect", emoji: "🎀", style: "cute", colors: ["#fff1f7", "#f472b6", "#4a1d3d", "#fbcfe8", "#db2777"], defaults: { name: "Baby Face", number: "CUT-021", headline: "CAUGHT BEING ADORABLE", status: "TOO CUTE TO DENY", stamp: "SUSPECT", evidence: "cuteness level above legal limit\nsmiles without warning\ncauses instant gemas reaction", warning: "handle with extra blush" } },
+      { id: "main-character", name: "Main Character", emoji: "🎬", style: "editorial", colors: ["#f7f2e8", "#b38b4d", "#1f2937", "#eadfc6", "#8b5e34"], defaults: { name: "Lead Energy", number: "MC-777", headline: "MAIN CHARACTER DETECTED", status: "SCENE STEALER CONFIRMED", stamp: "SPOTLIGHT", evidence: "walks like background music is playing\nrefuses to be a side character\ncamera naturally finds this face", warning: "status: impossible to ignore" } },
+      { id: "celeb-scandal", name: "Celebrity Scandal", emoji: "📰", style: "scandal", colors: ["#f8efe5", "#b45309", "#25160c", "#a16207", "#dc2626"], defaults: { name: "Public Figure", number: "TAB-404", headline: "SPOTTED SERVING LOOKS AGAIN", status: "NO DENIAL POSSIBLE", stamp: "EXCLUSIVE", evidence: "caught looking expensive in public\ntabloid interest increasing rapidly\nmedia unable to move on", warning: "breaking news: still iconic" } },
+      { id: "school-file", name: "School File", emoji: "🎓", style: "school", colors: ["#fffdf5", "#2563eb", "#0f172a", "#fde68a", "#dc2626"], defaults: { name: "Star Student", number: "SCH-113", headline: "DISCIPLINARY REPORT", status: "TOO MUCH CHARISMA IN CLASS", stamp: "REPORTED", evidence: "causes distraction by being photogenic\nsmiles during serious announcements\nhas suspicious levels of charm", warning: "offense: stealing attention" } },
+      { id: "office-report", name: "Office Report", emoji: "💼", style: "office", colors: ["#f8fafc", "#1d4ed8", "#0f172a", "#cbd5e1", "#2563eb"], defaults: { name: "Office Icon", number: "HR-2026", headline: "INCIDENT REPORT", status: "BOOSTING OFFICE MORALE", stamp: "APPROVED", evidence: "arrives and raises the vibe instantly\nemail tone always somehow iconic\nmeeting survival rate extremely high", warning: "hr note: keep being fabulous" } },
+      { id: "love-crime", name: "Love Crime", emoji: "💘", style: "love", colors: ["#fff1f2", "#e11d48", "#4a1626", "#fecdd3", "#fb7185"], defaults: { name: "Heart Thief", number: "LUV-143", headline: "CHARGED WITH STEALING HEARTS", status: "DANGEROUSLY LOVABLE", stamp: "HEART ALERT", evidence: "causes unexpected butterflies\nsmile linked to rapid heartbeat\nromantic threat level elevated", warning: "crime: making everyone soft" } },
+      { id: "bestie-board", name: "Bestie Board", emoji: "👯", style: "bestie", colors: ["#faf5ff", "#8b5cf6", "#312e81", "#ddd6fe", "#ec4899"], defaults: { name: "Chaos Bestie", number: "BST-222", headline: "BESTIE CASE REPORT", status: "CHAOS LEVEL: FRIENDLY", stamp: "BESTIE ONLY", evidence: "laughs at the worst possible time\nknows too much gossip\nstill somehow the favorite person", warning: "warning: contagious chaos" } },
+      { id: "royal-record", name: "Royal Record", emoji: "👑", style: "royal", colors: ["#fff7e6", "#d4a63f", "#24180a", "#6b3f14", "#b45309"], defaults: { name: "Royal Icon", number: "ROY-001", headline: "ROYAL CASE RECORD", status: "CONFIRMED AS ICON", stamp: "SEALED", evidence: "presence immediately upgrades the room\naura registered as premium\nrespectfully too majestic", warning: "crown recommended at all times" } }
+    ]
+  };
+
   const FILTER_MAP = {
     "original": "none",
     "Normal": "none",
@@ -278,13 +311,27 @@
     ctx.restore();
   }
   function drawPhoto(ctx, state, x, y, w, h, r=28) {
-    const filter = FILTER_MAP[state.filter] || 'none';
+    const baseFilter = FILTER_MAP[state.filter] || 'none';
+    const beautyFilter = (typeof Beautify !== 'undefined' && state.beautify && state.beautify !== 'off') ? Beautify.css(state.beautify) : 'none';
+    const filter = [baseFilter, beautyFilter].filter(v => v && v !== 'none').join(' ') || 'none';
     ctx.save();
     roundRect(ctx,x,y,w,h,r); ctx.clip();
     if (state.photoImg) {
-      ctx.filter = filter;
-      drawCoverImage(ctx, state.photoImg, x,y,w,h,state);
-      ctx.filter = 'none';
+      if (typeof Beautify !== 'undefined' && state.beautify && state.beautify !== 'off') {
+        ctx.filter = baseFilter;
+        Beautify.drawCover(ctx, state.photoImg, x, y, w, h, {
+          beautify: state.beautify,
+          zoom: state.zoom,
+          offsetX: state.photoX,
+          offsetY: state.photoY,
+          rotate: state.rotate
+        });
+        ctx.filter = 'none';
+      } else {
+        ctx.filter = filter;
+        drawCoverImage(ctx, state.photoImg, x,y,w,h,state);
+        ctx.filter = 'none';
+      }
     } else {
       const th = getTheme(state.menu, state.themeId);
       const c = th.colors;
@@ -810,12 +857,243 @@
     ctx.textAlign='right'; ctx.fillText('SSR', 1020, 1481);
   }
 
+
+
+  function evidenceLines(str) {
+    return String(str || '').split('\n').map(s => s.trim()).filter(Boolean);
+  }
+
+  function drawStampedLabel(ctx, text, x, y, w, h, color) {
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2);
+    ctx.rotate(-0.14);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 6;
+    roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+    ctx.stroke();
+    ctx.globalAlpha = .12;
+    ctx.fillStyle = color;
+    roundRect(ctx, -w / 2, -h / 2, w, h, 14);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    fitFont(ctx, String(text || '').toUpperCase(), w - 24, 30, 18, '950');
+    ctx.fillText(String(text || '').toUpperCase(), 0, 2);
+    ctx.restore();
+  }
+
+  function drawDetectiveDecor(ctx, theme, paperX, paperY, paperW, paperH) {
+    const c = theme.colors || ['#fff','#ddd','#111','#bbb','#c33'];
+    const style = theme.style || 'case';
+    ctx.save();
+    if (style === 'secret') {
+      ctx.fillStyle = c[2];
+      ctx.fillRect(paperX, paperY, paperW, 26);
+      for (let i = 0; i < 10; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#facc15' : c[2];
+        ctx.fillRect(paperX + i * (paperW / 10), paperY, paperW / 10, 26);
+      }
+    } else if (style === 'school') {
+      ctx.strokeStyle = 'rgba(37,99,235,.13)';
+      ctx.lineWidth = 2;
+      for (let y = paperY + 84; y < paperY + paperH - 84; y += 44) {
+        ctx.beginPath(); ctx.moveTo(paperX + 24, y); ctx.lineTo(paperX + paperW - 24, y); ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(239,68,68,.18)';
+      ctx.beginPath(); ctx.moveTo(paperX + 64, paperY + 36); ctx.lineTo(paperX + 64, paperY + paperH - 36); ctx.stroke();
+    } else if (style === 'office') {
+      ctx.strokeStyle = 'rgba(148,163,184,.18)';
+      ctx.lineWidth = 1.6;
+      for (let x = paperX + 24; x < paperX + paperW; x += 36) {
+        ctx.beginPath(); ctx.moveTo(x, paperY + 24); ctx.lineTo(x, paperY + paperH - 24); ctx.stroke();
+      }
+      for (let y = paperY + 24; y < paperY + paperH; y += 36) {
+        ctx.beginPath(); ctx.moveTo(paperX + 24, y); ctx.lineTo(paperX + paperW - 24, y); ctx.stroke();
+      }
+    } else if (style === 'cute' || style === 'love' || style === 'bestie') {
+      ctx.fillStyle = 'rgba(255,255,255,.78)';
+      [['♡', paperX + paperW - 88, paperY + 88], ['✦', paperX + paperW - 130, paperY + 130], ['♡', paperX + 54, paperY + paperH - 48]].forEach(([s,x,y]) => {
+        ctx.font = '900 36px Segoe UI Emoji, sans-serif';
+        ctx.fillText(s, x, y);
+      });
+      ctx.fillStyle = 'rgba(255,255,255,.58)';
+      roundRect(ctx, paperX + 82, paperY - 16, 114, 34, 10); ctx.fill();
+      roundRect(ctx, paperX + paperW - 190, paperY - 10, 96, 28, 10); ctx.fill();
+    } else if (style === 'royal') {
+      ctx.strokeStyle = 'rgba(212,166,63,.75)';
+      ctx.lineWidth = 4;
+      roundRect(ctx, paperX + 12, paperY + 12, paperW - 24, paperH - 24, 18); ctx.stroke();
+      ctx.font = '900 48px Segoe UI Emoji, sans-serif';
+      ctx.fillStyle = 'rgba(212,166,63,.95)';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText('👑', paperX + paperW - 78, paperY + 36);
+    } else if (style === 'scandal') {
+      ctx.globalAlpha = .22;
+      ctx.fillStyle = c[2];
+      ctx.font = '900 18px "Courier New", monospace';
+      for (let i = 0; i < 7; i++) {
+        ctx.fillText('BREAKING NEWS • EXCLUSIVE REPORT • PAPARAZZI ALERT', paperX + 26, paperY + 70 + i * 26);
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
+  function drawDetective(state, theme) {
+    const ctx = state.ctx, t = state.text || {}, c = theme.colors || ['#f7ecd9','#8c5a2b','#24160f','#7a5231','#c53929'];
+    ctx.clearRect(0, 0, W, H);
+    const bgGradient = ctx.createLinearGradient(0, 0, W, H);
+    bgGradient.addColorStop(0, c[0]);
+    bgGradient.addColorStop(.5, '#fdf8f1');
+    bgGradient.addColorStop(1, c[3] || '#c9b08b');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalAlpha = .08;
+    for (let i = 0; i < 280; i++) {
+      ctx.fillStyle = i % 2 ? c[1] : c[3];
+      const x = (i * 97) % W;
+      const y = (i * 157) % H;
+      const r = .6 + (i % 4) * .45;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    const boardX = 62, boardY = 72, boardW = W - 124, boardH = H - 144;
+    ctx.save();
+    ctx.shadowColor = 'rgba(15,23,42,.18)';
+    ctx.shadowBlur = 32;
+    ctx.shadowOffsetY = 14;
+    ctx.fillStyle = c[3] || '#8b6a49';
+    roundRect(ctx, boardX, boardY, boardW, boardH, 28);
+    ctx.fill();
+    ctx.restore();
+
+    const paperX = boardX + 28, paperY = boardY + 34, paperW = boardW - 56, paperH = boardH - 66;
+    ctx.fillStyle = '#fbf4e7';
+    roundRect(ctx, paperX, paperY, paperW, paperH, 18);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.08)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, paperX, paperY, paperW, paperH, 18);
+    ctx.stroke();
+
+    drawDetectiveDecor(ctx, theme, paperX, paperY, paperW, paperH);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,.22)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(boardX + boardW - 66, boardY + 72, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(boardX + boardW - 66, boardY + 90);
+    ctx.lineTo(boardX + boardW - 66, boardY + 148);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = theme.style === 'cute' || theme.style === 'love' || theme.style === 'bestie' ? c[3] : '#f7dbe5';
+    roundRect(ctx, paperX + 22, paperY - 34, 212, 42, 18);
+    ctx.fill();
+    ctx.fillStyle = c[2] || '#111';
+    ctx.font = '900 18px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((theme.name || 'Case File').toUpperCase(), paperX + 128, paperY - 13);
+
+    ctx.fillStyle = c[2] || '#111827';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = '900 24px "Courier New", monospace';
+    ctx.fillText('CASE FILE', paperX + 36, paperY + 40);
+    ctx.font = '900 20px "Courier New", monospace';
+    ctx.fillText(String(t.number || 'DET-001').toUpperCase(), paperX + paperW - 270, paperY + 44);
+
+    fitFont(ctx, String(t.headline || 'TOO ICONIC').toUpperCase(), paperW - 72, 72, 32, '1000');
+    ctx.fillStyle = c[2] || '#111827';
+    ctx.fillText(String(t.headline || 'TOO ICONIC').toUpperCase(), paperX + 36, paperY + 86);
+
+    ctx.font = '800 24px Segoe UI, sans-serif';
+    ctx.fillStyle = 'rgba(36,22,15,.82)';
+    ctx.fillText('Subject: ' + (t.name || 'Main Character'), paperX + 36, paperY + 160);
+
+    const photoX = paperX + 38, photoY = paperY + 210, photoW = 360, photoH = 492;
+    ctx.save();
+    ctx.translate(photoX + photoW / 2, photoY + photoH / 2);
+    ctx.rotate(-0.018);
+    ctx.fillStyle = '#fffdf9';
+    roundRect(ctx, -photoW / 2, -photoH / 2, photoW, photoH, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.10)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, -photoW / 2, -photoH / 2, photoW, photoH, 10);
+    ctx.stroke();
+    ctx.restore();
+
+    drawPhoto(ctx, state, photoX + 24, photoY + 22, photoW - 48, photoH - 104, 8);
+    ctx.fillStyle = 'rgba(0,0,0,.72)';
+    ctx.font = '900 18px Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('PHOTO EVIDENCE', photoX + 24, photoY + photoH - 56);
+    ctx.font = '700 16px Segoe UI, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,.52)';
+    ctx.fillText((theme.style === 'office' ? 'employee visual record' : 'suspect visual record').toUpperCase(), photoX + 24, photoY + photoH - 32);
+
+    drawStampedLabel(ctx, t.stamp || 'CONFIDENTIAL', paperX + 548, photoY + 82, 290, 76, c[4] || '#c53929');
+
+    const rightX = paperX + 444;
+    ctx.fillStyle = c[2] || '#111827';
+    ctx.font = '900 24px Segoe UI, sans-serif';
+    ctx.fillText('STATUS:', rightX, photoY + 190);
+    ctx.fillStyle = 'rgba(15,23,42,.06)';
+    roundRect(ctx, rightX, photoY + 228, 420, 60, 18); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 1.5; roundRect(ctx, rightX, photoY + 228, 420, 60, 18); ctx.stroke();
+    ctx.fillStyle = c[2] || '#111827';
+    ctx.font = '850 24px Segoe UI, sans-serif';
+    ctx.fillText((t.status || 'UNDER INVESTIGATION').toUpperCase(), rightX + 18, photoY + 245);
+
+    ctx.font = '900 24px Segoe UI, sans-serif';
+    ctx.fillText('EVIDENCE:', rightX, photoY + 330);
+    ctx.strokeStyle = 'rgba(0,0,0,.10)';
+    ctx.lineWidth = 1.5;
+    const evs = evidenceLines(t.evidence || '').slice(0, 5);
+    const evidence = evs.length ? evs : ['caught stealing the spotlight','suspiciously photogenic','main character energy'];
+    let lineY = photoY + 378;
+    evidence.forEach((line) => {
+      ctx.beginPath(); ctx.moveTo(rightX, lineY + 28); ctx.lineTo(rightX + 430, lineY + 28); ctx.stroke();
+      ctx.fillStyle = c[2] || '#111827';
+      ctx.font = '800 22px Segoe UI, sans-serif';
+      ctx.fillText('• ' + line, rightX + 8, lineY);
+      lineY += 68;
+    });
+
+    ctx.fillStyle = 'rgba(0,0,0,.65)';
+    ctx.font = '800 20px Segoe UI, sans-serif';
+    ctx.fillText('NOTES:', paperX + 36, paperY + paperH - 220);
+    ctx.strokeStyle = 'rgba(0,0,0,.12)';
+    ctx.beginPath(); ctx.moveTo(paperX + 36, paperY + paperH - 184); ctx.lineTo(paperX + paperW - 36, paperY + paperH - 184); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(paperX + 36, paperY + paperH - 144); ctx.lineTo(paperX + paperW - 36, paperY + paperH - 144); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(paperX + 36, paperY + paperH - 104); ctx.lineTo(paperX + paperW - 36, paperY + paperH - 104); ctx.stroke();
+
+    ctx.fillStyle = c[3] || '#8b6a49';
+    ctx.font = '900 30px Segoe UI, sans-serif';
+    fitFont(ctx, String(t.warning || 'warning: extremely iconic').toUpperCase(), paperW - 80, 30, 16, '950');
+    ctx.textAlign = 'center';
+    ctx.fillText(String(t.warning || 'warning: extremely iconic').toUpperCase(), paperX + paperW / 2, paperY + paperH - 70);
+  }
+
   function render(state) {
     const theme = getTheme(state.menu, state.themeId);
     if (state.menu === 'trading-card') drawTrading(state, theme);
     if (state.menu === 'icon-portrait') drawIcon(state, theme);
     if (state.menu === 'certificate') drawCertificate(state, theme);
     if (state.menu === 'game-character') drawGame(state, theme);
+    if (state.menu === 'detective-case') drawDetective(state, theme);
 
     // Safe print guide hidden in final? Keep subtle only in preview? No guide drawn.
   }

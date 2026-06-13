@@ -258,6 +258,11 @@
       </div>
 
       <div class="card">
+        <div class="card-title">💄 Percantik Wajah</div>
+        <div class="theme-grid" id="beautifyGrid"></div>
+      </div>
+
+      <div class="card">
         <div class="card-title">🎨 Color Theme</div>
         <div class="theme-grid" id="themeGrid"></div>
       </div>
@@ -439,6 +444,7 @@
       funFact: OPTIONS.id.funFact[0],
       theme:'pink',
       filter:'none',
+      beautify:'off',
       photo:null,
       savedId:null,
       synced:false
@@ -593,6 +599,23 @@
       renderPreview();
     }
 
+    function buildBeautifyGrid() {
+      const grid = document.getElementById('beautifyGrid');
+      if (!grid || typeof Beautify === 'undefined') return;
+      grid.innerHTML = Object.entries(Beautify.PRESETS).map(([key, p]) => `
+        <button class="theme-btn ${state.beautify === key ? 'active' : ''}" onclick="setBeautify('${key}')">
+          <div class="theme-swatch">${key === 'off' ? '🙅' : key === 'natural' ? '✨' : key === 'medium' ? '💄' : '🌸'}</div>
+          <div class="theme-name">${p.label}</div>
+        </button>
+      `).join('');
+    }
+
+    function setBeautify(key) {
+      state.beautify = key || 'off';
+      buildBeautifyGrid();
+      renderPreview();
+    }
+
     function buildThemeGrid() {
       const grid = document.getElementById('themeGrid');
       grid.innerHTML = Object.entries(THEMES).map(([key, t]) => `
@@ -605,6 +628,7 @@
 
     function setTheme(key) {
       state.theme = key;
+      buildBeautifyGrid();
       buildThemeGrid();
       renderPreview();
     }
@@ -864,9 +888,16 @@
       drawRoundRect(targetCtx, px, py, pw, ph, 24);
       targetCtx.clip();
       if (photoImg) {
-        targetCtx.filter = state.filter || 'none';
-        drawCoverImage(targetCtx, photoImg, px, py, pw, ph);
-        targetCtx.filter = 'none';
+        const base = state.filter || 'none';
+        if (typeof Beautify !== 'undefined' && state.beautify && state.beautify !== 'off') {
+          targetCtx.filter = base;
+          Beautify.drawCover(targetCtx, photoImg, px, py, pw, ph, { beautify: state.beautify });
+          targetCtx.filter = 'none';
+        } else {
+          targetCtx.filter = base;
+          drawCoverImage(targetCtx, photoImg, px, py, pw, ph);
+          targetCtx.filter = 'none';
+        }
       }
       else if (state.photo) {
         const img = new Image();
@@ -874,9 +905,16 @@
           targetCtx.save();
           drawRoundRect(targetCtx, px, py, pw, ph, 24);
           targetCtx.clip();
-          targetCtx.filter = state.filter || 'none';
-          drawCoverImage(targetCtx, img, px, py, pw, ph);
-          targetCtx.filter = 'none';
+          const base = state.filter || 'none';
+          if (typeof Beautify !== 'undefined' && state.beautify && state.beautify !== 'off') {
+            targetCtx.filter = base;
+            Beautify.drawCover(targetCtx, img, px, py, pw, ph, { beautify: state.beautify });
+            targetCtx.filter = 'none';
+          } else {
+            targetCtx.filter = base;
+            drawCoverImage(targetCtx, img, px, py, pw, ph);
+            targetCtx.filter = 'none';
+          }
           targetCtx.restore();
         };
         img.src = state.photo;
@@ -1242,5 +1280,6 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
 <script src="/local-camera.js"></script>
+<script src="/beautify.js"></script>
 </body>
 </html>

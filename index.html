@@ -221,6 +221,7 @@
     .portrait .feature-icon { background: linear-gradient(135deg, #8b5cf6, #d6b56d); }
     .certificate .feature-icon { background: linear-gradient(135deg, #d6b56d, #f59e0b); }
     .game .feature-icon { background: linear-gradient(135deg, #22d3ee, #7c3aed); }
+    .detective .feature-icon { background: linear-gradient(135deg, #8c5a2b, #d84b7e); }
     .footer {
       position: static; margin-top: 14px;
       font-size: 11px; color: #cbb8ac;
@@ -352,6 +353,14 @@
           </span>
         </button>
 
+        <button class="feature-card detective" onclick="bukaDetectiveCase()">
+          <span class="feature-icon">🕵️</span>
+          <span>
+            <span class="feature-title">Detective Case File</span>
+            <span class="feature-desc">berkas investigasi lucu ala dossier</span>
+          </span>
+        </button>
+
       </div>
     </div>
 
@@ -416,6 +425,7 @@
     function bukaIconPortrait() { window.location.href = '/icon-portrait'; }
     function bukaCertificate() { window.location.href = '/certificate'; }
     function bukaGameCharacter() { window.location.href = '/game-character'; }
+    function bukaDetectiveCase() { window.location.href = '/detective-case'; }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

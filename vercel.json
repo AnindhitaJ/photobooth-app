@@ -48,6 +48,10 @@
   ],
   "rewrites": [
     {
+      "source": "/detective-case",
+      "destination": "/detective-case.html"
+    },
+    {
       "source": "/game-character",
       "destination": "/game-character.html"
     },

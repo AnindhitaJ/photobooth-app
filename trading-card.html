@@ -97,6 +97,11 @@
       </div>
 
       <div class="card">
+        <div class="card-title">💄 Percantik Wajah</div>
+        <div class="pill-grid" id="beautifyGrid"></div>
+      </div>
+
+      <div class="card">
         <div class="card-title">🎨 Ganti Tema</div>
         <div class="theme-grid" id="themeGrid"></div>
       </div>
@@ -202,6 +207,15 @@
         </button>
       `).join('');
     }
+    function buildBeautify() {
+      if (typeof Beautify !== 'undefined') Beautify.renderControls('beautifyGrid', state.beautify || 'off', 'setBeautify');
+    }
+    function setBeautify(key) {
+      state.beautify = key || 'off';
+      buildBeautify();
+      render();
+    }
+
     function buildFilters() {
       document.getElementById('filterGrid').innerHTML = cfg.filters.map(f => `
         <button class="pill ${state.filter === f ? 'active' : ''}" onclick="selectFilter('${escapeHtml(f)}')">${escapeHtml(f)}</button>
@@ -309,12 +323,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      buildThemes(); buildFilters(); buildForm(); render();
+      buildThemes(); buildBeautify(); buildFilters(); buildForm(); render();
     });
   </script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
 <script src="/local-camera.js"></script>
+<script src="/beautify.js"></script>
 </body>
 </html>

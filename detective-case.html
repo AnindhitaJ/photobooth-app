@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#D84B7E">
-  <title>Game Character Photobooth</title>
+  <title>Detective Case File</title>
   <style>
     :root { --pink:#D84B7E; --yellow:#E5B842; --navy:#1D3557; --bg:#FFF8FC; --border:#f5c6da; --text:#1D3557; --text2:#6b7fa3; }
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -48,8 +48,8 @@
     .chip { border:2px solid var(--border); border-radius:999px; padding:6px 10px; background:white; color:var(--text2); font-size:12px; font-weight:850; }
     .chip span { color:var(--pink); }
     .final-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
-    .camera-modal, .print-modal { display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.78); align-items:center; justify-content:center; flex-direction:column; padding:18px; }
-    .camera-modal.show, .print-modal.show { display:flex; }
+    .print-modal { display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.78); align-items:center; justify-content:center; flex-direction:column; padding:18px; }
+    .print-modal.show { display:flex; }
     .dialog { width:min(430px,100%); background:white; border:2px solid var(--border); border-radius:24px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.25); text-align:center; }
     .dialog h3 { font-size:20px; font-weight:950; margin-bottom:8px; }
     .dialog p { color:var(--text2); font-size:13px; font-weight:760; line-height:1.45; margin-bottom:14px; }
@@ -57,7 +57,7 @@
     .dialog-grid button { border-radius:18px; border:2px solid var(--border); background:#fff8fc; padding:14px; font-size:14px; font-weight:950; color:var(--text); cursor:pointer; text-align:left; font-family:inherit; }
     .dialog-grid span { display:block; color:var(--text2); font-size:12px; margin-top:3px; line-height:1.35; }
     .toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:white; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; box-shadow:0 12px 32px rgba(0,0,0,.2); transition:.25s; z-index:1200; }
-    .toast.show { transform:translateX(-50%) translateY(0); } to{transform:scale(1.18)} }
+    .toast.show { transform:translateX(-50%) translateY(0); }
   </style>
   <script src="/auth.js"></script>
   <script src="/product-photobooth.js"></script>
@@ -66,8 +66,8 @@
   <div class="header">
     <a class="btn-back" href="/" title="Kembali">←</a>
     <div class="header-main">
-      <div class="header-title">🎮 Game Character Photobooth</div>
-      <div class="header-sub">4R portrait 10×15 cm · 1181×1772 px · 300 DPI target</div>
+      <div class="header-title">🕵️ Detective Case File</div>
+      <div class="header-sub">4R portrait 10×15 cm · template berkas kasus lucu ala dossier investigasi</div>
     </div>
     <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
   </div>
@@ -102,17 +102,17 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🎨 Ganti Tema</div>
+        <div class="card-title">🕵️ Pilih Tema</div>
         <div class="theme-grid" id="themeGrid"></div>
       </div>
 
       <div class="card">
-        <div class="card-title">✨ Filter</div>
+        <div class="card-title">✨ Filter Foto</div>
         <div class="pill-grid" id="filterGrid"></div>
       </div>
 
       <div class="card">
-        <div class="card-title">📝 Custom Text</div>
+        <div class="card-title">📝 Isi Berkas</div>
         <div id="formFields"></div>
         <button class="btn-outline" onclick="resetText()">Reset Text</button>
       </div>
@@ -135,22 +135,20 @@
         </div>
         <div class="preview-meta">
           <div class="chip">Canvas: <span>4R Portrait</span></div>
-          <div class="chip">Safe Area: <span>60 px</span></div>
-          <div class="chip">Mode: <span>Game Character</span></div>
+          <div class="chip">Mode: <span>Detective Dossier</span></div>
+          <div class="chip">Foto: <span>1 Shot</span></div>
         </div>
       </div>
     </div>
   </div>
 
-  </div>
-
   <div class="print-modal" id="printModal">
     <div class="dialog">
       <h3>Pilih ukuran cetak</h3>
-      <p>Output tetap canvas 4R. Original mencetak penuh desain final. Fit to 4R menaruh desain dengan padding putih agar tidak crop.</p>
+      <p>Output detective case file portrait 4R. Original penuh, Fit memberi border putih tipis agar aman saat cetak.</p>
       <div class="dialog-grid">
-        <button onclick="confirmPrint('original')">Original 4R <span>Output penuh sesuai canvas 4R final.</span></button>
-        <button onclick="confirmPrint('fit')">Fit to 4R <span>Desain tetap masuk canvas 4R dengan ruang aman di sekitar.</span></button>
+        <button onclick="confirmPrint('original')">Original 4R Portrait <span>Output penuh sesuai layout dossier final.</span></button>
+        <button onclick="confirmPrint('fit')">Fit with white border <span>Masuk 4R portrait dengan border putih tipis.</span></button>
         <button onclick="closePrintModal()" style="text-align:center;background:white;">Batal</button>
       </div>
     </div>
@@ -159,9 +157,8 @@
 
   <script>
     if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login';
-    const RETURN_URL = '/game-character';
 
-    const MENU = 'game-character';
+    const MENU = 'detective-case';
     const canvas = document.getElementById('productCanvas');
     const ctx = canvas.getContext('2d');
     const cfg = Product4R.getConfig(MENU);
@@ -180,23 +177,7 @@
     function render() { Product4R.render(state); }
 
     function themeEmoji(t) {
-      const key = String(t.id || t.name || '').toLowerCase();
-      if (key.includes('battle') || key.includes('boss')) return '⚔️';
-      if (key.includes('sport')) return '🏆';
-      if (key.includes('bestie')) return '👯';
-      if (key.includes('couple')) return '💞';
-      if (key.includes('office')) return '💼';
-      if (key.includes('school') || key.includes('club')) return '🎓';
-      if (key.includes('luxury') || key.includes('black')) return '🖤';
-      if (key.includes('arcade') || key.includes('pixel')) return '🕹️';
-      if (key.includes('tarot') || key.includes('magical')) return '🔮';
-      if (key.includes('food')) return '🍰';
-      if (key.includes('meme')) return '😂';
-      if (key.includes('rpg') || key.includes('hero')) return '🛡️';
-      if (key.includes('cyber')) return '🤖';
-      if (key.includes('horror')) return '👻';
-      if (key.includes('cozy')) return '☕';
-      return '✨';
+      return t.emoji || '🕵️';
     }
 
     function buildThemes() {
@@ -248,9 +229,8 @@
       render();
     }
     function resetText() {
-      const t = Product4R.getTheme(MENU, state.themeId);
-      Product4R.setTheme(state, state.themeId);
       state.edited = {};
+      Product4R.setTheme(state, state.themeId);
       buildForm(); render();
     }
 
@@ -261,13 +241,6 @@
       });
     }
 
-    function checkAndLoadProductPhoto() {
-      const photo = localStorage.getItem('productPhoto');
-      if (!photo) return;
-      localStorage.removeItem('productPhoto');
-      loadPhoto(photo);
-    }
-
     function loadPhoto(src) {
       const img = new Image();
       img.onload = () => {
@@ -276,6 +249,7 @@
         state.zoom = 1; state.rotate = 0; state.photoX = 0; state.photoY = 0;
         render();
       };
+      img.onerror = () => toast('Foto gagal dimuat.');
       img.src = src;
     }
     function uploadPhoto(ev) {
@@ -284,6 +258,7 @@
       const reader = new FileReader();
       reader.onload = e => loadPhoto(e.target.result);
       reader.readAsDataURL(file);
+      ev.target.value = '';
     }
     function adjustPhoto(action) {
       if (action === 'zoomIn') state.zoom = Math.min(2.4, state.zoom + .08);
@@ -310,7 +285,7 @@
     function saveOutput() {
       render();
       download(canvas.toDataURL('image/png'), `${cfg.filePrefix}-${timestamp()}.png`);
-      toast('File 4R berhasil disimpan ✓');
+      toast('File detective case berhasil disimpan ✓');
     }
     function openPrintModal() { document.getElementById('printModal').classList.add('show'); }
     function closePrintModal() { document.getElementById('printModal').classList.remove('show'); }
@@ -329,7 +304,7 @@
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
-<script src="/local-camera.js"></script>
-<script src="/beautify.js"></script>
+  <script src="/local-camera.js"></script>
+  <script src="/beautify.js"></script>
 </body>
 </html>

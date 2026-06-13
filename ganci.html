@@ -468,6 +468,7 @@
       ganciW: 55,
       ganciH: 55,
       jumlah: 6,
+      beautify: 'off',
     };
 
     let previewPhotoImg = null;
@@ -657,6 +658,20 @@
     }
 
     // ── Main preview renderer ──
+    function renderGanciBeautify() {
+      const grid = document.getElementById('ganciBeautifyGrid');
+      if (!grid || typeof Beautify === 'undefined') return;
+      grid.innerHTML = Object.entries(Beautify.PRESETS).map(([key, p]) => `
+        <button class="toggle-btn ${state.beautify === key ? 'active' : ''}" onclick="setGanciBeautify('${key}')">${p.label}</button>
+      `).join('');
+    }
+
+    function setGanciBeautify(key) {
+      state.beautify = key || 'off';
+      renderGanciBeautify();
+      updatePreview();
+    }
+
     function updatePreview() {
       state.ganciW = Math.max(20, parseInt(document.getElementById('ganciW').value) || 55);
       state.ganciH = Math.max(20, parseInt(document.getElementById('ganciH').value) || 55);
@@ -732,6 +747,7 @@
         ganciW: state.ganciW,
         ganciH: state.ganciH,
         jumlah: state.jumlah,
+        beautify: state.beautify,
         updatedAt: new Date().toISOString()
       };
     }
@@ -777,6 +793,7 @@
             photo,
             originalPhoto: photo,
             filter: { tone: 'normal' },
+            beautify: state.beautify,
             mode: 'ganci',
             bentuk: config.bentuk,
             frame: config.frame,
@@ -981,5 +998,6 @@
     }
   </script>
 <script src="/local-camera.js"></script>
+<script src="/beautify.js"></script>
 </body>
 </html>

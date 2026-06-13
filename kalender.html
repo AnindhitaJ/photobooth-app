@@ -218,6 +218,18 @@
       </div>
 
       <div class="card">
+        <div class="card-title">💄 Percantik Wajah</div>
+        <div class="filter-section">
+          <div class="filter-pill-row" data-filter-group="smooth">
+            <button class="filter-pill active" data-value="0" onclick="setPhotoFilter('smooth',0)">Off</button>
+            <button class="filter-pill" data-value="1.2" onclick="setPhotoFilter('smooth',1.2)">Natural</button>
+            <button class="filter-pill" data-value="2.8" onclick="setPhotoFilter('smooth',2.8)">Medium</button>
+            <button class="filter-pill" data-value="4.2" onclick="setPhotoFilter('smooth',4.2)">Smooth</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">5. Filter Foto</div>
         <div class="filter-section">
           <div class="filter-label">Tone Warna</div>
@@ -846,42 +858,65 @@
     ctx.save();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+
+    const padX = Math.max(22, w * .04);
+    const padY = Math.max(14, h * .12);
+    const titleSize = Math.max(15, Math.min(21, h * .16));
     ctx.fillStyle = t.text;
-    ctx.font = `900 ${Math.max(17, Math.min(24, h * .18))}px Segoe UI, sans-serif`;
-    ctx.fillText('Tanggal merah:', x + w * .04, y + h * .10);
+    ctx.font = `900 ${titleSize}px Segoe UI, sans-serif`;
+    ctx.fillText('Tanggal merah:', x + padX, y + padY);
 
     if (!list.length) {
       ctx.fillStyle = t.muted;
-      ctx.font = `700 ${Math.max(14, Math.min(20, h * .15))}px Segoe UI, sans-serif`;
+      ctx.font = `700 ${Math.max(13, Math.min(18, h * .13))}px Segoe UI, sans-serif`;
       const msg = state.holidayAvailable
         ? 'Tidak ada libur nasional/cuti bersama di bulan ini.'
         : 'Data libur belum tersedia. Minggu tetap merah otomatis.';
-      drawWrappedCalendarText(msg, x + w * .04, y + h * .42, w * .90, Math.max(18, h * .16), 2);
+      drawWrappedCalendarText(msg, x + padX, y + padY + titleSize + 10, w - padX * 2, Math.max(17, h * .14), 3);
       ctx.restore();
       return;
     }
 
-    const maxItems = Math.max(1, Math.min(list.length, Math.floor((h * .60) / 22)));
-    const shown = list.slice(0, maxItems);
-    const fs = Math.max(13, Math.min(20, (h * .58) / Math.max(1, shown.length)));
-    ctx.font = `800 ${fs}px Segoe UI, sans-serif`;
+    const contentTop = y + padY + titleSize + 10;
+    const contentBottom = y + h - Math.max(12, h * .10);
+    const availableH = Math.max(20, contentBottom - contentTop);
+    const useTwoCols = list.length >= 4 && w > 540;
+    const cols = useTwoCols ? 2 : 1;
+    const rows = Math.ceil(list.length / cols);
+    const colGap = Math.max(22, w * .045);
+    const colW = (w - padX * 2 - colGap * (cols - 1)) / cols;
+    const lineH = Math.max(14, Math.min(22, availableH / Math.max(1, rows)));
+    const fs = Math.max(12, Math.min(18, lineH * .78));
 
-    let yy = y + h * .37;
-    shown.forEach(item => {
+    ctx.font = `850 ${fs}px Segoe UI, sans-serif`;
+
+    list.forEach((item, i) => {
+      const col = useTwoCols ? Math.floor(i / rows) : 0;
+      const row = useTwoCols ? (i % rows) : i;
+      const tx = x + padX + col * (colW + colGap);
+      const ty = contentTop + row * lineH;
       const day = parseInt(item.date.slice(8,10), 10);
       const rawName = item.name || 'Libur nasional';
-      const maxChars = w < 620 ? 34 : 52;
-      const shortName = rawName.length > maxChars ? rawName.slice(0, maxChars - 1) + '…' : rawName;
+      const prefix = `${day} ${MONTHS_SHORT[month]} - `;
+      const maxTextW = colW;
+      let label = prefix + rawName;
+
+      // Trim until it fits the available column width.
+      while (ctx.measureText(label).width > maxTextW && rawName.length > 8) {
+        const keep = Math.max(8, rawName.length - 4);
+        label = prefix + rawName.slice(0, keep) + '…';
+        item = { ...item, name: rawName.slice(0, keep) + '…' };
+        break;
+      }
+      if (ctx.measureText(label).width > maxTextW) {
+        const maxChars = Math.max(14, Math.floor(maxTextW / (fs * .48)));
+        label = label.slice(0, maxChars - 1) + '…';
+      }
+
       ctx.fillStyle = item.type === 'leave' ? t.leave : t.red;
-      ctx.fillText(`${day} ${MONTHS_SHORT[month]} - ${shortName}`, x + w * .04, yy);
-      yy += fs * 1.28;
+      ctx.fillText(label, tx, ty);
     });
 
-    if (list.length > shown.length) {
-      ctx.fillStyle = t.muted;
-      ctx.font = `800 ${Math.max(12, fs * .82)}px Segoe UI, sans-serif`;
-      ctx.fillText(`+${list.length - shown.length} tanggal lainnya`, x + w * .04, y + h - fs * 1.2);
-    }
     ctx.restore();
   }
 
@@ -967,18 +1002,19 @@
       const calH = Math.round(panelH * .31);
       drawMonthCalendar(panelX + panelW*.09, calY, panelW*.82, calH, state.year, state.month, { compact:false, showTitle:false });
 
-      const tagY = panelY + panelH - Math.round(panelH * .055);
-      const noteY = calY + calH + Math.round(panelH * .020);
-      const noteH = Math.max(92, tagY - noteY - Math.round(panelH * .050));
+      const noteY = calY + calH + Math.round(panelH * .030);
+      const tagY = panelY + panelH - Math.round(panelH * .038);
+      const noteBottom = tagY - Math.round(panelH * .040);
+      const noteH = Math.max(150, noteBottom - noteY);
       drawMonthlyHolidayNotes(panelX + panelW*.09, noteY, panelW*.82, noteH, state.year, state.month);
 
       if (t.deco === 'boldPop') {
-        fillRound(ctx, panelX + panelW*.28, tagY - 26, panelW*.44, 52, 16, '#FFFFFF');
-        strokeRound(ctx, panelX + panelW*.28, tagY - 26, panelW*.44, 52, 16, t.accent, 3);
+        fillRound(ctx, panelX + panelW*.28, tagY - 22, panelW*.44, 44, 16, '#FFFFFF');
+        strokeRound(ctx, panelX + panelW*.28, tagY - 22, panelW*.44, 44, 16, t.accent, 3);
         drawCalendarTagline(t.tagline, panelX + panelW*.28, tagY, panelW*.44, t);
       } else if (t.deco === 'festiveParty') {
-        fillRound(ctx, panelX + panelW*.24, tagY - 28, panelW*.52, 56, 4, '#7C64D5');
-        ctx.save(); ctx.fillStyle = '#fff'; ctx.font = `800 ${Math.round(panelW*.038)}px Segoe UI, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t.tagline, panelX + panelW/2, tagY); ctx.restore();
+        fillRound(ctx, panelX + panelW*.24, tagY - 24, panelW*.52, 48, 4, '#7C64D5');
+        ctx.save(); ctx.fillStyle = '#fff'; ctx.font = `800 ${Math.round(panelW*.034)}px Segoe UI, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t.tagline, panelX + panelW/2, tagY); ctx.restore();
       } else {
         drawCalendarTagline(t.tagline, panelX, tagY, panelW, t);
       }
@@ -996,7 +1032,7 @@
       drawMonthCalendar(calX, calY, calW, calH, state.year, state.month, { compact:false, showTitle:false });
       const tagY = panelY + panelH - 74;
       const noteY = calY + calH + 24;
-      drawMonthlyHolidayNotes(calX, noteY, calW, Math.max(92, tagY - noteY - 42), state.year, state.month);
+      drawMonthlyHolidayNotes(calX, noteY, calW, Math.max(140, tagY - noteY - 42), state.year, state.month);
       drawCalendarTagline(t.tagline, calX, tagY, calW, t);
     }
   }
@@ -1147,5 +1183,6 @@
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
 <script src="/local-camera.js"></script>
+<script src="/beautify.js"></script>
 </body>
 </html>

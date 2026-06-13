@@ -117,6 +117,11 @@
       </div>
 
       <div class="card">
+        <div class="card-title">💄 Percantik Wajah</div>
+        <div class="filter-grid" id="beautifyGrid"></div>
+      </div>
+
+      <div class="card">
         <div class="card-title">✨ Filter Foto</div>
         <div class="filter-grid" id="filterGrid"></div>
       </div>
@@ -167,6 +172,7 @@
     const ctx = canvas.getContext('2d');
     const state = CoverMaker.createState(COVER_TYPE, canvas, ctx);
     state.lang = 'id';
+    state.beautify = 'off';
     state.text = CoverMaker.getDefaultText(COVER_TYPE, state.selectedTheme, state.lang);
 
     function showToast(msg) {
@@ -205,6 +211,16 @@
           <div class="theme-name">${escapeHtml(t.name)}</div>
         </button>
       `).join('');
+    }
+
+    function buildBeautifyGrid() {
+      if (typeof Beautify !== 'undefined') Beautify.renderControls('beautifyGrid', state.beautify || 'off', 'setBeautify');
+    }
+
+    function setBeautify(key) {
+      state.beautify = key || 'off';
+      buildBeautifyGrid();
+      render();
     }
 
     function buildFilterGrid() {
@@ -433,5 +449,6 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
 <script src="/local-camera.js"></script>
+<script src="/beautify.js"></script>
 </body>
 </html>

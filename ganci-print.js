@@ -210,26 +210,18 @@
     const gapPx = mmToPx(gapMM, dpi);
     const betweenPairPx = mmToPx(betweenPairMM, dpi);
 
-    // Hitung skala maksimum agar grid yang ada bisa "mentok" memenuhi area print.
-    const rawPanelWpx = mmToPx(panelWmm, dpi);
-    const rawPanelHpx = mmToPx(panelHmm, dpi);
-    const rawPairWpx = rawPanelWpx * 2 + betweenPairPx;
-    const rawUsedW = cols * rawPairWpx + Math.max(0, cols - 1) * gapPx;
-    const rawUsedH = rows * rawPanelHpx + Math.max(0, rows - 1) * gapPx;
-    const maxW = pageWpx - marginPx * 2;
-    const maxH = pageHpx - marginPx * 2;
-    const fitScale = Math.min(maxW / rawUsedW, maxH / rawUsedH);
-
-    const panelWpx = Math.floor(rawPanelWpx * fitScale);
-    const panelHpx = Math.floor(rawPanelHpx * fitScale);
-    const scaledBetweenPairPx = Math.max(1, Math.floor(betweenPairPx * fitScale));
-    const scaledGapPx = Math.max(1, Math.floor(gapPx * fitScale));
+    // Ukuran input ganci adalah ukuran TOTAL final termasuk frame.
+    // Jangan scale-up agar "mentok" kertas, karena 30×30 mm harus tetap 30×30 mm saat print.
+    const panelWpx = mmToPx(panelWmm, dpi);
+    const panelHpx = mmToPx(panelHmm, dpi);
+    const scaledBetweenPairPx = betweenPairPx;
+    const scaledGapPx = gapPx;
     const pairWpx = panelWpx * 2 + scaledBetweenPairPx;
 
     const usedW = cols * pairWpx + Math.max(0, cols - 1) * scaledGapPx;
     const usedH = rows * panelHpx + Math.max(0, rows - 1) * scaledGapPx;
 
-    // Mentok atas-kiri dengan margin tipis. Kalau sisa ruang ada, biarin numpuk di kanan/bawah.
+    // Tetap mulai dari atas-kiri dengan margin tipis, tapi ukuran item tidak berubah.
     const startX = marginPx;
     const startY = marginPx;
 

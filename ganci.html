@@ -318,17 +318,17 @@
 
       <!-- Ukuran Ganci -->
       <div class="card" style="margin-bottom:16px;">
-        <div class="card-title">📏 Ukuran Ganci</div>
+        <div class="card-title">📏 Ukuran Ganci <span style="font-size:11px;color:var(--text2);font-weight:800;text-transform:none;letter-spacing:0;">(total termasuk frame)</span></div>
         <div class="input-row" style="margin-bottom:0;">
           <div class="input-wrap">
-            <label>Lebar</label>
+            <label>Lebar Total</label>
             <div class="input-with-suffix">
               <input type="number" id="ganciW" min="20" max="200" value="55" oninput="updatePreview()">
               <div class="input-suffix">mm</div>
             </div>
           </div>
           <div class="input-wrap">
-            <label>Tinggi</label>
+            <label>Tinggi Total</label>
             <div class="input-with-suffix">
               <input type="number" id="ganciH" min="20" max="200" value="55" oninput="updatePreview()">
               <div class="input-suffix">mm</div>
@@ -726,7 +726,7 @@
       const frameLabel = (window.GanciFrames?.labels?.[state.frame]) || state.frame;
       info.innerHTML = `
         <div class="info-chip">Mode: <span>1 foto</span></div>
-        <div class="info-chip">Ganci: <span>${gW}×${gH} mm</span></div>
+        <div class="info-chip">Ganci total: <span>${gW}×${gH} mm incl. frame</span></div>
         <div class="info-chip">Bentuk: <span>${state.bentuk}</span></div>
         <div class="info-chip">Frame: <span>${frameLabel}</span></div>
         <div class="info-chip">Kertas: <span>${state.ukuranKertas === 'Custom' ? state.customW + '×' + state.customH + ' mm' : state.ukuranKertas}</span></div>
@@ -881,7 +881,7 @@
       document.getElementById('pageInfo').textContent = `Halaman ${currentLayoutPage + 1} / ${generatedLayout.pages.length}`;
       document.getElementById('btnPrevPage').disabled = currentLayoutPage === 0;
       document.getElementById('btnNextPage').disabled = currentLayoutPage === generatedLayout.pages.length - 1;
-      document.getElementById('layoutStatus').textContent = `${generatedLayout.paper.label} • ${generatedLayout.quantity} set • kapasitas ${generatedLayout.capacity} set/halaman • ${generatedLayout.pageCount} halaman • 300 DPI`;
+      document.getElementById('layoutStatus').textContent = `${generatedLayout.paper.label} • ${generatedLayout.quantity} set • ukuran total ${generatedLayout.panelWmm}×${generatedLayout.panelHmm} mm incl. frame • kapasitas ${generatedLayout.capacity} set/halaman • ${generatedLayout.pageCount} halaman • 300 DPI`;
     }
 
     window.changeLayoutPage = function(delta) {

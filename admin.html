@@ -262,6 +262,81 @@
     .al-btn:hover { transform:translateY(-2px);box-shadow:0 10px 28px rgba(216,75,126,0.5); }
     .al-back { margin-top:14px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px; }
     .al-back:hover { color:var(--orange); }
+
+    /* ── Membership Info ── */
+    .membership-card {
+      background: linear-gradient(135deg, #ffffff, #fff8fc);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 18px 20px;
+      margin: 24px auto 0;
+      max-width: 800px;
+      box-shadow: 0 4px 18px rgba(216,75,126,0.08);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+    }
+    .membership-label {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .membership-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .membership-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .membership-badge.pro { background:#d1fae5; color:#059669; border:2px solid #a7f3d0; }
+    .membership-badge.trial { background:#fef3c7; color:#d97706; border:2px solid #fde68a; }
+    .membership-badge.expired,
+    .membership-badge.inactive { background:#fee2e2; color:#dc2626; border:2px solid #fca5a5; }
+    .membership-detail {
+      font-size: 13px;
+      color: var(--text2);
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .membership-days {
+      min-width: 86px;
+      text-align: center;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 12px;
+    }
+    .membership-days strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      color: var(--orange);
+      font-weight: 950;
+    }
+    .membership-days span {
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+    }
+    @media (max-width: 640px) {
+      .membership-card { grid-template-columns: 1fr; }
+      .membership-days { text-align:left; min-width:0; }
+    }
+
     /* ── Profile Section ── */
     .profile-section {
       background: white; border: 2px solid var(--border); border-radius: 20px;
@@ -349,6 +424,22 @@
 </div>
 
 <div id="adminContent" style="display:none">
+
+
+<!-- MEMBERSHIP INFO -->
+<div class="membership-card" id="membershipInfo">
+  <div>
+    <div class="membership-label">Membership</div>
+    <div class="membership-main">
+      <span class="membership-badge" id="membershipBadge">⏳ Memuat...</span>
+      <span class="membership-detail" id="membershipDetail">Informasi membership akun ini akan muncul di sini.</span>
+    </div>
+  </div>
+  <div class="membership-days" id="membershipDaysBox">
+    <strong id="membershipDays">—</strong>
+    <span>hari lagi</span>
+  </div>
+</div>
 
 <!-- PROFILE SECTION -->
 <div class="profile-section" style="max-width:800px;margin:24px auto 0;">
@@ -946,6 +1037,7 @@
         document.getElementById('adminLock').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
         loadProfile();
+        renderMembershipInfo();
       } else {
         const errData = await res.json().catch(() => ({}));
         console.error('reAuth failed:', errData);
@@ -965,6 +1057,45 @@
     document.getElementById('adminPin').focus();
   });
 
+
+  function renderMembershipInfo() {
+    const badge = document.getElementById('membershipBadge');
+    const detail = document.getElementById('membershipDetail');
+    const daysEl = document.getElementById('membershipDays');
+    const daysBox = document.getElementById('membershipDaysBox');
+    if (!badge || !detail || !daysEl) return;
+
+    const p = Auth.getProfile() || {};
+    const status = Auth.getPlanStatus ? Auth.getPlanStatus() : 'expired';
+    const days = Auth.getDaysLeft ? Auth.getDaysLeft() : 0;
+    const end = p.pro_ends_at ? new Date(p.pro_ends_at).toLocaleDateString('id-ID') : '—';
+
+    badge.className = 'membership-badge ' + status;
+
+    if (status === 'pro') {
+      badge.textContent = '⭐ PRO aktif';
+      detail.textContent = `Berlaku sampai ${end}. Semua fitur aktif.`;
+      daysEl.textContent = Math.max(0, days);
+      daysBox.style.display = '';
+    } else if (status === 'trial') {
+      badge.textContent = '🔄 Free Trial';
+      detail.textContent = `Trial berlaku sampai ${end}. Setelah habis, hubungi admin untuk upgrade PRO.`;
+      daysEl.textContent = Math.max(0, days);
+      daysBox.style.display = '';
+    } else if (status === 'inactive') {
+      badge.textContent = '⛔ Akun nonaktif';
+      detail.textContent = 'Akun sedang nonaktif. Hubungi admin untuk mengaktifkan kembali.';
+      daysEl.textContent = '0';
+      daysBox.style.display = '';
+    } else {
+      badge.textContent = '⏰ Akses habis';
+      detail.textContent = 'Masa aktif sudah habis. Hubungi admin untuk perpanjang membership.';
+      daysEl.textContent = '0';
+      daysBox.style.display = '';
+    }
+  }
+
+
   // Load profile ke form
   function loadProfile() {
     const p = Auth.getProfile();
@@ -973,6 +1104,7 @@
     if (p.booth_name) document.getElementById('profileBoothName').value = p.booth_name;
     if (p.email) document.getElementById('profileEmail').value = p.email;
     document.getElementById('watermarkToggle').checked = p.show_watermark !== false;
+    renderMembershipInfo();
   }
 
   // Logo preview

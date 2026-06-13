@@ -163,6 +163,16 @@
       transition:.25s; z-index:1200;
     }
     .toast.show { transform:translateX(-50%) translateY(0); }
+  
+    /* Hide created ID card history from user-facing UI */
+    #historyPanel,
+    #historyGrid,
+    #historyEmpty,
+    [onclick="setView('history')"],
+    .history-grid {
+      display: none !important;
+    }
+
   </style>
   <script src="/auth.js"></script>
 </head>
@@ -600,10 +610,11 @@
     }
 
     function setView(view) {
+      if (view === 'history') view = 'create';
       document.getElementById('tabCreate').classList.toggle('active', view === 'create');
       document.getElementById('tabHistory').classList.toggle('active', view === 'history');
       document.getElementById('createPanel').style.display = view === 'create' ? '' : 'none';
-      document.getElementById('historyPanel').style.display = view === 'history' ? '' : 'none';
+      document.getElementById('historyPanel').style.display = 'none';
       if (view === 'history') renderHistory();
     }
 
@@ -663,6 +674,18 @@
       if (!photo) return;
       localStorage.removeItem('productPhoto');
       loadPhoto(photo);
+    }
+
+    function loadPhoto(src) {
+      const img = new Image();
+      img.onload = () => {
+        state.photo = src;
+        renderPreview();
+        applyLabels();
+        showToast('Foto berhasil masuk ✓');
+      };
+      img.onerror = () => showToast('Foto gagal dimuat');
+      img.src = src;
     }
 
     function renderPreview() {

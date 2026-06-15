@@ -122,23 +122,6 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-    ctx.globalAlpha = 0.18;
-    ctx.fillStyle = rgbToCss(theme.accent);
-    ctx.beginPath();
-    ctx.arc(cvs.width * 0.18, cvs.height * 0.2, Math.min(cvs.width, cvs.height) * 0.16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cvs.width * 0.82, cvs.height * 0.78, Math.min(cvs.width, cvs.height) * 0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.globalAlpha = 0.12;
-    ctx.strokeStyle = rgbToCss(theme.ring);
-    ctx.lineWidth = Math.max(3, Math.min(cvs.width, cvs.height) * 0.02);
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.arc(cvs.width / 2, cvs.height / 2, Math.min(cvs.width, cvs.height) * (0.16 + i * 0.11), 0, Math.PI * 2);
-      ctx.stroke();
-    }
     ctx.globalAlpha = 1;
 
     const boxW = cvs.width - pad * 2;
@@ -263,15 +246,6 @@
           drawn++;
         }
       }
-
-      ctx.save();
-      ctx.fillStyle = 'rgba(29,53,87,0.72)';
-      ctx.font = `${Math.max(18, Math.round(pageWpx * 0.012))}px Segoe UI, sans-serif`;
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'bottom';
-      const label = `${paper.label} • ${Math.min(capacity, qty - pageIndex * capacity)} set • ${pageIndex + 1}/${pageCount}`;
-      ctx.fillText(label, pageWpx - Math.round(pageWpx * 0.02), pageHpx - Math.round(pageHpx * 0.015));
-      ctx.restore();
 
       pages.push({
         index: pageIndex,

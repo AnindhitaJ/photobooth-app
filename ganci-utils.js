@@ -165,7 +165,10 @@
       } else if (type === 'swirl') {
         ctx.beginPath(); ctx.arc(cx, cy, m * 0.035, 0, Math.PI * 1.6); ctx.stroke();
       } else {
-        ctx.beginPath(); ctx.arc(cx, cy, m * 0.026, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cx - m * 0.03, cy + m * 0.02);
+        ctx.quadraticCurveTo(cx, cy - m * 0.02, cx + m * 0.03, cy + m * 0.02);
+        ctx.stroke();
       }
     });
     ctx.restore();
@@ -228,7 +231,7 @@
         ctx.lineTo(cx - m * 0.04, cy); ctx.lineTo(cx - m * 0.014, cy - m * 0.012);
         ctx.closePath(); ctx.stroke();
       } else {
-        ctx.beginPath(); ctx.arc(cx, cy, m * 0.018, 0, Math.PI * 2); ctx.fill();
+        drawEmoji(ctx, '✨', cx, cy, m * 0.09, 0.92);
       }
     });
     ctx.restore();
@@ -239,14 +242,11 @@
     const m = Math.min(w, h);
     ctx.shadowColor = fs.stroke;
     ctx.shadowBlur = m * 0.08;
-    ctx.strokeStyle = fs.stroke;
-    ctx.lineWidth = Math.max(2, m * 0.014);
     roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.15)).forEach(([cx, cy], i) => {
-      ctx.beginPath();
-      ctx.arc(cx, cy, m * (i % 2 ? 0.018 : 0.026), 0, Math.PI * 2);
-      ctx.stroke();
+      drawEmoji(ctx, i % 2 ? '✨' : '⚡', cx, cy, m * 0.11, 0.92);
     });
     ctx.strokeStyle = fs.accent;
+    ctx.lineWidth = Math.max(2, m * 0.014);
     ctx.beginPath();
     ctx.moveTo(x + w * 0.18, y + h * 0.84);
     ctx.quadraticCurveTo(x + w * 0.5, y + h * 0.72, x + w * 0.82, y + h * 0.84);
@@ -285,7 +285,7 @@
       ctx.stroke();
     });
     drawEmoji(ctx, '🐚', x + w * 0.18, y + h * 0.76, m * 0.10, 0.9);
-    drawEmoji(ctx, '🫧', x + w * 0.82, y + h * 0.24, m * 0.10, 0.9);
+    drawEmoji(ctx, '🌊', x + w * 0.82, y + h * 0.24, m * 0.10, 0.9);
     ctx.restore();
   }
 
@@ -300,10 +300,6 @@
       if (i % 2 === 0) drawEmoji(ctx, '✦', cx, cy, m * 0.12, 0.95);
       else drawEmoji(ctx, '☾', cx, cy, m * 0.12, 0.85);
     });
-    ctx.beginPath();
-    ctx.arc(x + w * 0.5, y + h * 0.5, m * 0.43, 0, Math.PI * 2);
-    ctx.globalAlpha = 0.18;
-    ctx.stroke();
     ctx.restore();
   }
 
@@ -326,54 +322,20 @@
   function drawBatik(ctx, x, y, w, h, bentuk, fs) {
     ctx.save();
     const m = Math.min(w, h);
-    ctx.strokeStyle = fs.accent;
-    ctx.fillStyle = fs.stroke;
-    ctx.lineWidth = Math.max(2, m * 0.01);
-    ctx.globalAlpha = 0.9;
-    const pts = roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.13));
-    pts.forEach(([cx, cy], i) => {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(i * Math.PI / 3);
-      ctx.beginPath();
-      ctx.arc(0, 0, m * 0.035, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-m * 0.05, 0);
-      ctx.quadraticCurveTo(0, -m * 0.08, m * 0.05, 0);
-      ctx.quadraticCurveTo(0, m * 0.08, -m * 0.05, 0);
-      ctx.stroke();
-      ctx.restore();
+    const items = ['✦', '🌺', '✦', '🌺', '✦', '🌺'];
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(18, m * 0.13)).forEach(([cx, cy], i) => {
+      drawEmoji(ctx, items[i % items.length], cx, cy, m * 0.11, 0.9);
     });
-    ctx.globalAlpha = 0.2;
-    for (let i = 0; i < 4; i++) {
-      ctx.beginPath();
-      ctx.arc(x + w * (0.25 + i * 0.16), y + h * 0.5, m * 0.09, 0, Math.PI * 2);
-      ctx.stroke();
-    }
     ctx.restore();
   }
 
   function drawPearl(ctx, x, y, w, h, bentuk, fs) {
     ctx.save();
     const m = Math.min(w, h);
-    const pts = roundedBorderPoints(x, y, w, h, bentuk, Math.max(16, m * 0.11));
-    pts.forEach(([cx, cy], i) => {
-      const grd = ctx.createRadialGradient(cx - m * 0.012, cy - m * 0.012, 1, cx, cy, m * 0.04);
-      grd.addColorStop(0, '#ffffff');
-      grd.addColorStop(0.65, '#f7e7bd');
-      grd.addColorStop(1, '#d6b56d');
-      ctx.fillStyle = grd;
-      ctx.beginPath();
-      ctx.arc(cx, cy, m * (i % 2 ? 0.032 : 0.04), 0, Math.PI * 2);
-      ctx.fill();
+    const items = ['🤍', '✨', '🤍', '✨', '🤍', '✨'];
+    roundedBorderPoints(x, y, w, h, bentuk, Math.max(16, m * 0.11)).forEach(([cx, cy], i) => {
+      drawEmoji(ctx, items[i % items.length], cx, cy, m * 0.10, 0.9);
     });
-    ctx.strokeStyle = '#d6b56d';
-    ctx.lineWidth = Math.max(1.5, m * 0.008);
-    ctx.globalAlpha = 0.75;
-    ctx.beginPath();
-    ctx.arc(x + w / 2, y + h / 2, m * 0.42, 0, Math.PI * 2);
-    ctx.stroke();
     ctx.restore();
   }
 
@@ -401,15 +363,10 @@
       ctx.stroke();
       ctx.restore();
     });
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = '#ef4444';
-    for (let yy = 0; yy < 5; yy++) {
-      for (let xx = 0; xx < 5; xx++) {
-        ctx.beginPath();
-        ctx.arc(x + w * (0.25 + xx * 0.12), y + h * (0.27 + yy * 0.10), m * 0.009, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    ctx.globalAlpha = 0.55;
+    ['💥', '⚡', '💬'].forEach((item, idx) => {
+      drawEmoji(ctx, item, x + w * (0.28 + idx * 0.22), y + h * 0.5, m * 0.09, 0.85);
+    });
     ctx.restore();
   }
 

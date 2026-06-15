@@ -864,7 +864,8 @@
       const frameLabel = saved.frameLabel || (window.GanciFrames?.labels?.[saved.frame]) || saved.frame || '-';
       const tone = saved.filter?.tone || 'normal';
       const cfg = saved.config || {};
-      document.getElementById('savedGanciMeta').textContent = `Frame: ${frameLabel} · Filter: ${tone} · ${cfg.jumlah || state.jumlah || 1} set`;
+      const corner = (saved.bentuk || cfg.bentuk || state.bentuk) === 'persegi' ? ` · Sudut: ${saved.cornerStyle || cfg.cornerStyle || state.cornerStyle || 'rounded'}` : '';
+      document.getElementById('savedGanciMeta').textContent = `Frame: ${frameLabel}${corner} · Filter: ${tone} · ${cfg.jumlah || state.jumlah || 1} set`;
       box.classList.add('show');
       document.getElementById('printCard').classList.add('show');
       loadPreviewPhotoFromState();
@@ -944,6 +945,7 @@
         saved.frame = freshConfig.frame;
         saved.frameLabel = freshConfig.frameLabel;
         saved.bentuk = freshConfig.bentuk;
+        saved.cornerStyle = freshConfig.cornerStyle;
         saved.config = { ...(saved.config || {}), ...freshConfig };
         localStorage.setItem('ganciConfig', JSON.stringify(saved.config));
         localStorage.setItem('ganciState', JSON.stringify(saved));

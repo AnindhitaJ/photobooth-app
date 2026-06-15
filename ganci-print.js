@@ -225,7 +225,8 @@
     const startX = marginPx;
     const startY = marginPx;
 
-    const logoPanelCvs = createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme, ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded');
+    const cornerStyle = ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded';
+    const logoPanelCvs = createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme, cornerStyle);
 
     const pages = [];
     for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
@@ -246,7 +247,7 @@
           window.GanciFrames.drawFrame(ctx, {
             x, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
-            cornerStyle: ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded',
+            cornerStyle,
             frame: ganciState.frame || 'polos',
             photo: photoImg,
             hook: false
@@ -254,7 +255,7 @@
           window.GanciFrames.drawFrame(ctx, {
             x: x + panelWpx + scaledBetweenPairPx, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
-            cornerStyle: ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded',
+            cornerStyle,
             frame: ganciState.frame || 'polos',
             photo: logoPanelCvs,
             hook: false

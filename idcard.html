@@ -657,6 +657,8 @@
     }
 
     function drawCoverImage(ctx, img, x, y, w, h) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       const iw = img.naturalWidth || img.width;
       const ih = img.naturalHeight || img.height;
       const scale = Math.max(w / iw, h / ih);
@@ -1002,7 +1004,7 @@
         drawStaticIdCard(cc, c, null);
       }
       latestIdCanvas = c;
-      return c.toDataURL(type === 'jpg' ? 'image/jpeg' : 'image/png', .94);
+      return c.toDataURL(type === 'jpg' ? 'image/jpeg' : 'image/png', .98);
     }
 
     async function getPrintDataUrl() {

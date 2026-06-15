@@ -299,6 +299,8 @@
     return y + lines.length * lineH;
   }
   function drawCoverImage(ctx, img, x, y, w, h, state) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
     const scale = Math.max(w / iw, h / ih) * (state.zoom || 1);

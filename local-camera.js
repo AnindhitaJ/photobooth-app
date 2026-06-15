@@ -120,8 +120,8 @@
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: captureOptions.facingMode || 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 1600 }
+          width: { ideal: 1920 },
+          height: { ideal: 2560 }
         },
         audio: false
       });
@@ -168,6 +168,8 @@
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // Mirror output to match front-camera preview.
     ctx.save();
@@ -176,7 +178,7 @@
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+    const dataUrl = canvas.toDataURL('image/jpeg', captureOptions.quality || 0.98);
     const callback = captureOptions.onCapture;
     close();
     if (typeof callback === 'function') callback(dataUrl);

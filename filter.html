@@ -248,7 +248,10 @@
 <script>
   const photos    = JSON.parse(localStorage.getItem('photos') || '[]');
   const slotCount = photos.length;
-  const isGanciMode = localStorage.getItem('captureFlow') === 'ganci';
+  const captureFlow = localStorage.getItem('captureFlow') || '';
+  const isGanciMode = captureFlow === 'ganci';
+  const isProductMode = captureFlow === 'product';
+  const productLikeExportQuality = (isGanciMode || isProductMode) ? 0.98 : 0.92;
   const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
   if (isGanciMode) {
     document.body.classList.add('ganci-mode');
@@ -858,7 +861,7 @@
       currentImg = new Image();
       currentImg.onload = () => {
         applyFilter();
-        filteredPhotos[i] = canvas.toDataURL('image/jpeg', 0.92);
+        filteredPhotos[i] = canvas.toDataURL('image/jpeg', productLikeExportQuality);
         resolve();
       };
       currentImg.src = src;
@@ -883,7 +886,7 @@
 
   function simpanFotoSilent() {
     if (!canvas.width || !canvas.height) return;
-    filteredPhotos[currentIdx] = canvas.toDataURL('image/jpeg', 0.92);
+    filteredPhotos[currentIdx] = canvas.toDataURL('image/jpeg', productLikeExportQuality);
   }
 
   window.simpanFoto = function() {
@@ -919,7 +922,6 @@
     }
 
     // Product mode: simpan foto ke productPhoto lalu balik ke menu asal
-    const captureFlow = localStorage.getItem('captureFlow') || '';
     const returnUrl   = localStorage.getItem('captureReturnUrl') || '/result';
     if (captureFlow === 'product') {
       const photo = filteredPhotos[0] || photos[0] || null;

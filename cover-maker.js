@@ -157,6 +157,8 @@
   }
 
   function drawCoverImage(ctx, img, x, y, w, h, zoom=1, offsetX=0, offsetY=0) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
     const scale = Math.max(w / iw, h / ih) * zoom;

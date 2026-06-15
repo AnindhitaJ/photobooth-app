@@ -486,6 +486,8 @@
   }
 
   function drawCoverPhotoWithFilter(img, x, y, w, h) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
     const scale = Math.max(w / iw, h / ih);
@@ -1100,7 +1102,7 @@
     temp.height = video.videoHeight || 960;
     const c = temp.getContext('2d');
     c.save(); c.translate(temp.width, 0); c.scale(-1, 1); c.drawImage(video, 0, 0, temp.width, temp.height); c.restore();
-    const data = temp.toDataURL('image/jpeg', .92);
+    const data = temp.toDataURL('image/jpeg', .98);
     closeCamera();
     loadPhoto(data);
   }

@@ -217,6 +217,8 @@
       canvas.width = pageWpx;
       canvas.height = pageHpx;
       const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -249,7 +251,7 @@
 
       pages.push({
         index: pageIndex,
-        dataUrl: canvas.toDataURL('image/jpeg', 0.92),
+        dataUrl: canvas.toDataURL('image/jpeg', 0.98),
         title: `ganci-print-${Date.now()}-${pageIndex + 1}.jpg`
       });
     }

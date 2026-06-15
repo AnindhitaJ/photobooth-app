@@ -106,14 +106,14 @@
     return { base, bgMain, bgAlt, accent, ring };
   }
 
-  function createLogoPanelCanvas(logoImg, width, height, bentuk, theme) {
+  function createLogoPanelCanvas(logoImg, width, height, bentuk, theme, cornerStyle) {
     const cvs = document.createElement('canvas');
     cvs.width = Math.max(10, Math.round(width));
     cvs.height = Math.max(10, Math.round(height));
     const ctx = cvs.getContext('2d');
     const pad = Math.max(16, Math.min(cvs.width, cvs.height) * 0.08);
 
-    window.GanciFrames.shapePath(ctx, 0, 0, cvs.width, cvs.height, bentuk, Math.min(cvs.width, cvs.height) * 0.16);
+    window.GanciFrames.shapePath(ctx, 0, 0, cvs.width, cvs.height, bentuk, Math.min(cvs.width, cvs.height) * 0.16, cornerStyle);
     ctx.save();
     ctx.clip();
     const grad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
@@ -225,7 +225,7 @@
     const startX = marginPx;
     const startY = marginPx;
 
-    const logoPanelCvs = createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme);
+    const logoPanelCvs = createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme, ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded');
 
     const pages = [];
     for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
@@ -246,6 +246,7 @@
           window.GanciFrames.drawFrame(ctx, {
             x, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
+            cornerStyle: ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded',
             frame: ganciState.frame || 'polos',
             photo: photoImg,
             hook: false
@@ -253,6 +254,7 @@
           window.GanciFrames.drawFrame(ctx, {
             x: x + panelWpx + scaledBetweenPairPx, y, w: panelWpx, h: panelHpx,
             bentuk: ganciState.bentuk || 'persegi',
+            cornerStyle: ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded',
             frame: ganciState.frame || 'polos',
             photo: logoPanelCvs,
             hook: false

@@ -39,13 +39,19 @@
     return FRAME_STYLES[frame] || FRAME_STYLES.polos;
   }
 
-  function shapePath(ctx, x, y, w, h, bentuk, radius) {
+  function shapePath(ctx, x, y, w, h, bentuk, radius, cornerStyle) {
     ctx.beginPath();
     if (bentuk === 'lingkaran') {
       const r = Math.min(w, h) / 2;
       ctx.arc(x + w / 2, y + h / 2, r, 0, Math.PI * 2);
       return;
     }
+
+    if (cornerStyle === 'siku') {
+      ctx.rect(x, y, w, h);
+      return;
+    }
+
     const rr = Math.max(8, Math.min(radius || 26, Math.min(w, h) * 0.16));
     ctx.moveTo(x + rr, y);
     ctx.lineTo(x + w - rr, y);
@@ -450,6 +456,7 @@
     const w = o.w || 100;
     const h = o.h || 100;
     const bentuk = o.bentuk || 'persegi';
+    const cornerStyle = o.cornerStyle || 'rounded';
     const frame = o.frame || 'polos';
     const fs = getStyle(frame);
     const line = Math.max(o.lineWidth || 0, Math.min(w, h) * (o.overlay ? 0.038 : 0.045));
@@ -458,11 +465,11 @@
     ctx.save();
 
     if (o.showPlaceholder || o.photo) {
-      shapePath(ctx, x, y, w, h, bentuk);
+      shapePath(ctx, x, y, w, h, bentuk, undefined, cornerStyle);
       ctx.fillStyle = fs.fill;
       ctx.fill();
       ctx.save();
-      shapePath(ctx, x + inset, y + inset, w - inset * 2, h - inset * 2, bentuk);
+      shapePath(ctx, x + inset, y + inset, w - inset * 2, h - inset * 2, bentuk, undefined, cornerStyle);
       ctx.clip();
       if (o.photo) {
         const img = o.photo;
@@ -480,14 +487,14 @@
 
     ctx.shadowColor = fs.shadow;
     ctx.shadowBlur = o.overlay ? 20 : 0;
-    shapePath(ctx, x, y, w, h, bentuk);
+    shapePath(ctx, x, y, w, h, bentuk, undefined, cornerStyle);
     ctx.strokeStyle = frame === 'polos' ? 'rgba(255,255,255,0.96)' : fs.stroke;
     ctx.lineWidth = line;
     if (frame === 'doodle') ctx.setLineDash([line * 1.15, line * 0.9]);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    shapePath(ctx, x + line * 1.45, y + line * 1.45, w - line * 2.9, h - line * 2.9, bentuk);
+    shapePath(ctx, x + line * 1.45, y + line * 1.45, w - line * 2.9, h - line * 2.9, bentuk, undefined, cornerStyle);
     ctx.strokeStyle = frame === 'polos' ? 'rgba(229,231,235,0.95)' : fs.accent;
     ctx.lineWidth = Math.max(2, line * 0.35);
     ctx.stroke();

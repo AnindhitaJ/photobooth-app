@@ -281,6 +281,21 @@
           </div>
         </div>
       </div>
+
+      <!-- Sudut Persegi -->
+      <div class="card" id="cornerStyleCard" style="margin-bottom:16px;">
+        <div class="card-title">◻️ Sudut Rectangle</div>
+        <div class="form-group" style="margin-bottom:0;">
+          <div class="toggle-group" id="cornerStyleGroup">
+            <button class="toggle-btn active" data-value="rounded" onclick="setCornerStyle(this)">
+              <span class="icon">🟪</span> Rounded
+            </button>
+            <button class="toggle-btn" data-value="siku" onclick="setCornerStyle(this)">
+              <span class="icon">⬛</span> Siku
+            </button>
+          </div>
+        </div>
+      </div>
       <!-- Ukuran Kertas -->
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">📄 Ukuran Kertas</div>
@@ -461,6 +476,7 @@
     // ── State ──
     const state = {
       bentuk: 'persegi',
+      cornerStyle: 'rounded',
       frame: 'polos',
       ukuranKertas: 'A4',
       customW: 150,
@@ -503,6 +519,7 @@
       document.querySelectorAll('#bentukGroup .toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.bentuk = btn.dataset.value;
+      updateCornerStyleVisibility();
       updatePreview();
     }
     function setFrame(btn) {
@@ -510,6 +527,17 @@
       btn.classList.add('active');
       state.frame = btn.dataset.value;
       updatePreview();
+    }
+    function setCornerStyle(btn) {
+      document.querySelectorAll('#cornerStyleGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.cornerStyle = btn.dataset.value;
+      updatePreview();
+    }
+    function updateCornerStyleVisibility() {
+      const card = document.getElementById('cornerStyleCard');
+      if (!card) return;
+      card.style.display = state.bentuk === 'persegi' ? '' : 'none';
     }
     function setUkuranKertas(val) {
       state.ukuranKertas = val;
@@ -707,6 +735,7 @@
           w: frameW,
           h: frameH,
           bentuk: state.bentuk,
+          cornerStyle: state.cornerStyle,
           frame: state.frame,
           photo: previewPhotoImg || null,
           showPlaceholder: !previewPhotoImg,
@@ -728,6 +757,7 @@
         <div class="info-chip">Mode: <span>1 foto</span></div>
         <div class="info-chip">Ganci total: <span>${gW}×${gH} mm incl. frame</span></div>
         <div class="info-chip">Bentuk: <span>${state.bentuk}</span></div>
+        ${state.bentuk === 'persegi' ? `<div class="info-chip">Sudut: <span>${state.cornerStyle}</span></div>` : ''}
         <div class="info-chip">Frame: <span>${frameLabel}</span></div>
         <div class="info-chip">Kertas: <span>${state.ukuranKertas === 'Custom' ? state.customW + '×' + state.customH + ' mm' : state.ukuranKertas}</span></div>
         <div class="info-chip">Jumlah: <span>${state.jumlah} set</span></div>
@@ -739,6 +769,7 @@
       return {
         mode: 'ganci',
         bentuk: state.bentuk,
+        cornerStyle: state.cornerStyle,
         frame: state.frame,
         frameLabel: (window.GanciFrames?.labels?.[state.frame]) || state.frame,
         ukuranKertas: state.ukuranKertas,
@@ -796,6 +827,7 @@
             beautify: state.beautify,
             mode: 'ganci',
             bentuk: config.bentuk,
+            cornerStyle: config.cornerStyle,
             frame: config.frame,
             frameLabel: config.frameLabel,
             ukuranKertas: config.ukuranKertas,
@@ -851,6 +883,11 @@
         state.bentuk = cfg.bentuk;
         document.querySelectorAll('#bentukGroup .toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.value === cfg.bentuk));
       }
+      if (cfg.cornerStyle) {
+        state.cornerStyle = cfg.cornerStyle;
+        document.querySelectorAll('#cornerStyleGroup .toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.value === cfg.cornerStyle));
+      }
+      updateCornerStyleVisibility();
       if (cfg.frame) {
         state.frame = cfg.frame;
         document.querySelectorAll('#frameGroup .toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.value === cfg.frame));
@@ -881,7 +918,7 @@
       document.getElementById('pageInfo').textContent = `Halaman ${currentLayoutPage + 1} / ${generatedLayout.pages.length}`;
       document.getElementById('btnPrevPage').disabled = currentLayoutPage === 0;
       document.getElementById('btnNextPage').disabled = currentLayoutPage === generatedLayout.pages.length - 1;
-      document.getElementById('layoutStatus').textContent = `${generatedLayout.paper.label} • ${generatedLayout.quantity} set • ukuran total ${generatedLayout.panelWmm}×${generatedLayout.panelHmm} mm incl. frame • kapasitas ${generatedLayout.capacity} set/halaman • ${generatedLayout.pageCount} halaman • 300 DPI`;
+      document.getElementById('layoutStatus').textContent = `${generatedLayout.paper.label} • ${generatedLayout.quantity} set • ukuran total ${generatedLayout.panelWmm}×${generatedLayout.panelHmm} mm incl. frame${state.bentuk === 'persegi' ? ' • sudut ' + state.cornerStyle : ''} • kapasitas ${generatedLayout.capacity} set/halaman • ${generatedLayout.pageCount} halaman • 300 DPI`;
     }
 
     window.changeLayoutPage = function(delta) {

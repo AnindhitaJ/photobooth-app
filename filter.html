@@ -116,6 +116,43 @@
     .btn-primary { background: linear-gradient(135deg, var(--green), #c9972a); color: white; box-shadow: 0 6px 20px rgba(229,184,66,0.35); }
     .btn-primary:hover { transform: translateY(-2px); }
     body.ganci-mode .photo-tabs, body.ganci-mode #applyAllRow { display: none; }
+  
+    /* iPad / tablet fix: jangan sampai action button ketutup karena viewport terlalu zoom */
+    @media (min-width: 700px) and (max-width: 1180px), (max-height: 820px) {
+      body { overflow-x: hidden; }
+      .page-wrap, .main-wrap, .app-wrap, .container {
+        max-width: 100% !important;
+      }
+      .preview-card, .editor-card, .filter-card, .panel, .card {
+        min-width: 0 !important;
+      }
+      .btn-row {
+        position: sticky;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        z-index: 20;
+        background: rgba(255, 248, 252, 0.96);
+        backdrop-filter: blur(8px);
+        border-radius: 18px;
+        padding: 8px;
+        box-shadow: 0 -8px 24px rgba(216, 75, 126, 0.10);
+      }
+      .btn-row .btn {
+        min-height: 46px;
+        font-size: 13px;
+        padding: 12px 14px;
+      }
+    }
+
+    @media (min-width: 700px) and (max-width: 1180px) {
+      .layout, .content, .filter-layout, .main-layout {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      canvas, #previewCanvas {
+        max-width: min(100%, 560px) !important;
+        height: auto !important;
+      }
+    }
+
   </style>
   <script src="/auth.js"></script>
   <script src="/ganci-utils.js"></script>

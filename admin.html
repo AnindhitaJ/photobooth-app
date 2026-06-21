@@ -101,14 +101,22 @@
       background: #f0ebe4; border-radius: 16px;
       overflow: hidden; border: 2.5px solid var(--border);
       margin-bottom: 16px; user-select: none;
+      touch-action: none;
       box-shadow: 0 4px 20px rgba(216,75,126,0.12);
     }
-    #editorCanvas { display: block; }
-    .slot-overlay { position: absolute; inset: 0; pointer-events: none; }
+    #editorCanvas { display: block; touch-action: none; }
+    .slot-overlay { position: absolute; inset: 0; pointer-events: none; touch-action: none; }
     .slot-box {
       position: absolute; border: 2.5px solid var(--orange);
       background: rgba(216,75,126,0.12);
       pointer-events: all; cursor: move; border-radius: 6px;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .slot-box.dragging {
+      box-shadow: 0 0 0 4px rgba(216,75,126,0.18);
+      background: rgba(216,75,126,0.20);
     }
     .slot-label {
       position: absolute; top: 4px; left: 6px;
@@ -118,14 +126,28 @@
     .slot-delete {
       position: absolute; top: 4px; right: 4px;
       background: var(--orange); color: white; border: none; border-radius: 50%;
-      width: 22px; height: 22px; font-size: 13px; cursor: pointer;
+      width: 28px; height: 28px; font-size: 15px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 2px 6px rgba(216,75,126,0.5);
+      touch-action: manipulation;
     }
     .resize-handle {
-      position: absolute; bottom: 0; right: 0;
-      width: 16px; height: 16px; background: var(--orange);
-      cursor: se-resize; border-radius: 2px 0 6px 0;
+      position: absolute; bottom: -7px; right: -7px;
+      width: 34px; height: 34px; background: var(--orange);
+      cursor: se-resize; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.95);
+      box-shadow: 0 4px 12px rgba(216,75,126,0.35);
+      touch-action: none;
+    }
+    .resize-handle::after {
+      content: ""; position: absolute; right: 7px; bottom: 7px;
+      width: 11px; height: 11px;
+      border-right: 2px solid white; border-bottom: 2px solid white;
+    }
+    @media (pointer: coarse) {
+      .slot-box { border-width: 3px; }
+      .resize-handle { width: 44px; height: 44px; bottom: -12px; right: -12px; }
+      .slot-delete { width: 34px; height: 34px; font-size: 17px; }
     }
 
     /* SLOT INFO */
@@ -814,34 +836,76 @@
     });
   }
 
+  function getPointerXY(e) {
+    if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function bindDragMove(target, startEvent, onMove, onEnd) {
+    const pointerId = startEvent.pointerId;
+    if (target.setPointerCapture && pointerId != null) {
+      try { target.setPointerCapture(pointerId); } catch(e) {}
+    }
+    const moveEvent = window.PointerEvent ? 'pointermove' : 'mousemove';
+    const upEvent = window.PointerEvent ? 'pointerup' : 'mouseup';
+    const cancelEvent = window.PointerEvent ? 'pointercancel' : 'mouseleave';
+    const mv = e => {
+      if (pointerId != null && e.pointerId != null && e.pointerId !== pointerId) return;
+      e.preventDefault();
+      onMove(e);
+    };
+    const up = e => {
+      if (pointerId != null && e.pointerId != null && e.pointerId !== pointerId) return;
+      if (target.releasePointerCapture && pointerId != null) {
+        try { target.releasePointerCapture(pointerId); } catch(err) {}
+      }
+      document.removeEventListener(moveEvent, mv);
+      document.removeEventListener(upEvent, up);
+      document.removeEventListener(cancelEvent, up);
+      if (typeof onEnd === 'function') onEnd(e);
+    };
+    document.addEventListener(moveEvent, mv, { passive: false });
+    document.addEventListener(upEvent, up, { passive: false });
+    document.addEventListener(cancelEvent, up, { passive: false });
+  }
+
   function makeDraggable(box, idx) {
-    let sx, sy, sl, st;
-    box.addEventListener('mousedown', e => {
+    const start = e => {
+      if (e.button != null && e.button !== 0) return;
       if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
       e.preventDefault();
-      sx = e.clientX; sy = e.clientY; sl = slots[idx].x; st = slots[idx].y;
-      const mv = e => {
-        slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + e.clientX - sx));
-        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + e.clientY - sy));
-        box.style.left = slots[idx].x + 'px'; box.style.top = slots[idx].y + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    });
+      const p = getPointerXY(e);
+      const sx = p.x, sy = p.y, sl = slots[idx].x, st = slots[idx].y;
+      box.classList.add('dragging');
+      bindDragMove(box, e, moveEvent => {
+        const q = getPointerXY(moveEvent);
+        slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + q.x - sx));
+        slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + q.y - sy));
+        box.style.left = slots[idx].x + 'px';
+        box.style.top = slots[idx].y + 'px';
+      }, () => box.classList.remove('dragging'));
+    };
+    box.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
   }
 
   function makeResizable(handle, box, idx) {
-    handle.addEventListener('mousedown', e => {
+    const start = e => {
+      if (e.button != null && e.button !== 0) return;
       e.preventDefault(); e.stopPropagation();
-      const sx = e.clientX, sy = e.clientY, sw = slots[idx].w, sh = slots[idx].h;
-      const mv = e => {
-        slots[idx].w = Math.max(40, Math.min(canvas.width - slots[idx].x, sw + e.clientX - sx));
-        slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, sh + e.clientY - sy));
-        box.style.width = slots[idx].w + 'px'; box.style.height = slots[idx].h + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    });
+      const p = getPointerXY(e);
+      const sx = p.x, sy = p.y, sw = slots[idx].w, sh = slots[idx].h;
+      box.classList.add('dragging');
+      bindDragMove(handle, e, moveEvent => {
+        const q = getPointerXY(moveEvent);
+        slots[idx].w = Math.max(40, Math.min(canvas.width - slots[idx].x, sw + q.x - sx));
+        slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, sh + q.y - sy));
+        box.style.width = slots[idx].w + 'px';
+        box.style.height = slots[idx].h + 'px';
+      }, () => box.classList.remove('dragging'));
+    };
+    handle.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
+    handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   }
 
   function addSlotManual() {

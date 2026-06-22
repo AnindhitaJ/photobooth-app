@@ -570,7 +570,7 @@
       for (let y = 42; y < FRAME_H - 42; y += 36) roundRect(ctx, FRAME_W - 40, y, 16, 16, 3, withAlpha(def.accent2, .88));
       roundRect(ctx, 52, 28, FRAME_W - 104, 46, 12, withAlpha('#fff8', .28), withAlpha(def.accent2, .42), 2);
       text(ctx, 'KODAK FEEL', FRAME_W / 2, 55, 20, def.ink, 900);
-      tinyLabel(FRAME_W - 170, 39, 116, 'flash booth', def.accent, def.ink);
+      tinyLabel(FRAME_W - 170, 39, 116, 'flash snap', def.accent, def.ink);
       line(ctx, 66, FRAME_H - 96, FRAME_W - 66, FRAME_H - 96, withAlpha(def.accent2, .28), 2);
       line(ctx, 66, FRAME_H - 70, FRAME_W - 66, FRAME_H - 70, withAlpha(def.accent2, .18), 1.5);
       for (let i = 0; i < 20; i++) circle(ctx, 60 + (i * 25) % (FRAME_W - 120), 110 + (i * 79) % (FRAME_H - 180), 1.6, withAlpha(def.ink, .18));
@@ -1128,7 +1128,7 @@
       circle(ctx, 62, FRAME_H - 78, 18, withAlpha('#ffffff', .18), withAlpha('#ffffff', .55), 1);
       text(ctx, '♪', 62, FRAME_H - 78, 16, '#ffffff', 900);
       text(ctx, '@nova.loop', 92, FRAME_H - 92, 14, '#ffffff', 900, 'left');
-      text(ctx, 'face card never declines ✨', 92, FRAME_H - 70, 12, withAlpha('#ffffff', .82), 700, 'left');
+      text(ctx, 'pretty privilege detected ✨', 92, FRAME_H - 70, 12, withAlpha('#ffffff', .82), 700, 'left');
       actionBubble(FRAME_W - 42, 640, '♥', '24.6k', withAlpha(def.accent, .22), '#ffffff');
       actionBubble(FRAME_W - 42, 748, '💬', '1,203', withAlpha(def.accent2, .24), '#ffffff');
       actionBubble(FRAME_W - 42, 856, '↗', '314', withAlpha('#ffffff', .12), '#ffffff');
@@ -1276,12 +1276,12 @@
         igstory: '24h of pure main character energy',
         tiktok: 'the algorithm has a favorite',
         youtube: 'vlog now, overthink later',
-        iphone: 'camera roll full of slay',
+        iphone: 'camera roll full of bangers',
         cameraRoll: 'too cute to stay in recents only',
-        music: 'now playing: face card anthem',
-        chat: 'group chat approved this look',
-        profile: 'chronically photogenic behavior',
-        viral: 'accidentally broke the timeline'
+        music: 'now playing: main pop girl energy',
+        chat: 'group chat says post it now',
+        profile: 'too photogenic for one account',
+        viral: 'oops this post went viral'
       };
       text(ctx, socialQuotes[def.motif] || 'main character post incoming', FRAME_W / 2, zoneTop + 20, 11, withAlpha(def.ink, .82), 800);
     } else if (def.category === 'Pattern') {
@@ -1560,10 +1560,10 @@
         }
       } else if (def.category === 'Social Media') {
         const socialCounts = [
-          ['♥ 1.2k', '💬 48', '↗ 12'],
-          ['♥ 2.8k', '💬 116', '↗ 29'],
-          ['♥ 4.9k', '💬 302', '↗ 87'],
-          ['♥ 8.1k', '💬 540', '↗ 121']
+          ['1.2k likes', '48 chats', '12 saves'],
+          ['2.8k likes', '116 chats', '29 saves'],
+          ['4.9k likes', '302 chats', '87 saves'],
+          ['8.1k likes', '540 chats', '121 saves']
         ];
         if (def.motif === 'igstory') {
           roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 22, null, withAlpha('#ffffff', .82), 1.5);
@@ -1572,9 +1572,9 @@
         } else if (def.motif === 'igfeed' || def.motif === 'profile') {
           roundRect(ctx, s.x - 8, s.y - 30, s.w + 16, 22, 11, withAlpha('#ffffff', .86), withAlpha(def.accent2, .22), 1);
           circle(ctx, s.x + 14, s.y - 19, 6, def.accent);
-          line(ctx, s.x + 26, s.y - 19, s.x + 88, s.y - 19, withAlpha(def.ink, .28), 3);
-          text(ctx, socialCounts[idx][0], s.x + 14, s.y + s.h + 20, 9, withAlpha(def.ink, .72), 800, 'left');
-          text(ctx, socialCounts[idx][1], s.x + 70, s.y + s.h + 20, 9, withAlpha(def.ink, .72), 800, 'left');
+          line(ctx, s.x + 26, s.y - 19, s.x + 96, s.y - 19, withAlpha(def.ink, .28), 3);
+          text(ctx, socialCounts[idx][0], s.x + 10, s.y + s.h + 20, 8.5, withAlpha(def.ink, .72), 800, 'left');
+          text(ctx, socialCounts[idx][1], s.x + s.w - 10, s.y + s.h + 20, 8.5, withAlpha(def.ink, .72), 800, 'right');
         } else if (def.motif === 'youtube') {
           roundRect(ctx, s.x + 10, s.y + s.h - 28, 54, 16, 8, def.accent);
           text(ctx, 'PLAY', s.x + 37, s.y + s.h - 16, 9, '#fff', 900);
@@ -1593,8 +1593,8 @@
           text(ctx, idx === 0 ? 'LIVE' : idx === 1 ? 'HDR' : idx === 2 ? 'RAW' : 'RECENT', s.x + s.w - 14, s.y + 16, 9, def.ink, 800, 'right');
           text(ctx, ['1 Jun','4 Jun','7 Jun','10 Jun'][idx], s.x + 12, s.y + s.h + 18, 9, withAlpha(def.ink, .72), 800, 'left');
         } else {
-          text(ctx, socialCounts[idx][0], s.x + 12, s.y + s.h + 18, 9, withAlpha(def.ink, .72), 800, 'left');
-          text(ctx, socialCounts[idx][1], s.x + 72, s.y + s.h + 18, 9, withAlpha(def.ink, .72), 800, 'left');
+          text(ctx, socialCounts[idx][0], s.x + 10, s.y + s.h + 18, 8.5, withAlpha(def.ink, .72), 800, 'left');
+          text(ctx, socialCounts[idx][1], s.x + s.w - 10, s.y + s.h + 18, 8.5, withAlpha(def.ink, .72), 800, 'right');
         }
       } else {
         corners.forEach(([cx, cy], cidx) => {
@@ -1619,11 +1619,12 @@
           text(ctx, gamingGap, FRAME_W / 2, gapY + 1, 12, def.ink, 900);
         } else if (def.category === 'Social Media') {
           const socialGap = def.motif === 'youtube' ? ['10k views','18k views','31k views'][idx]
-            : def.motif === 'tiktok' ? ['♥ 12k','💬 904','↗ 122'][idx]
-            : def.motif === 'music' ? ['playing','liked','saved'][idx]
-            : ['♥ 1.2k','💬 302','↗ 87'][idx];
-          roundRect(ctx, FRAME_W / 2 - 64, gapY - 12, 128, 24, 10, withAlpha(def.accent, .1), withAlpha(def.accent2, .28), 1.2);
-          text(ctx, socialGap, FRAME_W / 2, gapY + 1, 11, def.ink, 800);
+            : def.motif === 'tiktok' ? ['12k likes','904 chats','122 saves'][idx]
+            : def.motif === 'music' ? ['now playing','most replayed','saved track'][idx]
+            : def.motif === 'iphone' || def.motif === 'cameraRoll' ? ['fave shot','camera roll','best angle'][idx]
+            : ['1.2k likes','302 chats','87 saves'][idx];
+          roundRect(ctx, FRAME_W / 2 - 70, gapY - 12, 140, 24, 10, withAlpha(def.accent, .1), withAlpha(def.accent2, .28), 1.2);
+          text(ctx, socialGap, FRAME_W / 2, gapY + 1, 10.5, def.ink, 800);
         } else {
           text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 20, withAlpha(def.accent2, .92));
           line(ctx, 110, gapY, FRAME_W / 2 - 26, gapY, withAlpha(def.accent, .24), 1.5);

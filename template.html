@@ -679,7 +679,7 @@
         circle(ctx, x + 24, y, 18, withAlpha('#ffffff', .82));
         for (let k = 0; k < 3; k++) line(ctx, x - 18 + k * 18, y + 28, x - 24 + k * 18, y + 44, withAlpha(def.accent, .35), 3);
       }
-      text(ctx, 'soft cloud', FRAME_W / 2, 56, 23, def.ink, 900);
+      text(ctx, 'soft cloud', FRAME_W / 2 + 40, 56, 20, def.ink, 900);
     } else if (def.motif === 'diary') {
       // diary rings + ruled-note feel
       for (let y = 122; y < FRAME_H - 128; y += 72) {
@@ -688,7 +688,7 @@
       }
       tinySticker(FRAME_W - 65, 58, '♡', def.accent2);
       tinySticker(72, FRAME_H - 58, 'OK', def.accent);
-      text(ctx, 'dear diary', FRAME_W / 2, 56, 22, def.ink, 900);
+      text(ctx, 'dear diary', FRAME_W / 2 + 40, 56, 19, def.ink, 900);
     } else if (def.motif === 'sakura') {
       for (let y = 106; y < FRAME_H - 110; y += 86) {
         line(ctx, 20, y - 32, 58, y + 32, withAlpha(def.ink, .18), 2);
@@ -698,14 +698,14 @@
           circle(ctx, side, y, 4, def.accent2);
         }
       }
-      text(ctx, 'cherry day', FRAME_W / 2, 56, 22, def.ink, 900);
+      text(ctx, 'cherry day', FRAME_W / 2 + 40, 56, 19, def.ink, 900);
     } else if (def.motif === 'ribbon') {
       for (let y = 132; y < FRAME_H - 128; y += 184) {
         drawBow(ctx, 42, y, withAlpha(def.accent, .72), def.ink);
         drawBow(ctx, FRAME_W - 42, y + 72, withAlpha(def.accent2, .82), def.ink);
       }
       roundRect(ctx, 88, 28, FRAME_W - 176, 48, 24, withAlpha('#ffffff', .55), withAlpha(def.accent, .45), 2);
-      text(ctx, 'ribbon club', FRAME_W / 2, 55, 20, def.ink, 900);
+      text(ctx, 'ribbon club', FRAME_W / 2 + 42, 55, 18, def.ink, 900);
     } else if (def.motif === 'latte') {
       for (let y = 130; y < FRAME_H - 130; y += 170) {
         roundRect(ctx, 24, y, 42, 34, 10, withAlpha(def.accent2, .72), withAlpha(def.accent, .45), 2);
@@ -713,7 +713,7 @@
         text(ctx, '☕', FRAME_W - 45, y + 13, 24, def.accent);
         text(ctx, '♡', 45, y + 76, 24, def.accent);
       }
-      text(ctx, 'latte mood', FRAME_W / 2, 56, 22, def.ink, 900);
+      text(ctx, 'latte mood', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
     } else if (def.motif === 'campus') {
       for (let y = 120; y < FRAME_H - 130; y += 150) {
         roundRect(ctx, 22, y, 54, 36, 8, withAlpha(def.accent2, .85), withAlpha(def.ink, .18), 2);
@@ -722,7 +722,7 @@
       }
       line(ctx, 0, 88, FRAME_W, 88, withAlpha(def.accent, .35), 3);
       line(ctx, 0, FRAME_H - 98, FRAME_W, FRAME_H - 98, withAlpha(def.accent, .35), 3);
-      text(ctx, 'campus day', FRAME_W / 2, 56, 21, def.ink, 900);
+      text(ctx, 'campus day', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
     } else if (def.motif === 'stamp') {
       for (let y = 122; y < FRAME_H - 130; y += 150) {
         roundRect(ctx, 18, y, 64, 42, 8, withAlpha('#ffffff', .25), def.accent, 3);
@@ -730,14 +730,14 @@
         roundRect(ctx, FRAME_W - 82, y + 58, 64, 42, 8, withAlpha('#ffffff', .25), def.accent2, 3);
         text(ctx, 'MEMO', FRAME_W - 50, y + 83, 14, def.ink, 900);
       }
-      text(ctx, 'heart stamp', FRAME_W / 2, 56, 21, def.ink, 900);
+      text(ctx, 'heart stamp', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
     } else {
       sideScallop(def.accent, def.accent2);
       for (let y = 112; y < FRAME_H - 120; y += 130) {
         text(ctx, ['♡','✦','✿','⋆'][Math.floor(y/130)%4], 42, y, 30, def.accent);
         text(ctx, ['⋆','✿','♡','✦'][Math.floor(y/130)%4], FRAME_W - 42, y + 52, 30, def.accent2);
       }
-      text(ctx, 'k-style', FRAME_W / 2, 56, 22, def.ink, 900);
+      text(ctx, 'k-style', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
     }
 
     drawConfetti(ctx, def, 52);
@@ -1087,43 +1087,8 @@
     const headerMid = Math.max(58, Math.min(92, topBottom * 0.5));
 
     if (def.category === 'Korean') {
-      if (def.motif === 'cloud') {
-        for (const [x, y, scale] of [[100, 70, 1.1], [FRAME_W / 2, 52, 1.25], [FRAME_W - 98, 82, 1]]) {
-          circle(ctx, x - 22 * scale, y, 17 * scale, withAlpha('#ffffff', .82));
-          circle(ctx, x, y - 8 * scale, 24 * scale, withAlpha('#ffffff', .88));
-          circle(ctx, x + 24 * scale, y, 17 * scale, withAlpha('#ffffff', .82));
-        }
-      } else if (def.motif === 'diary') {
-        roundRect(ctx, 76, 34, FRAME_W - 152, 48, 16, withAlpha('#ffffff', .55), withAlpha(def.accent, .28), 2);
-        for (let x = 112; x < FRAME_W - 96; x += 50) roundRect(ctx, x, 24, 26, 18, 9, null, withAlpha(def.ink, .22), 3);
-        text(ctx, 'dear diary', FRAME_W / 2, 58, 20, def.ink, 900);
-      } else if (def.motif === 'sakura') {
-        for (let i = 0; i < 8; i++) {
-          const x = 62 + i * 62;
-          circle(ctx, x - 10, 52 + (i % 2) * 5, 8, withAlpha(def.accent, .82));
-          circle(ctx, x, 42 + (i % 2) * 5, 8, withAlpha(def.accent2, .84));
-          circle(ctx, x + 10, 52 + (i % 2) * 5, 8, withAlpha(def.accent, .82));
-        }
-      } else if (def.motif === 'ribbon') {
-        drawHeaderRibbon(ctx, 110, 34, FRAME_W - 220, 42, 'coquette club', withAlpha('#ffffff', .56), withAlpha(def.accent, .42), def.ink);
-        drawBow(ctx, 78, 56, withAlpha(def.accent, .72), def.ink);
-        drawBow(ctx, FRAME_W - 78, 56, withAlpha(def.accent2, .82), def.ink);
-      } else if (def.motif === 'latte') {
-        drawHeaderRibbon(ctx, 154, 34, FRAME_W - 308, 40, 'latte mood', withAlpha(def.accent2, .56), withAlpha(def.accent, .32), def.ink);
-        text(ctx, '☕', 92, 56, 28, def.accent, 900);
-        text(ctx, '☕', FRAME_W - 92, 56, 28, def.accent, 900);
-      } else if (def.motif === 'campus') {
-        roundRect(ctx, 80, 34, FRAME_W - 160, 44, 12, withAlpha('#ffffff', .62), withAlpha(def.accent, .32), 2);
-        text(ctx, 'campus day', FRAME_W / 2, 56, 18, def.ink, 900);
-        roundRect(ctx, 40, 40, 50, 30, 8, withAlpha(def.accent2, .85), withAlpha(def.ink, .18), 1.5);
-        text(ctx, 'A+', 65, 56, 14, def.ink, 900);
-      } else if (def.motif === 'stamp') {
-        drawHeaderRibbon(ctx, 120, 34, FRAME_W - 240, 42, 'post card', withAlpha('#ffffff', .58), withAlpha(def.accent, .42), def.ink);
-        roundRect(ctx, 48, 36, 58, 34, 8, withAlpha('#ffffff', .28), def.accent, 2.4);
-        text(ctx, 'LOVE', 77, 54, 12, def.accent, 900);
-      } else {
-        drawHeaderRibbon(ctx, 126, 34, FRAME_W - 252, 42, def.name.toLowerCase(), withAlpha('#ffffff', .54), withAlpha(def.accent, .34), def.ink);
-      }
+      // Korean header/decor is handled by drawKoreanDecor().
+      // Keep this branch empty to avoid duplicate/stacked labels in the thumbnail/output.
     } else if (def.category === 'Film') {
       // Film header/decor is handled by drawFilmDecor().
       // Keep this branch empty to avoid duplicate labels in the thumbnail/output.

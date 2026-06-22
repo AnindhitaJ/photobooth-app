@@ -341,26 +341,6 @@
     { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
   ];
 
-  (function enrichBuiltInDefs() {
-    const layoutMap = {
-      'Korean': ['airy','diary','petal','ribbon','postcard','clean','stagger','cloud','notebook','label'],
-      'Film': ['filmstrip','contact','retro','cinema','darkroom','polaroid','grain','memory','ticket','wide'],
-      'Elegant': ['luxe','plaque','pearl','gallery','royal','tall','panel','marble','gala','wedding'],
-      'Floral': ['garden','rose','sunny','vine','petite','bouquet','leafy','wild','hydra','spring'],
-      'Seasonal': ['party','badge','festive','romance','mystic','crescent','countdown','sunny','harvest','snow'],
-      'Gaming': ['pixel','arcade','quest','cyber','fantasy','magic','space','boss','dungeon','console'],
-      'Pattern': ['dot','dotWide','stripe','rainbow','checker','gingham','grid','starry','hearty','mix'],
-      'Social Media': ['feed','story','reels','vlog','ios','gallery','player','chat','profile','viral']
-    };
-    const seen = {};
-    BUILTIN_FRAME_DEFS.forEach((def) => {
-      const idx = seen[def.category] || 0;
-      seen[def.category] = idx + 1;
-      def.variantIndex = idx;
-      def.layout = (layoutMap[def.category] || [])[idx] || 'default';
-    });
-  })();
-
   const builtInCache = new Map();
 
   function generateBasicSlots() {
@@ -375,123 +355,60 @@
 
   // Built-in decorative templates need bigger margins than Basic
   // so the frame ornaments are visible and the photo slots do not feel too tight.
-  function pickBuiltInLayout(def = {}) {
-    const presets = {
-      airy:      { sidePad: 78, topPad: 166, bottomPad: 228, gap: 48, widths: [0.84, 0.84, 0.84, 0.84], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      diary:     { sidePad: 82, topPad: 170, bottomPad: 236, gap: 46, widths: [0.88, 0.80, 0.88, 0.80], heights: [1.02, 0.94, 1.02, 0.94], offsets: [0, 20, 0, -20] },
-      petal:     { sidePad: 80, topPad: 170, bottomPad: 232, gap: 52, widths: [0.86, 0.90, 0.86, 0.90], heights: [0.95, 1.03, 0.95, 1.03], offsets: [-8, 8, -8, 8] },
-      ribbon:    { sidePad: 78, topPad: 174, bottomPad: 238, gap: 48, widths: [0.82, 0.90, 0.82, 0.90], heights: [0.95, 1.05, 0.95, 1.05], offsets: [16, -8, 16, -8] },
-      postcard:  { sidePad: 88, topPad: 168, bottomPad: 246, gap: 52, widths: [0.88, 0.88, 0.88, 0.88], heights: [0.96, 0.96, 0.96, 0.96], offsets: [0, 0, 0, 0] },
-      clean:     { sidePad: 92, topPad: 176, bottomPad: 248, gap: 56, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      stagger:   { sidePad: 80, topPad: 168, bottomPad: 236, gap: 48, widths: [0.84, 0.92, 0.84, 0.92], heights: [0.96, 1.04, 0.96, 1.04], offsets: [-14, 12, -14, 12] },
-      cloud:     { sidePad: 84, topPad: 174, bottomPad: 240, gap: 54, widths: [0.86, 0.80, 0.86, 0.80], heights: [1.04, 0.92, 1.04, 0.92], offsets: [0, 14, 0, 14] },
-      notebook:  { sidePad: 86, topPad: 182, bottomPad: 250, gap: 48, widths: [0.90, 0.86, 0.90, 0.86], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 0, 0, 0] },
-      label:     { sidePad: 82, topPad: 174, bottomPad: 248, gap: 50, widths: [0.80, 0.90, 0.80, 0.90], heights: [0.98, 1.02, 0.98, 1.02], offsets: [18, -8, 18, -8] },
-
-      filmstrip: { sidePad: 72, topPad: 154, bottomPad: 224, gap: 40, widths: [0.90, 0.90, 0.90, 0.90], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      contact:   { sidePad: 86, topPad: 162, bottomPad: 238, gap: 44, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.94, 0.94, 0.94, 0.94], offsets: [0, 0, 0, 0] },
-      retro:     { sidePad: 80, topPad: 166, bottomPad: 240, gap: 50, widths: [0.88, 0.82, 0.88, 0.82], heights: [0.98, 1.02, 0.98, 1.02], offsets: [-10, 12, -10, 12] },
-      cinema:    { sidePad: 76, topPad: 162, bottomPad: 246, gap: 56, widths: [0.92, 0.82, 0.82, 0.92], heights: [0.90, 1.05, 1.05, 0.90], offsets: [0, 18, -18, 0] },
-      darkroom:  { sidePad: 74, topPad: 170, bottomPad: 250, gap: 44, widths: [0.82, 0.90, 0.82, 0.90], heights: [1.02, 0.96, 1.02, 0.96], offsets: [12, -10, 12, -10] },
-      polaroid:  { sidePad: 88, topPad: 168, bottomPad: 258, gap: 50, widths: [0.88, 0.88, 0.88, 0.88], heights: [0.92, 0.92, 0.92, 0.92], offsets: [0, 0, 0, 0] },
-      grain:     { sidePad: 82, topPad: 160, bottomPad: 236, gap: 42, widths: [0.86, 0.92, 0.86, 0.92], heights: [0.98, 1.02, 0.98, 1.02], offsets: [8, -8, 8, -8] },
-      memory:    { sidePad: 86, topPad: 174, bottomPad: 252, gap: 54, widths: [0.84, 0.88, 0.84, 0.88], heights: [0.95, 1.02, 0.95, 1.02], offsets: [0, 12, 0, -12] },
-      ticket:    { sidePad: 78, topPad: 170, bottomPad: 248, gap: 52, widths: [0.92, 0.92, 0.92, 0.92], heights: [0.90, 0.90, 0.90, 0.90], offsets: [0, 0, 0, 0] },
-      wide:      { sidePad: 70, topPad: 168, bottomPad: 236, gap: 46, widths: [0.94, 0.88, 0.94, 0.88], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, 10, 0, -10] },
-
-      luxe:      { sidePad: 86, topPad: 184, bottomPad: 252, gap: 54, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      plaque:    { sidePad: 82, topPad: 178, bottomPad: 248, gap: 50, widths: [0.90, 0.78, 0.90, 0.78], heights: [1.02, 0.94, 1.02, 0.94], offsets: [0, 24, 0, -24] },
-      pearl:     { sidePad: 90, topPad: 186, bottomPad: 260, gap: 56, widths: [0.80, 0.88, 0.80, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -10, 10, -10] },
-      gallery:   { sidePad: 82, topPad: 188, bottomPad: 258, gap: 58, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.92, 0.92, 0.92, 0.92], offsets: [0, 0, 0, 0] },
-      royal:     { sidePad: 76, topPad: 182, bottomPad: 256, gap: 52, widths: [0.90, 0.84, 0.90, 0.84], heights: [1, 0.96, 1, 0.96], offsets: [0, 12, 0, -12] },
-      tall:      { sidePad: 92, topPad: 176, bottomPad: 252, gap: 46, widths: [0.78, 0.78, 0.78, 0.78], heights: [1.06, 1.06, 1.06, 1.06], offsets: [0, 0, 0, 0] },
-      panel:     { sidePad: 78, topPad: 186, bottomPad: 260, gap: 54, widths: [0.88, 0.94, 0.88, 0.94], heights: [0.94, 1.02, 0.94, 1.02], offsets: [-8, 8, -8, 8] },
-      marble:    { sidePad: 88, topPad: 188, bottomPad: 262, gap: 56, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 0, 0, 0] },
-      gala:      { sidePad: 80, topPad: 184, bottomPad: 258, gap: 58, widths: [0.92, 0.80, 0.92, 0.80], heights: [0.90, 1.06, 0.90, 1.06], offsets: [0, 18, 0, -18] },
-      wedding:   { sidePad: 84, topPad: 190, bottomPad: 268, gap: 56, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.96, 1, 0.96, 1], offsets: [0, 8, 0, -8] },
-
-      garden:    { sidePad: 82, topPad: 176, bottomPad: 248, gap: 54, widths: [0.86, 0.90, 0.86, 0.90], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 10, 0, -10] },
-      rose:      { sidePad: 88, topPad: 184, bottomPad: 254, gap: 56, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      sunny:     { sidePad: 80, topPad: 170, bottomPad: 238, gap: 48, widths: [0.88, 0.84, 0.88, 0.84], heights: [1.02, 0.96, 1.02, 0.96], offsets: [-8, 12, -8, 12] },
-      vine:      { sidePad: 92, topPad: 184, bottomPad: 256, gap: 58, widths: [0.80, 0.88, 0.80, 0.88], heights: [0.96, 1.02, 0.96, 1.02], offsets: [10, -10, 10, -10] },
-      petite:    { sidePad: 96, topPad: 188, bottomPad: 266, gap: 58, widths: [0.78, 0.78, 0.78, 0.78], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      bouquet:   { sidePad: 84, topPad: 178, bottomPad: 248, gap: 52, widths: [0.90, 0.84, 0.90, 0.84], heights: [1, 0.96, 1, 0.96], offsets: [0, 10, 0, -10] },
-      leafy:     { sidePad: 90, topPad: 184, bottomPad: 260, gap: 56, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.96, 1, 0.96, 1], offsets: [6, -8, 6, -8] },
-      wild:      { sidePad: 78, topPad: 174, bottomPad: 244, gap: 50, widths: [0.92, 0.80, 0.92, 0.80], heights: [0.94, 1.04, 0.94, 1.04], offsets: [0, 18, 0, -18] },
-      hydra:     { sidePad: 86, topPad: 180, bottomPad: 252, gap: 54, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 0, 0, 0] },
-      spring:    { sidePad: 80, topPad: 176, bottomPad: 246, gap: 54, widths: [0.88, 0.90, 0.88, 0.90], heights: [0.95, 1.02, 0.95, 1.02], offsets: [-6, 8, -6, 8] },
-
-      party:     { sidePad: 80, topPad: 166, bottomPad: 244, gap: 50, widths: [0.90, 0.84, 0.90, 0.84], heights: [1, 0.96, 1, 0.96], offsets: [0, 10, 0, -10] },
-      badge:     { sidePad: 88, topPad: 178, bottomPad: 254, gap: 54, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.98, 0.98, 0.98, 0.98], offsets: [0, 0, 0, 0] },
-      festive:   { sidePad: 76, topPad: 162, bottomPad: 238, gap: 48, widths: [0.92, 0.88, 0.92, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [-8, 8, -8, 8] },
-      romance:   { sidePad: 84, topPad: 178, bottomPad: 256, gap: 58, widths: [0.80, 0.90, 0.80, 0.90], heights: [1, 1, 1, 1], offsets: [14, -8, 14, -8] },
-      mystic:    { sidePad: 82, topPad: 172, bottomPad: 250, gap: 54, widths: [0.88, 0.82, 0.88, 0.82], heights: [1.02, 0.96, 1.02, 0.96], offsets: [8, -8, 8, -8] },
-      crescent:  { sidePad: 86, topPad: 182, bottomPad: 260, gap: 56, widths: [0.82, 0.88, 0.82, 0.88], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 10, 0, -10] },
-      countdown: { sidePad: 76, topPad: 166, bottomPad: 238, gap: 46, widths: [0.94, 0.86, 0.94, 0.86], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 12, 0, -12] },
-      harvest:   { sidePad: 80, topPad: 170, bottomPad: 246, gap: 52, widths: [0.88, 0.84, 0.88, 0.84], heights: [0.98, 1.02, 0.98, 1.02], offsets: [-6, 8, -6, 8] },
-      snow:      { sidePad: 90, topPad: 184, bottomPad: 262, gap: 58, widths: [0.80, 0.80, 0.80, 0.80], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-
-      pixel:     { sidePad: 82, topPad: 166, bottomPad: 238, gap: 48, widths: [0.88, 0.84, 0.88, 0.84], heights: [1, 1, 1, 1], offsets: [-8, 8, -8, 8] },
-      arcade:    { sidePad: 78, topPad: 162, bottomPad: 236, gap: 44, widths: [0.92, 0.88, 0.92, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [0, 10, 0, -10] },
-      quest:     { sidePad: 88, topPad: 176, bottomPad: 250, gap: 54, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, -8, 0, 8] },
-      cyber:     { sidePad: 74, topPad: 160, bottomPad: 232, gap: 44, widths: [0.94, 0.84, 0.94, 0.84], heights: [0.98, 1.04, 0.98, 1.04], offsets: [0, 12, 0, -12] },
-      fantasy:   { sidePad: 84, topPad: 176, bottomPad: 250, gap: 54, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 0, 0, 0] },
-      magic:     { sidePad: 90, topPad: 182, bottomPad: 258, gap: 56, widths: [0.82, 0.88, 0.82, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -8, 10, -8] },
-      space:     { sidePad: 80, topPad: 168, bottomPad: 242, gap: 50, widths: [0.90, 0.80, 0.90, 0.80], heights: [0.96, 1.04, 0.96, 1.04], offsets: [-6, 16, -6, 16] },
-      boss:      { sidePad: 86, topPad: 176, bottomPad: 248, gap: 52, widths: [0.84, 0.90, 0.84, 0.90], heights: [1.02, 0.96, 1.02, 0.96], offsets: [0, 8, 0, -8] },
-      dungeon:   { sidePad: 82, topPad: 174, bottomPad: 246, gap: 50, widths: [0.88, 0.88, 0.88, 0.88], heights: [0.96, 1, 0.96, 1], offsets: [0, 0, 0, 0] },
-      console:   { sidePad: 92, topPad: 180, bottomPad: 252, gap: 54, widths: [0.80, 0.80, 0.80, 0.80], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-
-      dot:       { sidePad: 88, topPad: 178, bottomPad: 252, gap: 56, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
-      dotWide:   { sidePad: 76, topPad: 170, bottomPad: 246, gap: 52, widths: [0.92, 0.92, 0.92, 0.92], heights: [0.92, 0.92, 0.92, 0.92], offsets: [0, 0, 0, 0] },
-      stripe:    { sidePad: 82, topPad: 176, bottomPad: 248, gap: 52, widths: [0.90, 0.84, 0.90, 0.84], heights: [0.96, 1.02, 0.96, 1.02], offsets: [-6, 8, -6, 8] },
-      rainbow:   { sidePad: 78, topPad: 170, bottomPad: 242, gap: 48, widths: [0.92, 0.86, 0.92, 0.86], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 10, 0, -10] },
-      checker:   { sidePad: 84, topPad: 176, bottomPad: 252, gap: 54, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.98, 0.98, 0.98, 0.98], offsets: [0, 0, 0, 0] },
-      gingham:   { sidePad: 90, topPad: 184, bottomPad: 258, gap: 58, widths: [0.80, 0.86, 0.80, 0.86], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -10, 10, -10] },
-      grid:      { sidePad: 86, topPad: 180, bottomPad: 254, gap: 54, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 10, 0, -10] },
-      starry:    { sidePad: 80, topPad: 172, bottomPad: 246, gap: 52, widths: [0.88, 0.84, 0.88, 0.84], heights: [1, 1, 1, 1], offsets: [-10, 10, -10, 10] },
-      hearty:    { sidePad: 84, topPad: 178, bottomPad: 254, gap: 56, widths: [0.82, 0.90, 0.82, 0.90], heights: [0.98, 1.02, 0.98, 1.02], offsets: [12, -8, 12, -8] },
-      mix:       { sidePad: 78, topPad: 172, bottomPad: 244, gap: 50, widths: [0.92, 0.80, 0.92, 0.80], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, 14, 0, -14] },
-
-      feed:      { sidePad: 84, topPad: 190, bottomPad: 270, gap: 58, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.94, 0.94, 0.94, 0.94], offsets: [0, 0, 0, 0] },
-      story:     { sidePad: 92, topPad: 204, bottomPad: 282, gap: 58, widths: [0.78, 0.78, 0.78, 0.78], heights: [1.02, 1.02, 1.02, 1.02], offsets: [0, 0, 0, 0] },
-      reels:     { sidePad: 80, topPad: 184, bottomPad: 268, gap: 60, widths: [0.90, 0.80, 0.90, 0.80], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, 14, 0, -14] },
-      vlog:      { sidePad: 86, topPad: 196, bottomPad: 278, gap: 58, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.96, 1, 0.96, 1], offsets: [0, 0, 0, 0] },
-      ios:       { sidePad: 96, topPad: 206, bottomPad: 288, gap: 60, widths: [0.76, 0.76, 0.76, 0.76], heights: [1.02, 1.02, 1.02, 1.02], offsets: [0, 0, 0, 0] },
-      gallery:   { sidePad: 90, topPad: 200, bottomPad: 284, gap: 60, widths: [0.82, 0.88, 0.82, 0.88], heights: [0.96, 1.02, 0.96, 1.02], offsets: [8, -8, 8, -8] },
-      player:    { sidePad: 88, topPad: 198, bottomPad: 292, gap: 62, widths: [0.80, 0.90, 0.80, 0.90], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -10, 10, -10] },
-      chat:      { sidePad: 86, topPad: 192, bottomPad: 286, gap: 60, widths: [0.88, 0.78, 0.88, 0.78], heights: [0.94, 1.04, 0.94, 1.04], offsets: [0, 18, 0, -18] },
-      profile:   { sidePad: 92, topPad: 200, bottomPad: 286, gap: 58, widths: [0.78, 0.86, 0.78, 0.86], heights: [1, 1, 1, 1], offsets: [12, -8, 12, -8] },
-      viral:     { sidePad: 82, topPad: 188, bottomPad: 274, gap: 58, widths: [0.90, 0.84, 0.90, 0.84], heights: [0.96, 1.02, 0.96, 1.02], offsets: [-8, 8, -8, 8] },
-
-      default:   { sidePad: 82, topPad: 170, bottomPad: 240, gap: 50, widths: [0.86, 0.86, 0.86, 0.86], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] }
-    };
-    return presets[def.layout] || presets.default;
-  }
-
   function generateBuiltInSlots(def = {}) {
-    const layout = pickBuiltInLayout(def);
-    const sidePad = layout.sidePad;
-    const topPad = layout.topPad;
-    const bottomPad = layout.bottomPad;
-    const gap = layout.gap;
-    const baseW = FRAME_W - sidePad * 2;
-    const widths = layout.widths || [0.86, 0.86, 0.86, 0.86];
-    const heights = layout.heights || [1, 1, 1, 1];
-    const offsets = layout.offsets || [0, 0, 0, 0];
-    const availH = FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1);
-    const totalWeight = heights.reduce((a,b) => a + b, 0);
-    const rawHeights = heights.map(h => Math.floor(availH * h / totalWeight));
-    rawHeights[rawHeights.length - 1] += availH - rawHeights.reduce((a,b)=>a+b,0);
+    const category = def.category || '';
+    let sidePad = 76;
+    let topPad = 168;
+    let bottomPad = 236;
+    let gap = 38;
 
+    if (category === 'Social Media') {
+      sidePad = 74;
+      topPad = 178;
+      bottomPad = 250;
+      gap = 34;
+    } else if (category === 'Korean') {
+      sidePad = 78;
+      topPad = 176;
+      bottomPad = 246;
+      gap = 40;
+    } else if (category === 'Film') {
+      sidePad = 68;
+      topPad = 158;
+      bottomPad = 228;
+      gap = 34;
+    } else if (category === 'Elegant') {
+      sidePad = 70;
+      topPad = 162;
+      bottomPad = 232;
+      gap = 36;
+    } else if (category === 'Floral') {
+      sidePad = 80;
+      topPad = 172;
+      bottomPad = 244;
+      gap = 40;
+    } else if (category === 'Seasonal') {
+      sidePad = 74;
+      topPad = 170;
+      bottomPad = 240;
+      gap = 38;
+    } else if (category === 'Gaming') {
+      sidePad = 72;
+      topPad = 166;
+      bottomPad = 236;
+      gap = 36;
+    } else if (category === 'Pattern') {
+      sidePad = 78;
+      topPad = 170;
+      bottomPad = 242;
+      gap = 38;
+    }
+
+    const slotW = FRAME_W - sidePad * 2;
+    const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1)) / FRAME_SLOTS);
     const slots = [];
-    let y = topPad;
     for (let i = 0; i < FRAME_SLOTS; i++) {
-      const w = Math.max(270, Math.round(baseW * (widths[i] || widths[widths.length - 1] || 0.86)));
-      const h = rawHeights[i];
-      const x = Math.round((FRAME_W - w) / 2 + (offsets[i] || 0));
-      slots.push({ x, y, w, h });
-      y += h + gap;
+      slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH });
     }
     return slots;
   }
@@ -855,6 +772,184 @@
     drawConfetti(ctx, def, 42);
   }
 
+
+  function drawHeaderRibbon(ctx, x, y, w, h, label, fill, stroke, color) {
+    roundRect(ctx, x, y, w, h, h / 2, fill, stroke, 2);
+    text(ctx, label, x + w / 2, y + h / 2 + 1, Math.max(14, Math.min(22, h * 0.52)), color, 900);
+  }
+
+  function drawNameZone(ctx, def, slots) {
+    const last = slots[slots.length - 1];
+    const zoneTop = last.y + last.h + 34;
+    const zoneBottom = FRAME_H - 36;
+    const zoneH = zoneBottom - zoneTop;
+    const blankTop = zoneTop + 38;
+    const blankBottom = zoneBottom - 48;
+    roundRect(ctx, 54, zoneTop, FRAME_W - 108, zoneH - 14, 26, withAlpha('#ffffff', .15), withAlpha(def.accent, .18), 1.5);
+    line(ctx, 86, blankTop - 14, FRAME_W - 86, blankTop - 14, withAlpha(def.accent, .22), 2);
+    line(ctx, 114, blankBottom, FRAME_W - 114, blankBottom, withAlpha(def.accent2, .3), 2);
+    circle(ctx, 88, blankTop - 14, 4, def.accent);
+    circle(ctx, FRAME_W - 88, blankTop - 14, 4, def.accent2);
+
+    if (def.category === 'Elegant') {
+      drawStar(ctx, FRAME_W / 2, zoneTop + 22, 10, def.accent, 4);
+      line(ctx, 132, zoneTop + 22, FRAME_W / 2 - 24, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+      line(ctx, FRAME_W / 2 + 24, zoneTop + 22, FRAME_W - 132, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+    } else if (def.category === 'Gaming') {
+      roundRect(ctx, FRAME_W / 2 - 76, zoneTop + 8, 152, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
+      text(ctx, 'PLAYER TAG', FRAME_W / 2, zoneTop + 20, 11, def.ink, 900);
+    } else if (def.category === 'Social Media') {
+      text(ctx, '♡   comment   share', FRAME_W / 2, zoneTop + 20, 12, withAlpha(def.ink, .82), 800);
+    } else if (def.category === 'Pattern') {
+      for (let x = 128; x < FRAME_W - 116; x += 36) circle(ctx, x, zoneTop + 20, 3, withAlpha(def.accent, .65));
+    } else {
+      text(ctx, '✦', FRAME_W / 2, zoneTop + 20, 14, withAlpha(def.accent2, .92), 900);
+    }
+  }
+
+  function drawReservedZones(ctx, slots, def) {
+    const first = slots[0];
+    const topBottom = first.y - 28;
+    const headerMid = Math.max(58, Math.min(92, topBottom * 0.5));
+
+    if (def.category === 'Korean') {
+      if (def.motif === 'cloud') {
+        for (const [x, y, scale] of [[100, 70, 1.1], [FRAME_W / 2, 52, 1.25], [FRAME_W - 98, 82, 1]]) {
+          circle(ctx, x - 22 * scale, y, 17 * scale, withAlpha('#ffffff', .82));
+          circle(ctx, x, y - 8 * scale, 24 * scale, withAlpha('#ffffff', .88));
+          circle(ctx, x + 24 * scale, y, 17 * scale, withAlpha('#ffffff', .82));
+        }
+      } else if (def.motif === 'diary') {
+        roundRect(ctx, 76, 34, FRAME_W - 152, 48, 16, withAlpha('#ffffff', .55), withAlpha(def.accent, .28), 2);
+        for (let x = 112; x < FRAME_W - 96; x += 50) roundRect(ctx, x, 24, 26, 18, 9, null, withAlpha(def.ink, .22), 3);
+        text(ctx, 'dear diary', FRAME_W / 2, 58, 20, def.ink, 900);
+      } else if (def.motif === 'sakura') {
+        for (let i = 0; i < 8; i++) {
+          const x = 62 + i * 62;
+          circle(ctx, x - 10, 52 + (i % 2) * 5, 8, withAlpha(def.accent, .82));
+          circle(ctx, x, 42 + (i % 2) * 5, 8, withAlpha(def.accent2, .84));
+          circle(ctx, x + 10, 52 + (i % 2) * 5, 8, withAlpha(def.accent, .82));
+        }
+      } else if (def.motif === 'ribbon') {
+        drawHeaderRibbon(ctx, 110, 34, FRAME_W - 220, 42, 'coquette club', withAlpha('#ffffff', .56), withAlpha(def.accent, .42), def.ink);
+        drawBow(ctx, 78, 56, withAlpha(def.accent, .72), def.ink);
+        drawBow(ctx, FRAME_W - 78, 56, withAlpha(def.accent2, .82), def.ink);
+      } else if (def.motif === 'latte') {
+        drawHeaderRibbon(ctx, 154, 34, FRAME_W - 308, 40, 'latte mood', withAlpha(def.accent2, .56), withAlpha(def.accent, .32), def.ink);
+        text(ctx, '☕', 92, 56, 28, def.accent, 900);
+        text(ctx, '☕', FRAME_W - 92, 56, 28, def.accent, 900);
+      } else if (def.motif === 'campus') {
+        roundRect(ctx, 80, 34, FRAME_W - 160, 44, 12, withAlpha('#ffffff', .62), withAlpha(def.accent, .32), 2);
+        text(ctx, 'campus day', FRAME_W / 2, 56, 18, def.ink, 900);
+        roundRect(ctx, 40, 40, 50, 30, 8, withAlpha(def.accent2, .85), withAlpha(def.ink, .18), 1.5);
+        text(ctx, 'A+', 65, 56, 14, def.ink, 900);
+      } else if (def.motif === 'stamp') {
+        drawHeaderRibbon(ctx, 120, 34, FRAME_W - 240, 42, 'post card', withAlpha('#ffffff', .58), withAlpha(def.accent, .42), def.ink);
+        roundRect(ctx, 48, 36, 58, 34, 8, withAlpha('#ffffff', .28), def.accent, 2.4);
+        text(ctx, 'LOVE', 77, 54, 12, def.accent, 900);
+      } else {
+        drawHeaderRibbon(ctx, 126, 34, FRAME_W - 252, 42, def.name.toLowerCase(), withAlpha('#ffffff', .54), withAlpha(def.accent, .34), def.ink);
+      }
+    } else if (def.category === 'Film') {
+      if (def.motif === 'camera') {
+        roundRect(ctx, 64, 30, 114, 58, 14, withAlpha(def.accent, .88), withAlpha(def.ink, .35), 2.5);
+        circle(ctx, 106, 58, 18, withAlpha(def.ink, .82));
+        roundRect(ctx, 126, 46, 26, 12, 5, withAlpha(def.accent2, .82));
+        text(ctx, 'SHOT 04', FRAME_W - 88, 58, 18, def.ink, 900, 'right');
+      } else if (def.motif === 'polaroid') {
+        roundRect(ctx, 116, 34, FRAME_W - 232, 44, 10, withAlpha('#ffffff', .75), withAlpha(def.accent2, .28), 2);
+        text(ctx, 'instant memory', FRAME_W / 2, 57, 18, def.ink, 900);
+      } else if (def.motif === 'cinema') {
+        for (let x = 88; x < FRAME_W - 88; x += 48) {
+          ctx.fillStyle = (Math.floor(x / 48) % 2) ? def.accent : def.accent2;
+          ctx.globalAlpha = .7;
+          ctx.fillRect(x, 36, 30, 16);
+          ctx.fillRect(x, 52, 30, 16);
+          ctx.globalAlpha = 1;
+        }
+        drawHeaderRibbon(ctx, 170, 74, FRAME_W - 340, 34, 'cinema', withAlpha('#000000', .16), withAlpha(def.accent, .44), def.ink);
+      } else if (def.motif === 'vintage') {
+        drawHeaderRibbon(ctx, 128, 34, FRAME_W - 256, 40, 'memory archive', withAlpha('#ffffff', .48), withAlpha(def.accent, .34), def.ink);
+        text(ctx, '1987', 72, 56, 22, def.ink, 900);
+      } else {
+        text(ctx, '35MM', 76, 52, 22, def.ink, 900, 'left');
+        drawHeaderRibbon(ctx, 166, 34, FRAME_W - 332, 40, 'film booth', withAlpha('#ffffff', .2), withAlpha(def.accent2, .38), def.ink);
+      }
+    } else if (def.category === 'Elegant') {
+      if (def.motif === 'luxury' || def.motif === 'royal') {
+        line(ctx, 130, 54, FRAME_W / 2 - 28, 54, withAlpha(def.accent, .35), 2);
+        line(ctx, FRAME_W / 2 + 28, 54, FRAME_W - 130, 54, withAlpha(def.accent, .35), 2);
+        drawStar(ctx, FRAME_W / 2, 54, 12, def.accent, 4);
+      } else if (def.motif === 'pearl') {
+        for (let x = 138; x < FRAME_W - 130; x += 30) circle(ctx, x, 54, 6, withAlpha('#ffffff', .88), withAlpha(def.accent2, .62), 1);
+      } else if (def.motif === 'marble') {
+        drawHeaderRibbon(ctx, 144, 34, FRAME_W - 288, 38, 'marble collection', withAlpha('#ffffff', .66), withAlpha(def.accent2, .34), def.ink);
+      } else if (def.motif === 'wedding') {
+        drawHeaderRibbon(ctx, 158, 34, FRAME_W - 316, 40, 'with love', withAlpha('#ffffff', .75), withAlpha(def.accent, .3), def.ink);
+      } else {
+        drawHeaderRibbon(ctx, 154, 34, FRAME_W - 308, 38, def.name.toLowerCase(), withAlpha('#ffffff', .7), withAlpha(def.accent2, .3), def.ink);
+      }
+    } else if (def.category === 'Floral') {
+      const floralLabel = ({sakura:'sakura day', rose:'blue rose', sunflower:'sunny bloom', lavender:'lavender bloom', daisy:'daisy field', peony:'peony blush', leaf:'botanical green', wild:'wild flower', hydrangea:'hydrangea', spring:'spring bloom'})[def.motif] || def.name.toLowerCase();
+      drawHeaderRibbon(ctx, 140, 34, FRAME_W - 280, 40, floralLabel, withAlpha('#ffffff', .64), withAlpha(def.accent, .28), def.ink);
+      for (let x = 96; x < FRAME_W - 94; x += 64) {
+        circle(ctx, x - 8, 56, 6, withAlpha(def.accent, .68));
+        circle(ctx, x + 8, 56, 6, withAlpha(def.accent2, .72));
+      }
+    } else if (def.category === 'Seasonal') {
+      drawHeaderRibbon(ctx, 138, 34, FRAME_W - 276, 40, def.name.toLowerCase(), withAlpha('#ffffff', .5), withAlpha(def.accent, .38), def.ink);
+      const icon = ({birthday:'🎈', graduation:'🎓', christmas:'❄', valentine:'♡', halloween:'☾', eid:'☪', newyear:'✦', summer:'☼', autumn:'✦', winter:'❄'})[def.motif] || '✦';
+      text(ctx, icon, 82, 56, 24, def.accent, 900);
+      text(ctx, icon, FRAME_W - 82, 56, 24, def.accent2, 900);
+    } else if (def.category === 'Gaming') {
+      roundRect(ctx, 48, 34, 150, 36, 8, withAlpha(def.accent, .2), withAlpha(def.accent, .42), 2);
+      text(ctx, 'HP ▰▰▰▰', 123, 52, 14, def.ink, 900);
+      roundRect(ctx, FRAME_W - 202, 34, 154, 36, 8, withAlpha(def.accent2, .22), withAlpha(def.accent2, .44), 2);
+      text(ctx, def.motif === 'rpg' ? 'CLASS MAGE' : def.motif === 'cyber' ? 'MODE NEO' : 'LEVEL 99', FRAME_W - 125, 52, 12, def.ink, 900);
+      if (def.motif === 'arcade' || def.motif === 'console') {
+        for (let x = 100; x < FRAME_W - 100; x += 24) {
+          ctx.fillStyle = (Math.floor(x / 24) % 2) ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .72);
+          ctx.fillRect(x, 88, 12, 12);
+        }
+      }
+    } else if (def.category === 'Pattern') {
+      if (def.motif === 'polkadot') {
+        for (let x = 72; x < FRAME_W - 60; x += 38) circle(ctx, x, 56, 6, x % 76 ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .72));
+      } else if (def.motif === 'stripe' || def.motif === 'rainbow') {
+        for (let x = 64; x < FRAME_W - 48; x += 26) line(ctx, x, 32, x + 12, 84, withAlpha((x / 26) % 2 ? def.accent : def.accent2, .6), 4);
+      } else if (def.motif === 'checker') {
+        for (let i = 0; i < 10; i++) {
+          ctx.fillStyle = i % 2 ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .9);
+          ctx.fillRect(88 + i * 24, 42, 18, 18);
+        }
+      } else if (def.motif === 'gingham' || def.motif === 'grid') {
+        drawHeaderRibbon(ctx, 146, 34, FRAME_W - 292, 38, def.name.toLowerCase(), withAlpha('#ffffff', .68), withAlpha(def.accent, .28), def.ink);
+      } else {
+        drawHeaderRibbon(ctx, 156, 34, FRAME_W - 312, 38, def.name.toLowerCase(), withAlpha('#ffffff', .58), withAlpha(def.accent, .28), def.ink);
+      }
+    } else if (def.category === 'Social Media') {
+      if (def.motif === 'igstory') {
+        for (let x = 44; x < FRAME_W - 44; x += 86) roundRect(ctx, x, 24, 70, 6, 3, withAlpha('#ffffff', .92));
+      } else if (def.motif === 'youtube') {
+        roundRect(ctx, 54, 34, 108, 42, 14, def.accent);
+        text(ctx, 'SUBSCRIBE', 108, 56, 12, '#ffffff', 900);
+      } else if (def.motif === 'iphone' || def.motif === 'cameraRoll') {
+        text(ctx, '9:41', 70, 54, 18, def.ink, 900, 'left');
+        text(ctx, 'Photos', FRAME_W / 2, 54, 18, def.ink, 900);
+        text(ctx, 'Edit', FRAME_W - 64, 54, 16, def.accent, 900, 'right');
+      } else if (def.motif === 'music') {
+        drawHeaderRibbon(ctx, 138, 34, FRAME_W - 276, 40, 'now playing', withAlpha('#ffffff', .58), withAlpha(def.accent, .32), def.ink);
+      } else if (def.motif === 'chat') {
+        roundRect(ctx, 62, 36, 152, 38, 18, withAlpha(def.accent, .22), withAlpha(def.accent, .35), 1.5);
+        roundRect(ctx, FRAME_W - 214, 36, 152, 38, 18, withAlpha(def.accent2, .72), withAlpha(def.accent2, .35), 1.5);
+      } else {
+        drawHeaderRibbon(ctx, 136, 34, FRAME_W - 272, 40, def.name.toLowerCase(), withAlpha('#ffffff', .56), withAlpha(def.accent, .3), def.ink);
+      }
+    }
+
+    drawNameZone(ctx, def, slots);
+  }
+
   function drawSlotBorders(ctx, slots, def) {
     function tape(x, y, w=44, h=18, color=def.accent2, angle=0) {
       ctx.save();
@@ -1031,48 +1126,6 @@
     });
   }
 
-  function drawFooterNameZone(ctx, def, slots) {
-    const last = slots[slots.length - 1];
-    if (!last) return;
-    const zoneTop = last.y + last.h + 28;
-    const zoneBottom = FRAME_H - 42;
-    const zoneH = zoneBottom - zoneTop;
-    if (zoneH < 60) return;
-
-    const panelH = Math.min(68, Math.max(50, zoneH - 16));
-    const panelY = zoneTop + Math.max(8, (zoneH - panelH) / 2);
-    const panelX = 70;
-    const panelW = FRAME_W - 140;
-
-    if (def.category === 'Film') {
-      line(ctx, 84, zoneTop + 8, FRAME_W - 84, zoneTop + 8, withAlpha(def.accent2, .35), 2);
-      for (let x of [82, FRAME_W - 96]) {
-        roundRect(ctx, x, panelY + 8, 14, panelH - 16, 3, withAlpha(def.ink, .8));
-      }
-      roundRect(ctx, panelX + 18, panelY, panelW - 36, panelH, 14, withAlpha('#ffffff', .14), withAlpha(def.accent, .32), 1.5);
-    } else if (def.category === 'Social Media') {
-      roundRect(ctx, panelX, panelY, panelW, panelH, 28, withAlpha('#ffffff', .14), withAlpha(def.accent, .28), 1.5);
-      circle(ctx, panelX + 28, panelY + panelH / 2, 8, withAlpha(def.accent, .85));
-      line(ctx, panelX + 48, panelY + panelH / 2, panelX + panelW - 80, panelY + panelH / 2, withAlpha(def.ink, .18), 4);
-      text(ctx, '♡', panelX + panelW - 34, panelY + panelH / 2, 18, withAlpha(def.accent2, .92));
-    } else if (def.category === 'Gaming') {
-      roundRect(ctx, panelX, panelY, panelW, panelH, 12, withAlpha(def.accent, .10), withAlpha(def.accent2, .45), 2);
-      for (let i = 0; i < 8; i++) {
-        ctx.fillStyle = i % 2 ? withAlpha(def.accent2, .7) : withAlpha(def.accent, .7);
-        ctx.fillRect(panelX + 18 + i * 14, panelY + 12, 8, 8);
-      }
-      for (let i = 0; i < 8; i++) {
-        ctx.fillStyle = i % 2 ? withAlpha(def.accent, .7) : withAlpha(def.accent2, .7);
-        ctx.fillRect(panelX + panelW - 26 - i * 14, panelY + panelH - 20, 8, 8);
-      }
-    } else {
-      roundRect(ctx, panelX, panelY, panelW, panelH, 24, withAlpha('#ffffff', .14), withAlpha(def.accent, .24), 1.5);
-      line(ctx, panelX + 38, panelY + panelH / 2, panelX + panelW - 38, panelY + panelH / 2, withAlpha(def.ink, .18), 3);
-      text(ctx, '✦', panelX + 24, panelY + panelH / 2, 16, withAlpha(def.accent2, .85));
-      text(ctx, '✦', panelX + panelW - 24, panelY + panelH / 2, 16, withAlpha(def.accent2, .85));
-    }
-  }
-
   // Render basic frame as PNG using canvas (591x1772)
   function generateBasicFrameSrc(colorObj) {
     const W = FRAME_W, H = FRAME_H;
@@ -1114,13 +1167,13 @@
       drawConfetti(ctx, def, 28);
     }
     if (def.category === 'Social Media') drawSocialDecor(ctx, def);
+    drawReservedZones(ctx, slots, def);
 
     // Clear photo slots so the captured photos show through.
     slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
 
     // Foreground frame layer stays on top of photos.
     drawSlotBorders(ctx, slots, def);
-    drawFooterNameZone(ctx, def, slots);
     roundRect(ctx, 12, 12, W - 24, H - 24, 30, null, withAlpha(def.accent, .54), 3.5);
     roundRect(ctx, 26, 26, W - 52, H - 52, 24, null, withAlpha('#ffffff', .28), 1.5);
 

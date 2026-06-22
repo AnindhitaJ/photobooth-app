@@ -541,26 +541,111 @@
   }
 
   function drawFilmDecor(ctx, def) {
-    const dark = def.bg === '#facc15' || def.bg === '#f5e4c3' || def.bg === '#fff7ed' || def.bg === '#e7d2b0' || def.bg === '#d9f99d';
-    const side = dark ? withAlpha(def.ink, .65) : withAlpha('#ffffff', .9);
-    for (let y = 28; y < FRAME_H - 96; y += 68) {
-      roundRect(ctx, 8, y, 18, 34, 4, side);
-      roundRect(ctx, FRAME_W - 26, y, 18, 34, 4, side);
+    function sprocketBar(x, fill, hole = '#f8fafc') {
+      roundRect(ctx, x, 20, 30, FRAME_H - 40, 10, withAlpha(fill, .22), withAlpha(hole, .18), 1.5);
+      for (let y = 50; y < FRAME_H - 70; y += 34) roundRect(ctx, x + 7, y, 16, 18, 3, withAlpha(hole, .92));
     }
-    for (let i = 0; i < 150; i++) {
-      const x = (i * 47) % FRAME_W, y = (i * 89) % FRAME_H;
-      circle(ctx, x, y, (i % 3) + 1, withAlpha(def.accent2, .22));
+    function tinyLabel(x, y, w, txt, fill, color) {
+      roundRect(ctx, x, y, w, 20, 8, withAlpha(fill, .82), withAlpha(color, .18), 1.2);
+      text(ctx, txt, x + w / 2, y + 13, 10, color, 900);
     }
-    text(ctx, '35mm', 74, 52, 24, def.ink, 900, 'left');
-    text(ctx, 'FRAME 04', FRAME_W - 74, FRAME_H - 52, 22, def.ink, 900, 'right');
-    if (def.motif === 'camera' || def.motif === 'polaroid') {
-      roundRect(ctx, 408, 34, 96, 52, 12, withAlpha(def.accent, .9), withAlpha(def.ink, .45), 3);
-      circle(ctx, 442, 60, 15, withAlpha(def.ink, .85));
-      roundRect(ctx, 466, 48, 24, 12, 5, withAlpha(def.accent2, .85));
+    function tapePiece(x, y, w = 42, h = 16, ang = 0, fill = def.accent2) {
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(ang * Math.PI / 180);
+      roundRect(ctx, -w / 2, -h / 2, w, h, 5, withAlpha(fill, .48), withAlpha('#ffffff', .16), 1);
+      ctx.restore();
     }
-    if (def.motif === 'cinema') {
-      for (let x = 80; x < FRAME_W - 80; x += 70) drawStar(ctx, x, 54, 14, def.accent, 4);
-      text(ctx, 'CINEMA', FRAME_W - 62, FRAME_H - 50, 22, def.accent, 900, 'right');
+
+    roundRect(ctx, 16, 16, FRAME_W - 32, FRAME_H - 32, 28, null, withAlpha(def.ink, .22), 2);
+
+    if (def.id === 'film_retro_film') {
+      sprocketBar(18, '#0f0f10'); sprocketBar(FRAME_W - 48, '#0f0f10');
+      roundRect(ctx, 56, 30, FRAME_W - 112, 52, 14, withAlpha('#000000', .34), withAlpha(def.accent, .55), 2.5);
+      text(ctx, 'RETRO FILM', FRAME_W / 2, 56, 24, def.accent, 900);
+      for (let i = 0; i < 24; i++) circle(ctx, 66 + (i * 20) % (FRAME_W - 132), 96 + (i * 65) % (FRAME_H - 180), 1.4, withAlpha('#f8fafc', .26));
+      roundRect(ctx, 48, FRAME_H - 112, FRAME_W - 96, 66, 18, withAlpha('#111827', .55), withAlpha(def.accent2, .22), 1.5);
+      text(ctx, 'FRAME 04', FRAME_W - 58, FRAME_H - 62, 16, def.accent2, 900, 'right');
+    } else if (def.id === 'film_kodak_yellow') {
+      for (let y = 28; y < FRAME_H - 28; y += 28) roundRect(ctx, 24, y, 16, 14, 3, withAlpha(def.accent2, .88));
+      for (let y = 42; y < FRAME_H - 42; y += 36) roundRect(ctx, FRAME_W - 40, y, 16, 16, 3, withAlpha(def.accent2, .88));
+      roundRect(ctx, 52, 28, FRAME_W - 104, 46, 12, withAlpha('#fff8', .28), withAlpha(def.accent2, .42), 2);
+      text(ctx, 'KODAK FEEL', 124, 55, 22, def.ink, 900, 'left');
+      tinyLabel(FRAME_W - 170, 39, 116, 'flash booth', def.accent, def.ink);
+      line(ctx, 66, FRAME_H - 96, FRAME_W - 66, FRAME_H - 96, withAlpha(def.accent2, .28), 2);
+      line(ctx, 66, FRAME_H - 70, FRAME_W - 66, FRAME_H - 70, withAlpha(def.accent2, .18), 1.5);
+      for (let i = 0; i < 20; i++) circle(ctx, 60 + (i * 25) % (FRAME_W - 120), 110 + (i * 79) % (FRAME_H - 180), 1.6, withAlpha(def.ink, .18));
+      text(ctx, 'FRAME 04', FRAME_W - 58, FRAME_H - 62, 16, def.ink, 900, 'right');
+    } else if (def.id === 'film_analog_brown') {
+      sprocketBar(18, '#6b4d36', '#fff8'); sprocketBar(FRAME_W - 48, '#6b4d36', '#fff8');
+      for (let i = 0; i < 18; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .18); ctx.lineWidth = 1.5;
+        const y = 70 + i * 90; ctx.moveTo(60, y); ctx.bezierCurveTo(150, y - 40, 340, y + 40, FRAME_W - 70, y - 6); ctx.stroke();
+      }
+      text(ctx, 'analog brown', FRAME_W / 2, 56, 22, def.ink, 900);
+      tinyLabel(64, FRAME_H - 86, 128, 'grain + dust', def.accent2, def.ink);
+      tinyLabel(FRAME_W - 168, 34, 104, '35mm', def.accent, '#fff7ed');
+    } else if (def.id === 'film_vintage_camera') {
+      roundRect(ctx, 48, 26, FRAME_W - 96, 56, 20, withAlpha('#fff7ed', .48), withAlpha(def.accent, .38), 2);
+      roundRect(ctx, FRAME_W / 2 - 42, 36, 84, 34, 12, withAlpha(def.accent, .88), withAlpha(def.ink, .22), 2);
+      circle(ctx, FRAME_W / 2, 53, 14, withAlpha(def.ink, .9));
+      text(ctx, 'camera', 92, 57, 20, def.ink, 900, 'left');
+      for (const x of [66, FRAME_W - 66]) {
+        for (let y = 120; y < FRAME_H - 150; y += 160) tapePiece(x, y, 48, 18, x < FRAME_W / 2 ? -10 : 10, '#fef3c7');
+      }
+      for (let i = 0; i < 22; i++) circle(ctx, 72 + (i * 21) % (FRAME_W - 144), 104 + (i * 58) % (FRAME_H - 200), 2, withAlpha(def.accent2, .18));
+      roundRect(ctx, 62, FRAME_H - 98, FRAME_W - 124, 48, 14, withAlpha('#ffffff', .22), withAlpha(def.accent, .24), 1.5);
+      text(ctx, 'memory archive', FRAME_W / 2, FRAME_H - 68, 18, def.ink, 900);
+    } else if (def.id === 'film_roll_black') {
+      sprocketBar(18, '#020617'); sprocketBar(FRAME_W - 48, '#020617');
+      for (let i = 0; i < 14; i++) line(ctx, 60, 110 + i * 110, FRAME_W - 60, 90 + i * 110, withAlpha('#ffffff', .06), 1);
+      roundRect(ctx, 54, 30, FRAME_W - 108, 42, 10, withAlpha('#111827', .55), withAlpha(def.accent2, .22), 1.5);
+      text(ctx, 'night memory', FRAME_W / 2, 56, 21, def.ink, 900);
+      roundRect(ctx, 48, FRAME_H - 112, FRAME_W - 96, 68, 18, withAlpha('#0f172a', .72), withAlpha(def.accent2, .18), 1.5);
+      text(ctx, 'FRAME 04', FRAME_W - 56, FRAME_H - 60, 16, def.accent2, 900, 'right');
+    } else if (def.id === 'film_polaroid_cream') {
+      roundRect(ctx, 28, 28, FRAME_W - 56, FRAME_H - 56, 26, null, withAlpha(def.accent, .32), 2);
+      for (let y = 110; y < FRAME_H - 150; y += 310) {
+        tapePiece(92, y, 46, 16, -12, '#fef3c7');
+        tapePiece(FRAME_W - 92, y + 18, 46, 16, 12, '#fef3c7');
+      }
+      roundRect(ctx, 84, 32, FRAME_W - 168, 40, 18, withAlpha('#ffffff', .78), withAlpha(def.accent2, .28), 1.5);
+      text(ctx, 'instant memory', FRAME_W / 2, 56, 18, def.ink, 900);
+      for (let i = 0; i < 12; i++) text(ctx, i % 2 ? '✦' : '•', 58 + (i * 42) % (FRAME_W - 116), FRAME_H - 88 + (i % 2) * 8, 12, withAlpha(def.accent2, .42));
+    } else if (def.id === 'film_dust_grain') {
+      sprocketBar(18, '#1f2937'); sprocketBar(FRAME_W - 48, '#1f2937');
+      for (let i = 0; i < 30; i++) {
+        line(ctx, 58 + (i * 17) % (FRAME_W - 116), 70 + (i * 49) % (FRAME_H - 160), 86 + (i * 17) % (FRAME_W - 116), 54 + (i * 49) % (FRAME_H - 160), withAlpha('#ffffff', .12), 1);
+      }
+      for (let i = 0; i < 80; i++) circle(ctx, 58 + (i * 31) % (FRAME_W - 116), 84 + (i * 71) % (FRAME_H - 190), 1.3, withAlpha(def.accent2, .18));
+      drawHeaderRibbon(ctx, 132, 32, FRAME_W - 264, 38, 'dust + grain', withAlpha('#ffffff', .18), withAlpha(def.accent2, .35), def.ink);
+    } else if (def.id === 'film_cinema_frame') {
+      roundRect(ctx, 36, 28, FRAME_W - 72, 56, 18, withAlpha('#0f172a', .4), withAlpha(def.accent, .42), 2);
+      for (let x = 52; x < FRAME_W - 52; x += 32) {
+        ctx.fillStyle = (Math.floor(x / 32) % 2) ? def.accent : def.accent2;
+        ctx.globalAlpha = .82; ctx.fillRect(x, 40, 20, 14); ctx.fillRect(x, 58, 20, 14); ctx.globalAlpha = 1;
+      }
+      drawHeaderRibbon(ctx, 164, 90, FRAME_W - 328, 32, 'cinema ticket', withAlpha('#111827', .2), withAlpha(def.accent, .42), def.ink);
+      for (let i = 0; i < 22; i++) drawStar(ctx, 56 + (i * 23) % (FRAME_W - 112), 120 + (i * 59) % (FRAME_H - 220), 6 + (i % 2), i % 2 ? def.accent2 : def.accent, 4);
+    } else if (def.id === 'film_disposable_camera') {
+      roundRect(ctx, 46, 24, FRAME_W - 92, 52, 18, withAlpha(def.accent2, .2), withAlpha(def.accent, .48), 2);
+      text(ctx, 'flash ready', 108, 53, 20, def.ink, 900, 'left');
+      circle(ctx, FRAME_W - 92, 51, 16, withAlpha(def.accent, .9));
+      text(ctx, '★', FRAME_W - 92, 53, 12, '#ffffff', 900);
+      for (let y = 122; y < FRAME_H - 132; y += 180) {
+        text(ctx, '← snap', 58, y, 16, def.ink, 900, 'left');
+        text(ctx, 'smile →', FRAME_W - 58, y + 46, 16, def.accent2, 900, 'right');
+      }
+      roundRect(ctx, 64, FRAME_H - 98, FRAME_W - 128, 48, 14, withAlpha('#ffffff', .2), withAlpha(def.accent, .24), 1.5);
+      text(ctx, 'summer cam', FRAME_W / 2, FRAME_H - 68, 17, def.ink, 900);
+    } else if (def.id === 'film_old_memory') {
+      roundRect(ctx, 40, 30, FRAME_W - 80, 44, 14, withAlpha('#ffffff', .32), withAlpha(def.accent, .36), 1.5);
+      text(ctx, 'memory archive', FRAME_W / 2, 55, 18, def.ink, 900);
+      for (let y = 100; y < FRAME_H - 140; y += 140) {
+        line(ctx, 70, y, FRAME_W - 70, y + 10, withAlpha(def.accent, .14), 1.5);
+        if ((y / 140) % 2 === 0) tapePiece(80, y + 22, 42, 16, -8); else tapePiece(FRAME_W - 80, y + 22, 42, 16, 8);
+      }
+      tinyLabel(FRAME_W - 158, 34, 92, '1987', def.accent2, def.ink);
+      tinyLabel(54, FRAME_H - 84, 110, 'vintage', def.accent, '#fff7ed');
     }
   }
 
@@ -659,81 +744,270 @@
   }
 
   function drawElegantDecor(ctx, def) {
-    roundRect(ctx, 13, 13, FRAME_W - 26, FRAME_H - 26, 32, null, def.accent, 5);
-    roundRect(ctx, 34, 34, FRAME_W - 68, FRAME_H - 68, 26, null, withAlpha(def.accent2, .65), 2);
-    const corners = [[55,55],[FRAME_W-55,55],[55,FRAME_H-55],[FRAME_W-55,FRAME_H-55]];
-    corners.forEach(([x,y],i)=>{
-      drawStar(ctx, x, y, 16, def.accent, 4);
-      circle(ctx, x + (i%2? -26:26), y, 6, def.accent2);
-      circle(ctx, x, y + (i>1? -26:26), 6, def.accent2);
-    });
-    for (let y = 140; y < FRAME_H - 140; y += 90) {
-      circle(ctx, 42, y, 5, withAlpha(def.accent, .8));
-      circle(ctx, FRAME_W - 42, y, 5, withAlpha(def.accent, .8));
+    function pearlChain(y, color) {
+      for (let x = 78; x < FRAME_W - 76; x += 28) circle(ctx, x, y, 5, withAlpha('#ffffff', .92), withAlpha(color, .55), 1);
     }
-    if (def.motif === 'marble') {
-      for (let i=0;i<12;i++) {
-        ctx.beginPath();
-        ctx.strokeStyle = withAlpha(i%2?def.accent:def.accent2, .45); ctx.lineWidth = 2;
-        const y = 90 + i * 135;
-        ctx.moveTo(20, y); ctx.bezierCurveTo(160, y-90, 290, y+90, 560, y-20); ctx.stroke();
+    function flourish(x, y, color) {
+      line(ctx, x - 18, y, x + 18, y, withAlpha(color, .68), 1.8);
+      line(ctx, x, y - 18, x, y + 18, withAlpha(color, .68), 1.8);
+      drawStar(ctx, x, y, 9, color, 4);
+    }
+    function decoPanel(margin, stroke) {
+      roundRect(ctx, margin, margin, FRAME_W - margin * 2, FRAME_H - margin * 2, 28, null, stroke, 3);
+      roundRect(ctx, margin + 16, margin + 16, FRAME_W - (margin + 16) * 2, FRAME_H - (margin + 16) * 2, 24, null, withAlpha(def.accent2, .45), 1.5);
+    }
+
+    if (def.id === 'elegant_black_gold') {
+      decoPanel(14, def.accent);
+      for (const [x, y] of [[56, 56], [FRAME_W - 56, 56], [56, FRAME_H - 56], [FRAME_W - 56, FRAME_H - 56]]) flourish(x, y, def.accent);
+      line(ctx, 96, 54, FRAME_W - 96, 54, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, 96, FRAME_H - 54, FRAME_W - 96, FRAME_H - 54, withAlpha(def.accent2, .28), 1.5);
+      text(ctx, 'LUXE NOIR', FRAME_W / 2, 58, 24, def.accent, 900);
+    } else if (def.id === 'elegant_white_gold') {
+      decoPanel(18, withAlpha(def.accent, .55));
+      for (let y = 90; y < FRAME_H - 100; y += 72) {
+        circle(ctx, 42, y, 3, withAlpha(def.accent, .72));
+        circle(ctx, FRAME_W - 42, y, 3, withAlpha(def.accent, .72));
+      }
+      pearlChain(60, def.accent2); pearlChain(FRAME_H - 60, def.accent2);
+      text(ctx, 'WHITE GOLD', FRAME_W / 2, 58, 22, def.accent, 900);
+    } else if (def.id === 'elegant_rose_gold') {
+      decoPanel(16, withAlpha(def.accent, .58));
+      pearlChain(58, def.accent2); pearlChain(FRAME_H - 58, def.accent2);
+      for (const x of [72, FRAME_W - 72]) drawBow(ctx, x, 60, withAlpha(def.accent, .72), def.ink, .6);
+      for (let y = 120; y < FRAME_H - 140; y += 170) text(ctx, '♡', 42, y, 18, withAlpha(def.accent2, .78));
+      text(ctx, 'rose glow', FRAME_W / 2, FRAME_H - 48, 18, def.accent, 900);
+    } else if (def.id === 'elegant_silver_pearl') {
+      decoPanel(18, withAlpha(def.accent, .5));
+      for (let i = 0; i < 10; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .48); ctx.lineWidth = 1.5;
+        const y = 92 + i * 150; ctx.moveTo(40, y); ctx.bezierCurveTo(170, y - 60, 330, y + 50, FRAME_W - 48, y - 10); ctx.stroke();
+      }
+      for (const x of [90, FRAME_W - 90]) for (let y = 82; y < FRAME_H - 82; y += 34) circle(ctx, x, y, 4, withAlpha('#ffffff', .94), withAlpha(def.accent, .6), 1);
+      text(ctx, 'silver pearl', FRAME_W / 2, 58, 22, def.accent, 900);
+    } else if (def.id === 'elegant_emerald_luxury') {
+      decoPanel(16, withAlpha(def.accent, .9));
+      for (let y = 68; y < FRAME_H - 68; y += 110) {
+        line(ctx, 28, y, 64, y, withAlpha(def.accent2, .55), 2);
+        line(ctx, FRAME_W - 64, y, FRAME_W - 28, y, withAlpha(def.accent2, .55), 2);
+      }
+      line(ctx, 110, 60, FRAME_W / 2 - 34, 60, withAlpha(def.accent2, .5), 2);
+      line(ctx, FRAME_W / 2 + 34, 60, FRAME_W - 110, 60, withAlpha(def.accent2, .5), 2);
+      drawStar(ctx, FRAME_W / 2, 60, 12, def.accent, 4);
+      text(ctx, 'emerald luxe', FRAME_W / 2, FRAME_H - 48, 18, def.accent2, 900);
+    } else if (def.id === 'elegant_royal_navy') {
+      decoPanel(16, withAlpha(def.accent, .72));
+      text(ctx, '♛', FRAME_W / 2, 56, 24, def.accent, 900);
+      drawHeaderRibbon(ctx, 150, 76, FRAME_W - 300, 34, 'royal edition', withAlpha('#ffffff', .08), withAlpha(def.accent2, .22), def.ink);
+      for (let i = 0; i < 40; i++) drawStar(ctx, 44 + (i * 39) % (FRAME_W - 88), 118 + (i * 67) % (FRAME_H - 210), 5 + (i % 2), i % 2 ? def.accent : def.accent2, 4);
+    } else if (def.id === 'elegant_champagne_gold') {
+      decoPanel(18, withAlpha(def.accent, .52));
+      for (let i = 0; i < 36; i++) circle(ctx, 58 + (i * 19) % (FRAME_W - 116), 90 + (i * 53) % (FRAME_H - 180), 4 + (i % 3), withAlpha('#ffffff', .65), withAlpha(def.accent2, .4), 1);
+      drawHeaderRibbon(ctx, 142, 34, FRAME_W - 284, 40, 'champagne', withAlpha('#ffffff', .68), withAlpha(def.accent2, .34), def.ink);
+    } else if (def.id === 'elegant_luxury_marble') {
+      decoPanel(16, withAlpha(def.accent, .46));
+      for (let i = 0; i < 16; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent2 : def.accent, .34); ctx.lineWidth = 1.6;
+        const y = 74 + i * 100; ctx.moveTo(20, y); ctx.bezierCurveTo(130, y - 50, 270, y + 50, FRAME_W - 22, y - 8); ctx.stroke();
+      }
+      flourish(62, 60, def.accent); flourish(FRAME_W - 62, FRAME_H - 60, def.accent2);
+      text(ctx, 'marble collection', FRAME_W / 2, 58, 20, def.accent, 900);
+    } else if (def.id === 'elegant_midnight_black') {
+      decoPanel(14, withAlpha(def.accent2, .65));
+      for (let i = 0; i < 80; i++) drawStar(ctx, 34 + (i * 37) % (FRAME_W - 68), 42 + (i * 71) % (FRAME_H - 84), 5 + (i % 3), i % 2 ? def.accent : def.accent2, 4);
+      line(ctx, 88, 60, FRAME_W - 88, 60, withAlpha(def.accent, .22), 1.5);
+      text(ctx, 'midnight', FRAME_W / 2, 58, 22, def.accent2, 900);
+      text(ctx, '✦', 68, FRAME_H - 52, 18, def.accent, 900);
+      text(ctx, '✦', FRAME_W - 68, FRAME_H - 52, 18, def.accent, 900);
+    } else if (def.id === 'elegant_wedding_elegant') {
+      decoPanel(18, withAlpha(def.accent, .5));
+      drawHeaderRibbon(ctx, 168, 34, FRAME_W - 336, 40, 'with love', withAlpha('#ffffff', .84), withAlpha(def.accent2, .28), def.ink);
+      drawBow(ctx, 86, 56, withAlpha(def.accent2, .76), def.accent, .7);
+      drawBow(ctx, FRAME_W - 86, 56, withAlpha(def.accent2, .76), def.accent, .7);
+      for (let y = 100; y < FRAME_H - 120; y += 120) {
+        text(ctx, '♡', 42, y, 15, withAlpha(def.accent2, .68));
+        text(ctx, '♡', FRAME_W - 42, y + 30, 15, withAlpha(def.accent2, .68));
       }
     }
-    text(ctx, 'LUXE', FRAME_W/2, 58, 25, def.accent, 900);
-    text(ctx, '✦', 64, FRAME_H - 52, 22, def.accent2, 900);
-    text(ctx, '✦', FRAME_W - 64, FRAME_H - 52, 22, def.accent2, 900);
   }
 
   function drawFloralDecor(ctx, def) {
-    function flower(x,y,scale=1) {
-      for (let k=0;k<6;k++) circle(ctx, x+Math.cos(k*1.047)*12*scale, y+Math.sin(k*1.047)*12*scale, 8*scale, withAlpha(def.accent, .75));
-      circle(ctx, x, y, 6*scale, def.accent2);
+    function bloom(x, y, petal, center, scale = 1, petals = 6) {
+      for (let k = 0; k < petals; k++) circle(ctx, x + Math.cos(k * (Math.PI * 2 / petals)) * 12 * scale, y + Math.sin(k * (Math.PI * 2 / petals)) * 12 * scale, 7 * scale, withAlpha(petal, .78));
+      circle(ctx, x, y, 5 * scale, withAlpha(center, .92));
     }
-    for (let y = 70; y < FRAME_H - 115; y += 95) {
-      const x1 = 34 + Math.sin(y*.02)*8;
-      const x2 = FRAME_W - 34 + Math.cos(y*.02)*8;
-      circle(ctx, x1, y, 6, withAlpha(def.accent2, .8));
-      circle(ctx, x2, y, 6, withAlpha(def.accent2, .8));
-      line(ctx, x1, y - 34, x1, y + 34, withAlpha(def.ink, .18), 2);
-      line(ctx, x2, y - 34, x2, y + 34, withAlpha(def.ink, .18), 2);
-      if (y % 190 < 95) { flower(x1, y, .75); flower(x2, y + 30, .65); }
+    function stem(x, y1, y2, color) { line(ctx, x, y1, x, y2, withAlpha(color, .24), 2); }
+    function leaf(x, y, color, scale = 1) {
+      ctx.beginPath(); ctx.fillStyle = withAlpha(color, .42);
+      ctx.ellipse(x, y, 8 * scale, 14 * scale, Math.PI / 5, 0, Math.PI * 2); ctx.fill();
     }
-    for (let x = 75; x < FRAME_W - 75; x += 74) flower(x, 48, .72);
-    for (let x = 82; x < FRAME_W - 75; x += 84) flower(x, FRAME_H - 52, .65);
-    text(ctx, 'BLOOM', FRAME_W - 54, FRAME_H - 50, 18, def.ink, 900, 'right');
+
+    if (def.motif === 'sakura') {
+      line(ctx, 26, 86, 180, 34, withAlpha(def.ink, .32), 4);
+      line(ctx, FRAME_W - 26, 116, FRAME_W - 170, 48, withAlpha(def.ink, .24), 3);
+      for (const [x, y, sc] of [[78, 62, .8], [122, 54, .9], [FRAME_W - 106, 80, .8], [FRAME_W - 72, 62, .7]]) bloom(x, y, def.accent, def.accent2, sc, 5);
+      for (let i = 0; i < 36; i++) text(ctx, i % 2 ? '❀' : '✿', 72 + (i * 31) % (FRAME_W - 144), 130 + (i * 73) % (FRAME_H - 220), 12, withAlpha(def.accent2, .45));
+    } else if (def.motif === 'rose') {
+      for (const [x, y] of [[70, 64], [FRAME_W - 70, 64], [70, FRAME_H - 70], [FRAME_W - 70, FRAME_H - 70]]) { bloom(x, y, def.accent, '#ffffff', 1.1, 8); leaf(x - 18, y + 10, def.ink, .9); leaf(x + 18, y - 10, def.ink, .9); }
+      line(ctx, 108, 58, FRAME_W - 108, 58, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, 108, FRAME_H - 58, FRAME_W - 108, FRAME_H - 58, withAlpha(def.accent2, .28), 1.5);
+    } else if (def.motif === 'sunflower') {
+      for (let y = 72; y < FRAME_H - 70; y += 210) { bloom(56, y, def.accent, def.accent2, 1, 10); bloom(FRAME_W - 56, y + 60, def.accent, def.accent2, 1, 10); }
+      line(ctx, 56, 110, 56, FRAME_H - 120, withAlpha(def.ink, .18), 2); line(ctx, FRAME_W - 56, 170, FRAME_W - 56, FRAME_H - 70, withAlpha(def.ink, .18), 2);
+    } else if (def.motif === 'lavender') {
+      for (let y = 110; y < FRAME_H - 120; y += 170) {
+        stem(44, y - 40, y + 42, def.ink); stem(FRAME_W - 44, y - 10, y + 78, def.ink);
+        for (let k = 0; k < 6; k++) { circle(ctx, 44 + (k % 2 ? -7 : 7), y - 28 + k * 12, 5, withAlpha(def.accent, .8)); circle(ctx, FRAME_W - 44 + (k % 2 ? -7 : 7), y + 4 + k * 12, 5, withAlpha(def.accent2, .82)); }
+      }
+    } else if (def.motif === 'daisy') {
+      for (let x = 74; x < FRAME_W - 70; x += 74) bloom(x, 56, '#ffffff', def.accent, .7, 8);
+      for (let x = 82; x < FRAME_W - 78; x += 82) bloom(x, FRAME_H - 56, '#ffffff', def.accent2, .68, 8);
+      for (let y = 118; y < FRAME_H - 130; y += 170) { bloom(42, y, '#ffffff', def.accent, .62, 8); bloom(FRAME_W - 42, y + 48, '#ffffff', def.accent2, .62, 8); }
+    } else if (def.motif === 'peony') {
+      for (const [x, y, sc] of [[72, 68, 1.25], [FRAME_W - 86, 90, 1], [88, FRAME_H - 86, 1], [FRAME_W - 78, FRAME_H - 74, 1.2]]) bloom(x, y, def.accent, def.accent2, sc, 8);
+      for (const [x, y] of [[98, 48], [FRAME_W - 104, 108], [112, FRAME_H - 98], [FRAME_W - 112, FRAME_H - 94]]) { leaf(x - 22, y + 16, def.ink, 1); leaf(x + 20, y - 14, def.ink, 1); }
+    } else if (def.motif === 'leaf') {
+      for (let y = 82; y < FRAME_H - 80; y += 74) { leaf(42, y, def.accent, 1.1); leaf(FRAME_W - 42, y + 36, def.accent2, 1.1); }
+      for (let x = 90; x < FRAME_W - 90; x += 60) { leaf(x, 52, def.accent, .8); leaf(x + 20, FRAME_H - 54, def.accent2, .8); }
+      line(ctx, 32, 120, 32, FRAME_H - 120, withAlpha(def.ink, .12), 1.5); line(ctx, FRAME_W - 32, 120, FRAME_W - 32, FRAME_H - 120, withAlpha(def.ink, .12), 1.5);
+    } else if (def.motif === 'wild') {
+      const palette = [def.accent, def.accent2, '#f9a8d4', '#fde68a'];
+      for (let i = 0; i < 26; i++) bloom(48 + (i * 29) % (FRAME_W - 96), 58 + (i * 97) % (FRAME_H - 116), palette[i % palette.length], palette[(i + 1) % palette.length], .45 + (i % 3) * .15, 6);
+    } else if (def.motif === 'hydrangea') {
+      for (const [x, y] of [[74, 72], [FRAME_W - 74, 72], [74, FRAME_H - 72], [FRAME_W - 74, FRAME_H - 72]]) {
+        for (let i = 0; i < 10; i++) bloom(x + ((i % 5) - 2) * 12, y + (Math.floor(i / 5) - 0.5) * 16, i % 2 ? def.accent : def.accent2, '#ffffff', .45, 4);
+      }
+    } else if (def.motif === 'spring') {
+      for (let x = 80; x < FRAME_W - 76; x += 54) { bloom(x, 54, def.accent, def.accent2, .55, 5); line(ctx, x, 66, x, 82, withAlpha(def.ink, .16), 1); }
+      for (let x = 96; x < FRAME_W - 90; x += 74) { bloom(x, FRAME_H - 54, '#bef264', def.accent, .5, 6); }
+      for (let i = 0; i < 24; i++) text(ctx, '✦', 58 + (i * 34) % (FRAME_W - 116), 94 + (i * 81) % (FRAME_H - 180), 10, withAlpha(def.accent2, .44));
+    }
+    text(ctx, 'bloom', FRAME_W - 52, FRAME_H - 48, 16, def.ink, 900, 'right');
   }
 
   function drawSeasonalDecor(ctx, def) {
-    drawConfetti(ctx, def, 96);
-    const motifIcons = {
-      birthday:['🎂','🎈','✦'], graduation:['🎓','★','✦'], christmas:['🎄','✦','●'], valentine:['♡','♥','✦'], halloween:['☾','★','◆'], eid:['☾','✦','★'], newyear:['✦','★','✺'], summer:['☀','✦','○'], autumn:['🍂','◆','✦'], winter:['❄','✦','○']
-    };
-    const icons = motifIcons[def.motif] || ['✦','★','○'];
-    for (let y=90;y<FRAME_H-120;y+=150) {
-      text(ctx, icons[(y/150|0)%icons.length], 44, y, 31, def.accent);
-      text(ctx, icons[(y/150+1|0)%icons.length], FRAME_W-44, y+45, 31, def.accent2);
+    function balloon(x, y, color) { circle(ctx, x, y, 14, withAlpha(color, .82)); line(ctx, x, y + 14, x - 6, y + 36, withAlpha(def.ink, .25), 1.5); }
+    function firework(x, y, color) { for (let i = 0; i < 8; i++) line(ctx, x, y, x + Math.cos(i * Math.PI / 4) * 18, y + Math.sin(i * Math.PI / 4) * 18, withAlpha(color, .75), 2); circle(ctx, x, y, 4, color); }
+    function miniStarScatter(count=42) { for (let i = 0; i < count; i++) drawStar(ctx, 46 + (i * 43) % (FRAME_W - 92), 86 + (i * 89) % (FRAME_H - 170), 5 + (i % 2), i % 2 ? def.accent : def.accent2, 4); }
+
+    if (def.motif === 'birthday') {
+      balloon(58, 64, def.accent); balloon(96, 54, def.accent2); balloon(FRAME_W - 84, 64, '#facc15');
+      for (let i = 0; i < 30; i++) text(ctx, i % 2 ? '✦' : '•', 48 + (i * 29) % (FRAME_W - 96), 102 + (i * 79) % (FRAME_H - 190), 12, withAlpha(i % 3 ? def.accent2 : def.accent, .6));
+      drawHeaderRibbon(ctx, 150, 32, FRAME_W - 300, 42, 'birthday party', withAlpha('#ffffff', .58), withAlpha(def.accent2, .32), def.ink);
+    } else if (def.motif === 'graduation') {
+      drawHeaderRibbon(ctx, 136, 32, FRAME_W - 272, 42, 'graduation day', withAlpha('#ffffff', .6), withAlpha(def.accent2, .26), def.ink);
+      text(ctx, '🎓', 64, 56, 24, def.accent, 900); text(ctx, '🎓', FRAME_W - 64, 56, 24, def.accent2, 900);
+      for (let y = 120; y < FRAME_H - 120; y += 180) { line(ctx, 38, y, 74, y, withAlpha(def.accent2, .32), 2); line(ctx, FRAME_W - 74, y + 30, FRAME_W - 38, y + 30, withAlpha(def.accent2, .32), 2); }
+    } else if (def.motif === 'christmas') {
+      drawHeaderRibbon(ctx, 160, 32, FRAME_W - 320, 42, 'christmas', withAlpha('#ffffff', .18), withAlpha(def.accent2, .28), def.ink);
+      for (let x = 74; x < FRAME_W - 70; x += 70) text(ctx, x % 140 ? '✦' : '●', x, 58, 16, x % 140 ? def.accent2 : def.accent, 900);
+      for (let y = 118; y < FRAME_H - 120; y += 160) { text(ctx, '🎄', 42, y, 18, def.accent2); text(ctx, '❄', FRAME_W - 42, y + 40, 16, def.accent2); }
+      miniStarScatter(36);
+    } else if (def.motif === 'valentine') {
+      drawHeaderRibbon(ctx, 152, 32, FRAME_W - 304, 42, 'valentine', withAlpha('#ffffff', .62), withAlpha(def.accent2, .32), def.ink);
+      for (let i = 0; i < 42; i++) text(ctx, i % 2 ? '♡' : '♥', 48 + (i * 31) % (FRAME_W - 96), 92 + (i * 85) % (FRAME_H - 190), 13, withAlpha(i % 2 ? def.accent2 : def.accent, .54));
+      drawBow(ctx, 78, 56, withAlpha(def.accent2, .72), def.accent, .65); drawBow(ctx, FRAME_W - 78, 56, withAlpha(def.accent2, .72), def.accent, .65);
+    } else if (def.motif === 'halloween') {
+      drawHeaderRibbon(ctx, 148, 32, FRAME_W - 296, 42, 'halloween', withAlpha('#111827', .2), withAlpha(def.accent, .34), def.ink);
+      for (let y = 110; y < FRAME_H - 120; y += 160) { text(ctx, y % 320 ? '☾' : '★', 44, y, 18, def.accent); text(ctx, y % 320 ? '◆' : '✦', FRAME_W - 44, y + 42, 18, def.accent2); }
+      line(ctx, 24, 28, 70, 74, withAlpha(def.accent2, .28), 1.5); line(ctx, FRAME_W - 24, 28, FRAME_W - 70, 74, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, 24, 60, 70, 74, withAlpha(def.accent2, .28), 1.5); line(ctx, FRAME_W - 24, 60, FRAME_W - 70, 74, withAlpha(def.accent2, .28), 1.5);
+      miniStarScatter(24);
+    } else if (def.motif === 'eid') {
+      drawHeaderRibbon(ctx, 142, 32, FRAME_W - 284, 42, 'eid mubarak', withAlpha('#ffffff', .66), withAlpha(def.accent2, .26), def.ink);
+      text(ctx, '☪', 70, 58, 24, def.accent, 900); text(ctx, '☪', FRAME_W - 70, 58, 24, def.accent2, 900);
+      for (let y = 120; y < FRAME_H - 140; y += 180) { roundRect(ctx, 34, y, 18, 32, 5, withAlpha(def.accent2, .3), withAlpha(def.accent, .4), 1); roundRect(ctx, FRAME_W - 52, y + 46, 18, 32, 5, withAlpha(def.accent2, .3), withAlpha(def.accent, .4), 1); }
+      miniStarScatter(34);
+    } else if (def.motif === 'newyear') {
+      drawHeaderRibbon(ctx, 144, 32, FRAME_W - 288, 42, 'new year', withAlpha('#ffffff', .14), withAlpha(def.accent2, .28), def.ink);
+      for (const [x, y, c] of [[74, 58, def.accent], [FRAME_W / 2, 52, def.accent2], [FRAME_W - 74, 58, def.accent]]) firework(x, y, c);
+      for (let i = 0; i < 44; i++) text(ctx, i % 2 ? '✦' : '★', 48 + (i * 23) % (FRAME_W - 96), 96 + (i * 91) % (FRAME_H - 186), 12, withAlpha(i % 2 ? def.accent2 : def.accent, .62));
+    } else if (def.motif === 'summer') {
+      drawHeaderRibbon(ctx, 144, 32, FRAME_W - 288, 42, 'summer trip', withAlpha('#ffffff', .5), withAlpha(def.accent2, .28), def.ink);
+      text(ctx, '☀', 76, 58, 22, def.accent2, 900); text(ctx, '☼', FRAME_W - 76, 58, 20, def.accent, 900);
+      for (let y = FRAME_H - 124; y < FRAME_H - 40; y += 16) ctx.beginPath(), ctx.strokeStyle = withAlpha(def.accent, .25), ctx.lineWidth = 2, ctx.moveTo(44, y), ctx.quadraticCurveTo(FRAME_W / 2, y - 12, FRAME_W - 44, y), ctx.stroke();
+      for (let i = 0; i < 18; i++) text(ctx, i % 2 ? '✦' : '•', 46 + (i * 33) % (FRAME_W - 92), 116 + (i * 88) % (FRAME_H - 220), 10, withAlpha(def.accent2, .52));
+    } else if (def.motif === 'autumn') {
+      drawHeaderRibbon(ctx, 142, 32, FRAME_W - 284, 42, 'autumn leaves', withAlpha('#ffffff', .52), withAlpha(def.accent2, .28), def.ink);
+      for (let i = 0; i < 28; i++) text(ctx, i % 2 ? '✦' : '◆', 54 + (i * 37) % (FRAME_W - 108), 90 + (i * 95) % (FRAME_H - 190), 12, withAlpha(i % 2 ? def.accent : def.accent2, .54));
+      for (let y = 120; y < FRAME_H - 120; y += 180) text(ctx, '🍂', 42, y, 16, def.accent); 
+    } else if (def.motif === 'winter') {
+      drawHeaderRibbon(ctx, 146, 32, FRAME_W - 292, 42, 'winter snow', withAlpha('#ffffff', .62), withAlpha(def.accent2, .28), def.ink);
+      for (let i = 0; i < 42; i++) text(ctx, i % 2 ? '❄' : '✦', 48 + (i * 31) % (FRAME_W - 96), 90 + (i * 81) % (FRAME_H - 190), 12, withAlpha(i % 2 ? def.accent : def.accent2, .58));
+      line(ctx, 34, 64, 82, 112, withAlpha(def.accent2, .18), 1.5); line(ctx, FRAME_W - 34, 64, FRAME_W - 82, 112, withAlpha(def.accent2, .18), 1.5);
     }
-    roundRect(ctx, 70, 28, FRAME_W - 140, 52, 26, withAlpha('#ffffff', .35), withAlpha(def.accent, .65), 2);
-    text(ctx, def.name.toUpperCase().slice(0, 18), FRAME_W/2, 55, 19, def.ink, 900);
   }
 
   function drawGamingDecor(ctx, def) {
-    for (let y=40;y<FRAME_H-100;y+=72) {
-      for (let x of [20, FRAME_W-44]) {
-        ctx.fillStyle = (Math.floor(y/72)%2) ? def.accent : def.accent2;
-        ctx.globalAlpha = .9; ctx.fillRect(x, y, 24, 24); ctx.globalAlpha = 1;
+    function sidePixels(c1, c2) {
+      for (let y = 40; y < FRAME_H - 100; y += 72) {
+        ctx.fillStyle = (Math.floor(y / 72) % 2) ? c1 : c2; ctx.globalAlpha = .95; ctx.fillRect(18, y, 20, 20); ctx.fillRect(FRAME_W - 38, y + 20, 20, 20); ctx.globalAlpha = 1;
       }
     }
-    roundRect(ctx, 52, 32, 170, 40, 8, withAlpha(def.accent, .28), def.accent, 3);
-    text(ctx, 'HP ▰▰▰▰', 137, 53, 17, def.ink, 900);
-    roundRect(ctx, FRAME_W - 220, 32, 168, 40, 8, withAlpha(def.accent2, .25), def.accent2, 3);
-    text(ctx, 'LV. 99', FRAME_W - 136, 53, 17, def.ink, 900);
-    for (let i=0;i<42;i++) {
-      const x=(i*97)%FRAME_W, y=(i*167)%FRAME_H;
-      if (x>80 && x<FRAME_W-80) continue;
-      drawStar(ctx,x,y,8+(i%3)*2,i%2?def.accent:def.accent2,4);
+    function neonPanel(x, y, w, txt, fill, stroke) {
+      roundRect(ctx, x, y, w, 34, 8, withAlpha(fill, .22), withAlpha(stroke, .65), 2);
+      text(ctx, txt, x + w / 2, y + 21, 12, stroke, 900);
     }
-    text(ctx, 'PRESS START', FRAME_W - 48, FRAME_H-50, 18, def.accent, 900, 'right');
+
+    if (def.motif === 'pixel') {
+      sidePixels(def.accent, def.accent2);
+      neonPanel(46, 30, 150, 'HP 80/80', def.accent, def.accent);
+      neonPanel(FRAME_W - 190, 30, 144, 'LEVEL 04', def.accent2, def.accent2);
+      for (let y = 104; y < FRAME_H - 90; y += 94) for (let x = 66; x < FRAME_W - 64; x += 32) if ((x + y) % 64 === 0) ctx.fillStyle = withAlpha(def.accent2, .25), ctx.fillRect(x, y, 6, 6);
+      text(ctx, 'PRESS START', FRAME_W - 46, FRAME_H - 48, 16, def.accent, 900, 'right');
+    } else if (def.motif === 'arcade') {
+      for (let y = 0; y < FRAME_H; y += 40) line(ctx, 0, y, FRAME_W, y, withAlpha(def.accent2, .06), 1);
+      sidePixels(def.accent, def.accent2);
+      drawHeaderRibbon(ctx, 126, 32, FRAME_W - 252, 40, 'ARCADE MODE', withAlpha('#111827', .22), withAlpha(def.accent, .45), def.ink);
+      for (let x = 72; x < FRAME_W - 72; x += 26) { ctx.fillStyle = (Math.floor(x / 26) % 2) ? def.accent : def.accent2; ctx.globalAlpha = .8; ctx.fillRect(x, 84, 12, 12); ctx.globalAlpha = 1; }
+      text(ctx, '1UP 9999', 70, FRAME_H - 48, 14, def.accent2, 900, 'left');
+    } else if (def.motif === 'rpg') {
+      sidePixels(def.accent, def.accent2);
+      neonPanel(42, 30, 150, 'CLASS MAGE', def.accent, def.accent);
+      neonPanel(FRAME_W - 190, 30, 150, 'RANK S', def.accent2, def.accent2);
+      for (let y = 112; y < FRAME_H - 130; y += 200) {
+        roundRect(ctx, 44, y, 48, 18, 6, withAlpha(def.accent, .26), withAlpha(def.accent2, .2), 1); text(ctx, 'MP', 68, y + 12, 10, def.ink, 900);
+        roundRect(ctx, FRAME_W - 92, y + 48, 48, 18, 6, withAlpha(def.accent2, .26), withAlpha(def.accent, .2), 1); text(ctx, 'HP', FRAME_W - 68, y + 60, 10, def.ink, 900);
+      }
+    } else if (def.motif === 'cyber') {
+      for (let x = 40; x < FRAME_W - 40; x += 64) { line(ctx, x, 22, x, FRAME_H - 22, withAlpha(def.accent, .1), 1); }
+      for (let y = 90; y < FRAME_H - 90; y += 54) { line(ctx, 22, y, FRAME_W - 22, y, withAlpha(def.accent2, .08), 1); }
+      neonPanel(40, 28, 156, 'SCAN READY', def.accent, def.accent);
+      neonPanel(FRAME_W - 196, 28, 156, 'MODE NEO', def.accent2, def.accent2);
+      for (let i = 0; i < 26; i++) drawStar(ctx, 42 + (i * 47) % (FRAME_W - 84), 102 + (i * 113) % (FRAME_H - 204), 6, i % 2 ? def.accent2 : def.accent, 4);
+    } else if (def.motif === 'fantasy') {
+      roundRect(ctx, 16, 16, FRAME_W - 32, FRAME_H - 32, 28, null, withAlpha(def.accent2, .58), 3);
+      for (let y = 86; y < FRAME_H - 86; y += 110) { line(ctx, 34, y, 64, y - 18, withAlpha(def.accent2, .38), 2); line(ctx, FRAME_W - 34, y, FRAME_W - 64, y - 18, withAlpha(def.accent2, .38), 2); }
+      drawHeaderRibbon(ctx, 134, 30, FRAME_W - 268, 42, 'FANTASY WORLD', withAlpha('#ffffff', .18), withAlpha(def.accent2, .34), def.ink);
+      text(ctx, '✦', 58, 58, 16, def.accent2); text(ctx, '✦', FRAME_W - 58, 58, 16, def.accent2);
+      text(ctx, 'portal', FRAME_W / 2, FRAME_H - 48, 16, def.accent2, 900);
+    } else if (def.motif === 'magic') {
+      roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 28, null, withAlpha(def.accent, .58), 3);
+      circle(ctx, FRAME_W / 2, 56, 18, withAlpha(def.accent2, .22), withAlpha(def.accent2, .55), 2);
+      drawStar(ctx, FRAME_W / 2, 56, 10, def.accent2, 5);
+      for (let y = 110; y < FRAME_H - 120; y += 170) { text(ctx, '✧', 42, y, 16, def.accent); text(ctx, '✧', FRAME_W - 42, y + 50, 16, def.accent2); }
+      neonPanel(166, 30, FRAME_W - 332, 'SPELLBOOK', def.accent2, def.accent2);
+    } else if (def.motif === 'space') {
+      for (let i = 0; i < 90; i++) circle(ctx, 28 + (i * 39) % (FRAME_W - 56), 28 + (i * 67) % (FRAME_H - 56), 1.4, withAlpha('#ffffff', .42));
+      circle(ctx, FRAME_W / 2, 56, 20, withAlpha(def.accent2, .1), withAlpha(def.accent2, .3), 1.5);
+      text(ctx, 'space map', FRAME_W / 2, 58, 20, def.accent2, 900);
+      line(ctx, 92, 56, FRAME_W / 2 - 30, 56, withAlpha(def.accent, .22), 1.5); line(ctx, FRAME_W / 2 + 30, 56, FRAME_W - 92, 56, withAlpha(def.accent, .22), 1.5);
+      sidePixels(def.accent, def.accent2);
+    } else if (def.motif === 'monster') {
+      sidePixels(def.accent, def.accent2);
+      for (const x of [64, FRAME_W - 64]) for (let y = 130; y < FRAME_H - 140; y += 230) line(ctx, x - 14, y - 20, x + 14, y + 20, withAlpha(def.accent2, .55), 3), line(ctx, x - 4, y - 22, x + 24, y + 18, withAlpha(def.accent, .45), 2);
+      neonPanel(144, 30, FRAME_W - 288, 'MONSTER MODE', def.accent, def.accent);
+    } else if (def.motif === 'dungeon') {
+      for (let y = 26; y < FRAME_H - 26; y += 44) { ctx.fillStyle = withAlpha(def.accent, .14); ctx.fillRect(20, y, 28, 24); ctx.fillRect(FRAME_W - 48, y + 10, 28, 24); }
+      drawHeaderRibbon(ctx, 138, 30, FRAME_W - 276, 42, 'dungeon run', withAlpha('#ffffff', .08), withAlpha(def.accent2, .32), def.ink);
+      text(ctx, 'TORCH', 74, 58, 14, def.accent2, 900); text(ctx, 'KEY', FRAME_W - 74, 58, 14, def.accent, 900);
+    } else if (def.motif === 'console') {
+      roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 28, null, withAlpha(def.accent, .48), 3);
+      roundRect(ctx, 48, 28, FRAME_W - 96, 48, 18, withAlpha('#ffffff', .55), withAlpha(def.accent2, .26), 1.5);
+      text(ctx, 'RETRO CONSOLE', FRAME_W / 2, 56, 18, def.ink, 900);
+      circle(ctx, 74, FRAME_H - 56, 16, withAlpha(def.accent, .72)); circle(ctx, 116, FRAME_H - 56, 16, withAlpha(def.accent2, .72));
+      line(ctx, FRAME_W - 124, FRAME_H - 56, FRAME_W - 72, FRAME_H - 56, withAlpha(def.ink, .35), 6); line(ctx, FRAME_W - 98, FRAME_H - 82, FRAME_W - 98, FRAME_H - 30, withAlpha(def.ink, .35), 6);
+    }
   }
 
   function drawSocialDecor(ctx, def) {

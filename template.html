@@ -235,13 +235,13 @@
   const BUILTIN_CATEGORIES = [
     'Korean',
     'Film',
-    'Elegant',
     'Floral',
     'Seasonal',
     'Gaming',
     'Pattern',
     'Social Media'
   ];
+  const HIDDEN_CATEGORIES = ['Elegant'];
 
   const BUILTIN_FRAME_DEFS = [
     // Korean
@@ -959,74 +959,133 @@
   }
 
   function drawGamingDecor(ctx, def) {
-    function sidePixels(c1, c2) {
-      for (let y = 40; y < FRAME_H - 100; y += 72) {
-        ctx.fillStyle = (Math.floor(y / 72) % 2) ? c1 : c2; ctx.globalAlpha = .95; ctx.fillRect(18, y, 20, 20); ctx.fillRect(FRAME_W - 38, y + 20, 20, 20); ctx.globalAlpha = 1;
+    function sidePixels(c1, c2, size = 20, inset = 18, step = 72) {
+      for (let y = 40; y < FRAME_H - 100; y += step) {
+        ctx.fillStyle = (Math.floor(y / step) % 2) ? c1 : c2;
+        ctx.globalAlpha = .95;
+        ctx.fillRect(inset, y, size, size);
+        ctx.fillRect(FRAME_W - inset - size, y + 20, size, size);
+        ctx.globalAlpha = 1;
       }
     }
     function neonPanel(x, y, w, txt, fill, stroke) {
       roundRect(ctx, x, y, w, 34, 8, withAlpha(fill, .22), withAlpha(stroke, .65), 2);
       text(ctx, txt, x + w / 2, y + 21, 12, stroke, 900);
     }
+    function cornerBracket(x, y, w, h, color) {
+      line(ctx, x, y, x + w, y, color, 2);
+      line(ctx, x, y, x, y + h, color, 2);
+    }
+    function chipRow(y, fillA, fillB) {
+      for (let x = 78; x < FRAME_W - 78; x += 24) {
+        ctx.fillStyle = (Math.floor(x / 24) % 2) ? withAlpha(fillA, .82) : withAlpha(fillB, .82);
+        ctx.fillRect(x, y, 12, 12);
+      }
+    }
 
     if (def.motif === 'pixel') {
-      sidePixels(def.accent, def.accent2);
-      neonPanel(46, 30, 150, 'HP 80/80', def.accent, def.accent);
-      neonPanel(FRAME_W - 190, 30, 144, 'LEVEL 04', def.accent2, def.accent2);
-      for (let y = 104; y < FRAME_H - 90; y += 94) for (let x = 66; x < FRAME_W - 64; x += 32) if ((x + y) % 64 === 0) ctx.fillStyle = withAlpha(def.accent2, .25), ctx.fillRect(x, y, 6, 6);
-      text(ctx, 'PRESS START', FRAME_W - 46, FRAME_H - 48, 16, def.accent, 900, 'right');
-    } else if (def.motif === 'arcade') {
-      for (let y = 0; y < FRAME_H; y += 40) line(ctx, 0, y, FRAME_W, y, withAlpha(def.accent2, .06), 1);
-      sidePixels(def.accent, def.accent2);
-      drawHeaderRibbon(ctx, 126, 32, FRAME_W - 252, 40, 'ARCADE MODE', withAlpha('#111827', .22), withAlpha(def.accent, .45), def.ink);
-      for (let x = 72; x < FRAME_W - 72; x += 26) { ctx.fillStyle = (Math.floor(x / 26) % 2) ? def.accent : def.accent2; ctx.globalAlpha = .8; ctx.fillRect(x, 84, 12, 12); ctx.globalAlpha = 1; }
-      text(ctx, '1UP 9999', 70, FRAME_H - 48, 14, def.accent2, 900, 'left');
-    } else if (def.motif === 'rpg') {
-      sidePixels(def.accent, def.accent2);
-      neonPanel(42, 30, 150, 'CLASS MAGE', def.accent, def.accent);
-      neonPanel(FRAME_W - 190, 30, 150, 'RANK S', def.accent2, def.accent2);
-      for (let y = 112; y < FRAME_H - 130; y += 200) {
-        roundRect(ctx, 44, y, 48, 18, 6, withAlpha(def.accent, .26), withAlpha(def.accent2, .2), 1); text(ctx, 'MP', 68, y + 12, 10, def.ink, 900);
-        roundRect(ctx, FRAME_W - 92, y + 48, 48, 18, 6, withAlpha(def.accent2, .26), withAlpha(def.accent, .2), 1); text(ctx, 'HP', FRAME_W - 68, y + 60, 10, def.ink, 900);
+      sidePixels(def.accent, def.accent2, 18, 18, 64);
+      neonPanel(44, 28, 144, 'HP 80/80', def.accent, def.accent);
+      neonPanel(FRAME_W - 184, 28, 140, 'QUEST ON', def.accent2, def.accent2);
+      chipRow(86, def.accent, def.accent2);
+      for (let y = 112; y < FRAME_H - 110; y += 96) {
+        for (let x = 68; x < FRAME_W - 68; x += 28) {
+          if ((x + y) % 56 === 0) { ctx.fillStyle = withAlpha(def.accent2, .22); ctx.fillRect(x, y, 6, 6); }
+        }
       }
+      text(ctx, 'PRESS START', FRAME_W - 44, FRAME_H - 48, 16, def.accent, 900, 'right');
+    } else if (def.motif === 'arcade') {
+      for (let y = 0; y < FRAME_H; y += 42) line(ctx, 0, y, FRAME_W, y, withAlpha(def.accent2, .08), 1);
+      for (let x = 0; x < FRAME_W; x += 42) line(ctx, x, 0, x, FRAME_H, withAlpha(def.accent, .04), 1);
+      roundRect(ctx, 22, 18, FRAME_W - 44, 62, 18, withAlpha('#111827', .28), withAlpha(def.accent, .48), 2.5);
+      chipRow(42, def.accent, def.accent2);
+      text(ctx, 'ARCADE MODE', FRAME_W / 2, 61, 22, def.ink, 900);
+      text(ctx, '1UP 9999', 54, FRAME_H - 50, 14, def.accent2, 900, 'left');
+      text(ctx, 'INSERT COIN', FRAME_W - 54, FRAME_H - 50, 14, def.accent, 900, 'right');
+    } else if (def.motif === 'rpg') {
+      roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 24, null, withAlpha(def.accent2, .56), 2.5);
+      neonPanel(44, 28, 146, 'CLASS MAGE', def.accent, def.accent);
+      neonPanel(FRAME_W - 190, 28, 146, 'RANK S', def.accent2, def.accent2);
+      for (let y = 120; y < FRAME_H - 120; y += 174) {
+        text(ctx, '✦', 42, y, 16, def.accent2);
+        text(ctx, '✦', FRAME_W - 42, y + 40, 16, def.accent);
+        roundRect(ctx, 40, y + 16, 54, 18, 6, withAlpha(def.accent, .18), withAlpha(def.accent2, .26), 1);
+        text(ctx, 'MP', 67, y + 29, 10, def.ink, 900);
+        roundRect(ctx, FRAME_W - 94, y + 56, 54, 18, 6, withAlpha(def.accent2, .18), withAlpha(def.accent, .26), 1);
+        text(ctx, 'HP', FRAME_W - 67, y + 69, 10, def.ink, 900);
+      }
+      text(ctx, 'party ready', FRAME_W / 2, FRAME_H - 48, 15, def.accent2, 900);
     } else if (def.motif === 'cyber') {
-      for (let x = 40; x < FRAME_W - 40; x += 64) { line(ctx, x, 22, x, FRAME_H - 22, withAlpha(def.accent, .1), 1); }
-      for (let y = 90; y < FRAME_H - 90; y += 54) { line(ctx, 22, y, FRAME_W - 22, y, withAlpha(def.accent2, .08), 1); }
+      for (let x = 36; x < FRAME_W - 36; x += 56) line(ctx, x, 18, x, FRAME_H - 18, withAlpha(def.accent, .1), 1);
+      for (let y = 92; y < FRAME_H - 92; y += 52) line(ctx, 18, y, FRAME_W - 18, y, withAlpha(def.accent2, .08), 1);
+      cornerBracket(24, 24, 30, 30, withAlpha(def.accent, .72));
+      cornerBracket(FRAME_W - 54, 24, -30, 30, withAlpha(def.accent2, .72));
+      cornerBracket(24, FRAME_H - 24, 30, -30, withAlpha(def.accent2, .72));
+      cornerBracket(FRAME_W - 24, FRAME_H - 24, -30, -30, withAlpha(def.accent, .72));
       neonPanel(40, 28, 156, 'SCAN READY', def.accent, def.accent);
       neonPanel(FRAME_W - 196, 28, 156, 'MODE NEO', def.accent2, def.accent2);
       for (let i = 0; i < 26; i++) drawStar(ctx, 42 + (i * 47) % (FRAME_W - 84), 102 + (i * 113) % (FRAME_H - 204), 6, i % 2 ? def.accent2 : def.accent, 4);
     } else if (def.motif === 'fantasy') {
       roundRect(ctx, 16, 16, FRAME_W - 32, FRAME_H - 32, 28, null, withAlpha(def.accent2, .58), 3);
-      for (let y = 86; y < FRAME_H - 86; y += 110) { line(ctx, 34, y, 64, y - 18, withAlpha(def.accent2, .38), 2); line(ctx, FRAME_W - 34, y, FRAME_W - 64, y - 18, withAlpha(def.accent2, .38), 2); }
-      drawHeaderRibbon(ctx, 134, 30, FRAME_W - 268, 42, 'FANTASY WORLD', withAlpha('#ffffff', .18), withAlpha(def.accent2, .34), def.ink);
-      text(ctx, '✦', 58, 58, 16, def.accent2); text(ctx, '✦', FRAME_W - 58, 58, 16, def.accent2);
-      text(ctx, 'portal', FRAME_W / 2, FRAME_H - 48, 16, def.accent2, 900);
+      drawHeaderRibbon(ctx, 138, 30, FRAME_W - 276, 42, 'FANTASY WORLD', withAlpha('#ffffff', .18), withAlpha(def.accent2, .34), def.ink);
+      for (let y = 96; y < FRAME_H - 92; y += 120) {
+        line(ctx, 32, y, 66, y - 18, withAlpha(def.accent2, .38), 2);
+        line(ctx, FRAME_W - 32, y, FRAME_W - 66, y - 18, withAlpha(def.accent2, .38), 2);
+        text(ctx, '✦', 52, y - 24, 13, def.accent2);
+        text(ctx, '✦', FRAME_W - 52, y - 10, 13, def.accent2);
+      }
+      circle(ctx, FRAME_W / 2, FRAME_H - 56, 20, withAlpha(def.accent2, .15), withAlpha(def.accent2, .3), 1.5);
+      text(ctx, 'portal', FRAME_W / 2, FRAME_H - 52, 16, def.accent2, 900);
     } else if (def.motif === 'magic') {
       roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 28, null, withAlpha(def.accent, .58), 3);
-      circle(ctx, FRAME_W / 2, 56, 18, withAlpha(def.accent2, .22), withAlpha(def.accent2, .55), 2);
-      drawStar(ctx, FRAME_W / 2, 56, 10, def.accent2, 5);
-      for (let y = 110; y < FRAME_H - 120; y += 170) { text(ctx, '✧', 42, y, 16, def.accent); text(ctx, '✧', FRAME_W - 42, y + 50, 16, def.accent2); }
-      neonPanel(166, 30, FRAME_W - 332, 'SPELLBOOK', def.accent2, def.accent2);
+      circle(ctx, FRAME_W / 2, 54, 20, withAlpha(def.accent2, .18), withAlpha(def.accent2, .62), 2);
+      drawStar(ctx, FRAME_W / 2, 54, 11, def.accent2, 5);
+      for (let y = 110; y < FRAME_H - 120; y += 160) {
+        text(ctx, '✧', 42, y, 16, def.accent);
+        text(ctx, '✧', FRAME_W - 42, y + 40, 16, def.accent2);
+      }
+      roundRect(ctx, 158, 28, FRAME_W - 316, 34, 10, withAlpha(def.accent2, .24), withAlpha(def.accent2, .44), 1.5);
+      text(ctx, 'SPELLBOOK', FRAME_W / 2, 49, 14, def.accent2, 900);
+      text(ctx, 'mana +10', FRAME_W / 2, FRAME_H - 48, 14, def.accent, 900);
     } else if (def.motif === 'space') {
-      for (let i = 0; i < 90; i++) circle(ctx, 28 + (i * 39) % (FRAME_W - 56), 28 + (i * 67) % (FRAME_H - 56), 1.4, withAlpha('#ffffff', .42));
-      circle(ctx, FRAME_W / 2, 56, 20, withAlpha(def.accent2, .1), withAlpha(def.accent2, .3), 1.5);
-      text(ctx, 'space map', FRAME_W / 2, 58, 20, def.accent2, 900);
-      line(ctx, 92, 56, FRAME_W / 2 - 30, 56, withAlpha(def.accent, .22), 1.5); line(ctx, FRAME_W / 2 + 30, 56, FRAME_W - 92, 56, withAlpha(def.accent, .22), 1.5);
-      sidePixels(def.accent, def.accent2);
+      for (let i = 0; i < 92; i++) circle(ctx, 26 + (i * 39) % (FRAME_W - 52), 26 + (i * 67) % (FRAME_H - 52), 1.5, withAlpha('#ffffff', .46));
+      circle(ctx, FRAME_W / 2, 54, 22, withAlpha(def.accent2, .12), withAlpha(def.accent2, .3), 1.5);
+      line(ctx, 92, 54, FRAME_W / 2 - 32, 54, withAlpha(def.accent, .22), 1.5);
+      line(ctx, FRAME_W / 2 + 32, 54, FRAME_W - 92, 54, withAlpha(def.accent, .22), 1.5);
+      text(ctx, 'space map', FRAME_W / 2, 57, 19, def.accent2, 900);
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent : def.accent2, .18); ctx.lineWidth = 1.1;
+        ctx.arc(FRAME_W / 2, FRAME_H / 2, 110 + i * 70, .2, 1.1); ctx.stroke();
+      }
+      sidePixels(def.accent, def.accent2, 14, 22, 86);
     } else if (def.motif === 'monster') {
-      sidePixels(def.accent, def.accent2);
-      for (const x of [64, FRAME_W - 64]) for (let y = 130; y < FRAME_H - 140; y += 230) line(ctx, x - 14, y - 20, x + 14, y + 20, withAlpha(def.accent2, .55), 3), line(ctx, x - 4, y - 22, x + 24, y + 18, withAlpha(def.accent, .45), 2);
-      neonPanel(144, 30, FRAME_W - 288, 'MONSTER MODE', def.accent, def.accent);
+      sidePixels(def.accent, def.accent2, 16, 18, 80);
+      for (const x of [64, FRAME_W - 64]) {
+        for (let y = 120; y < FRAME_H - 120; y += 220) {
+          line(ctx, x - 18, y - 18, x + 12, y + 22, withAlpha(def.accent2, .62), 3);
+          line(ctx, x - 8, y - 22, x + 22, y + 18, withAlpha(def.accent, .48), 2);
+          line(ctx, x - 24, y - 10, x + 6, y + 30, withAlpha(def.accent2, .42), 2);
+        }
+      }
+      neonPanel(142, 28, FRAME_W - 284, 'MONSTER MODE', def.accent, def.accent);
+      text(ctx, 'danger zone', FRAME_W / 2, FRAME_H - 48, 14, def.accent2, 900);
     } else if (def.motif === 'dungeon') {
-      for (let y = 26; y < FRAME_H - 26; y += 44) { ctx.fillStyle = withAlpha(def.accent, .14); ctx.fillRect(20, y, 28, 24); ctx.fillRect(FRAME_W - 48, y + 10, 28, 24); }
-      drawHeaderRibbon(ctx, 138, 30, FRAME_W - 276, 42, 'dungeon run', withAlpha('#ffffff', .08), withAlpha(def.accent2, .32), def.ink);
-      text(ctx, 'TORCH', 74, 58, 14, def.accent2, 900); text(ctx, 'KEY', FRAME_W - 74, 58, 14, def.accent, 900);
+      for (let y = 26; y < FRAME_H - 26; y += 44) {
+        ctx.fillStyle = withAlpha(def.accent, .14); ctx.fillRect(20, y, 28, 24); ctx.fillRect(FRAME_W - 48, y + 10, 28, 24);
+      }
+      drawHeaderRibbon(ctx, 140, 30, FRAME_W - 280, 42, 'DUNGEON RUN', withAlpha('#ffffff', .08), withAlpha(def.accent2, .32), def.ink);
+      text(ctx, 'TORCH', 72, 56, 14, def.accent2, 900); text(ctx, 'KEY', FRAME_W - 72, 56, 14, def.accent, 900);
+      for (let y = 100; y < FRAME_H - 90; y += 130) line(ctx, 48, y, 48, y + 18, withAlpha(def.accent2, .42), 4), line(ctx, FRAME_W - 48, y + 10, FRAME_W - 48, y + 28, withAlpha(def.accent, .42), 4);
     } else if (def.motif === 'console') {
-      roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 28, null, withAlpha(def.accent, .48), 3);
-      roundRect(ctx, 48, 28, FRAME_W - 96, 48, 18, withAlpha('#ffffff', .55), withAlpha(def.accent2, .26), 1.5);
-      text(ctx, 'RETRO CONSOLE', FRAME_W / 2, 56, 18, def.ink, 900);
-      circle(ctx, 74, FRAME_H - 56, 16, withAlpha(def.accent, .72)); circle(ctx, 116, FRAME_H - 56, 16, withAlpha(def.accent2, .72));
-      line(ctx, FRAME_W - 124, FRAME_H - 56, FRAME_W - 72, FRAME_H - 56, withAlpha(def.ink, .35), 6); line(ctx, FRAME_W - 98, FRAME_H - 82, FRAME_W - 98, FRAME_H - 30, withAlpha(def.ink, .35), 6);
+      roundRect(ctx, 14, 14, FRAME_W - 28, FRAME_H - 28, 38, null, withAlpha(def.accent, .48), 3);
+      roundRect(ctx, 48, 26, FRAME_W - 96, 52, 18, withAlpha('#ffffff', .6), withAlpha(def.accent2, .26), 1.5);
+      text(ctx, 'RETRO CONSOLE', FRAME_W / 2, 57, 18, def.ink, 900);
+      circle(ctx, 76, FRAME_H - 58, 16, withAlpha(def.accent, .72));
+      circle(ctx, 118, FRAME_H - 58, 16, withAlpha(def.accent2, .72));
+      line(ctx, FRAME_W - 124, FRAME_H - 58, FRAME_W - 72, FRAME_H - 58, withAlpha(def.ink, .35), 6);
+      line(ctx, FRAME_W - 98, FRAME_H - 84, FRAME_W - 98, FRAME_H - 32, withAlpha(def.ink, .35), 6);
+      text(ctx, 'A', 76, FRAME_H - 60, 12, def.ink, 900);
+      text(ctx, 'B', 118, FRAME_H - 60, 12, def.ink, 900);
     }
   }
 
@@ -1161,28 +1220,14 @@
       // Elegant header/decor is handled by drawElegantDecor().
       // Keep this branch empty to avoid duplicate/stacked labels in the thumbnail/output.
     } else if (def.category === 'Floral') {
-      const floralLabel = ({sakura:'sakura day', rose:'blue rose', sunflower:'sunny bloom', lavender:'lavender bloom', daisy:'daisy field', peony:'peony blush', leaf:'botanical green', wild:'wild flower', hydrangea:'hydrangea', spring:'spring bloom'})[def.motif] || def.name.toLowerCase();
-      drawHeaderRibbon(ctx, 140, 34, FRAME_W - 280, 40, floralLabel, withAlpha('#ffffff', .64), withAlpha(def.accent, .28), def.ink);
-      for (let x = 96; x < FRAME_W - 94; x += 64) {
-        circle(ctx, x - 8, 56, 6, withAlpha(def.accent, .68));
-        circle(ctx, x + 8, 56, 6, withAlpha(def.accent2, .72));
-      }
+      // Floral header/decor is handled by drawFloralDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
     } else if (def.category === 'Seasonal') {
-      drawHeaderRibbon(ctx, 138, 34, FRAME_W - 276, 40, def.name.toLowerCase(), withAlpha('#ffffff', .5), withAlpha(def.accent, .38), def.ink);
-      const icon = ({birthday:'🎈', graduation:'🎓', christmas:'❄', valentine:'♡', halloween:'☾', eid:'☪', newyear:'✦', summer:'☼', autumn:'✦', winter:'❄'})[def.motif] || '✦';
-      text(ctx, icon, 82, 56, 24, def.accent, 900);
-      text(ctx, icon, FRAME_W - 82, 56, 24, def.accent2, 900);
+      // Seasonal header/decor is handled by drawSeasonalDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
     } else if (def.category === 'Gaming') {
-      roundRect(ctx, 48, 34, 150, 36, 8, withAlpha(def.accent, .2), withAlpha(def.accent, .42), 2);
-      text(ctx, 'HP ▰▰▰▰', 123, 52, 14, def.ink, 900);
-      roundRect(ctx, FRAME_W - 202, 34, 154, 36, 8, withAlpha(def.accent2, .22), withAlpha(def.accent2, .44), 2);
-      text(ctx, def.motif === 'rpg' ? 'CLASS MAGE' : def.motif === 'cyber' ? 'MODE NEO' : 'LEVEL 99', FRAME_W - 125, 52, 12, def.ink, 900);
-      if (def.motif === 'arcade' || def.motif === 'console') {
-        for (let x = 100; x < FRAME_W - 100; x += 24) {
-          ctx.fillStyle = (Math.floor(x / 24) % 2) ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .72);
-          ctx.fillRect(x, 88, 12, 12);
-        }
-      }
+      // Gaming header/decor is handled by drawGamingDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
     } else if (def.category === 'Pattern') {
       if (def.motif === 'polkadot') {
         for (let x = 72; x < FRAME_W - 60; x += 38) circle(ctx, x, 56, 6, x % 76 ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .72));
@@ -1199,23 +1244,8 @@
         drawHeaderRibbon(ctx, 156, 34, FRAME_W - 312, 38, def.name.toLowerCase(), withAlpha('#ffffff', .58), withAlpha(def.accent, .28), def.ink);
       }
     } else if (def.category === 'Social Media') {
-      if (def.motif === 'igstory') {
-        for (let x = 44; x < FRAME_W - 44; x += 86) roundRect(ctx, x, 24, 70, 6, 3, withAlpha('#ffffff', .92));
-      } else if (def.motif === 'youtube') {
-        roundRect(ctx, 54, 34, 108, 42, 14, def.accent);
-        text(ctx, 'SUBSCRIBE', 108, 56, 12, '#ffffff', 900);
-      } else if (def.motif === 'iphone' || def.motif === 'cameraRoll') {
-        text(ctx, '9:41', 70, 54, 18, def.ink, 900, 'left');
-        text(ctx, 'Photos', FRAME_W / 2, 54, 18, def.ink, 900);
-        text(ctx, 'Edit', FRAME_W - 64, 54, 16, def.accent, 900, 'right');
-      } else if (def.motif === 'music') {
-        drawHeaderRibbon(ctx, 138, 34, FRAME_W - 276, 40, 'now playing', withAlpha('#ffffff', .58), withAlpha(def.accent, .32), def.ink);
-      } else if (def.motif === 'chat') {
-        roundRect(ctx, 62, 36, 152, 38, 18, withAlpha(def.accent, .22), withAlpha(def.accent, .35), 1.5);
-        roundRect(ctx, FRAME_W - 214, 36, 152, 38, 18, withAlpha(def.accent2, .72), withAlpha(def.accent2, .35), 1.5);
-      } else {
-        drawHeaderRibbon(ctx, 136, 34, FRAME_W - 272, 40, def.name.toLowerCase(), withAlpha('#ffffff', .56), withAlpha(def.accent, .3), def.ink);
-      }
+      // Social Media header/decor is handled by drawSocialDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
     }
 
     drawNameZone(ctx, def, slots);
@@ -1395,14 +1425,34 @@
         cornerSpark(s.x + 12, s.y + 16, iconMap[def.motif] || '✦', def.accent);
         slotLabel(s, ['snap 1','snap 2','snap 3','snap 4'][idx], def.accent2, def.ink);
       } else if (def.category === 'Gaming') {
-        for (let px = 0; px < 3; px++) {
-          ctx.fillStyle = px % 2 ? def.accent2 : def.accent;
-          ctx.globalAlpha = .92;
-          ctx.fillRect(s.x - 12 + px * 8, s.y - 12, 7, 7);
-          ctx.fillRect(s.x + s.w - 11 - px * 8, s.y + s.h + 5, 7, 7);
-          ctx.globalAlpha = 1;
+        if (def.motif === 'pixel' || def.motif === 'arcade') {
+          for (let px = 0; px < 4; px++) {
+            ctx.fillStyle = px % 2 ? def.accent2 : def.accent;
+            ctx.globalAlpha = .92;
+            ctx.fillRect(s.x - 12 + px * 8, s.y - 12, 7, 7);
+            ctx.fillRect(s.x + s.w - 11 - px * 8, s.y + s.h + 5, 7, 7);
+            ctx.globalAlpha = 1;
+          }
+          slotLabel(s, ['1UP','2UP','3UP','4UP'][idx], def.accent, def.ink);
+        } else if (def.motif === 'rpg' || def.motif === 'fantasy' || def.motif === 'magic') {
+          cornerSpark(s.x + 12, s.y + 14, '✦', def.accent2);
+          cornerSpark(s.x + s.w - 12, s.y + s.h - 10, '✧', def.accent);
+          slotLabel(s, ['quest 1','quest 2','quest 3','quest 4'][idx], def.accent2, def.ink);
+        } else if (def.motif === 'cyber' || def.motif === 'space') {
+          roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, 14, null, withAlpha(def.accent, .42), 1.4);
+          text(ctx, idx === 0 ? 'SCAN' : idx === 1 ? 'SYNC' : idx === 2 ? 'LOCK' : 'DATA', s.x + s.w - 16, s.y + 18, 10, def.accent2, 800, 'right');
+        } else if (def.motif === 'monster' || def.motif === 'dungeon') {
+          line(ctx, s.x + 12, s.y + 10, s.x + 28, s.y + 28, withAlpha(def.accent2, .7), 2.4);
+          line(ctx, s.x + 22, s.y + 8, s.x + 38, s.y + 26, withAlpha(def.accent, .55), 1.8);
+          slotLabel(s, ['boss 1','boss 2','boss 3','boss 4'][idx], def.accent, def.ink);
+        } else if (def.motif === 'console') {
+          roundRect(ctx, s.x + 10, s.y + s.h - 28, 54, 18, 9, withAlpha(def.accent, .24), withAlpha(def.accent2, .32), 1);
+          text(ctx, ['P1','P2','P3','P4'][idx], s.x + 37, s.y + s.h - 15, 10, def.ink, 900);
+          circle(ctx, s.x + s.w - 20, s.y + 18, 5, def.accent);
+          circle(ctx, s.x + s.w - 34, s.y + 18, 5, def.accent2);
+        } else {
+          slotLabel(s, ['LV.1','LV.2','LV.3','LV.4'][idx], def.accent, def.ink);
         }
-        slotLabel(s, ['LV.1','LV.2','LV.3','LV.4'][idx], def.accent, def.ink);
       } else if (def.category === 'Pattern') {
         if (def.motif === 'polkadot') {
           for (let dx of [16, s.w - 16]) {
@@ -1459,8 +1509,13 @@
           line(ctx, 100, gapY, FRAME_W / 2 - 30, gapY, withAlpha(def.accent2, .36), 1.5);
           line(ctx, FRAME_W / 2 + 30, gapY, FRAME_W - 100, gapY, withAlpha(def.accent2, .36), 1.5);
         } else if (def.category === 'Gaming') {
-          roundRect(ctx, FRAME_W / 2 - 44, gapY - 12, 88, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
-          text(ctx, ['HP +5','XP +8','BONUS'][idx], FRAME_W / 2, gapY + 1, 12, def.ink, 900);
+          roundRect(ctx, FRAME_W / 2 - 52, gapY - 12, 104, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
+          const gamingGap = def.motif === 'pixel' || def.motif === 'arcade' ? ['1UP','READY','GO!'][idx]
+            : def.motif === 'rpg' || def.motif === 'fantasy' || def.motif === 'magic' ? ['QUEST','MAGIC','LOOT'][idx]
+            : def.motif === 'cyber' || def.motif === 'space' ? ['SCAN','SYNC','DATA'][idx]
+            : def.motif === 'monster' || def.motif === 'dungeon' ? ['DANGER','BOSS','ITEM'][idx]
+            : ['P1','P2','P3'][idx];
+          text(ctx, gamingGap, FRAME_W / 2, gapY + 1, 12, def.ink, 900);
         } else if (def.category === 'Social Media') {
           text(ctx, ['♡','💬','↗'][idx], FRAME_W / 2, gapY + 1, 15, withAlpha(def.accent2, .95));
           line(ctx, 112, gapY, FRAME_W / 2 - 24, gapY, withAlpha(def.accent, .2), 1.5);
@@ -1550,7 +1605,9 @@
   }
 
   function getAllBuiltInTemplates() {
-    return BUILTIN_FRAME_DEFS.map((def) => {
+    return BUILTIN_FRAME_DEFS
+      .filter((def) => !HIDDEN_CATEGORIES.includes(def.category))
+      .map((def) => {
       const data = generateBuiltInFrameSrc(def);
       return {
         id: `__builtin_${def.id}__`,
@@ -1614,8 +1671,8 @@
   }
 
   function getCategories() {
-    const fromDB = [...new Set(_dbTemplates.map(t => t.category))];
-    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    const fromDB = [...new Set(_dbTemplates.map(t => t.category).filter(c => !HIDDEN_CATEGORIES.includes(c)))];
+    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]').filter(c => !HIDDEN_CATEGORIES.includes(c));
     return [...new Set([...BUILTIN_CATEGORIES, ...fromDB, ...fromLS])];
   }
 
@@ -1632,7 +1689,7 @@
   }
 
   function filterCat(cat) {
-    currentCat = cat;
+    currentCat = HIDDEN_CATEGORIES.includes(cat) ? 'all' : cat;
     renderCatTabs();
     renderTemplates();
   }
@@ -1666,10 +1723,11 @@
   // ─── Render templates ───
   function renderTemplates() {
     const grid = document.getElementById('templateGrid');
-    const saved = getSavedTemplates();
+    const saved = getSavedTemplates().filter(t => !HIDDEN_CATEGORIES.includes(t.category));
     let templates = [];
     const basicTemplates = getAllBasicTemplates();
     const builtInTemplates = getAllBuiltInTemplates();
+    if (HIDDEN_CATEGORIES.includes(currentCat)) currentCat = 'all';
     if (currentCat === 'all') {
       templates = [...basicTemplates, ...builtInTemplates, ...saved];
     } else if (currentCat === '__basic__') {

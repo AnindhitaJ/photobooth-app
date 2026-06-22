@@ -233,112 +233,112 @@
   let selectedFrameColor = FRAME_COLORS[0];
 
   const BUILTIN_CATEGORIES = [
-    'Korean 🇰🇷',
-    'Film 🎞️',
-    'Elegant ✨',
-    'Floral 🌸',
-    'Seasonal 🎉',
-    'Gaming 🎮',
-    'Pattern 🟣',
-    'Social Media 📱'
+    'Korean',
+    'Film',
+    'Elegant',
+    'Floral',
+    'Seasonal',
+    'Gaming',
+    'Pattern',
+    'Social Media'
   ];
 
   const BUILTIN_FRAME_DEFS = [
     // Korean
-    { id:'korean_lavender_cloud', category:'Korean 🇰🇷', name:'Lavender Cloud', bg:'#f5efff', accent:'#a78bfa', accent2:'#f9a8d4', ink:'#6d5b8d', motif:'cloud' },
-    { id:'korean_pink_diary', category:'Korean 🇰🇷', name:'Pink Diary', bg:'#fff1f7', accent:'#fb7185', accent2:'#fbcfe8', ink:'#9f3a58', motif:'diary' },
-    { id:'korean_cherry_blossom', category:'Korean 🇰🇷', name:'Cherry Blossom', bg:'#fff7f9', accent:'#f472b6', accent2:'#fecdd3', ink:'#a21caf', motif:'sakura' },
-    { id:'korean_coquette_ribbon', category:'Korean 🇰🇷', name:'Coquette Ribbon', bg:'#fff7ed', accent:'#f9a8d4', accent2:'#fde68a', ink:'#9d174d', motif:'ribbon' },
-    { id:'korean_milk_tea', category:'Korean 🇰🇷', name:'Milk Tea', bg:'#fff7ed', accent:'#c08457', accent2:'#f3d7b6', ink:'#7c4a2d', motif:'latte' },
-    { id:'korean_cream_beige', category:'Korean 🇰🇷', name:'Cream Beige', bg:'#faf3e8', accent:'#d6a86c', accent2:'#fff7d6', ink:'#76512a', motif:'clean' },
-    { id:'korean_matcha_latte', category:'Korean 🇰🇷', name:'Matcha Latte', bg:'#f3fae8', accent:'#86a86b', accent2:'#d9f99d', ink:'#3f6212', motif:'latte' },
-    { id:'korean_sky_blue', category:'Korean 🇰🇷', name:'Sky Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1e40af', motif:'cloud' },
-    { id:'korean_campus_day', category:'Korean 🇰🇷', name:'Campus Day', bg:'#f8fafc', accent:'#1d4ed8', accent2:'#facc15', ink:'#0f172a', motif:'campus' },
-    { id:'korean_heart_stamp', category:'Korean 🇰🇷', name:'Heart Stamp', bg:'#fff1f2', accent:'#e11d48', accent2:'#fecdd3', ink:'#881337', motif:'stamp' },
+    { id:'korean_lavender_cloud', category:'Korean', name:'Lavender Cloud', bg:'#f5efff', accent:'#a78bfa', accent2:'#f9a8d4', ink:'#6d5b8d', motif:'cloud' },
+    { id:'korean_pink_diary', category:'Korean', name:'Pink Diary', bg:'#fff1f7', accent:'#fb7185', accent2:'#fbcfe8', ink:'#9f3a58', motif:'diary' },
+    { id:'korean_cherry_blossom', category:'Korean', name:'Cherry Blossom', bg:'#fff7f9', accent:'#f472b6', accent2:'#fecdd3', ink:'#a21caf', motif:'sakura' },
+    { id:'korean_coquette_ribbon', category:'Korean', name:'Coquette Ribbon', bg:'#fff7ed', accent:'#f9a8d4', accent2:'#fde68a', ink:'#9d174d', motif:'ribbon' },
+    { id:'korean_milk_tea', category:'Korean', name:'Milk Tea', bg:'#fff7ed', accent:'#c08457', accent2:'#f3d7b6', ink:'#7c4a2d', motif:'latte' },
+    { id:'korean_cream_beige', category:'Korean', name:'Cream Beige', bg:'#faf3e8', accent:'#d6a86c', accent2:'#fff7d6', ink:'#76512a', motif:'clean' },
+    { id:'korean_matcha_latte', category:'Korean', name:'Matcha Latte', bg:'#f3fae8', accent:'#86a86b', accent2:'#d9f99d', ink:'#3f6212', motif:'latte' },
+    { id:'korean_sky_blue', category:'Korean', name:'Sky Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1e40af', motif:'cloud' },
+    { id:'korean_campus_day', category:'Korean', name:'Campus Day', bg:'#f8fafc', accent:'#1d4ed8', accent2:'#facc15', ink:'#0f172a', motif:'campus' },
+    { id:'korean_heart_stamp', category:'Korean', name:'Heart Stamp', bg:'#fff1f2', accent:'#e11d48', accent2:'#fecdd3', ink:'#881337', motif:'stamp' },
 
     // Film
-    { id:'film_retro_film', category:'Film 🎞️', name:'Retro Film', bg:'#171717', accent:'#f59e0b', accent2:'#faf3dd', ink:'#ffffff', motif:'film' },
-    { id:'film_kodak_yellow', category:'Film 🎞️', name:'Kodak Yellow', bg:'#facc15', accent:'#ef4444', accent2:'#111827', ink:'#111827', motif:'film' },
-    { id:'film_analog_brown', category:'Film 🎞️', name:'Analog Brown', bg:'#5a3e2b', accent:'#f4d7a1', accent2:'#a16207', ink:'#fff7ed', motif:'grain' },
-    { id:'film_vintage_camera', category:'Film 🎞️', name:'Vintage Camera', bg:'#f5e4c3', accent:'#78350f', accent2:'#d97706', ink:'#422006', motif:'camera' },
-    { id:'film_roll_black', category:'Film 🎞️', name:'Film Roll Black', bg:'#030712', accent:'#f8fafc', accent2:'#525252', ink:'#ffffff', motif:'film' },
-    { id:'film_polaroid_cream', category:'Film 🎞️', name:'Polaroid Cream', bg:'#fff7ed', accent:'#0f172a', accent2:'#f97316', ink:'#0f172a', motif:'polaroid' },
-    { id:'film_dust_grain', category:'Film 🎞️', name:'Dust & Grain', bg:'#262626', accent:'#e7d8b2', accent2:'#a3a3a3', ink:'#fafafa', motif:'grain' },
-    { id:'film_cinema_frame', category:'Film 🎞️', name:'Cinema Frame', bg:'#111827', accent:'#eab308', accent2:'#7f1d1d', ink:'#fef3c7', motif:'cinema' },
-    { id:'film_disposable_camera', category:'Film 🎞️', name:'Disposable Camera', bg:'#d9f99d', accent:'#84cc16', accent2:'#111827', ink:'#1a2e05', motif:'camera' },
-    { id:'film_old_memory', category:'Film 🎞️', name:'Old Memory', bg:'#e7d2b0', accent:'#92400e', accent2:'#fef3c7', ink:'#451a03', motif:'vintage' },
+    { id:'film_retro_film', category:'Film', name:'Retro Film', bg:'#171717', accent:'#f59e0b', accent2:'#faf3dd', ink:'#ffffff', motif:'film' },
+    { id:'film_kodak_yellow', category:'Film', name:'Kodak Yellow', bg:'#facc15', accent:'#ef4444', accent2:'#111827', ink:'#111827', motif:'film' },
+    { id:'film_analog_brown', category:'Film', name:'Analog Brown', bg:'#5a3e2b', accent:'#f4d7a1', accent2:'#a16207', ink:'#fff7ed', motif:'grain' },
+    { id:'film_vintage_camera', category:'Film', name:'Vintage Camera', bg:'#f5e4c3', accent:'#78350f', accent2:'#d97706', ink:'#422006', motif:'camera' },
+    { id:'film_roll_black', category:'Film', name:'Film Roll Black', bg:'#030712', accent:'#f8fafc', accent2:'#525252', ink:'#ffffff', motif:'film' },
+    { id:'film_polaroid_cream', category:'Film', name:'Polaroid Cream', bg:'#fff7ed', accent:'#0f172a', accent2:'#f97316', ink:'#0f172a', motif:'polaroid' },
+    { id:'film_dust_grain', category:'Film', name:'Dust & Grain', bg:'#262626', accent:'#e7d8b2', accent2:'#a3a3a3', ink:'#fafafa', motif:'grain' },
+    { id:'film_cinema_frame', category:'Film', name:'Cinema Frame', bg:'#111827', accent:'#eab308', accent2:'#7f1d1d', ink:'#fef3c7', motif:'cinema' },
+    { id:'film_disposable_camera', category:'Film', name:'Disposable Camera', bg:'#d9f99d', accent:'#84cc16', accent2:'#111827', ink:'#1a2e05', motif:'camera' },
+    { id:'film_old_memory', category:'Film', name:'Old Memory', bg:'#e7d2b0', accent:'#92400e', accent2:'#fef3c7', ink:'#451a03', motif:'vintage' },
 
     // Elegant
-    { id:'elegant_black_gold', category:'Elegant ✨', name:'Black Gold', bg:'#050505', accent:'#d6b56d', accent2:'#fff7d6', ink:'#fff7d6', motif:'luxury' },
-    { id:'elegant_white_gold', category:'Elegant ✨', name:'White Gold', bg:'#ffffff', accent:'#c8a24a', accent2:'#f7e7b5', ink:'#5f4505', motif:'luxury' },
-    { id:'elegant_rose_gold', category:'Elegant ✨', name:'Rose Gold', bg:'#fff1f2', accent:'#b76e79', accent2:'#f9a8d4', ink:'#7f1d1d', motif:'pearl' },
-    { id:'elegant_silver_pearl', category:'Elegant ✨', name:'Silver Pearl', bg:'#f8fafc', accent:'#94a3b8', accent2:'#e2e8f0', ink:'#334155', motif:'pearl' },
-    { id:'elegant_emerald_luxury', category:'Elegant ✨', name:'Emerald Luxury', bg:'#022c22', accent:'#d1b464', accent2:'#10b981', ink:'#fef3c7', motif:'luxury' },
-    { id:'elegant_royal_navy', category:'Elegant ✨', name:'Royal Navy', bg:'#0f172a', accent:'#d6b56d', accent2:'#1e3a8a', ink:'#f8fafc', motif:'royal' },
-    { id:'elegant_champagne_gold', category:'Elegant ✨', name:'Champagne Gold', bg:'#fbf1d3', accent:'#b58935', accent2:'#fff7d6', ink:'#65420c', motif:'pearl' },
-    { id:'elegant_luxury_marble', category:'Elegant ✨', name:'Luxury Marble', bg:'#f8f5f0', accent:'#bfa26a', accent2:'#d1d5db', ink:'#3f3f46', motif:'marble' },
-    { id:'elegant_midnight_black', category:'Elegant ✨', name:'Midnight Black', bg:'#020617', accent:'#c084fc', accent2:'#f5d76e', ink:'#f8fafc', motif:'stars' },
-    { id:'elegant_wedding_elegant', category:'Elegant ✨', name:'Wedding Elegant', bg:'#fffaf0', accent:'#d6b56d', accent2:'#fecdd3', ink:'#7c2d12', motif:'wedding' },
+    { id:'elegant_black_gold', category:'Elegant', name:'Black Gold', bg:'#050505', accent:'#d6b56d', accent2:'#fff7d6', ink:'#fff7d6', motif:'luxury' },
+    { id:'elegant_white_gold', category:'Elegant', name:'White Gold', bg:'#ffffff', accent:'#c8a24a', accent2:'#f7e7b5', ink:'#5f4505', motif:'luxury' },
+    { id:'elegant_rose_gold', category:'Elegant', name:'Rose Gold', bg:'#fff1f2', accent:'#b76e79', accent2:'#f9a8d4', ink:'#7f1d1d', motif:'pearl' },
+    { id:'elegant_silver_pearl', category:'Elegant', name:'Silver Pearl', bg:'#f8fafc', accent:'#94a3b8', accent2:'#e2e8f0', ink:'#334155', motif:'pearl' },
+    { id:'elegant_emerald_luxury', category:'Elegant', name:'Emerald Luxury', bg:'#022c22', accent:'#d1b464', accent2:'#10b981', ink:'#fef3c7', motif:'luxury' },
+    { id:'elegant_royal_navy', category:'Elegant', name:'Royal Navy', bg:'#0f172a', accent:'#d6b56d', accent2:'#1e3a8a', ink:'#f8fafc', motif:'royal' },
+    { id:'elegant_champagne_gold', category:'Elegant', name:'Champagne Gold', bg:'#fbf1d3', accent:'#b58935', accent2:'#fff7d6', ink:'#65420c', motif:'pearl' },
+    { id:'elegant_luxury_marble', category:'Elegant', name:'Luxury Marble', bg:'#f8f5f0', accent:'#bfa26a', accent2:'#d1d5db', ink:'#3f3f46', motif:'marble' },
+    { id:'elegant_midnight_black', category:'Elegant', name:'Midnight Black', bg:'#020617', accent:'#c084fc', accent2:'#f5d76e', ink:'#f8fafc', motif:'stars' },
+    { id:'elegant_wedding_elegant', category:'Elegant', name:'Wedding Elegant', bg:'#fffaf0', accent:'#d6b56d', accent2:'#fecdd3', ink:'#7c2d12', motif:'wedding' },
 
     // Floral
-    { id:'floral_sakura_garden', category:'Floral 🌸', name:'Sakura Garden', bg:'#fff1f7', accent:'#f472b6', accent2:'#fecdd3', ink:'#9d174d', motif:'sakura' },
-    { id:'floral_blue_rose', category:'Floral 🌸', name:'Blue Rose', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bfdbfe', ink:'#1e3a8a', motif:'rose' },
-    { id:'floral_sunflower_day', category:'Floral 🌸', name:'Sunflower Day', bg:'#fff7ed', accent:'#facc15', accent2:'#854d0e', ink:'#713f12', motif:'sunflower' },
-    { id:'floral_lavender_bloom', category:'Floral 🌸', name:'Lavender Bloom', bg:'#f5f3ff', accent:'#a78bfa', accent2:'#ddd6fe', ink:'#5b21b6', motif:'lavender' },
-    { id:'floral_daisy_field', category:'Floral 🌸', name:'Daisy Field', bg:'#f0fdf4', accent:'#fef08a', accent2:'#86efac', ink:'#166534', motif:'daisy' },
-    { id:'floral_pink_peony', category:'Floral 🌸', name:'Pink Peony', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#be123c', motif:'peony' },
-    { id:'floral_botanical_green', category:'Floral 🌸', name:'Botanical Green', bg:'#ecfdf5', accent:'#10b981', accent2:'#bbf7d0', ink:'#065f46', motif:'leaf' },
-    { id:'floral_wild_flower', category:'Floral 🌸', name:'Wild Flower', bg:'#fff7ed', accent:'#f97316', accent2:'#a7f3d0', ink:'#9a3412', motif:'wild' },
-    { id:'floral_hydrangea_dream', category:'Floral 🌸', name:'Hydrangea Dream', bg:'#eef2ff', accent:'#818cf8', accent2:'#f0abfc', ink:'#3730a3', motif:'hydrangea' },
-    { id:'floral_spring_blossom', category:'Floral 🌸', name:'Spring Blossom', bg:'#fdf2f8', accent:'#f9a8d4', accent2:'#bef264', ink:'#9d174d', motif:'spring' },
+    { id:'floral_sakura_garden', category:'Floral', name:'Sakura Garden', bg:'#fff1f7', accent:'#f472b6', accent2:'#fecdd3', ink:'#9d174d', motif:'sakura' },
+    { id:'floral_blue_rose', category:'Floral', name:'Blue Rose', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bfdbfe', ink:'#1e3a8a', motif:'rose' },
+    { id:'floral_sunflower_day', category:'Floral', name:'Sunflower Day', bg:'#fff7ed', accent:'#facc15', accent2:'#854d0e', ink:'#713f12', motif:'sunflower' },
+    { id:'floral_lavender_bloom', category:'Floral', name:'Lavender Bloom', bg:'#f5f3ff', accent:'#a78bfa', accent2:'#ddd6fe', ink:'#5b21b6', motif:'lavender' },
+    { id:'floral_daisy_field', category:'Floral', name:'Daisy Field', bg:'#f0fdf4', accent:'#fef08a', accent2:'#86efac', ink:'#166534', motif:'daisy' },
+    { id:'floral_pink_peony', category:'Floral', name:'Pink Peony', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#be123c', motif:'peony' },
+    { id:'floral_botanical_green', category:'Floral', name:'Botanical Green', bg:'#ecfdf5', accent:'#10b981', accent2:'#bbf7d0', ink:'#065f46', motif:'leaf' },
+    { id:'floral_wild_flower', category:'Floral', name:'Wild Flower', bg:'#fff7ed', accent:'#f97316', accent2:'#a7f3d0', ink:'#9a3412', motif:'wild' },
+    { id:'floral_hydrangea_dream', category:'Floral', name:'Hydrangea Dream', bg:'#eef2ff', accent:'#818cf8', accent2:'#f0abfc', ink:'#3730a3', motif:'hydrangea' },
+    { id:'floral_spring_blossom', category:'Floral', name:'Spring Blossom', bg:'#fdf2f8', accent:'#f9a8d4', accent2:'#bef264', ink:'#9d174d', motif:'spring' },
 
     // Seasonal
-    { id:'seasonal_birthday_party', category:'Seasonal 🎉', name:'Birthday Party', bg:'#fff7ed', accent:'#fb7185', accent2:'#60a5fa', ink:'#7c2d12', motif:'birthday' },
-    { id:'seasonal_graduation_day', category:'Seasonal 🎉', name:'Graduation Day', bg:'#f8fafc', accent:'#0f172a', accent2:'#facc15', ink:'#0f172a', motif:'graduation' },
-    { id:'seasonal_christmas', category:'Seasonal 🎉', name:'Christmas', bg:'#064e3b', accent:'#ef4444', accent2:'#fef3c7', ink:'#fefce8', motif:'christmas' },
-    { id:'seasonal_valentine', category:'Seasonal 🎉', name:'Valentine', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#9f1239', motif:'valentine' },
-    { id:'seasonal_halloween', category:'Seasonal 🎉', name:'Halloween', bg:'#2e1065', accent:'#f97316', accent2:'#111827', ink:'#fef3c7', motif:'halloween' },
-    { id:'seasonal_eid_mubarak', category:'Seasonal 🎉', name:'Eid Mubarak', bg:'#ecfdf5', accent:'#10b981', accent2:'#facc15', ink:'#065f46', motif:'eid' },
-    { id:'seasonal_new_year_party', category:'Seasonal 🎉', name:'New Year Party', bg:'#020617', accent:'#facc15', accent2:'#a78bfa', ink:'#f8fafc', motif:'newyear' },
-    { id:'seasonal_summer_vacation', category:'Seasonal 🎉', name:'Summer Vacation', bg:'#ecfeff', accent:'#06b6d4', accent2:'#f97316', ink:'#155e75', motif:'summer' },
-    { id:'seasonal_autumn_leaves', category:'Seasonal 🎉', name:'Autumn Leaves', bg:'#fff7ed', accent:'#ea580c', accent2:'#facc15', ink:'#7c2d12', motif:'autumn' },
-    { id:'seasonal_winter_snow', category:'Seasonal 🎉', name:'Winter Snow', bg:'#eff6ff', accent:'#93c5fd', accent2:'#e0f2fe', ink:'#1e3a8a', motif:'winter' },
+    { id:'seasonal_birthday_party', category:'Seasonal', name:'Birthday Party', bg:'#fff7ed', accent:'#fb7185', accent2:'#60a5fa', ink:'#7c2d12', motif:'birthday' },
+    { id:'seasonal_graduation_day', category:'Seasonal', name:'Graduation Day', bg:'#f8fafc', accent:'#0f172a', accent2:'#facc15', ink:'#0f172a', motif:'graduation' },
+    { id:'seasonal_christmas', category:'Seasonal', name:'Christmas', bg:'#064e3b', accent:'#ef4444', accent2:'#fef3c7', ink:'#fefce8', motif:'christmas' },
+    { id:'seasonal_valentine', category:'Seasonal', name:'Valentine', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#9f1239', motif:'valentine' },
+    { id:'seasonal_halloween', category:'Seasonal', name:'Halloween', bg:'#2e1065', accent:'#f97316', accent2:'#111827', ink:'#fef3c7', motif:'halloween' },
+    { id:'seasonal_eid_mubarak', category:'Seasonal', name:'Eid Mubarak', bg:'#ecfdf5', accent:'#10b981', accent2:'#facc15', ink:'#065f46', motif:'eid' },
+    { id:'seasonal_new_year_party', category:'Seasonal', name:'New Year Party', bg:'#020617', accent:'#facc15', accent2:'#a78bfa', ink:'#f8fafc', motif:'newyear' },
+    { id:'seasonal_summer_vacation', category:'Seasonal', name:'Summer Vacation', bg:'#ecfeff', accent:'#06b6d4', accent2:'#f97316', ink:'#155e75', motif:'summer' },
+    { id:'seasonal_autumn_leaves', category:'Seasonal', name:'Autumn Leaves', bg:'#fff7ed', accent:'#ea580c', accent2:'#facc15', ink:'#7c2d12', motif:'autumn' },
+    { id:'seasonal_winter_snow', category:'Seasonal', name:'Winter Snow', bg:'#eff6ff', accent:'#93c5fd', accent2:'#e0f2fe', ink:'#1e3a8a', motif:'winter' },
 
     // Gaming
-    { id:'gaming_pixel_quest', category:'Gaming 🎮', name:'Pixel Quest', bg:'#111827', accent:'#22c55e', accent2:'#facc15', ink:'#f8fafc', motif:'pixel' },
-    { id:'gaming_arcade_neon', category:'Gaming 🎮', name:'Arcade Neon', bg:'#12002f', accent:'#22d3ee', accent2:'#f97316', ink:'#f0abfc', motif:'arcade' },
-    { id:'gaming_rpg_character', category:'Gaming 🎮', name:'RPG Character', bg:'#1e1b4b', accent:'#a78bfa', accent2:'#facc15', ink:'#ede9fe', motif:'rpg' },
-    { id:'gaming_cyber_gamer', category:'Gaming 🎮', name:'Cyber Gamer', bg:'#020617', accent:'#00f5ff', accent2:'#ff2bd6', ink:'#e0f2fe', motif:'cyber' },
-    { id:'gaming_fantasy_world', category:'Gaming 🎮', name:'Fantasy World', bg:'#064e3b', accent:'#a7f3d0', accent2:'#d6b56d', ink:'#ecfdf5', motif:'fantasy' },
-    { id:'gaming_magic_academy', category:'Gaming 🎮', name:'Magic Academy', bg:'#312e81', accent:'#facc15', accent2:'#c084fc', ink:'#ede9fe', motif:'magic' },
-    { id:'gaming_space_battle', category:'Gaming 🎮', name:'Space Battle', bg:'#020617', accent:'#38bdf8', accent2:'#f472b6', ink:'#f8fafc', motif:'space' },
-    { id:'gaming_monster_hunter', category:'Gaming 🎮', name:'Monster Hunter', bg:'#1f2937', accent:'#84cc16', accent2:'#ef4444', ink:'#f9fafb', motif:'monster' },
-    { id:'gaming_dungeon_explorer', category:'Gaming 🎮', name:'Dungeon Explorer', bg:'#292524', accent:'#d97706', accent2:'#a3e635', ink:'#fafaf9', motif:'dungeon' },
-    { id:'gaming_retro_console', category:'Gaming 🎮', name:'Retro Console', bg:'#f3f4f6', accent:'#ef4444', accent2:'#3b82f6', ink:'#111827', motif:'console' },
+    { id:'gaming_pixel_quest', category:'Gaming', name:'Pixel Quest', bg:'#111827', accent:'#22c55e', accent2:'#facc15', ink:'#f8fafc', motif:'pixel' },
+    { id:'gaming_arcade_neon', category:'Gaming', name:'Arcade Neon', bg:'#12002f', accent:'#22d3ee', accent2:'#f97316', ink:'#f0abfc', motif:'arcade' },
+    { id:'gaming_rpg_character', category:'Gaming', name:'RPG Character', bg:'#1e1b4b', accent:'#a78bfa', accent2:'#facc15', ink:'#ede9fe', motif:'rpg' },
+    { id:'gaming_cyber_gamer', category:'Gaming', name:'Cyber Gamer', bg:'#020617', accent:'#00f5ff', accent2:'#ff2bd6', ink:'#e0f2fe', motif:'cyber' },
+    { id:'gaming_fantasy_world', category:'Gaming', name:'Fantasy World', bg:'#064e3b', accent:'#a7f3d0', accent2:'#d6b56d', ink:'#ecfdf5', motif:'fantasy' },
+    { id:'gaming_magic_academy', category:'Gaming', name:'Magic Academy', bg:'#312e81', accent:'#facc15', accent2:'#c084fc', ink:'#ede9fe', motif:'magic' },
+    { id:'gaming_space_battle', category:'Gaming', name:'Space Battle', bg:'#020617', accent:'#38bdf8', accent2:'#f472b6', ink:'#f8fafc', motif:'space' },
+    { id:'gaming_monster_hunter', category:'Gaming', name:'Monster Hunter', bg:'#1f2937', accent:'#84cc16', accent2:'#ef4444', ink:'#f9fafb', motif:'monster' },
+    { id:'gaming_dungeon_explorer', category:'Gaming', name:'Dungeon Explorer', bg:'#292524', accent:'#d97706', accent2:'#a3e635', ink:'#fafaf9', motif:'dungeon' },
+    { id:'gaming_retro_console', category:'Gaming', name:'Retro Console', bg:'#f3f4f6', accent:'#ef4444', accent2:'#3b82f6', ink:'#111827', motif:'console' },
 
     // Pattern
-    { id:'pattern_polkadot_pink', category:'Pattern 🟣', name:'Polkadot Pink', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#9f1239', motif:'polkadot' },
-    { id:'pattern_polkadot_blue', category:'Pattern 🟣', name:'Polkadot Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1d4ed8', motif:'polkadot' },
-    { id:'pattern_candy_stripe', category:'Pattern 🟣', name:'Candy Stripe', bg:'#ffffff', accent:'#fb7185', accent2:'#fbcfe8', ink:'#be123c', motif:'stripe' },
-    { id:'pattern_rainbow_stripe', category:'Pattern 🟣', name:'Rainbow Stripe', bg:'#fefce8', accent:'#f97316', accent2:'#22c55e', ink:'#7c2d12', motif:'rainbow' },
-    { id:'pattern_checkerboard', category:'Pattern 🟣', name:'Checkerboard', bg:'#ffffff', accent:'#111827', accent2:'#f3f4f6', ink:'#111827', motif:'checker' },
-    { id:'pattern_gingham_pink', category:'Pattern 🟣', name:'Gingham Pink', bg:'#fff1f2', accent:'#f9a8d4', accent2:'#ffffff', ink:'#9f1239', motif:'gingham' },
-    { id:'pattern_gingham_blue', category:'Pattern 🟣', name:'Gingham Blue', bg:'#eff6ff', accent:'#93c5fd', accent2:'#ffffff', ink:'#1e40af', motif:'gingham' },
-    { id:'pattern_notebook_grid', category:'Pattern 🟣', name:'Notebook Grid', bg:'#f8fafc', accent:'#93c5fd', accent2:'#fca5a5', ink:'#334155', motif:'grid' },
-    { id:'pattern_star_pattern', category:'Pattern 🟣', name:'Star Pattern', bg:'#111827', accent:'#facc15', accent2:'#60a5fa', ink:'#f8fafc', motif:'stars' },
-    { id:'pattern_heart_pattern', category:'Pattern 🟣', name:'Heart Pattern', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#881337', motif:'heart' },
+    { id:'pattern_polkadot_pink', category:'Pattern', name:'Polkadot Pink', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#9f1239', motif:'polkadot' },
+    { id:'pattern_polkadot_blue', category:'Pattern', name:'Polkadot Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1d4ed8', motif:'polkadot' },
+    { id:'pattern_candy_stripe', category:'Pattern', name:'Candy Stripe', bg:'#ffffff', accent:'#fb7185', accent2:'#fbcfe8', ink:'#be123c', motif:'stripe' },
+    { id:'pattern_rainbow_stripe', category:'Pattern', name:'Rainbow Stripe', bg:'#fefce8', accent:'#f97316', accent2:'#22c55e', ink:'#7c2d12', motif:'rainbow' },
+    { id:'pattern_checkerboard', category:'Pattern', name:'Checkerboard', bg:'#ffffff', accent:'#111827', accent2:'#f3f4f6', ink:'#111827', motif:'checker' },
+    { id:'pattern_gingham_pink', category:'Pattern', name:'Gingham Pink', bg:'#fff1f2', accent:'#f9a8d4', accent2:'#ffffff', ink:'#9f1239', motif:'gingham' },
+    { id:'pattern_gingham_blue', category:'Pattern', name:'Gingham Blue', bg:'#eff6ff', accent:'#93c5fd', accent2:'#ffffff', ink:'#1e40af', motif:'gingham' },
+    { id:'pattern_notebook_grid', category:'Pattern', name:'Notebook Grid', bg:'#f8fafc', accent:'#93c5fd', accent2:'#fca5a5', ink:'#334155', motif:'grid' },
+    { id:'pattern_star_pattern', category:'Pattern', name:'Star Pattern', bg:'#111827', accent:'#facc15', accent2:'#60a5fa', ink:'#f8fafc', motif:'stars' },
+    { id:'pattern_heart_pattern', category:'Pattern', name:'Heart Pattern', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#881337', motif:'heart' },
 
     // Social Media
-    { id:'social_instagram_feed', category:'Social Media 📱', name:'Instagram Feed', bg:'#ffffff', accent:'#e1306c', accent2:'#f9a8d4', ink:'#111827', motif:'igfeed' },
-    { id:'social_instagram_story', category:'Social Media 📱', name:'Instagram Story', bg:'#111827', accent:'#e1306c', accent2:'#facc15', ink:'#ffffff', motif:'igstory' },
-    { id:'social_tiktok_creator', category:'Social Media 📱', name:'TikTok Creator', bg:'#020617', accent:'#00f2ea', accent2:'#ff0050', ink:'#ffffff', motif:'tiktok' },
-    { id:'social_youtube_vlog', category:'Social Media 📱', name:'YouTube Vlog', bg:'#ffffff', accent:'#ff0000', accent2:'#111827', ink:'#111827', motif:'youtube' },
-    { id:'social_iphone_gallery', category:'Social Media 📱', name:'iPhone Gallery', bg:'#f8fafc', accent:'#007aff', accent2:'#e5e7eb', ink:'#111827', motif:'iphone' },
-    { id:'social_camera_roll', category:'Social Media 📱', name:'Camera Roll', bg:'#111827', accent:'#f8fafc', accent2:'#64748b', ink:'#f8fafc', motif:'cameraRoll' },
-    { id:'social_music_player', category:'Social Media 📱', name:'Music Player', bg:'#ecfdf5', accent:'#22c55e', accent2:'#111827', ink:'#052e16', motif:'music' },
-    { id:'social_chat_bubble', category:'Social Media 📱', name:'Chat Bubble', bg:'#eff6ff', accent:'#60a5fa', accent2:'#dbeafe', ink:'#1e3a8a', motif:'chat' },
-    { id:'social_profile', category:'Social Media 📱', name:'Social Profile', bg:'#f8fafc', accent:'#8b5cf6', accent2:'#f9a8d4', ink:'#312e81', motif:'profile' },
-    { id:'social_viral_post', category:'Social Media 📱', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
+    { id:'social_instagram_feed', category:'Social Media', name:'Instagram Feed', bg:'#ffffff', accent:'#e1306c', accent2:'#f9a8d4', ink:'#111827', motif:'igfeed' },
+    { id:'social_instagram_story', category:'Social Media', name:'Instagram Story', bg:'#111827', accent:'#e1306c', accent2:'#facc15', ink:'#ffffff', motif:'igstory' },
+    { id:'social_tiktok_creator', category:'Social Media', name:'TikTok Creator', bg:'#020617', accent:'#00f2ea', accent2:'#ff0050', ink:'#ffffff', motif:'tiktok' },
+    { id:'social_youtube_vlog', category:'Social Media', name:'YouTube Vlog', bg:'#ffffff', accent:'#ff0000', accent2:'#111827', ink:'#111827', motif:'youtube' },
+    { id:'social_iphone_gallery', category:'Social Media', name:'iPhone Gallery', bg:'#f8fafc', accent:'#007aff', accent2:'#e5e7eb', ink:'#111827', motif:'iphone' },
+    { id:'social_camera_roll', category:'Social Media', name:'Camera Roll', bg:'#111827', accent:'#f8fafc', accent2:'#64748b', ink:'#f8fafc', motif:'cameraRoll' },
+    { id:'social_music_player', category:'Social Media', name:'Music Player', bg:'#ecfdf5', accent:'#22c55e', accent2:'#111827', ink:'#052e16', motif:'music' },
+    { id:'social_chat_bubble', category:'Social Media', name:'Chat Bubble', bg:'#eff6ff', accent:'#60a5fa', accent2:'#dbeafe', ink:'#1e3a8a', motif:'chat' },
+    { id:'social_profile', category:'Social Media', name:'Social Profile', bg:'#f8fafc', accent:'#8b5cf6', accent2:'#f9a8d4', ink:'#312e81', motif:'profile' },
+    { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
   ];
 
   const builtInCache = new Map();
@@ -349,6 +349,23 @@
     const slots = [];
     for (let i = 0; i < FRAME_SLOTS; i++) {
       slots.push({ x: FRAME_PADDING, y: FRAME_PADDING + i * (slotH + FRAME_GAP), w: slotW, h: slotH });
+    }
+    return slots;
+  }
+
+  // Built-in decorative templates need bigger margins than Basic
+  // so the frame ornaments are visible and the photo slots do not feel too tight.
+  function generateBuiltInSlots(def = {}) {
+    const category = def.category || '';
+    const sidePad = 54;
+    const topPad = category === 'Social Media' ? 118 : 102;
+    const bottomPad = 126;
+    const gap = 34;
+    const slotW = FRAME_W - sidePad * 2;
+    const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1)) / FRAME_SLOTS);
+    const slots = [];
+    for (let i = 0; i < FRAME_SLOTS; i++) {
+      slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH });
     }
     return slots;
   }
@@ -505,24 +522,97 @@
   }
 
   function drawKoreanDecor(ctx, def) {
-    for (let y = 84; y < FRAME_H - 120; y += 175) {
-      const side = (y / 175) % 2 > 1 ? FRAME_W - 42 : 42;
-      if (def.motif === 'cloud') {
-        circle(ctx, side - 12, y, 18, withAlpha('#ffffff', .75));
-        circle(ctx, side + 10, y - 8, 22, withAlpha('#ffffff', .75));
-        circle(ctx, side + 28, y, 17, withAlpha('#ffffff', .75));
-      } else if (def.motif === 'ribbon') drawBow(ctx, side, y, withAlpha(def.accent, .75), def.ink);
-      else if (def.motif === 'sakura') {
-        for (let k = 0; k < 5; k++) circle(ctx, side + Math.cos(k*1.26)*12, y + Math.sin(k*1.26)*12, 9, withAlpha(def.accent, .65));
-        circle(ctx, side, y, 5, def.accent2);
-      } else {
-        text(ctx, ['♡','✦','✿','⋆'][Math.floor(y/175)%4], side, y, 34, def.accent);
+    // soft dotted background
+    for (let i = 0; i < 96; i++) {
+      const x = 28 + (i * 73) % (FRAME_W - 56);
+      const y = 92 + (i * 137) % (FRAME_H - 190);
+      circle(ctx, x, y, 2 + (i % 2), withAlpha(def.accent, .18));
+    }
+
+    // reusable decorative strips
+    function sideScallop(colorA, colorB) {
+      for (let y = 112; y < FRAME_H - 120; y += 52) {
+        circle(ctx, 24, y, 14, withAlpha(colorA, .34));
+        circle(ctx, FRAME_W - 24, y + 24, 14, withAlpha(colorB, .34));
       }
     }
-    roundRect(ctx, 70, 25, 132, 42, 22, withAlpha('#ffffff', .60), withAlpha(def.accent, .45), 2);
-    text(ctx, 'TODAY', 136, 47, 18, def.ink, 900);
-    text(ctx, '♡', FRAME_W - 70, 47, 30, def.accent);
-    drawConfetti(ctx, def, 34);
+    function tinySticker(x, y, label, fill) {
+      roundRect(ctx, x - 24, y - 18, 48, 36, 18, withAlpha(fill, .75), withAlpha(def.ink, .18), 2);
+      text(ctx, label, x, y + 1, 18, def.ink, 900);
+    }
+
+    if (def.motif === 'cloud') {
+      sideScallop('#ffffff', def.accent2);
+      for (let y = 144; y < FRAME_H - 150; y += 210) {
+        const left = y % 420 === 144;
+        const x = left ? 42 : FRAME_W - 42;
+        circle(ctx, x - 20, y, 18, withAlpha('#ffffff', .82));
+        circle(ctx, x, y - 10, 25, withAlpha('#ffffff', .86));
+        circle(ctx, x + 24, y, 18, withAlpha('#ffffff', .82));
+        for (let k = 0; k < 3; k++) line(ctx, x - 18 + k * 18, y + 28, x - 24 + k * 18, y + 44, withAlpha(def.accent, .35), 3);
+      }
+      text(ctx, 'soft cloud', FRAME_W / 2, 56, 23, def.ink, 900);
+    } else if (def.motif === 'diary') {
+      // diary rings + ruled-note feel
+      for (let y = 122; y < FRAME_H - 128; y += 72) {
+        roundRect(ctx, 28, y, 30, 18, 9, null, withAlpha(def.ink, .28), 3);
+        line(ctx, 70, y + 9, FRAME_W - 72, y + 9, withAlpha(def.accent, .16), 2);
+      }
+      tinySticker(FRAME_W - 65, 58, '♡', def.accent2);
+      tinySticker(72, FRAME_H - 58, 'OK', def.accent);
+      text(ctx, 'dear diary', FRAME_W / 2, 56, 22, def.ink, 900);
+    } else if (def.motif === 'sakura') {
+      for (let y = 106; y < FRAME_H - 110; y += 86) {
+        line(ctx, 20, y - 32, 58, y + 32, withAlpha(def.ink, .18), 2);
+        line(ctx, FRAME_W - 20, y - 20, FRAME_W - 60, y + 38, withAlpha(def.ink, .18), 2);
+        for (let side of [40, FRAME_W - 42]) {
+          for (let k = 0; k < 5; k++) circle(ctx, side + Math.cos(k*1.26)*12, y + Math.sin(k*1.26)*12, 8, withAlpha(def.accent, .72));
+          circle(ctx, side, y, 4, def.accent2);
+        }
+      }
+      text(ctx, 'cherry day', FRAME_W / 2, 56, 22, def.ink, 900);
+    } else if (def.motif === 'ribbon') {
+      for (let y = 132; y < FRAME_H - 128; y += 184) {
+        drawBow(ctx, 42, y, withAlpha(def.accent, .72), def.ink);
+        drawBow(ctx, FRAME_W - 42, y + 72, withAlpha(def.accent2, .82), def.ink);
+      }
+      roundRect(ctx, 88, 28, FRAME_W - 176, 48, 24, withAlpha('#ffffff', .55), withAlpha(def.accent, .45), 2);
+      text(ctx, 'ribbon club', FRAME_W / 2, 55, 20, def.ink, 900);
+    } else if (def.motif === 'latte') {
+      for (let y = 130; y < FRAME_H - 130; y += 170) {
+        roundRect(ctx, 24, y, 42, 34, 10, withAlpha(def.accent2, .72), withAlpha(def.accent, .45), 2);
+        circle(ctx, 56, y + 14, 8, null, withAlpha(def.accent, .45));
+        text(ctx, '☕', FRAME_W - 45, y + 13, 24, def.accent);
+        text(ctx, '♡', 45, y + 76, 24, def.accent);
+      }
+      text(ctx, 'latte mood', FRAME_W / 2, 56, 22, def.ink, 900);
+    } else if (def.motif === 'campus') {
+      for (let y = 120; y < FRAME_H - 130; y += 150) {
+        roundRect(ctx, 22, y, 54, 36, 8, withAlpha(def.accent2, .85), withAlpha(def.ink, .18), 2);
+        text(ctx, 'A+', 49, y + 22, 17, def.ink, 900);
+        drawStar(ctx, FRAME_W - 42, y + 20, 16, def.accent, 5);
+      }
+      line(ctx, 0, 88, FRAME_W, 88, withAlpha(def.accent, .35), 3);
+      line(ctx, 0, FRAME_H - 98, FRAME_W, FRAME_H - 98, withAlpha(def.accent, .35), 3);
+      text(ctx, 'campus day', FRAME_W / 2, 56, 21, def.ink, 900);
+    } else if (def.motif === 'stamp') {
+      for (let y = 122; y < FRAME_H - 130; y += 150) {
+        roundRect(ctx, 18, y, 64, 42, 8, withAlpha('#ffffff', .25), def.accent, 3);
+        text(ctx, 'LOVE', 50, y + 25, 14, def.accent, 900);
+        roundRect(ctx, FRAME_W - 82, y + 58, 64, 42, 8, withAlpha('#ffffff', .25), def.accent2, 3);
+        text(ctx, 'MEMO', FRAME_W - 50, y + 83, 14, def.ink, 900);
+      }
+      text(ctx, 'heart stamp', FRAME_W / 2, 56, 21, def.ink, 900);
+    } else {
+      sideScallop(def.accent, def.accent2);
+      for (let y = 112; y < FRAME_H - 120; y += 130) {
+        text(ctx, ['♡','✦','✿','⋆'][Math.floor(y/130)%4], 42, y, 30, def.accent);
+        text(ctx, ['⋆','✿','♡','✦'][Math.floor(y/130)%4], FRAME_W - 42, y + 52, 30, def.accent2);
+      }
+      text(ctx, 'k-style', FRAME_W / 2, 56, 22, def.ink, 900);
+    }
+
+    drawConfetti(ctx, def, 52);
   }
 
   function drawElegantDecor(ctx, def) {
@@ -641,12 +731,16 @@
 
   function drawSlotBorders(ctx, slots, def) {
     slots.forEach((s, idx) => {
-      const r = 12;
-      roundRect(ctx, s.x - 5, s.y - 5, s.w + 10, s.h + 10, r, null, withAlpha(def.ink, .22), 3);
-      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 8, null, withAlpha(def.accent, .75), idx % 2 ? 3 : 4);
+      const r = 16;
+      // soft mat around each photo slot
+      roundRect(ctx, s.x - 14, s.y - 14, s.w + 28, s.h + 28, r + 12, withAlpha('#ffffff', .20), withAlpha(def.accent, .36), 3);
+      roundRect(ctx, s.x - 5, s.y - 5, s.w + 10, s.h + 10, r, null, withAlpha(def.ink, .18), 2);
+      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 8, null, withAlpha(def.accent, .62), idx % 2 ? 2 : 3);
       if (idx < slots.length - 1) {
-        const gapY = s.y + s.h + FRAME_GAP / 2;
-        text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY, 22, withAlpha(def.accent2, .95));
+        const gapY = s.y + s.h + (slots[idx + 1].y - (s.y + s.h)) / 2;
+        text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 22, withAlpha(def.accent2, .95));
+        line(ctx, 82, gapY, FRAME_W / 2 - 30, gapY, withAlpha(def.accent, .28), 2);
+        line(ctx, FRAME_W / 2 + 30, gapY, FRAME_W - 82, gapY, withAlpha(def.accent, .28), 2);
       }
     });
   }
@@ -667,7 +761,7 @@
   function generateBuiltInFrameSrc(def) {
     if (builtInCache.has(def.id)) return builtInCache.get(def.id);
     const W = FRAME_W, H = FRAME_H;
-    const slots = generateBasicSlots();
+    const slots = generateBuiltInSlots(def);
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
@@ -680,18 +774,18 @@
 
     // Base decorative layer
     drawPatternBg(ctx, def);
-    if (def.category === 'Korean 🇰🇷') drawKoreanDecor(ctx, def);
-    if (def.category === 'Film 🎞️') drawFilmDecor(ctx, def);
-    if (def.category === 'Elegant ✨') drawElegantDecor(ctx, def);
-    if (def.category === 'Floral 🌸') drawFloralDecor(ctx, def);
-    if (def.category === 'Seasonal 🎉') drawSeasonalDecor(ctx, def);
-    if (def.category === 'Gaming 🎮') drawGamingDecor(ctx, def);
-    if (def.category === 'Pattern 🟣') {
+    if (def.category === 'Korean') drawKoreanDecor(ctx, def);
+    if (def.category === 'Film') drawFilmDecor(ctx, def);
+    if (def.category === 'Elegant') drawElegantDecor(ctx, def);
+    if (def.category === 'Floral') drawFloralDecor(ctx, def);
+    if (def.category === 'Seasonal') drawSeasonalDecor(ctx, def);
+    if (def.category === 'Gaming') drawGamingDecor(ctx, def);
+    if (def.category === 'Pattern') {
       if (def.motif === 'stars') for (let i=0;i<70;i++) drawStar(ctx, (i*79)%W, (i*151)%H, 8+(i%3)*3, i%2?def.accent:def.accent2, 5);
       if (def.motif === 'heart') for (let i=0;i<72;i++) text(ctx, i%2?'♡':'♥', (i*67)%W, (i*131)%H, 22, i%2?def.accent:def.accent2);
       drawConfetti(ctx, def, 28);
     }
-    if (def.category === 'Social Media 📱') drawSocialDecor(ctx, def);
+    if (def.category === 'Social Media') drawSocialDecor(ctx, def);
 
     // Clear photo slots so the captured photos show through.
     slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));

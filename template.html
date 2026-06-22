@@ -1125,24 +1125,48 @@
         drawHeaderRibbon(ctx, 126, 34, FRAME_W - 252, 42, def.name.toLowerCase(), withAlpha('#ffffff', .54), withAlpha(def.accent, .34), def.ink);
       }
     } else if (def.category === 'Film') {
-      if (def.motif === 'camera') {
-        roundRect(ctx, 64, 30, 114, 58, 14, withAlpha(def.accent, .88), withAlpha(def.ink, .35), 2.5);
-        circle(ctx, 106, 58, 18, withAlpha(def.ink, .82));
-        roundRect(ctx, 126, 46, 26, 12, 5, withAlpha(def.accent2, .82));
-        text(ctx, 'SHOT 04', FRAME_W - 88, 58, 18, def.ink, 900, 'right');
-      } else if (def.motif === 'polaroid') {
-        roundRect(ctx, 116, 34, FRAME_W - 232, 44, 10, withAlpha('#ffffff', .75), withAlpha(def.accent2, .28), 2);
+      const filmId = def.id || '';
+      if (filmId === 'film_retro_film') {
+        text(ctx, '35MM', 70, 52, 22, def.ink, 900, 'left');
+        drawHeaderRibbon(ctx, 160, 34, FRAME_W - 320, 40, 'retro booth', withAlpha('#ffffff', .2), withAlpha(def.accent, .38), def.ink);
+        text(ctx, 'A-04', FRAME_W - 72, 52, 18, def.accent2, 900, 'right');
+      } else if (filmId === 'film_kodak_yellow') {
+        roundRect(ctx, 52, 30, 152, 50, 14, withAlpha('#fff8', .26), withAlpha(def.accent2, .36), 2);
+        text(ctx, 'COLOR 200', 128, 55, 20, def.ink, 900);
+        drawHeaderRibbon(ctx, 236, 36, FRAME_W - 292, 38, 'sunny shot', withAlpha('#ffffff', .4), withAlpha(def.accent, .46), def.ink);
+      } else if (filmId === 'film_analog_brown') {
+        drawHeaderRibbon(ctx, 136, 34, FRAME_W - 272, 40, 'contact sheet', withAlpha('#ffffff', .24), withAlpha(def.accent2, .38), def.ink);
+        text(ctx, 'dust • grain', FRAME_W / 2, 92, 14, withAlpha(def.accent, .84), 900);
+      } else if (filmId === 'film_vintage_camera') {
+        roundRect(ctx, 58, 30, 122, 58, 14, withAlpha(def.accent, .84), withAlpha(def.ink, .35), 2.5);
+        circle(ctx, 104, 58, 18, withAlpha(def.ink, .82));
+        roundRect(ctx, 124, 46, 24, 12, 4, withAlpha(def.accent2, .82));
+        text(ctx, 'ARCHIVE', FRAME_W - 88, 58, 18, def.ink, 900, 'right');
+      } else if (filmId === 'film_roll_black') {
+        text(ctx, 'NIGHT FILM', 78, 52, 18, def.ink, 900, 'left');
+        drawHeaderRibbon(ctx, 170, 34, FRAME_W - 340, 40, 'exp 24', withAlpha('#ffffff', .16), withAlpha(def.accent2, .34), def.ink);
+      } else if (filmId === 'film_polaroid_cream') {
+        roundRect(ctx, 116, 34, FRAME_W - 232, 44, 10, withAlpha('#ffffff', .82), withAlpha(def.accent2, .28), 2);
         text(ctx, 'instant memory', FRAME_W / 2, 57, 18, def.ink, 900);
-      } else if (def.motif === 'cinema') {
+      } else if (filmId === 'film_dust_grain') {
+        drawHeaderRibbon(ctx, 124, 34, FRAME_W - 248, 40, 'darkroom test', withAlpha('#ffffff', .18), withAlpha(def.accent2, .34), def.ink);
+        text(ctx, 'ISO 800', 80, 92, 16, withAlpha(def.ink, .84), 900);
+        text(ctx, 'grain mode', FRAME_W - 78, 92, 14, withAlpha(def.accent2, .84), 900, 'right');
+      } else if (filmId === 'film_cinema_frame') {
         for (let x = 88; x < FRAME_W - 88; x += 48) {
           ctx.fillStyle = (Math.floor(x / 48) % 2) ? def.accent : def.accent2;
-          ctx.globalAlpha = .7;
+          ctx.globalAlpha = .72;
           ctx.fillRect(x, 36, 30, 16);
           ctx.fillRect(x, 52, 30, 16);
           ctx.globalAlpha = 1;
         }
-        drawHeaderRibbon(ctx, 170, 74, FRAME_W - 340, 34, 'cinema', withAlpha('#000000', .16), withAlpha(def.accent, .44), def.ink);
-      } else if (def.motif === 'vintage') {
+        drawHeaderRibbon(ctx, 160, 74, FRAME_W - 320, 34, 'cinema ticket', withAlpha('#000000', .16), withAlpha(def.accent, .44), def.ink);
+      } else if (filmId === 'film_disposable_camera') {
+        roundRect(ctx, 68, 34, 144, 40, 18, withAlpha(def.accent, .18), withAlpha(def.accent, .35), 1.8);
+        text(ctx, 'FLASH READY', 140, 55, 16, def.ink, 900);
+        roundRect(ctx, FRAME_W - 148, 34, 86, 40, 18, withAlpha(def.accent2, .74), withAlpha(def.ink, .1), 1.2);
+        text(ctx, 'SNAP', FRAME_W - 105, 55, 16, def.ink, 900);
+      } else if (filmId === 'film_old_memory') {
         drawHeaderRibbon(ctx, 128, 34, FRAME_W - 256, 40, 'memory archive', withAlpha('#ffffff', .48), withAlpha(def.accent, .34), def.ink);
         text(ctx, '1987', 72, 56, 22, def.ink, 900);
       } else {
@@ -1295,13 +1319,90 @@
           cornerSpark(s.x + s.w - 14, s.y + s.h - 10, idx % 2 ? '✿' : '⋆', idx % 2 ? def.accent : def.accent2);
         }
       } else if (def.category === 'Film') {
-        for (let y = s.y + 10; y < s.y + s.h - 8; y += 22) {
-          roundRect(ctx, s.x - 18, y, 10, 14, 2, withAlpha(def.ink, .8));
-          roundRect(ctx, s.x + s.w + 8, y, 10, 14, 2, withAlpha(def.ink, .8));
-        }
-        text(ctx, `${String(idx + 1).padStart(2,'0')}`, s.x + s.w - 12, s.y + 20, 12, def.ink, 900, 'right');
-        if (def.motif === 'polaroid') {
-          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 18, 10, null, withAlpha(def.accent2, .4), 1.5);
+        const filmId = def.id || '';
+        const perforate = (side='both', fill=withAlpha(def.ink, .82), step=22, w=10, h=14) => {
+          for (let y = s.y + 10; y < s.y + s.h - 8; y += step) {
+            if (side === 'left' || side === 'both') roundRect(ctx, s.x - 18, y, w, h, 2, fill);
+            if (side === 'right' || side === 'both') roundRect(ctx, s.x + s.w + 8, y, w, h, 2, fill);
+          }
+        };
+        const captionLine = (label, color = def.ink) => {
+          line(ctx, s.x + 12, s.y + s.h + 10, s.x + s.w - 12, s.y + s.h + 10, withAlpha(color, .22), 1.5);
+          text(ctx, label, s.x + 18, s.y + s.h + 24, 10, withAlpha(color, .85), 900, 'left');
+        };
+        const tapeCorner = (x, y, ang, fill) => tape(x, y, 34, 14, fill, ang);
+        const clapStripe = (x, y, w=44, h=10) => {
+          const step = 12;
+          for (let xx = x; xx < x + w; xx += step) {
+            roundRect(ctx, xx, y, 8, h, 2, ((Math.floor((xx - x)/step) % 2) ? withAlpha('#ffffff', .9) : withAlpha(def.accent, .88)));
+          }
+        };
+
+        if (filmId === 'film_polaroid_cream') {
+          const outerY = s.y - 8;
+          const extraBottom = 34;
+          roundRect(ctx, s.x - 10, outerY, s.w + 20, s.h + extraBottom + 12, 12, withAlpha('#fffdf7', .96), withAlpha(def.accent2, .38), 1.5);
+          roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 8, null, withAlpha(def.accent, .35), 1.5);
+          tapeCorner(s.x + 34, s.y - 10, -12, '#fef3c7');
+          tapeCorner(s.x + s.w - 34, s.y - 4, 10, '#fef3c7');
+          text(ctx, `memory ${idx + 1}`, s.x + s.w / 2, s.y + s.h + 22, 11, withAlpha(def.ink, .78), 900);
+        } else if (filmId === 'film_vintage_camera') {
+          roundRect(ctx, s.x - 14, s.y - 14, s.w + 28, s.h + 28, 16, withAlpha('#fff7ed', .16), withAlpha(def.accent, .28), 1.5);
+          roundRect(ctx, s.x - 4, s.y - 4, s.w + 8, s.h + 8, 12, null, withAlpha('#fef3c7', .72), 2);
+          tapeCorner(s.x + 34, s.y + 8, -14, '#fef3c7');
+          tapeCorner(s.x + s.w - 34, s.y + 8, 14, '#fef3c7');
+          tapeCorner(s.x + 34, s.y + s.h - 8, 14, '#fef3c7');
+          tapeCorner(s.x + s.w - 34, s.y + s.h - 8, -14, '#fef3c7');
+          captionLine(`archived shot 0${idx + 1}`, def.accent);
+        } else if (filmId === 'film_cinema_frame') {
+          roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 12, withAlpha('#000000', .12), withAlpha(def.accent2, .26), 1.5);
+          roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 8, null, withAlpha(def.accent, .9), 2.2);
+          clapStripe(s.x + 8, s.y - 18, 54, 10);
+          clapStripe(s.x + s.w - 62, s.y - 18, 54, 10);
+          text(ctx, `SCENE ${idx + 1}`, s.x + 16, s.y + 18, 10, withAlpha(def.ink, .9), 900, 'left');
+          text(ctx, 'TAKE', s.x + s.w - 18, s.y + 18, 10, withAlpha(def.accent2, .86), 900, 'right');
+        } else if (filmId === 'film_disposable_camera') {
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 16, withAlpha('#ffffff', .1), withAlpha(def.accent, .42), 1.8);
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 12, null, withAlpha(def.accent2, .72), 2);
+          roundRect(ctx, s.x + 12, s.y + 10, 56, 16, 8, withAlpha(def.accent, .86), withAlpha(def.ink, .1), 1);
+          text(ctx, idx % 2 ? 'SMILE' : 'FLASH', s.x + 40, s.y + 18, 9, '#ffffff', 900);
+          roundRect(ctx, s.x + s.w - 68, s.y + s.h - 24, 56, 16, 8, withAlpha(def.accent2, .92), withAlpha(def.ink, .1), 1);
+          text(ctx, 'SNAP', s.x + s.w - 40, s.y + s.h - 16, 9, def.ink, 900);
+        } else if (filmId === 'film_analog_brown') {
+          roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 8, withAlpha('#000000', .07), withAlpha(def.accent2, .24), 1.5);
+          roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 6, null, withAlpha('#fef3c7', .62), 1.8);
+          for (let k = 0; k < 3; k++) line(ctx, s.x + 18, s.y + s.h + 12 + k * 10, s.x + s.w - 18, s.y + s.h + 12 + k * 10, withAlpha(def.accent2, .18), 1);
+          text(ctx, `${idx + 1}. contact print`, s.x + 16, s.y + s.h + 14, 10, withAlpha(def.ink, .74), 900, 'left');
+        } else if (filmId === 'film_old_memory') {
+          roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 10, withAlpha('#fffaf0', .12), withAlpha(def.accent, .28), 1.4);
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 8, null, withAlpha(def.accent2, .36), 1.5);
+          if (idx % 2 === 0) tapeCorner(s.x + 34, s.y - 8, -10, '#fef3c7');
+          else tapeCorner(s.x + s.w - 34, s.y - 8, 10, '#fef3c7');
+          captionLine(['july archive','old trip','flashback','dear memory'][idx % 4], def.ink);
+        } else if (filmId === 'film_dust_grain') {
+          ctx.save();
+          ctx.setLineDash([8, 7]);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 10, null, withAlpha(def.accent2, .4), 2);
+          ctx.restore();
+          roundRect(ctx, s.x - 1, s.y - 1, s.w + 2, s.h + 2, 6, null, withAlpha(def.accent, .32), 1.2);
+          for (let d = 0; d < 18; d++) circle(ctx, s.x + 8 + (d * 23) % (s.w - 16), s.y + 10 + (d * 31) % (s.h - 20), 1.2, withAlpha('#ffffff', .16));
+          text(ctx, `${String(idx + 1).padStart(2,'0')}`, s.x + s.w - 14, s.y + 18, 12, def.ink, 900, 'right');
+        } else if (filmId === 'film_kodak_yellow') {
+          perforate('left', withAlpha(def.accent2, .92), 24, 10, 14);
+          ctx.save();
+          ctx.setLineDash([6, 5]);
+          roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, 8, null, withAlpha(def.accent2, .55), 1.8);
+          ctx.restore();
+          roundRect(ctx, s.x + s.w - 52, s.y + 10, 38, 16, 8, withAlpha(def.accent, .9), withAlpha(def.ink, .08), 1);
+          text(ctx, 'K', s.x + s.w - 33, s.y + 18, 10, '#ffffff', 900);
+        } else if (filmId === 'film_roll_black') {
+          perforate('both', withAlpha('#ffffff', .9), 22, 10, 14);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 6, null, withAlpha(def.accent2, .28), 1.4);
+          text(ctx, `EXP ${idx + 1}`, s.x + 14, s.y + s.h - 12, 10, withAlpha(def.ink, .82), 900, 'left');
+        } else {
+          perforate('both', withAlpha(def.ink, .8), 22, 10, 14);
+          text(ctx, `${String(idx + 1).padStart(2,'0')}`, s.x + s.w - 12, s.y + 20, 12, def.ink, 900, 'right');
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 8, null, withAlpha(def.accent2, .24), 1.2);
         }
       } else if (def.category === 'Elegant') {
         [[s.x + 10, s.y + 10],[s.x + s.w - 10, s.y + 10],[s.x + 10, s.y + s.h - 10],[s.x + s.w - 10, s.y + s.h - 10]].forEach(([cx,cy])=>{

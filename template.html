@@ -361,12 +361,14 @@
     let topPad = 168;
     let bottomPad = 236;
     let gap = 38;
+    let slotCount = FRAME_SLOTS;
 
     if (category === 'Social Media') {
-      sidePad = 86;
-      topPad = 194;
-      bottomPad = 286;
-      gap = 42;
+      sidePad = 104;
+      topPad = 214;
+      bottomPad = 472;
+      gap = 92;
+      slotCount = 3;
     } else if (category === 'Korean') {
       sidePad = 78;
       topPad = 176;
@@ -405,9 +407,9 @@
     }
 
     const slotW = FRAME_W - sidePad * 2;
-    const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1)) / FRAME_SLOTS);
+    const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (slotCount - 1)) / slotCount);
     const slots = [];
-    for (let i = 0; i < FRAME_SLOTS; i++) {
+    for (let i = 0; i < slotCount; i++) {
       slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH });
     }
     return slots;
@@ -1093,7 +1095,7 @@
     function tinyMetric(x, y, w, label, fill, color, align = 'center') {
       roundRect(ctx, x, y, w, 22, 11, fill, null, 0);
       const tx = align === 'left' ? x + 10 : align === 'right' ? x + w - 10 : x + w / 2;
-      text(ctx, label, tx, y + 12, 10, color, 800, align);
+      text(ctx, label, tx, y + 12, 11.5, color, 800, align);
     }
     function actionBubble(x, y, icon, count, fill, color) {
       circle(ctx, x, y, 17, fill, null, 0);
@@ -1104,31 +1106,31 @@
       roundRect(ctx, 24, 20, FRAME_W - 48, 68, 26, withAlpha('#ffffff', .96), withAlpha(def.accent2, .24), 1.5);
       circle(ctx, 62, 54, 18, withAlpha(def.accent, .14), withAlpha(def.accent, .5), 1.2);
       text(ctx, '◎', 62, 54, 17, def.accent, 900);
-      text(ctx, 'sabrina.frame', 96, 49, 16, def.ink, 900, 'left');
-      text(ctx, 'pop muse', 96, 65, 10, withAlpha(def.ink, .56), 700, 'left');
+      text(ctx, 'sabrina.frame', 96, 49, 18, def.ink, 900, 'left');
+      text(ctx, 'pop muse', 96, 66, 12, withAlpha(def.ink, .58), 700, 'left');
       text(ctx, '⋯', FRAME_W - 40, 54, 18, def.ink, 900);
-      text(ctx, 'liked by @luna.velvet and 8,1k others', 38, FRAME_H - 104, 12, withAlpha(def.ink, .7), 700, 'left');
-      tinyMetric(34, FRAME_H - 82, 86, '12.8k likes', withAlpha(def.accent, .12), def.ink);
-      tinyMetric(128, FRAME_H - 82, 86, '326 replies', withAlpha(def.accent2, .22), def.ink);
-      tinyMetric(222, FRAME_H - 82, 78, '59 saves', withAlpha(def.accent, .1), def.ink);
+      text(ctx, 'liked by @luna.velvet and 8.1k others', 38, FRAME_H - 104, 13, withAlpha(def.ink, .7), 700, 'left');
+      tinyMetric(34, FRAME_H - 82, 92, '12.8k likes', withAlpha(def.accent, .12), def.ink);
+      tinyMetric(134, FRAME_H - 82, 92, '326 replies', withAlpha(def.accent2, .22), def.ink);
+      tinyMetric(234, FRAME_H - 82, 82, '59 saves', withAlpha(def.accent, .1), def.ink);
     } else if (def.motif === 'igstory') {
       roundRect(ctx, 24, 20, FRAME_W - 48, 76, 30, withAlpha('#000000', .48), withAlpha('#ffffff', .16), 1.2);
       const colors = ['#f9ce34','#ee2a7b','#6228d7','#f9ce34'];
       for (let i = 0; i < 4; i++) roundRect(ctx, 40 + i * 130, 30, 112, 5, 3, withAlpha(colors[i], .92));
       circle(ctx, 62, 62, 18, withAlpha('#ffffff', .08), withAlpha('#ffffff', .72), 1.2);
       text(ctx, '○', 62, 62, 18, '#ffffff', 900);
-      text(ctx, '@aria.afterglow', 94, 58, 15, '#ffffff', 900, 'left');
-      text(ctx, '2m ago', 94, 74, 10, withAlpha('#ffffff', .68), 700, 'left');
+      text(ctx, '@aria.afterglow', 94, 58, 17, '#ffffff', 900, 'left');
+      text(ctx, '2m ago', 94, 75, 12, withAlpha('#ffffff', .68), 700, 'left');
       text(ctx, '✕', FRAME_W - 40, 62, 15, '#ffffff', 900);
       text(ctx, '1.4k hearts • 88 replies • 21 shares', FRAME_W - 44, FRAME_H - 48, 15, '#ffffff', 900, 'right');
     } else if (def.motif === 'tiktok') {
-      text(ctx, 'Following', 178, 54, 14, withAlpha('#ffffff', .7), 700);
-      text(ctx, 'For You', 292, 54, 16, '#ffffff', 900);
+      text(ctx, 'Following', 178, 54, 16, withAlpha('#ffffff', .72), 700);
+      text(ctx, 'For You', 292, 54, 19, '#ffffff', 900);
       line(ctx, 258, 66, 326, 66, withAlpha('#ffffff', .88), 2);
       circle(ctx, 62, FRAME_H - 78, 18, withAlpha('#ffffff', .18), withAlpha('#ffffff', .55), 1);
       text(ctx, '♪', 62, FRAME_H - 78, 16, '#ffffff', 900);
-      text(ctx, '@nova.loop', 92, FRAME_H - 92, 14, '#ffffff', 900, 'left');
-      text(ctx, 'pretty privilege detected ✨', 92, FRAME_H - 70, 12, withAlpha('#ffffff', .82), 700, 'left');
+      text(ctx, '@nova.loop', 92, FRAME_H - 92, 16, '#ffffff', 900, 'left');
+      text(ctx, 'pretty privilege detected ✨', 92, FRAME_H - 70, 13, withAlpha('#ffffff', .82), 700, 'left');
       actionBubble(FRAME_W - 42, 640, '♥', '24.6k', withAlpha(def.accent, .22), '#ffffff');
       actionBubble(FRAME_W - 42, 748, '💬', '1,203', withAlpha(def.accent2, .24), '#ffffff');
       actionBubble(FRAME_W - 42, 856, '↗', '314', withAlpha('#ffffff', .12), '#ffffff');
@@ -1137,19 +1139,19 @@
       roundRect(ctx, 22, 20, FRAME_W - 44, 64, 22, withAlpha('#ffffff', .96), withAlpha(def.accent2, .18), 1.2);
       roundRect(ctx, 42, 37, 54, 30, 15, def.accent);
       text(ctx, '▶', 69, 52, 16, '#ffffff', 900);
-      text(ctx, 'MIRA VLOG', 136, 53, 18, def.ink, 900, 'left');
+      text(ctx, 'MIRA VLOG', 136, 53, 20, def.ink, 900, 'left');
       roundRect(ctx, FRAME_W - 144, 35, 96, 32, 16, def.accent);
       text(ctx, 'SUBSCRIBE', FRAME_W - 96, 51, 11, '#ffffff', 900);
-      text(ctx, '1.2M views • 2 days ago', 40, FRAME_H - 102, 12, withAlpha(def.ink, .72), 700, 'left');
+      text(ctx, '1.2M views • 2 days ago', 40, FRAME_H - 102, 13, withAlpha(def.ink, .72), 700, 'left');
       tinyMetric(34, FRAME_H - 84, 84, '18k likes', withAlpha(def.accent, .1), def.ink);
       tinyMetric(126, FRAME_H - 84, 84, '524 chats', withAlpha(def.accent2, .18), def.ink);
       tinyMetric(218, FRAME_H - 84, 84, 'shared 59', withAlpha(def.accent, .08), def.ink);
     } else if (def.motif === 'iphone') {
       text(ctx, '9:41', 58, 50, 18, def.ink, 900, 'left');
-      text(ctx, 'Photos', FRAME_W / 2, 52, 20, def.ink, 900);
+      text(ctx, 'Photos', FRAME_W / 2, 52, 24, def.ink, 900);
       text(ctx, 'Select', FRAME_W - 48, 50, 15, def.accent, 900, 'right');
       line(ctx, 26, 82, FRAME_W - 26, 82, withAlpha(def.accent2, .42), 1);
-      text(ctx, 'June 2026', 48, 108, 13, withAlpha(def.ink, .66), 700, 'left');
+      text(ctx, 'June 2026', 48, 108, 15, withAlpha(def.ink, .66), 700, 'left');
       line(ctx, 34, FRAME_H - 94, FRAME_W - 34, FRAME_H - 94, withAlpha(def.accent2, .38), 1);
       tinyMetric(48, FRAME_H - 72, 92, 'favorite', withAlpha(def.accent, .08), def.accent);
       tinyMetric(154, FRAME_H - 72, 92, 'share', withAlpha(def.accent, .08), def.accent);
@@ -1158,14 +1160,14 @@
     } else if (def.motif === 'cameraRoll') {
       roundRect(ctx, 24, 20, FRAME_W - 48, 66, 22, withAlpha('#ffffff', .06), withAlpha('#ffffff', .18), 1.2);
       text(ctx, '9:41', 54, 50, 18, '#ffffff', 900, 'left');
-      text(ctx, 'Recents', FRAME_W / 2, 52, 20, '#ffffff', 900);
+      text(ctx, 'Recents', FRAME_W / 2, 52, 24, '#ffffff', 900);
       text(ctx, 'Select', FRAME_W - 46, 50, 15, withAlpha('#ffffff', .84), 900, 'right');
       text(ctx, '247 items', 46, 106, 12, withAlpha('#ffffff', .66), 700, 'left');
       roundRect(ctx, 54, FRAME_H - 92, FRAME_W - 108, 40, 20, withAlpha('#ffffff', .08), withAlpha('#ffffff', .16), 1);
       text(ctx, 'fav   share   keep   more', FRAME_W / 2, FRAME_H - 67, 16, '#ffffff', 900);
     } else if (def.motif === 'music') {
       roundRect(ctx, 146, 28, FRAME_W - 292, 42, 20, withAlpha(def.accent, .16), withAlpha(def.accent, .36), 1.4);
-      text(ctx, 'Now Playing', FRAME_W / 2, 54, 16, def.ink, 900);
+      text(ctx, 'Now Playing', FRAME_W / 2, 54, 20, def.ink, 900);
       roundRect(ctx, 72, FRAME_H - 110, FRAME_W - 144, 28, 14, withAlpha(def.ink, .14));
       roundRect(ctx, 72, FRAME_H - 110, 240, 28, 14, def.accent);
       text(ctx, '▶ 00:42 / 02:31', 54, FRAME_H - 130, 14, def.ink, 900, 'left');
@@ -1173,7 +1175,7 @@
       text(ctx, 'prev   play   next', FRAME_W / 2, FRAME_H - 50, 18, def.ink, 900);
     } else if (def.motif === 'chat') {
       roundRect(ctx, 34, 26, 160, 34, 17, withAlpha(def.accent, .24));
-      text(ctx, 'mila popstar', 114, 48, 13, def.ink, 900);
+      text(ctx, 'mila popstar', 114, 48, 15, def.ink, 900);
       roundRect(ctx, 42, 112, 164, 38, 18, withAlpha(def.accent, .24));
       text(ctx, 'posting this bc i look expensive', 124, 136, 11, def.ink, 700);
       roundRect(ctx, FRAME_W - 244, FRAME_H - 166, 202, 38, 18, withAlpha(def.accent2, .88));
@@ -1183,15 +1185,15 @@
       roundRect(ctx, 24, 20, FRAME_W - 48, 88, 26, withAlpha('#ffffff', .92), withAlpha(def.accent2, .24), 1.2);
       circle(ctx, 72, 64, 24, withAlpha(def.accent, .14), withAlpha(def.accent, .52), 1.2);
       text(ctx, '☺', 72, 65, 18, def.accent, 900);
-      text(ctx, '@selena.snap', 118, 56, 16, def.ink, 900, 'left');
-      text(ctx, 'daily glam archive', 118, 74, 11, withAlpha(def.ink, .62), 700, 'left');
+      text(ctx, '@selena.snap', 118, 56, 18, def.ink, 900, 'left');
+      text(ctx, 'daily glam archive', 118, 74, 12, withAlpha(def.ink, .62), 700, 'left');
       tinyMetric(280, 42, 84, '321 posts', withAlpha(def.accent, .1), def.ink);
       tinyMetric(280, 68, 112, '14.2k followers', withAlpha(def.accent2, .18), def.ink);
       text(ctx, 'highlights • fitcheck • dumps', 46, FRAME_H - 54, 14, withAlpha(def.ink, .76), 700, 'left');
     } else {
       roundRect(ctx, 24, 20, FRAME_W - 48, 64, 22, withAlpha('#ffffff', .9), withAlpha(def.accent2, .2), 1.2);
-      text(ctx, 'viral post', FRAME_W / 2, 52, 18, def.ink, 900);
-      text(ctx, 'saved by 8.2k people', 44, FRAME_H - 108, 12, withAlpha(def.ink, .72), 700, 'left');
+      text(ctx, 'viral post', FRAME_W / 2, 52, 22, def.ink, 900);
+      text(ctx, 'saved by 8.2k people', 44, FRAME_H - 108, 13, withAlpha(def.ink, .72), 700, 'left');
       tinyMetric(42, FRAME_H - 86, 86, '48.9k likes', withAlpha(def.accent, .14), def.ink);
       tinyMetric(136, FRAME_H - 86, 86, '2,141 talks', withAlpha(def.accent2, .18), def.ink);
       tinyMetric(230, FRAME_H - 86, 72, '631 saves', withAlpha(def.accent, .1), def.ink);
@@ -1283,7 +1285,7 @@
         profile: 'too photogenic for one account',
         viral: 'oops this post went viral'
       };
-      text(ctx, socialQuotes[def.motif] || 'main character post incoming', FRAME_W / 2, zoneTop + 20, 11, withAlpha(def.ink, .82), 800);
+      text(ctx, socialQuotes[def.motif] || 'main character post incoming', FRAME_W / 2, zoneTop + 20, 12.5, withAlpha(def.ink, .82), 800);
     } else if (def.category === 'Pattern') {
       for (let x = 128; x < FRAME_W - 116; x += 36) circle(ctx, x, zoneTop + 20, 3, withAlpha(def.accent, .65));
     } else {
@@ -1560,41 +1562,40 @@
         }
       } else if (def.category === 'Social Media') {
         const socialCounts = [
-          ['1.2k likes', '48 chats', '12 saves'],
-          ['2.8k likes', '116 chats', '29 saves'],
+          ['1.8k likes', '86 chats', '24 saves'],
           ['4.9k likes', '302 chats', '87 saves'],
           ['8.1k likes', '540 chats', '121 saves']
         ];
         if (def.motif === 'igstory') {
-          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 22, null, withAlpha('#ffffff', .82), 1.5);
-          roundRect(ctx, s.x + 10, s.y + 10, 54, 6, 3, withAlpha('#ffffff', .7));
-          text(ctx, socialCounts[idx][0], s.x + s.w - 16, s.y + s.h - 12, 9, '#ffffff', 800, 'right');
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 24, null, withAlpha('#ffffff', .82), 1.8);
+          roundRect(ctx, s.x + 12, s.y + 12, 72, 8, 4, withAlpha('#ffffff', .78));
+          text(ctx, socialCounts[idx][0], s.x + s.w - 16, s.y + s.h - 14, 10.5, '#ffffff', 800, 'right');
         } else if (def.motif === 'igfeed' || def.motif === 'profile') {
-          roundRect(ctx, s.x - 8, s.y - 30, s.w + 16, 22, 11, withAlpha('#ffffff', .86), withAlpha(def.accent2, .22), 1);
-          circle(ctx, s.x + 14, s.y - 19, 6, def.accent);
-          line(ctx, s.x + 26, s.y - 19, s.x + 96, s.y - 19, withAlpha(def.ink, .28), 3);
-          text(ctx, socialCounts[idx][0], s.x + 10, s.y + s.h + 20, 8.5, withAlpha(def.ink, .72), 800, 'left');
-          text(ctx, socialCounts[idx][1], s.x + s.w - 10, s.y + s.h + 20, 8.5, withAlpha(def.ink, .72), 800, 'right');
+          roundRect(ctx, s.x - 8, s.y - 34, s.w + 16, 26, 13, withAlpha('#ffffff', .9), withAlpha(def.accent2, .24), 1);
+          circle(ctx, s.x + 16, s.y - 21, 7, def.accent);
+          line(ctx, s.x + 30, s.y - 21, s.x + 110, s.y - 21, withAlpha(def.ink, .28), 3.2);
+          text(ctx, socialCounts[idx][0], s.x + 10, s.y + s.h + 24, 10, withAlpha(def.ink, .76), 800, 'left');
+          text(ctx, socialCounts[idx][1], s.x + s.w - 10, s.y + s.h + 24, 10, withAlpha(def.ink, .76), 800, 'right');
         } else if (def.motif === 'youtube') {
-          roundRect(ctx, s.x + 10, s.y + s.h - 28, 54, 16, 8, def.accent);
-          text(ctx, 'PLAY', s.x + 37, s.y + s.h - 16, 9, '#fff', 900);
-          text(ctx, idx === 0 ? '10k views' : idx === 1 ? '18k views' : idx === 2 ? '25k views' : '31k views', s.x + s.w - 10, s.y + s.h + 18, 9, withAlpha(def.ink, .72), 800, 'right');
+          roundRect(ctx, s.x + 12, s.y + s.h - 30, 66, 20, 10, def.accent);
+          text(ctx, 'PLAY', s.x + 45, s.y + s.h - 16, 10.5, '#fff', 900);
+          text(ctx, ['10k views','18k views','31k views'][idx], s.x + s.w - 10, s.y + s.h + 22, 10, withAlpha(def.ink, .76), 800, 'right');
         } else if (def.motif === 'music') {
-          roundRect(ctx, s.x + 12, s.y + s.h - 24, s.w - 24, 8, 4, withAlpha(def.ink, .14));
-          roundRect(ctx, s.x + 12, s.y + s.h - 24, (s.w - 24) * (.25 + idx * .15), 8, 4, def.accent);
-          text(ctx, ['0:18','0:44','1:12','1:58'][idx], s.x + s.w - 12, s.y + 18, 9, withAlpha(def.ink, .74), 800, 'right');
+          roundRect(ctx, s.x + 12, s.y + s.h - 26, s.w - 24, 9, 5, withAlpha(def.ink, .14));
+          roundRect(ctx, s.x + 12, s.y + s.h - 26, (s.w - 24) * ([.28, .52, .76][idx]), 9, 5, def.accent);
+          text(ctx, ['0:18','0:58','1:42'][idx], s.x + s.w - 12, s.y + 18, 10, withAlpha(def.ink, .74), 800, 'right');
         } else if (def.motif === 'chat') {
-          roundRect(ctx, s.x + s.w - 84, s.y + 10, 68, 18, 9, withAlpha(def.accent, .22), withAlpha(def.accent, .32), 1);
-          text(ctx, idx % 2 ? 'typing...' : 'seen', s.x + s.w - 50, s.y + 23, 8, def.ink, 700);
+          roundRect(ctx, s.x + s.w - 94, s.y + 10, 78, 20, 10, withAlpha(def.accent, .22), withAlpha(def.accent, .32), 1);
+          text(ctx, idx % 2 ? 'typing...' : 'seen', s.x + s.w - 55, s.y + 24, 9, def.ink, 700);
         } else if (def.motif === 'tiktok') {
-          text(ctx, '♪', s.x + 14, s.y + 18, 16, def.accent);
-          text(ctx, socialCounts[idx][0], s.x + s.w - 12, s.y + s.h - 12, 9, '#ffffff', 800, 'right');
+          text(ctx, '♪', s.x + 16, s.y + 20, 18, def.accent);
+          text(ctx, socialCounts[idx][0], s.x + s.w - 12, s.y + s.h - 14, 10.5, '#ffffff', 800, 'right');
         } else if (def.motif === 'iphone' || def.motif === 'cameraRoll') {
-          text(ctx, idx === 0 ? 'LIVE' : idx === 1 ? 'HDR' : idx === 2 ? 'RAW' : 'RECENT', s.x + s.w - 14, s.y + 16, 9, def.ink, 800, 'right');
-          text(ctx, ['1 Jun','4 Jun','7 Jun','10 Jun'][idx], s.x + 12, s.y + s.h + 18, 9, withAlpha(def.ink, .72), 800, 'left');
+          text(ctx, ['LIVE','HDR','RAW'][idx], s.x + s.w - 14, s.y + 18, 10, def.ink, 800, 'right');
+          text(ctx, ['1 Jun','6 Jun','10 Jun'][idx], s.x + 12, s.y + s.h + 22, 10, withAlpha(def.ink, .72), 800, 'left');
         } else {
-          text(ctx, socialCounts[idx][0], s.x + 10, s.y + s.h + 18, 8.5, withAlpha(def.ink, .72), 800, 'left');
-          text(ctx, socialCounts[idx][1], s.x + s.w - 10, s.y + s.h + 18, 8.5, withAlpha(def.ink, .72), 800, 'right');
+          text(ctx, socialCounts[idx][0], s.x + 10, s.y + s.h + 22, 10, withAlpha(def.ink, .76), 800, 'left');
+          text(ctx, socialCounts[idx][1], s.x + s.w - 10, s.y + s.h + 22, 10, withAlpha(def.ink, .76), 800, 'right');
         }
       } else {
         corners.forEach(([cx, cy], cidx) => {
@@ -1618,13 +1619,14 @@
             : ['P1','P2','P3'][idx];
           text(ctx, gamingGap, FRAME_W / 2, gapY + 1, 12, def.ink, 900);
         } else if (def.category === 'Social Media') {
-          const socialGap = def.motif === 'youtube' ? ['10k views','18k views','31k views'][idx]
-            : def.motif === 'tiktok' ? ['12k likes','904 chats','122 saves'][idx]
-            : def.motif === 'music' ? ['now playing','most replayed','saved track'][idx]
-            : def.motif === 'iphone' || def.motif === 'cameraRoll' ? ['fave shot','camera roll','best angle'][idx]
-            : ['1.2k likes','302 chats','87 saves'][idx];
-          roundRect(ctx, FRAME_W / 2 - 70, gapY - 12, 140, 24, 10, withAlpha(def.accent, .1), withAlpha(def.accent2, .28), 1.2);
-          text(ctx, socialGap, FRAME_W / 2, gapY + 1, 10.5, def.ink, 800);
+          const socialGap = def.motif === 'youtube' ? ['posted 2d ago','watch next ✨'][idx]
+            : def.motif === 'tiktok' ? ['on your fyp','saved to favorites'][idx]
+            : def.motif === 'music' ? ['now playing','repeat-worthy'][idx]
+            : def.motif === 'iphone' || def.motif === 'cameraRoll' ? ['camera roll','best angle only'][idx]
+            : def.motif === 'chat' ? ['group chat chaos','bestie approved'][idx]
+            : ['soft launch energy','too pretty to scroll past'][idx];
+          roundRect(ctx, FRAME_W / 2 - 98, gapY - 14, 196, 28, 12, withAlpha(def.accent, .1), withAlpha(def.accent2, .28), 1.2);
+          text(ctx, socialGap, FRAME_W / 2, gapY + 1, 12, def.ink, 800);
         } else {
           text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 20, withAlpha(def.accent2, .92));
           line(ctx, 110, gapY, FRAME_W / 2 - 26, gapY, withAlpha(def.accent, .24), 1.5);

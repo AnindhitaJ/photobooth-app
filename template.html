@@ -210,7 +210,14 @@
   </div>
 
 <script>
-  // ─── Frame Basic: 4 slot (5×15cm = 591×1772px) ───
+  // ─── Built-in Frames: 4 slot (5×15cm = 591×1772px) ───
+  const FRAME_W = 591;
+  const FRAME_H = 1772;
+  const FRAME_PADDING = 20;
+  const FRAME_GAP = 12;
+  const FRAME_SLOTS = 4;
+  const FRAME_FOOTER_H = 90;
+
   const FRAME_COLORS = [
     { label: 'Putih',     bg: '#ffffff',   text: '#1D3557' },
     { label: 'Hitam',     bg: '#1D3557',   text: '#ffffff' },
@@ -225,49 +232,477 @@
   ];
   let selectedFrameColor = FRAME_COLORS[0];
 
+  const BUILTIN_CATEGORIES = [
+    'Korean 🇰🇷',
+    'Film 🎞️',
+    'Elegant ✨',
+    'Floral 🌸',
+    'Seasonal 🎉',
+    'Gaming 🎮',
+    'Pattern 🟣',
+    'Social Media 📱'
+  ];
+
+  const BUILTIN_FRAME_DEFS = [
+    // Korean
+    { id:'korean_lavender_cloud', category:'Korean 🇰🇷', name:'Lavender Cloud', bg:'#f5efff', accent:'#a78bfa', accent2:'#f9a8d4', ink:'#6d5b8d', motif:'cloud' },
+    { id:'korean_pink_diary', category:'Korean 🇰🇷', name:'Pink Diary', bg:'#fff1f7', accent:'#fb7185', accent2:'#fbcfe8', ink:'#9f3a58', motif:'diary' },
+    { id:'korean_cherry_blossom', category:'Korean 🇰🇷', name:'Cherry Blossom', bg:'#fff7f9', accent:'#f472b6', accent2:'#fecdd3', ink:'#a21caf', motif:'sakura' },
+    { id:'korean_coquette_ribbon', category:'Korean 🇰🇷', name:'Coquette Ribbon', bg:'#fff7ed', accent:'#f9a8d4', accent2:'#fde68a', ink:'#9d174d', motif:'ribbon' },
+    { id:'korean_milk_tea', category:'Korean 🇰🇷', name:'Milk Tea', bg:'#fff7ed', accent:'#c08457', accent2:'#f3d7b6', ink:'#7c4a2d', motif:'latte' },
+    { id:'korean_cream_beige', category:'Korean 🇰🇷', name:'Cream Beige', bg:'#faf3e8', accent:'#d6a86c', accent2:'#fff7d6', ink:'#76512a', motif:'clean' },
+    { id:'korean_matcha_latte', category:'Korean 🇰🇷', name:'Matcha Latte', bg:'#f3fae8', accent:'#86a86b', accent2:'#d9f99d', ink:'#3f6212', motif:'latte' },
+    { id:'korean_sky_blue', category:'Korean 🇰🇷', name:'Sky Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1e40af', motif:'cloud' },
+    { id:'korean_campus_day', category:'Korean 🇰🇷', name:'Campus Day', bg:'#f8fafc', accent:'#1d4ed8', accent2:'#facc15', ink:'#0f172a', motif:'campus' },
+    { id:'korean_heart_stamp', category:'Korean 🇰🇷', name:'Heart Stamp', bg:'#fff1f2', accent:'#e11d48', accent2:'#fecdd3', ink:'#881337', motif:'stamp' },
+
+    // Film
+    { id:'film_retro_film', category:'Film 🎞️', name:'Retro Film', bg:'#171717', accent:'#f59e0b', accent2:'#faf3dd', ink:'#ffffff', motif:'film' },
+    { id:'film_kodak_yellow', category:'Film 🎞️', name:'Kodak Yellow', bg:'#facc15', accent:'#ef4444', accent2:'#111827', ink:'#111827', motif:'film' },
+    { id:'film_analog_brown', category:'Film 🎞️', name:'Analog Brown', bg:'#5a3e2b', accent:'#f4d7a1', accent2:'#a16207', ink:'#fff7ed', motif:'grain' },
+    { id:'film_vintage_camera', category:'Film 🎞️', name:'Vintage Camera', bg:'#f5e4c3', accent:'#78350f', accent2:'#d97706', ink:'#422006', motif:'camera' },
+    { id:'film_roll_black', category:'Film 🎞️', name:'Film Roll Black', bg:'#030712', accent:'#f8fafc', accent2:'#525252', ink:'#ffffff', motif:'film' },
+    { id:'film_polaroid_cream', category:'Film 🎞️', name:'Polaroid Cream', bg:'#fff7ed', accent:'#0f172a', accent2:'#f97316', ink:'#0f172a', motif:'polaroid' },
+    { id:'film_dust_grain', category:'Film 🎞️', name:'Dust & Grain', bg:'#262626', accent:'#e7d8b2', accent2:'#a3a3a3', ink:'#fafafa', motif:'grain' },
+    { id:'film_cinema_frame', category:'Film 🎞️', name:'Cinema Frame', bg:'#111827', accent:'#eab308', accent2:'#7f1d1d', ink:'#fef3c7', motif:'cinema' },
+    { id:'film_disposable_camera', category:'Film 🎞️', name:'Disposable Camera', bg:'#d9f99d', accent:'#84cc16', accent2:'#111827', ink:'#1a2e05', motif:'camera' },
+    { id:'film_old_memory', category:'Film 🎞️', name:'Old Memory', bg:'#e7d2b0', accent:'#92400e', accent2:'#fef3c7', ink:'#451a03', motif:'vintage' },
+
+    // Elegant
+    { id:'elegant_black_gold', category:'Elegant ✨', name:'Black Gold', bg:'#050505', accent:'#d6b56d', accent2:'#fff7d6', ink:'#fff7d6', motif:'luxury' },
+    { id:'elegant_white_gold', category:'Elegant ✨', name:'White Gold', bg:'#ffffff', accent:'#c8a24a', accent2:'#f7e7b5', ink:'#5f4505', motif:'luxury' },
+    { id:'elegant_rose_gold', category:'Elegant ✨', name:'Rose Gold', bg:'#fff1f2', accent:'#b76e79', accent2:'#f9a8d4', ink:'#7f1d1d', motif:'pearl' },
+    { id:'elegant_silver_pearl', category:'Elegant ✨', name:'Silver Pearl', bg:'#f8fafc', accent:'#94a3b8', accent2:'#e2e8f0', ink:'#334155', motif:'pearl' },
+    { id:'elegant_emerald_luxury', category:'Elegant ✨', name:'Emerald Luxury', bg:'#022c22', accent:'#d1b464', accent2:'#10b981', ink:'#fef3c7', motif:'luxury' },
+    { id:'elegant_royal_navy', category:'Elegant ✨', name:'Royal Navy', bg:'#0f172a', accent:'#d6b56d', accent2:'#1e3a8a', ink:'#f8fafc', motif:'royal' },
+    { id:'elegant_champagne_gold', category:'Elegant ✨', name:'Champagne Gold', bg:'#fbf1d3', accent:'#b58935', accent2:'#fff7d6', ink:'#65420c', motif:'pearl' },
+    { id:'elegant_luxury_marble', category:'Elegant ✨', name:'Luxury Marble', bg:'#f8f5f0', accent:'#bfa26a', accent2:'#d1d5db', ink:'#3f3f46', motif:'marble' },
+    { id:'elegant_midnight_black', category:'Elegant ✨', name:'Midnight Black', bg:'#020617', accent:'#c084fc', accent2:'#f5d76e', ink:'#f8fafc', motif:'stars' },
+    { id:'elegant_wedding_elegant', category:'Elegant ✨', name:'Wedding Elegant', bg:'#fffaf0', accent:'#d6b56d', accent2:'#fecdd3', ink:'#7c2d12', motif:'wedding' },
+
+    // Floral
+    { id:'floral_sakura_garden', category:'Floral 🌸', name:'Sakura Garden', bg:'#fff1f7', accent:'#f472b6', accent2:'#fecdd3', ink:'#9d174d', motif:'sakura' },
+    { id:'floral_blue_rose', category:'Floral 🌸', name:'Blue Rose', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bfdbfe', ink:'#1e3a8a', motif:'rose' },
+    { id:'floral_sunflower_day', category:'Floral 🌸', name:'Sunflower Day', bg:'#fff7ed', accent:'#facc15', accent2:'#854d0e', ink:'#713f12', motif:'sunflower' },
+    { id:'floral_lavender_bloom', category:'Floral 🌸', name:'Lavender Bloom', bg:'#f5f3ff', accent:'#a78bfa', accent2:'#ddd6fe', ink:'#5b21b6', motif:'lavender' },
+    { id:'floral_daisy_field', category:'Floral 🌸', name:'Daisy Field', bg:'#f0fdf4', accent:'#fef08a', accent2:'#86efac', ink:'#166534', motif:'daisy' },
+    { id:'floral_pink_peony', category:'Floral 🌸', name:'Pink Peony', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#be123c', motif:'peony' },
+    { id:'floral_botanical_green', category:'Floral 🌸', name:'Botanical Green', bg:'#ecfdf5', accent:'#10b981', accent2:'#bbf7d0', ink:'#065f46', motif:'leaf' },
+    { id:'floral_wild_flower', category:'Floral 🌸', name:'Wild Flower', bg:'#fff7ed', accent:'#f97316', accent2:'#a7f3d0', ink:'#9a3412', motif:'wild' },
+    { id:'floral_hydrangea_dream', category:'Floral 🌸', name:'Hydrangea Dream', bg:'#eef2ff', accent:'#818cf8', accent2:'#f0abfc', ink:'#3730a3', motif:'hydrangea' },
+    { id:'floral_spring_blossom', category:'Floral 🌸', name:'Spring Blossom', bg:'#fdf2f8', accent:'#f9a8d4', accent2:'#bef264', ink:'#9d174d', motif:'spring' },
+
+    // Seasonal
+    { id:'seasonal_birthday_party', category:'Seasonal 🎉', name:'Birthday Party', bg:'#fff7ed', accent:'#fb7185', accent2:'#60a5fa', ink:'#7c2d12', motif:'birthday' },
+    { id:'seasonal_graduation_day', category:'Seasonal 🎉', name:'Graduation Day', bg:'#f8fafc', accent:'#0f172a', accent2:'#facc15', ink:'#0f172a', motif:'graduation' },
+    { id:'seasonal_christmas', category:'Seasonal 🎉', name:'Christmas', bg:'#064e3b', accent:'#ef4444', accent2:'#fef3c7', ink:'#fefce8', motif:'christmas' },
+    { id:'seasonal_valentine', category:'Seasonal 🎉', name:'Valentine', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#9f1239', motif:'valentine' },
+    { id:'seasonal_halloween', category:'Seasonal 🎉', name:'Halloween', bg:'#2e1065', accent:'#f97316', accent2:'#111827', ink:'#fef3c7', motif:'halloween' },
+    { id:'seasonal_eid_mubarak', category:'Seasonal 🎉', name:'Eid Mubarak', bg:'#ecfdf5', accent:'#10b981', accent2:'#facc15', ink:'#065f46', motif:'eid' },
+    { id:'seasonal_new_year_party', category:'Seasonal 🎉', name:'New Year Party', bg:'#020617', accent:'#facc15', accent2:'#a78bfa', ink:'#f8fafc', motif:'newyear' },
+    { id:'seasonal_summer_vacation', category:'Seasonal 🎉', name:'Summer Vacation', bg:'#ecfeff', accent:'#06b6d4', accent2:'#f97316', ink:'#155e75', motif:'summer' },
+    { id:'seasonal_autumn_leaves', category:'Seasonal 🎉', name:'Autumn Leaves', bg:'#fff7ed', accent:'#ea580c', accent2:'#facc15', ink:'#7c2d12', motif:'autumn' },
+    { id:'seasonal_winter_snow', category:'Seasonal 🎉', name:'Winter Snow', bg:'#eff6ff', accent:'#93c5fd', accent2:'#e0f2fe', ink:'#1e3a8a', motif:'winter' },
+
+    // Gaming
+    { id:'gaming_pixel_quest', category:'Gaming 🎮', name:'Pixel Quest', bg:'#111827', accent:'#22c55e', accent2:'#facc15', ink:'#f8fafc', motif:'pixel' },
+    { id:'gaming_arcade_neon', category:'Gaming 🎮', name:'Arcade Neon', bg:'#12002f', accent:'#22d3ee', accent2:'#f97316', ink:'#f0abfc', motif:'arcade' },
+    { id:'gaming_rpg_character', category:'Gaming 🎮', name:'RPG Character', bg:'#1e1b4b', accent:'#a78bfa', accent2:'#facc15', ink:'#ede9fe', motif:'rpg' },
+    { id:'gaming_cyber_gamer', category:'Gaming 🎮', name:'Cyber Gamer', bg:'#020617', accent:'#00f5ff', accent2:'#ff2bd6', ink:'#e0f2fe', motif:'cyber' },
+    { id:'gaming_fantasy_world', category:'Gaming 🎮', name:'Fantasy World', bg:'#064e3b', accent:'#a7f3d0', accent2:'#d6b56d', ink:'#ecfdf5', motif:'fantasy' },
+    { id:'gaming_magic_academy', category:'Gaming 🎮', name:'Magic Academy', bg:'#312e81', accent:'#facc15', accent2:'#c084fc', ink:'#ede9fe', motif:'magic' },
+    { id:'gaming_space_battle', category:'Gaming 🎮', name:'Space Battle', bg:'#020617', accent:'#38bdf8', accent2:'#f472b6', ink:'#f8fafc', motif:'space' },
+    { id:'gaming_monster_hunter', category:'Gaming 🎮', name:'Monster Hunter', bg:'#1f2937', accent:'#84cc16', accent2:'#ef4444', ink:'#f9fafb', motif:'monster' },
+    { id:'gaming_dungeon_explorer', category:'Gaming 🎮', name:'Dungeon Explorer', bg:'#292524', accent:'#d97706', accent2:'#a3e635', ink:'#fafaf9', motif:'dungeon' },
+    { id:'gaming_retro_console', category:'Gaming 🎮', name:'Retro Console', bg:'#f3f4f6', accent:'#ef4444', accent2:'#3b82f6', ink:'#111827', motif:'console' },
+
+    // Pattern
+    { id:'pattern_polkadot_pink', category:'Pattern 🟣', name:'Polkadot Pink', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#9f1239', motif:'polkadot' },
+    { id:'pattern_polkadot_blue', category:'Pattern 🟣', name:'Polkadot Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1d4ed8', motif:'polkadot' },
+    { id:'pattern_candy_stripe', category:'Pattern 🟣', name:'Candy Stripe', bg:'#ffffff', accent:'#fb7185', accent2:'#fbcfe8', ink:'#be123c', motif:'stripe' },
+    { id:'pattern_rainbow_stripe', category:'Pattern 🟣', name:'Rainbow Stripe', bg:'#fefce8', accent:'#f97316', accent2:'#22c55e', ink:'#7c2d12', motif:'rainbow' },
+    { id:'pattern_checkerboard', category:'Pattern 🟣', name:'Checkerboard', bg:'#ffffff', accent:'#111827', accent2:'#f3f4f6', ink:'#111827', motif:'checker' },
+    { id:'pattern_gingham_pink', category:'Pattern 🟣', name:'Gingham Pink', bg:'#fff1f2', accent:'#f9a8d4', accent2:'#ffffff', ink:'#9f1239', motif:'gingham' },
+    { id:'pattern_gingham_blue', category:'Pattern 🟣', name:'Gingham Blue', bg:'#eff6ff', accent:'#93c5fd', accent2:'#ffffff', ink:'#1e40af', motif:'gingham' },
+    { id:'pattern_notebook_grid', category:'Pattern 🟣', name:'Notebook Grid', bg:'#f8fafc', accent:'#93c5fd', accent2:'#fca5a5', ink:'#334155', motif:'grid' },
+    { id:'pattern_star_pattern', category:'Pattern 🟣', name:'Star Pattern', bg:'#111827', accent:'#facc15', accent2:'#60a5fa', ink:'#f8fafc', motif:'stars' },
+    { id:'pattern_heart_pattern', category:'Pattern 🟣', name:'Heart Pattern', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#881337', motif:'heart' },
+
+    // Social Media
+    { id:'social_instagram_feed', category:'Social Media 📱', name:'Instagram Feed', bg:'#ffffff', accent:'#e1306c', accent2:'#f9a8d4', ink:'#111827', motif:'igfeed' },
+    { id:'social_instagram_story', category:'Social Media 📱', name:'Instagram Story', bg:'#111827', accent:'#e1306c', accent2:'#facc15', ink:'#ffffff', motif:'igstory' },
+    { id:'social_tiktok_creator', category:'Social Media 📱', name:'TikTok Creator', bg:'#020617', accent:'#00f2ea', accent2:'#ff0050', ink:'#ffffff', motif:'tiktok' },
+    { id:'social_youtube_vlog', category:'Social Media 📱', name:'YouTube Vlog', bg:'#ffffff', accent:'#ff0000', accent2:'#111827', ink:'#111827', motif:'youtube' },
+    { id:'social_iphone_gallery', category:'Social Media 📱', name:'iPhone Gallery', bg:'#f8fafc', accent:'#007aff', accent2:'#e5e7eb', ink:'#111827', motif:'iphone' },
+    { id:'social_camera_roll', category:'Social Media 📱', name:'Camera Roll', bg:'#111827', accent:'#f8fafc', accent2:'#64748b', ink:'#f8fafc', motif:'cameraRoll' },
+    { id:'social_music_player', category:'Social Media 📱', name:'Music Player', bg:'#ecfdf5', accent:'#22c55e', accent2:'#111827', ink:'#052e16', motif:'music' },
+    { id:'social_chat_bubble', category:'Social Media 📱', name:'Chat Bubble', bg:'#eff6ff', accent:'#60a5fa', accent2:'#dbeafe', ink:'#1e3a8a', motif:'chat' },
+    { id:'social_profile', category:'Social Media 📱', name:'Social Profile', bg:'#f8fafc', accent:'#8b5cf6', accent2:'#f9a8d4', ink:'#312e81', motif:'profile' },
+    { id:'social_viral_post', category:'Social Media 📱', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
+  ];
+
+  const builtInCache = new Map();
+
+  function generateBasicSlots() {
+    const slotH = Math.floor((FRAME_H - FRAME_PADDING * 2 - FRAME_GAP * (FRAME_SLOTS - 1) - FRAME_FOOTER_H) / FRAME_SLOTS);
+    const slotW = FRAME_W - FRAME_PADDING * 2;
+    const slots = [];
+    for (let i = 0; i < FRAME_SLOTS; i++) {
+      slots.push({ x: FRAME_PADDING, y: FRAME_PADDING + i * (slotH + FRAME_GAP), w: slotW, h: slotH });
+    }
+    return slots;
+  }
+
+  function withAlpha(hex, alpha) {
+    const h = (hex || '#000000').replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke, lw = 2) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); }
+  }
+
+  function circle(ctx, x, y, r, color, stroke) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    if (color) { ctx.fillStyle = color; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+
+  function text(ctx, value, x, y, size, color, weight = 900, align = 'center') {
+    ctx.save();
+    ctx.font = `${weight} ${size}px 'Trebuchet MS', 'Segoe UI', Arial, sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(value, x, y);
+    ctx.restore();
+  }
+
+  function line(ctx, x1, y1, x2, y2, color, width = 3) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.stroke();
+  }
+
+  function drawStar(ctx, x, y, r, color, points = 5) {
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const rr = i % 2 === 0 ? r : r * 0.42;
+      const a = -Math.PI / 2 + i * Math.PI / points;
+      const px = x + Math.cos(a) * rr;
+      const py = y + Math.sin(a) * rr;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBow(ctx, x, y, color, lineColor) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = lineColor || color;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(x - 18, y, 20, 12, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x + 18, y, 20, 12, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    circle(ctx, x, y, 8, lineColor || '#fff');
+    ctx.restore();
+  }
+
+  function drawConfetti(ctx, def, count = 80) {
+    const colors = [def.accent, def.accent2, withAlpha(def.ink, .65), '#ffffff'];
+    for (let i = 0; i < count; i++) {
+      const x = (i * 73) % FRAME_W;
+      const y = (i * 137) % FRAME_H;
+      const c = colors[i % colors.length];
+      if ((x > 80 && x < FRAME_W - 80) && (y > 30 && y < FRAME_H - 120)) continue;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((i % 9) * .35);
+      ctx.fillStyle = c;
+      if (i % 3 === 0) ctx.fillRect(-4, -10, 8, 20);
+      else if (i % 3 === 1) circle(ctx, 0, 0, 5, c);
+      else drawStar(ctx, 0, 0, 7, c, 4);
+      ctx.restore();
+    }
+  }
+
+  function drawPatternBg(ctx, def) {
+    if (def.motif === 'stripe' || def.motif === 'rainbow') {
+      const colors = def.motif === 'rainbow' ? ['#f87171','#fbbf24','#34d399','#60a5fa','#c084fc'] : [def.accent, def.accent2];
+      for (let y = -FRAME_H; y < FRAME_H * 2; y += 52) {
+        ctx.save(); ctx.translate(FRAME_W / 2, FRAME_H / 2); ctx.rotate(-0.35); ctx.translate(-FRAME_W / 2, -FRAME_H / 2);
+        ctx.fillStyle = colors[Math.abs(Math.floor(y / 52)) % colors.length];
+        ctx.globalAlpha = .75;
+        ctx.fillRect(-200, y, FRAME_W + 400, 24);
+        ctx.restore();
+      }
+    }
+    if (def.motif === 'polkadot') {
+      for (let y = 40; y < FRAME_H; y += 78) {
+        for (let x = 28; x < FRAME_W; x += 78) {
+          circle(ctx, x + ((Math.floor(y / 78) % 2) * 32), y, 13, withAlpha(def.accent, .55));
+          circle(ctx, x + 18, y + 26, 6, withAlpha(def.accent2, .75));
+        }
+      }
+    }
+    if (def.motif === 'checker') {
+      const s = 42;
+      for (let y = 0; y < FRAME_H; y += s) for (let x = 0; x < FRAME_W; x += s) {
+        ctx.fillStyle = ((x / s + y / s) % 2) ? def.accent : def.accent2;
+        ctx.globalAlpha = .25; ctx.fillRect(x, y, s, s); ctx.globalAlpha = 1;
+      }
+    }
+    if (def.motif === 'gingham') {
+      ctx.globalAlpha = .35;
+      for (let x = 0; x < FRAME_W; x += 52) { ctx.fillStyle = def.accent; ctx.fillRect(x, 0, 26, FRAME_H); }
+      for (let y = 0; y < FRAME_H; y += 52) { ctx.fillStyle = def.accent; ctx.fillRect(0, y, FRAME_W, 26); }
+      ctx.globalAlpha = 1;
+    }
+    if (def.motif === 'grid') {
+      ctx.strokeStyle = withAlpha(def.accent, .45); ctx.lineWidth = 1.5;
+      for (let x = 28; x < FRAME_W; x += 36) line(ctx, x, 0, x, FRAME_H, withAlpha(def.accent, .35), 1);
+      for (let y = 28; y < FRAME_H; y += 36) line(ctx, 0, y, FRAME_W, y, withAlpha(def.accent, .35), 1);
+      line(ctx, 72, 0, 72, FRAME_H, def.accent2, 4);
+    }
+  }
+
+  function drawFilmDecor(ctx, def) {
+    const dark = def.bg === '#facc15' || def.bg === '#f5e4c3' || def.bg === '#fff7ed' || def.bg === '#e7d2b0' || def.bg === '#d9f99d';
+    const side = dark ? withAlpha(def.ink, .65) : withAlpha('#ffffff', .9);
+    for (let y = 28; y < FRAME_H - 96; y += 68) {
+      roundRect(ctx, 8, y, 18, 34, 4, side);
+      roundRect(ctx, FRAME_W - 26, y, 18, 34, 4, side);
+    }
+    for (let i = 0; i < 150; i++) {
+      const x = (i * 47) % FRAME_W, y = (i * 89) % FRAME_H;
+      circle(ctx, x, y, (i % 3) + 1, withAlpha(def.accent2, .22));
+    }
+    text(ctx, '35mm', 74, 52, 24, def.ink, 900, 'left');
+    text(ctx, 'FRAME 04', FRAME_W - 74, FRAME_H - 52, 22, def.ink, 900, 'right');
+    if (def.motif === 'camera' || def.motif === 'polaroid') {
+      roundRect(ctx, 408, 34, 96, 52, 12, withAlpha(def.accent, .9), withAlpha(def.ink, .45), 3);
+      circle(ctx, 442, 60, 15, withAlpha(def.ink, .85));
+      roundRect(ctx, 466, 48, 24, 12, 5, withAlpha(def.accent2, .85));
+    }
+    if (def.motif === 'cinema') {
+      for (let x = 80; x < FRAME_W - 80; x += 70) drawStar(ctx, x, 54, 14, def.accent, 4);
+      text(ctx, 'CINEMA', FRAME_W - 62, FRAME_H - 50, 22, def.accent, 900, 'right');
+    }
+  }
+
+  function drawKoreanDecor(ctx, def) {
+    for (let y = 84; y < FRAME_H - 120; y += 175) {
+      const side = (y / 175) % 2 > 1 ? FRAME_W - 42 : 42;
+      if (def.motif === 'cloud') {
+        circle(ctx, side - 12, y, 18, withAlpha('#ffffff', .75));
+        circle(ctx, side + 10, y - 8, 22, withAlpha('#ffffff', .75));
+        circle(ctx, side + 28, y, 17, withAlpha('#ffffff', .75));
+      } else if (def.motif === 'ribbon') drawBow(ctx, side, y, withAlpha(def.accent, .75), def.ink);
+      else if (def.motif === 'sakura') {
+        for (let k = 0; k < 5; k++) circle(ctx, side + Math.cos(k*1.26)*12, y + Math.sin(k*1.26)*12, 9, withAlpha(def.accent, .65));
+        circle(ctx, side, y, 5, def.accent2);
+      } else {
+        text(ctx, ['♡','✦','✿','⋆'][Math.floor(y/175)%4], side, y, 34, def.accent);
+      }
+    }
+    roundRect(ctx, 70, 25, 132, 42, 22, withAlpha('#ffffff', .60), withAlpha(def.accent, .45), 2);
+    text(ctx, 'TODAY', 136, 47, 18, def.ink, 900);
+    text(ctx, '♡', FRAME_W - 70, 47, 30, def.accent);
+    drawConfetti(ctx, def, 34);
+  }
+
+  function drawElegantDecor(ctx, def) {
+    roundRect(ctx, 13, 13, FRAME_W - 26, FRAME_H - 26, 32, null, def.accent, 5);
+    roundRect(ctx, 34, 34, FRAME_W - 68, FRAME_H - 68, 26, null, withAlpha(def.accent2, .65), 2);
+    const corners = [[55,55],[FRAME_W-55,55],[55,FRAME_H-55],[FRAME_W-55,FRAME_H-55]];
+    corners.forEach(([x,y],i)=>{
+      drawStar(ctx, x, y, 16, def.accent, 4);
+      circle(ctx, x + (i%2? -26:26), y, 6, def.accent2);
+      circle(ctx, x, y + (i>1? -26:26), 6, def.accent2);
+    });
+    for (let y = 140; y < FRAME_H - 140; y += 90) {
+      circle(ctx, 42, y, 5, withAlpha(def.accent, .8));
+      circle(ctx, FRAME_W - 42, y, 5, withAlpha(def.accent, .8));
+    }
+    if (def.motif === 'marble') {
+      for (let i=0;i<12;i++) {
+        ctx.beginPath();
+        ctx.strokeStyle = withAlpha(i%2?def.accent:def.accent2, .45); ctx.lineWidth = 2;
+        const y = 90 + i * 135;
+        ctx.moveTo(20, y); ctx.bezierCurveTo(160, y-90, 290, y+90, 560, y-20); ctx.stroke();
+      }
+    }
+    text(ctx, 'LUXE', FRAME_W/2, 58, 25, def.accent, 900);
+    text(ctx, '✦', 64, FRAME_H - 52, 22, def.accent2, 900);
+    text(ctx, '✦', FRAME_W - 64, FRAME_H - 52, 22, def.accent2, 900);
+  }
+
+  function drawFloralDecor(ctx, def) {
+    function flower(x,y,scale=1) {
+      for (let k=0;k<6;k++) circle(ctx, x+Math.cos(k*1.047)*12*scale, y+Math.sin(k*1.047)*12*scale, 8*scale, withAlpha(def.accent, .75));
+      circle(ctx, x, y, 6*scale, def.accent2);
+    }
+    for (let y = 70; y < FRAME_H - 115; y += 95) {
+      const x1 = 34 + Math.sin(y*.02)*8;
+      const x2 = FRAME_W - 34 + Math.cos(y*.02)*8;
+      circle(ctx, x1, y, 6, withAlpha(def.accent2, .8));
+      circle(ctx, x2, y, 6, withAlpha(def.accent2, .8));
+      line(ctx, x1, y - 34, x1, y + 34, withAlpha(def.ink, .18), 2);
+      line(ctx, x2, y - 34, x2, y + 34, withAlpha(def.ink, .18), 2);
+      if (y % 190 < 95) { flower(x1, y, .75); flower(x2, y + 30, .65); }
+    }
+    for (let x = 75; x < FRAME_W - 75; x += 74) flower(x, 48, .72);
+    for (let x = 82; x < FRAME_W - 75; x += 84) flower(x, FRAME_H - 52, .65);
+    text(ctx, 'BLOOM', FRAME_W - 54, FRAME_H - 50, 18, def.ink, 900, 'right');
+  }
+
+  function drawSeasonalDecor(ctx, def) {
+    drawConfetti(ctx, def, 96);
+    const motifIcons = {
+      birthday:['🎂','🎈','✦'], graduation:['🎓','★','✦'], christmas:['🎄','✦','●'], valentine:['♡','♥','✦'], halloween:['☾','★','◆'], eid:['☾','✦','★'], newyear:['✦','★','✺'], summer:['☀','✦','○'], autumn:['🍂','◆','✦'], winter:['❄','✦','○']
+    };
+    const icons = motifIcons[def.motif] || ['✦','★','○'];
+    for (let y=90;y<FRAME_H-120;y+=150) {
+      text(ctx, icons[(y/150|0)%icons.length], 44, y, 31, def.accent);
+      text(ctx, icons[(y/150+1|0)%icons.length], FRAME_W-44, y+45, 31, def.accent2);
+    }
+    roundRect(ctx, 70, 28, FRAME_W - 140, 52, 26, withAlpha('#ffffff', .35), withAlpha(def.accent, .65), 2);
+    text(ctx, def.name.toUpperCase().slice(0, 18), FRAME_W/2, 55, 19, def.ink, 900);
+  }
+
+  function drawGamingDecor(ctx, def) {
+    for (let y=40;y<FRAME_H-100;y+=72) {
+      for (let x of [20, FRAME_W-44]) {
+        ctx.fillStyle = (Math.floor(y/72)%2) ? def.accent : def.accent2;
+        ctx.globalAlpha = .9; ctx.fillRect(x, y, 24, 24); ctx.globalAlpha = 1;
+      }
+    }
+    roundRect(ctx, 52, 32, 170, 40, 8, withAlpha(def.accent, .28), def.accent, 3);
+    text(ctx, 'HP ▰▰▰▰', 137, 53, 17, def.ink, 900);
+    roundRect(ctx, FRAME_W - 220, 32, 168, 40, 8, withAlpha(def.accent2, .25), def.accent2, 3);
+    text(ctx, 'LV. 99', FRAME_W - 136, 53, 17, def.ink, 900);
+    for (let i=0;i<42;i++) {
+      const x=(i*97)%FRAME_W, y=(i*167)%FRAME_H;
+      if (x>80 && x<FRAME_W-80) continue;
+      drawStar(ctx,x,y,8+(i%3)*2,i%2?def.accent:def.accent2,4);
+    }
+    text(ctx, 'PRESS START', FRAME_W - 48, FRAME_H-50, 18, def.accent, 900, 'right');
+  }
+
+  function drawSocialDecor(ctx, def) {
+    const topColor = def.motif === 'igstory' || def.motif === 'tiktok' || def.motif === 'cameraRoll' ? withAlpha('#000000', .45) : withAlpha('#ffffff', .76);
+    roundRect(ctx, 28, 24, FRAME_W - 56, 60, 30, topColor, withAlpha(def.accent, .35), 2);
+    circle(ctx, 62, 54, 16, def.accent);
+    text(ctx, '@lux.booth', 92, 55, 18, def.ink, 900, 'left');
+    if (def.motif === 'youtube') {
+      roundRect(ctx, FRAME_W - 148, 39, 82, 28, 14, def.accent);
+      text(ctx, 'SUB', FRAME_W - 107, 54, 14, '#fff', 900);
+      text(ctx, '▶', 64, FRAME_H-50, 28, def.accent, 900);
+    } else if (def.motif === 'igstory') {
+      for (let x=46; x<FRAME_W-46; x+=94) roundRect(ctx, x, 16, 78, 5, 3, withAlpha('#ffffff', .75));
+      text(ctx, '♡  💬  ↗', FRAME_W - 58, FRAME_H-50, 19, def.ink, 900, 'right');
+    } else if (def.motif === 'tiktok') {
+      for (let y=570; y<1210; y+=120) {
+        circle(ctx, FRAME_W-42, y, 20, withAlpha(def.accent, .24), def.accent);
+        text(ctx, ['♡','☰','↗'][Math.floor(y/120)%3], FRAME_W-42, y, 22, def.ink);
+      }
+      text(ctx, 'TikTok', 88, FRAME_H-50, 24, def.accent, 900, 'left');
+    } else if (def.motif === 'iphone' || def.motif === 'cameraRoll') {
+      text(ctx, '9:41', 62, 52, 18, def.ink, 900, 'left');
+      text(ctx, 'Photos', FRAME_W/2, 55, 20, def.ink, 900);
+      text(ctx, '♡   ⤴   🗑', FRAME_W - 52, FRAME_H-50, 18, def.ink, 900, 'right');
+    } else if (def.motif === 'music') {
+      roundRect(ctx, 80, FRAME_H - 82, FRAME_W - 160, 26, 13, withAlpha(def.ink, .15));
+      roundRect(ctx, 80, FRAME_H - 82, 220, 26, 13, def.accent);
+      text(ctx, '▶ now playing', 58, FRAME_H-108, 18, def.ink, 900, 'left');
+    } else if (def.motif === 'chat') {
+      roundRect(ctx, 48, 112, 168, 38, 18, withAlpha(def.accent, .28));
+      roundRect(ctx, FRAME_W-238, FRAME_H-154, 190, 38, 18, withAlpha(def.accent2, .85));
+      text(ctx, 'sent with love', FRAME_W - 52, FRAME_H-50, 17, def.ink, 900, 'right');
+    } else {
+      text(ctx, '♡ comment share', FRAME_W - 52, FRAME_H-50, 17, def.ink, 900, 'right');
+    }
+    drawConfetti(ctx, def, 42);
+  }
+
+  function drawSlotBorders(ctx, slots, def) {
+    slots.forEach((s, idx) => {
+      const r = 12;
+      roundRect(ctx, s.x - 5, s.y - 5, s.w + 10, s.h + 10, r, null, withAlpha(def.ink, .22), 3);
+      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 8, null, withAlpha(def.accent, .75), idx % 2 ? 3 : 4);
+      if (idx < slots.length - 1) {
+        const gapY = s.y + s.h + FRAME_GAP / 2;
+        text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY, 22, withAlpha(def.accent2, .95));
+      }
+    });
+  }
+
   // Render basic frame as PNG using canvas (591x1772)
   function generateBasicFrameSrc(colorObj) {
-    const W = 591, H = 1772;
-    const PADDING = 20;
-    const GAP = 12;
-    const N_SLOTS = 4;
-    // Gap bawah lebih besar untuk watermark dinamis (sama kayak template custom)
-    const FOOTER_H = 90;
-    const slotH = Math.floor((H - PADDING * 2 - GAP * (N_SLOTS - 1) - FOOTER_H) / N_SLOTS);
-    const slotW = W - PADDING * 2;
-
+    const W = FRAME_W, H = FRAME_H;
+    const slots = generateBasicSlots();
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
-
-    // Background
     ctx.fillStyle = colorObj.bg;
     ctx.fillRect(0, 0, W, H);
-
-    // Clear slot areas (transparent untuk foto)
-    for (let i = 0; i < N_SLOTS; i++) {
-      const y = PADDING + i * (slotH + GAP);
-      ctx.clearRect(PADDING, y, slotW, slotH);
-    }
-
-    // Tidak ada footer text statis — watermark dinamis ditangani result.html
-
-    return { src: c.toDataURL('image/png'), slots: generateBasicSlots(), w: W, h: H };
+    slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
+    return { src: c.toDataURL('image/png'), slots, w: W, h: H };
   }
 
-  function generateBasicSlots() {
-    const W = 591, H = 1772;
-    const PADDING = 20;
-    const GAP = 12;
-    const N_SLOTS = 4;
-    const FOOTER_H = 90;
-    const slotH = Math.floor((H - PADDING * 2 - GAP * (N_SLOTS - 1) - FOOTER_H) / N_SLOTS);
-    const slotW = W - PADDING * 2;
-    const slots = [];
-    for (let i = 0; i < N_SLOTS; i++) {
-      slots.push({ x: PADDING, y: PADDING + i * (slotH + GAP), w: slotW, h: slotH });
+  function generateBuiltInFrameSrc(def) {
+    if (builtInCache.has(def.id)) return builtInCache.get(def.id);
+    const W = FRAME_W, H = FRAME_H;
+    const slots = generateBasicSlots();
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Background
+    ctx.fillStyle = def.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Base decorative layer
+    drawPatternBg(ctx, def);
+    if (def.category === 'Korean 🇰🇷') drawKoreanDecor(ctx, def);
+    if (def.category === 'Film 🎞️') drawFilmDecor(ctx, def);
+    if (def.category === 'Elegant ✨') drawElegantDecor(ctx, def);
+    if (def.category === 'Floral 🌸') drawFloralDecor(ctx, def);
+    if (def.category === 'Seasonal 🎉') drawSeasonalDecor(ctx, def);
+    if (def.category === 'Gaming 🎮') drawGamingDecor(ctx, def);
+    if (def.category === 'Pattern 🟣') {
+      if (def.motif === 'stars') for (let i=0;i<70;i++) drawStar(ctx, (i*79)%W, (i*151)%H, 8+(i%3)*3, i%2?def.accent:def.accent2, 5);
+      if (def.motif === 'heart') for (let i=0;i<72;i++) text(ctx, i%2?'♡':'♥', (i*67)%W, (i*131)%H, 22, i%2?def.accent:def.accent2);
+      drawConfetti(ctx, def, 28);
     }
-    return slots;
+    if (def.category === 'Social Media 📱') drawSocialDecor(ctx, def);
+
+    // Clear photo slots so the captured photos show through.
+    slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
+
+    // Foreground frame layer stays on top of photos.
+    drawSlotBorders(ctx, slots, def);
+    roundRect(ctx, 10, 10, W - 20, H - 20, 28, null, withAlpha(def.accent, .60), 4);
+
+    const data = { src: c.toDataURL('image/png'), slots, w: W, h: H };
+    builtInCache.set(def.id, data);
+    return data;
   }
 
   // Generate semua basic template (1 per warna)
@@ -279,9 +714,26 @@
         name: `Basic ${colorObj.label}`,
         category: '__basic__',
         isBasic: true,
+        isBuiltIn: true,
         src: data.src,
         slots: data.slots,
         frameColor: colorObj,
+        w: data.w,
+        h: data.h
+      };
+    });
+  }
+
+  function getAllBuiltInTemplates() {
+    return BUILTIN_FRAME_DEFS.map((def) => {
+      const data = generateBuiltInFrameSrc(def);
+      return {
+        id: `__builtin_${def.id}__`,
+        name: def.name,
+        category: def.category,
+        isBuiltIn: true,
+        src: data.src,
+        slots: data.slots,
         w: data.w,
         h: data.h
       };
@@ -296,6 +748,7 @@
       name: 'Frame Basic',
       category: '__basic__',
       isBasic: true,
+      isBuiltIn: true,
       src: data.src,
       slots: data.slots,
       frameColor: selectedFrameColor,
@@ -338,7 +791,7 @@
   function getCategories() {
     const fromDB = [...new Set(_dbTemplates.map(t => t.category))];
     const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]');
-    return [...new Set([...fromDB, ...fromLS])];
+    return [...new Set([...BUILTIN_CATEGORIES, ...fromDB, ...fromLS])];
   }
 
   // ─── Render category tabs ───
@@ -391,12 +844,16 @@
     const saved = getSavedTemplates();
     let templates = [];
     const basicTemplates = getAllBasicTemplates();
+    const builtInTemplates = getAllBuiltInTemplates();
     if (currentCat === 'all') {
-      templates = [...basicTemplates, ...saved];
+      templates = [...basicTemplates, ...builtInTemplates, ...saved];
     } else if (currentCat === '__basic__') {
       templates = basicTemplates;
     } else {
-      templates = saved.filter(t => t.category === currentCat);
+      templates = [
+        ...builtInTemplates.filter(t => t.category === currentCat),
+        ...saved.filter(t => t.category === currentCat)
+      ];
     }
 
     // Sembunyikan color picker permanen
@@ -419,7 +876,7 @@
       const card = document.createElement('div');
       card.className = 'template-card';
       const slotLen = Array.isArray(tmpl.slots) ? tmpl.slots.length : 0;
-      const basicBadge = tmpl.isBasic ? '<span class="basic-badge">Built-in</span>' : '';
+      const basicBadge = (tmpl.isBasic || tmpl.isBuiltIn) ? '<span class="basic-badge">Built-in</span>' : '';
       card.innerHTML = `
         ${basicBadge}
         <span class="selected-badge">✓ Dipilih</span>
@@ -458,7 +915,8 @@
     localStorage.setItem('templateW', t.w || 591);
     localStorage.setItem('templateH', t.h || 1772);
     localStorage.setItem('templateIsBasic', t.isBasic ? '1' : '0');
-    if (t.isBasic) localStorage.setItem('basicFrameColor', JSON.stringify(t.frameColor));
+    if (t.isBasic && t.frameColor) localStorage.setItem('basicFrameColor', JSON.stringify(t.frameColor));
+    else localStorage.removeItem('basicFrameColor');
 
     document.getElementById('slotCount').textContent = (t.slots || []).length;
     document.getElementById('infoBox').style.display = 'block';

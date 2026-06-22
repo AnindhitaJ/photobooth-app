@@ -209,34 +209,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ── PLAN HELPERS ────────────────────────────────────────────────────────
 Object.assign(Auth, {
-  // Status plan: 'pro' | 'trial' | 'inactive' | 'expired'
-  // pro & trial pakai kolom pro_ends_at yang sama
+  // Status plan sederhana: 'pro' | 'free' | 'inactive'
+  // Tidak ada konsep free trial / expired lagi.
   getPlanStatus() {
     const p = this.getProfile();
-    if (!p) return 'expired';
-    if (!p.is_active) return 'inactive';
+    if (!p) return 'free';
+    if (p.is_active === false) return 'inactive';
+
     const now = new Date();
-    // Cek pro_ends_at untuk semua plan
-    if (p.pro_ends_at && new Date(p.pro_ends_at) > now) {
-      return p.plan === 'trial' ? 'trial' : 'pro';
-    }
-    return 'expired';
+    const isMarkedPro = p.plan === 'pro';
+    const hasValidProEnd = !p.pro_ends_at || new Date(p.pro_ends_at) > now;
+
+    if (isMarkedPro && hasValidProEnd) return 'pro';
+    return 'free';
   },
 
   isPro() {
-    const s = this.getPlanStatus();
-    return s === 'pro' || s === 'trial'; // trial = pro dalam hal akses
-  },
-  isTrialActive() { return this.getPlanStatus() === 'trial'; },
-  hasAccess() {
-    const s = this.getPlanStatus();
-    return s === 'pro' || s === 'trial';
+    return this.getPlanStatus() === 'pro';
   },
 
-  // Sisa hari
+  // Disisakan agar file lama yang masih memanggil fungsi ini tidak error.
+  isTrialActive() { return false; },
+
+  // Free tetap boleh akses. Nonaktif saja yang diblok.
+  hasAccess() {
+    return this.getPlanStatus() !== 'inactive';
+  },
+
+  // Sisa hari PRO, untuk Free nilainya 0.
   getDaysLeft() {
     const p = this.getProfile();
-    if (!p || !p.pro_ends_at) return 0;
+    if (!p || !p.pro_ends_at || this.getPlanStatus() !== 'pro') return 0;
     return Math.max(0, Math.ceil((new Date(p.pro_ends_at) - Date.now()) / 86400000));
   },
 

@@ -323,8 +323,7 @@
       font-weight: 900;
     }
     .membership-badge.pro { background:#d1fae5; color:#059669; border:2px solid #a7f3d0; }
-    .membership-badge.trial { background:#fef3c7; color:#d97706; border:2px solid #fde68a; }
-    .membership-badge.expired,
+    .membership-badge.free { background:#e0f2fe; color:#0369a1; border:2px solid #bae6fd; }
     .membership-badge.inactive { background:#fee2e2; color:#dc2626; border:2px solid #fca5a5; }
     .membership-detail {
       font-size: 13px;
@@ -1130,32 +1129,27 @@
     if (!badge || !detail || !daysEl) return;
 
     const p = Auth.getProfile() || {};
-    const status = Auth.getPlanStatus ? Auth.getPlanStatus() : 'expired';
+    const status = Auth.getPlanStatus ? Auth.getPlanStatus() : 'free';
     const days = Auth.getDaysLeft ? Auth.getDaysLeft() : 0;
     const end = p.pro_ends_at ? new Date(p.pro_ends_at).toLocaleDateString('id-ID') : '—';
 
     badge.className = 'membership-badge ' + status;
 
     if (status === 'pro') {
-      badge.textContent = '⭐ PRO aktif';
-      detail.textContent = `Berlaku sampai ${end}. Semua fitur aktif.`;
+      badge.textContent = '⭐ PRO';
+      detail.textContent = p.pro_ends_at ? `Berlaku sampai ${end}.` : 'Akun ini aktif sebagai PRO.';
       daysEl.textContent = Math.max(0, days);
-      daysBox.style.display = '';
-    } else if (status === 'trial') {
-      badge.textContent = '🔄 Free Trial';
-      detail.textContent = `Trial berlaku sampai ${end}. Setelah habis, hubungi admin untuk upgrade PRO.`;
-      daysEl.textContent = Math.max(0, days);
-      daysBox.style.display = '';
+      daysBox.style.display = p.pro_ends_at ? '' : 'none';
     } else if (status === 'inactive') {
       badge.textContent = '⛔ Akun nonaktif';
       detail.textContent = 'Akun sedang nonaktif. Hubungi admin untuk mengaktifkan kembali.';
       daysEl.textContent = '0';
-      daysBox.style.display = '';
+      daysBox.style.display = 'none';
     } else {
-      badge.textContent = '⏰ Akses habis';
-      detail.textContent = 'Masa aktif sudah habis. Hubungi admin untuk perpanjang membership.';
+      badge.textContent = '🆓 Free';
+      detail.textContent = 'Akun aktif sebagai Free.';
       daysEl.textContent = '0';
-      daysBox.style.display = '';
+      daysBox.style.display = 'none';
     }
   }
 

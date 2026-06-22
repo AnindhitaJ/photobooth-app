@@ -503,7 +503,7 @@
         }
       }
 
-      // ── Watermark tiled diagonal hanya untuk expired/nonaktif ──
+      // ── Watermark tiled diagonal hanya untuk akun nonaktif ──
       if (!Auth.hasAccess() && !Auth.isSuperAdmin()) {
         const w = canvas.width, h = canvas.height;
         ctx.save();

@@ -388,11 +388,12 @@
       const status = Auth.getPlanStatus();
       const days   = Auth.getDaysLeft();
       if (status === 'pro') {
-        badge.innerHTML = `<span style="background:#d1fae5;color:#059669;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">⭐ PRO · ${days} hari lagi</span>`;
-      } else if (status === 'trial') {
-        badge.innerHTML = `<span style="background:#fef3c7;color:#d97706;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">🔄 Trial · ${days} hari lagi</span>`;
-      } else if (status === 'expired' || status === 'inactive') {
-        badge.innerHTML = `<span style="background:#fee2e2;color:#dc2626;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">⏰ Akses Habis</span>`;
+        const dayText = days > 0 ? ` · ${days} hari lagi` : '';
+        badge.innerHTML = `<span style="background:#d1fae5;color:#059669;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">⭐ PRO${dayText}</span>`;
+      } else if (status === 'inactive') {
+        badge.innerHTML = `<span style="background:#fee2e2;color:#dc2626;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">⛔ Akun Nonaktif</span>`;
+      } else {
+        badge.innerHTML = `<span style="background:#e0f2fe;color:#0369a1;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">🆓 Free</span>`;
       }
 
       // CMS link untuk super admin
@@ -403,14 +404,13 @@
         document.body.appendChild(cms);
       }
 
-      // Block akses kalau expired & bukan super admin
-      if (status === 'expired' && !Auth.isSuperAdmin()) {
+      // Block akses hanya kalau akun dinonaktifkan oleh admin.
+      if (status === 'inactive' && !Auth.isSuperAdmin()) {
         document.querySelector('.btn-group').innerHTML = `
           <div style="background:#fee2e2;border:2px solid #fca5a5;border-radius:16px;padding:20px;text-align:center;max-width:300px;">
-            <div style="font-size:32px;margin-bottom:10px;">⏰</div>
-            <div style="font-size:16px;font-weight:900;color:#dc2626;margin-bottom:6px;">Akses Kamu Sudah Habis</div>
-            <div style="font-size:13px;color:#64748b;margin-bottom:14px;">Hubungi admin untuk perpanjang akses</div>
-            <a href="https://instagram.com/luxphotobooth.id" target="_blank" style="display:inline-block;background:#D84B7E;color:white;padding:10px 22px;border-radius:50px;font-weight:800;font-size:14px;text-decoration:none;">📸 @luxphotobooth.id</a>
+            <div style="font-size:32px;margin-bottom:10px;">⛔</div>
+            <div style="font-size:16px;font-weight:900;color:#dc2626;margin-bottom:6px;">Akun Sedang Nonaktif</div>
+            <div style="font-size:13px;color:#64748b;margin-bottom:14px;">Hubungi admin untuk mengaktifkan kembali akun.</div>
           </div>`;
       }
     });

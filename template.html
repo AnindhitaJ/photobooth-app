@@ -569,7 +569,7 @@
       for (let y = 28; y < FRAME_H - 28; y += 28) roundRect(ctx, 24, y, 16, 14, 3, withAlpha(def.accent2, .88));
       for (let y = 42; y < FRAME_H - 42; y += 36) roundRect(ctx, FRAME_W - 40, y, 16, 16, 3, withAlpha(def.accent2, .88));
       roundRect(ctx, 52, 28, FRAME_W - 104, 46, 12, withAlpha('#fff8', .28), withAlpha(def.accent2, .42), 2);
-      text(ctx, 'KODAK FEEL', 124, 55, 22, def.ink, 900, 'left');
+      text(ctx, 'KODAK FEEL', FRAME_W / 2, 55, 20, def.ink, 900);
       tinyLabel(FRAME_W - 170, 39, 116, 'flash booth', def.accent, def.ink);
       line(ctx, 66, FRAME_H - 96, FRAME_W - 66, FRAME_H - 96, withAlpha(def.accent2, .28), 2);
       line(ctx, 66, FRAME_H - 70, FRAME_W - 66, FRAME_H - 70, withAlpha(def.accent2, .18), 1.5);
@@ -588,7 +588,7 @@
       roundRect(ctx, 48, 26, FRAME_W - 96, 56, 20, withAlpha('#fff7ed', .48), withAlpha(def.accent, .38), 2);
       roundRect(ctx, FRAME_W / 2 - 42, 36, 84, 34, 12, withAlpha(def.accent, .88), withAlpha(def.ink, .22), 2);
       circle(ctx, FRAME_W / 2, 53, 14, withAlpha(def.ink, .9));
-      text(ctx, 'camera', 92, 57, 20, def.ink, 900, 'left');
+      text(ctx, 'camera', FRAME_W - 104, 57, 18, def.ink, 900, 'right');
       for (const x of [66, FRAME_W - 66]) {
         for (let y = 120; y < FRAME_H - 150; y += 160) tapePiece(x, y, 48, 18, x < FRAME_W / 2 ? -10 : 10, '#fef3c7');
       }
@@ -628,7 +628,7 @@
       for (let i = 0; i < 22; i++) drawStar(ctx, 56 + (i * 23) % (FRAME_W - 112), 120 + (i * 59) % (FRAME_H - 220), 6 + (i % 2), i % 2 ? def.accent2 : def.accent, 4);
     } else if (def.id === 'film_disposable_camera') {
       roundRect(ctx, 46, 24, FRAME_W - 92, 52, 18, withAlpha(def.accent2, .2), withAlpha(def.accent, .48), 2);
-      text(ctx, 'flash ready', 108, 53, 20, def.ink, 900, 'left');
+      text(ctx, 'flash ready', FRAME_W / 2, 53, 18, def.ink, 900);
       circle(ctx, FRAME_W - 92, 51, 16, withAlpha(def.accent, .9));
       text(ctx, '★', FRAME_W - 92, 53, 12, '#ffffff', 900);
       for (let y = 122; y < FRAME_H - 132; y += 180) {
@@ -639,7 +639,7 @@
       text(ctx, 'summer cam', FRAME_W / 2, FRAME_H - 68, 17, def.ink, 900);
     } else if (def.id === 'film_old_memory') {
       roundRect(ctx, 40, 30, FRAME_W - 80, 44, 14, withAlpha('#ffffff', .32), withAlpha(def.accent, .36), 1.5);
-      text(ctx, 'memory archive', FRAME_W / 2, 55, 18, def.ink, 900);
+      text(ctx, 'memory archive', FRAME_W / 2, 55, 17, def.ink, 900);
       for (let y = 100; y < FRAME_H - 140; y += 140) {
         line(ctx, 70, y, FRAME_W - 70, y + 10, withAlpha(def.accent, .14), 1.5);
         if ((y / 140) % 2 === 0) tapePiece(80, y + 22, 42, 16, -8); else tapePiece(FRAME_W - 80, y + 22, 42, 16, 8);
@@ -1125,54 +1125,8 @@
         drawHeaderRibbon(ctx, 126, 34, FRAME_W - 252, 42, def.name.toLowerCase(), withAlpha('#ffffff', .54), withAlpha(def.accent, .34), def.ink);
       }
     } else if (def.category === 'Film') {
-      const filmId = def.id || '';
-      if (filmId === 'film_retro_film') {
-        text(ctx, '35MM', 70, 52, 22, def.ink, 900, 'left');
-        drawHeaderRibbon(ctx, 160, 34, FRAME_W - 320, 40, 'retro booth', withAlpha('#ffffff', .2), withAlpha(def.accent, .38), def.ink);
-        text(ctx, 'A-04', FRAME_W - 72, 52, 18, def.accent2, 900, 'right');
-      } else if (filmId === 'film_kodak_yellow') {
-        roundRect(ctx, 52, 30, 152, 50, 14, withAlpha('#fff8', .26), withAlpha(def.accent2, .36), 2);
-        text(ctx, 'COLOR 200', 128, 55, 20, def.ink, 900);
-        drawHeaderRibbon(ctx, 236, 36, FRAME_W - 292, 38, 'sunny shot', withAlpha('#ffffff', .4), withAlpha(def.accent, .46), def.ink);
-      } else if (filmId === 'film_analog_brown') {
-        drawHeaderRibbon(ctx, 136, 34, FRAME_W - 272, 40, 'contact sheet', withAlpha('#ffffff', .24), withAlpha(def.accent2, .38), def.ink);
-        text(ctx, 'dust • grain', FRAME_W / 2, 92, 14, withAlpha(def.accent, .84), 900);
-      } else if (filmId === 'film_vintage_camera') {
-        roundRect(ctx, 58, 30, 122, 58, 14, withAlpha(def.accent, .84), withAlpha(def.ink, .35), 2.5);
-        circle(ctx, 104, 58, 18, withAlpha(def.ink, .82));
-        roundRect(ctx, 124, 46, 24, 12, 4, withAlpha(def.accent2, .82));
-        text(ctx, 'ARCHIVE', FRAME_W - 88, 58, 18, def.ink, 900, 'right');
-      } else if (filmId === 'film_roll_black') {
-        text(ctx, 'NIGHT FILM', 78, 52, 18, def.ink, 900, 'left');
-        drawHeaderRibbon(ctx, 170, 34, FRAME_W - 340, 40, 'exp 24', withAlpha('#ffffff', .16), withAlpha(def.accent2, .34), def.ink);
-      } else if (filmId === 'film_polaroid_cream') {
-        roundRect(ctx, 116, 34, FRAME_W - 232, 44, 10, withAlpha('#ffffff', .82), withAlpha(def.accent2, .28), 2);
-        text(ctx, 'instant memory', FRAME_W / 2, 57, 18, def.ink, 900);
-      } else if (filmId === 'film_dust_grain') {
-        drawHeaderRibbon(ctx, 124, 34, FRAME_W - 248, 40, 'darkroom test', withAlpha('#ffffff', .18), withAlpha(def.accent2, .34), def.ink);
-        text(ctx, 'ISO 800', 80, 92, 16, withAlpha(def.ink, .84), 900);
-        text(ctx, 'grain mode', FRAME_W - 78, 92, 14, withAlpha(def.accent2, .84), 900, 'right');
-      } else if (filmId === 'film_cinema_frame') {
-        for (let x = 88; x < FRAME_W - 88; x += 48) {
-          ctx.fillStyle = (Math.floor(x / 48) % 2) ? def.accent : def.accent2;
-          ctx.globalAlpha = .72;
-          ctx.fillRect(x, 36, 30, 16);
-          ctx.fillRect(x, 52, 30, 16);
-          ctx.globalAlpha = 1;
-        }
-        drawHeaderRibbon(ctx, 160, 74, FRAME_W - 320, 34, 'cinema ticket', withAlpha('#000000', .16), withAlpha(def.accent, .44), def.ink);
-      } else if (filmId === 'film_disposable_camera') {
-        roundRect(ctx, 68, 34, 144, 40, 18, withAlpha(def.accent, .18), withAlpha(def.accent, .35), 1.8);
-        text(ctx, 'FLASH READY', 140, 55, 16, def.ink, 900);
-        roundRect(ctx, FRAME_W - 148, 34, 86, 40, 18, withAlpha(def.accent2, .74), withAlpha(def.ink, .1), 1.2);
-        text(ctx, 'SNAP', FRAME_W - 105, 55, 16, def.ink, 900);
-      } else if (filmId === 'film_old_memory') {
-        drawHeaderRibbon(ctx, 128, 34, FRAME_W - 256, 40, 'memory archive', withAlpha('#ffffff', .48), withAlpha(def.accent, .34), def.ink);
-        text(ctx, '1987', 72, 56, 22, def.ink, 900);
-      } else {
-        text(ctx, '35MM', 76, 52, 22, def.ink, 900, 'left');
-        drawHeaderRibbon(ctx, 166, 34, FRAME_W - 332, 40, 'film booth', withAlpha('#ffffff', .2), withAlpha(def.accent2, .38), def.ink);
-      }
+      // Film header/decor is handled by drawFilmDecor().
+      // Keep this branch empty to avoid duplicate labels in the thumbnail/output.
     } else if (def.category === 'Elegant') {
       if (def.motif === 'luxury' || def.motif === 'royal') {
         line(ctx, 130, 54, FRAME_W / 2 - 28, 54, withAlpha(def.accent, .35), 2);

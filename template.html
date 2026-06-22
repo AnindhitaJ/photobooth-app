@@ -373,10 +373,10 @@
       bottomPad = 246;
       gap = 40;
     } else if (category === 'Film') {
-      sidePad = 68;
-      topPad = 158;
-      bottomPad = 228;
-      gap = 34;
+      sidePad = 84;
+      topPad = 178;
+      bottomPad = 272;
+      gap = 42;
     } else if (category === 'Elegant') {
       sidePad = 70;
       topPad = 162;
@@ -1341,13 +1341,13 @@
         if (filmId === 'film_polaroid_cream') {
           const outerY = s.y - 8;
           const extraBottom = 34;
-          roundRect(ctx, s.x - 10, outerY, s.w + 20, s.h + extraBottom + 12, 12, withAlpha('#fffdf7', .96), withAlpha(def.accent2, .38), 1.5);
+          roundRect(ctx, s.x - 8, outerY, s.w + 16, s.h + extraBottom + 10, 12, withAlpha('#fffdf7', .96), withAlpha(def.accent2, .26), 1.2);
           roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 8, null, withAlpha(def.accent, .35), 1.5);
           tapeCorner(s.x + 34, s.y - 10, -12, '#fef3c7');
           tapeCorner(s.x + s.w - 34, s.y - 4, 10, '#fef3c7');
           text(ctx, `memory ${idx + 1}`, s.x + s.w / 2, s.y + s.h + 22, 11, withAlpha(def.ink, .78), 900);
         } else if (filmId === 'film_vintage_camera') {
-          roundRect(ctx, s.x - 14, s.y - 14, s.w + 28, s.h + 28, 16, withAlpha('#fff7ed', .16), withAlpha(def.accent, .28), 1.5);
+          roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, 14, withAlpha('#fff7ed', .12), withAlpha(def.accent, .2), 1.2);
           roundRect(ctx, s.x - 4, s.y - 4, s.w + 8, s.h + 8, 12, null, withAlpha('#fef3c7', .72), 2);
           tapeCorner(s.x + 34, s.y + 8, -14, '#fef3c7');
           tapeCorner(s.x + s.w - 34, s.y + 8, 14, '#fef3c7');
@@ -1355,26 +1355,26 @@
           tapeCorner(s.x + s.w - 34, s.y + s.h - 8, -14, '#fef3c7');
           captionLine(`archived shot 0${idx + 1}`, def.accent);
         } else if (filmId === 'film_cinema_frame') {
-          roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 12, withAlpha('#000000', .12), withAlpha(def.accent2, .26), 1.5);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 12, withAlpha('#000000', .08), withAlpha(def.accent2, .18), 1.2);
           roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 8, null, withAlpha(def.accent, .9), 2.2);
           clapStripe(s.x + 8, s.y - 18, 54, 10);
           clapStripe(s.x + s.w - 62, s.y - 18, 54, 10);
           text(ctx, `SCENE ${idx + 1}`, s.x + 16, s.y + 18, 10, withAlpha(def.ink, .9), 900, 'left');
           text(ctx, 'TAKE', s.x + s.w - 18, s.y + 18, 10, withAlpha(def.accent2, .86), 900, 'right');
         } else if (filmId === 'film_disposable_camera') {
-          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 16, withAlpha('#ffffff', .1), withAlpha(def.accent, .42), 1.8);
+          roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, 14, withAlpha('#ffffff', .08), withAlpha(def.accent, .3), 1.4);
           roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 12, null, withAlpha(def.accent2, .72), 2);
           roundRect(ctx, s.x + 12, s.y + 10, 56, 16, 8, withAlpha(def.accent, .86), withAlpha(def.ink, .1), 1);
           text(ctx, idx % 2 ? 'SMILE' : 'FLASH', s.x + 40, s.y + 18, 9, '#ffffff', 900);
           roundRect(ctx, s.x + s.w - 68, s.y + s.h - 24, 56, 16, 8, withAlpha(def.accent2, .92), withAlpha(def.ink, .1), 1);
           text(ctx, 'SNAP', s.x + s.w - 40, s.y + s.h - 16, 9, def.ink, 900);
         } else if (filmId === 'film_analog_brown') {
-          roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 8, withAlpha('#000000', .07), withAlpha(def.accent2, .24), 1.5);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 8, withAlpha('#000000', .05), withAlpha(def.accent2, .16), 1.2);
           roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 6, null, withAlpha('#fef3c7', .62), 1.8);
           for (let k = 0; k < 3; k++) line(ctx, s.x + 18, s.y + s.h + 12 + k * 10, s.x + s.w - 18, s.y + s.h + 12 + k * 10, withAlpha(def.accent2, .18), 1);
           text(ctx, `${idx + 1}. contact print`, s.x + 16, s.y + s.h + 14, 10, withAlpha(def.ink, .74), 900, 'left');
         } else if (filmId === 'film_old_memory') {
-          roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 10, withAlpha('#fffaf0', .12), withAlpha(def.accent, .28), 1.4);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 10, withAlpha('#fffaf0', .08), withAlpha(def.accent, .18), 1.1);
           roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 8, null, withAlpha(def.accent2, .36), 1.5);
           if (idx % 2 === 0) tapeCorner(s.x + 34, s.y - 8, -10, '#fef3c7');
           else tapeCorner(s.x + s.w - 34, s.y - 8, 10, '#fef3c7');

@@ -341,6 +341,26 @@
     { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
   ];
 
+  (function enrichBuiltInDefs() {
+    const layoutMap = {
+      'Korean': ['airy','diary','petal','ribbon','postcard','clean','stagger','cloud','notebook','label'],
+      'Film': ['filmstrip','contact','retro','cinema','darkroom','polaroid','grain','memory','ticket','wide'],
+      'Elegant': ['luxe','plaque','pearl','gallery','royal','tall','panel','marble','gala','wedding'],
+      'Floral': ['garden','rose','sunny','vine','petite','bouquet','leafy','wild','hydra','spring'],
+      'Seasonal': ['party','badge','festive','romance','mystic','crescent','countdown','sunny','harvest','snow'],
+      'Gaming': ['pixel','arcade','quest','cyber','fantasy','magic','space','boss','dungeon','console'],
+      'Pattern': ['dot','dotWide','stripe','rainbow','checker','gingham','grid','starry','hearty','mix'],
+      'Social Media': ['feed','story','reels','vlog','ios','gallery','player','chat','profile','viral']
+    };
+    const seen = {};
+    BUILTIN_FRAME_DEFS.forEach((def) => {
+      const idx = seen[def.category] || 0;
+      seen[def.category] = idx + 1;
+      def.variantIndex = idx;
+      def.layout = (layoutMap[def.category] || [])[idx] || 'default';
+    });
+  })();
+
   const builtInCache = new Map();
 
   function generateBasicSlots() {
@@ -355,40 +375,123 @@
 
   // Built-in decorative templates need bigger margins than Basic
   // so the frame ornaments are visible and the photo slots do not feel too tight.
+  function pickBuiltInLayout(def = {}) {
+    const presets = {
+      airy:      { sidePad: 78, topPad: 166, bottomPad: 228, gap: 48, widths: [0.84, 0.84, 0.84, 0.84], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      diary:     { sidePad: 82, topPad: 170, bottomPad: 236, gap: 46, widths: [0.88, 0.80, 0.88, 0.80], heights: [1.02, 0.94, 1.02, 0.94], offsets: [0, 20, 0, -20] },
+      petal:     { sidePad: 80, topPad: 170, bottomPad: 232, gap: 52, widths: [0.86, 0.90, 0.86, 0.90], heights: [0.95, 1.03, 0.95, 1.03], offsets: [-8, 8, -8, 8] },
+      ribbon:    { sidePad: 78, topPad: 174, bottomPad: 238, gap: 48, widths: [0.82, 0.90, 0.82, 0.90], heights: [0.95, 1.05, 0.95, 1.05], offsets: [16, -8, 16, -8] },
+      postcard:  { sidePad: 88, topPad: 168, bottomPad: 246, gap: 52, widths: [0.88, 0.88, 0.88, 0.88], heights: [0.96, 0.96, 0.96, 0.96], offsets: [0, 0, 0, 0] },
+      clean:     { sidePad: 92, topPad: 176, bottomPad: 248, gap: 56, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      stagger:   { sidePad: 80, topPad: 168, bottomPad: 236, gap: 48, widths: [0.84, 0.92, 0.84, 0.92], heights: [0.96, 1.04, 0.96, 1.04], offsets: [-14, 12, -14, 12] },
+      cloud:     { sidePad: 84, topPad: 174, bottomPad: 240, gap: 54, widths: [0.86, 0.80, 0.86, 0.80], heights: [1.04, 0.92, 1.04, 0.92], offsets: [0, 14, 0, 14] },
+      notebook:  { sidePad: 86, topPad: 182, bottomPad: 250, gap: 48, widths: [0.90, 0.86, 0.90, 0.86], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 0, 0, 0] },
+      label:     { sidePad: 82, topPad: 174, bottomPad: 248, gap: 50, widths: [0.80, 0.90, 0.80, 0.90], heights: [0.98, 1.02, 0.98, 1.02], offsets: [18, -8, 18, -8] },
+
+      filmstrip: { sidePad: 72, topPad: 154, bottomPad: 224, gap: 40, widths: [0.90, 0.90, 0.90, 0.90], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      contact:   { sidePad: 86, topPad: 162, bottomPad: 238, gap: 44, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.94, 0.94, 0.94, 0.94], offsets: [0, 0, 0, 0] },
+      retro:     { sidePad: 80, topPad: 166, bottomPad: 240, gap: 50, widths: [0.88, 0.82, 0.88, 0.82], heights: [0.98, 1.02, 0.98, 1.02], offsets: [-10, 12, -10, 12] },
+      cinema:    { sidePad: 76, topPad: 162, bottomPad: 246, gap: 56, widths: [0.92, 0.82, 0.82, 0.92], heights: [0.90, 1.05, 1.05, 0.90], offsets: [0, 18, -18, 0] },
+      darkroom:  { sidePad: 74, topPad: 170, bottomPad: 250, gap: 44, widths: [0.82, 0.90, 0.82, 0.90], heights: [1.02, 0.96, 1.02, 0.96], offsets: [12, -10, 12, -10] },
+      polaroid:  { sidePad: 88, topPad: 168, bottomPad: 258, gap: 50, widths: [0.88, 0.88, 0.88, 0.88], heights: [0.92, 0.92, 0.92, 0.92], offsets: [0, 0, 0, 0] },
+      grain:     { sidePad: 82, topPad: 160, bottomPad: 236, gap: 42, widths: [0.86, 0.92, 0.86, 0.92], heights: [0.98, 1.02, 0.98, 1.02], offsets: [8, -8, 8, -8] },
+      memory:    { sidePad: 86, topPad: 174, bottomPad: 252, gap: 54, widths: [0.84, 0.88, 0.84, 0.88], heights: [0.95, 1.02, 0.95, 1.02], offsets: [0, 12, 0, -12] },
+      ticket:    { sidePad: 78, topPad: 170, bottomPad: 248, gap: 52, widths: [0.92, 0.92, 0.92, 0.92], heights: [0.90, 0.90, 0.90, 0.90], offsets: [0, 0, 0, 0] },
+      wide:      { sidePad: 70, topPad: 168, bottomPad: 236, gap: 46, widths: [0.94, 0.88, 0.94, 0.88], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, 10, 0, -10] },
+
+      luxe:      { sidePad: 86, topPad: 184, bottomPad: 252, gap: 54, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      plaque:    { sidePad: 82, topPad: 178, bottomPad: 248, gap: 50, widths: [0.90, 0.78, 0.90, 0.78], heights: [1.02, 0.94, 1.02, 0.94], offsets: [0, 24, 0, -24] },
+      pearl:     { sidePad: 90, topPad: 186, bottomPad: 260, gap: 56, widths: [0.80, 0.88, 0.80, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -10, 10, -10] },
+      gallery:   { sidePad: 82, topPad: 188, bottomPad: 258, gap: 58, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.92, 0.92, 0.92, 0.92], offsets: [0, 0, 0, 0] },
+      royal:     { sidePad: 76, topPad: 182, bottomPad: 256, gap: 52, widths: [0.90, 0.84, 0.90, 0.84], heights: [1, 0.96, 1, 0.96], offsets: [0, 12, 0, -12] },
+      tall:      { sidePad: 92, topPad: 176, bottomPad: 252, gap: 46, widths: [0.78, 0.78, 0.78, 0.78], heights: [1.06, 1.06, 1.06, 1.06], offsets: [0, 0, 0, 0] },
+      panel:     { sidePad: 78, topPad: 186, bottomPad: 260, gap: 54, widths: [0.88, 0.94, 0.88, 0.94], heights: [0.94, 1.02, 0.94, 1.02], offsets: [-8, 8, -8, 8] },
+      marble:    { sidePad: 88, topPad: 188, bottomPad: 262, gap: 56, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 0, 0, 0] },
+      gala:      { sidePad: 80, topPad: 184, bottomPad: 258, gap: 58, widths: [0.92, 0.80, 0.92, 0.80], heights: [0.90, 1.06, 0.90, 1.06], offsets: [0, 18, 0, -18] },
+      wedding:   { sidePad: 84, topPad: 190, bottomPad: 268, gap: 56, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.96, 1, 0.96, 1], offsets: [0, 8, 0, -8] },
+
+      garden:    { sidePad: 82, topPad: 176, bottomPad: 248, gap: 54, widths: [0.86, 0.90, 0.86, 0.90], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 10, 0, -10] },
+      rose:      { sidePad: 88, topPad: 184, bottomPad: 254, gap: 56, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      sunny:     { sidePad: 80, topPad: 170, bottomPad: 238, gap: 48, widths: [0.88, 0.84, 0.88, 0.84], heights: [1.02, 0.96, 1.02, 0.96], offsets: [-8, 12, -8, 12] },
+      vine:      { sidePad: 92, topPad: 184, bottomPad: 256, gap: 58, widths: [0.80, 0.88, 0.80, 0.88], heights: [0.96, 1.02, 0.96, 1.02], offsets: [10, -10, 10, -10] },
+      petite:    { sidePad: 96, topPad: 188, bottomPad: 266, gap: 58, widths: [0.78, 0.78, 0.78, 0.78], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      bouquet:   { sidePad: 84, topPad: 178, bottomPad: 248, gap: 52, widths: [0.90, 0.84, 0.90, 0.84], heights: [1, 0.96, 1, 0.96], offsets: [0, 10, 0, -10] },
+      leafy:     { sidePad: 90, topPad: 184, bottomPad: 260, gap: 56, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.96, 1, 0.96, 1], offsets: [6, -8, 6, -8] },
+      wild:      { sidePad: 78, topPad: 174, bottomPad: 244, gap: 50, widths: [0.92, 0.80, 0.92, 0.80], heights: [0.94, 1.04, 0.94, 1.04], offsets: [0, 18, 0, -18] },
+      hydra:     { sidePad: 86, topPad: 180, bottomPad: 252, gap: 54, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 0, 0, 0] },
+      spring:    { sidePad: 80, topPad: 176, bottomPad: 246, gap: 54, widths: [0.88, 0.90, 0.88, 0.90], heights: [0.95, 1.02, 0.95, 1.02], offsets: [-6, 8, -6, 8] },
+
+      party:     { sidePad: 80, topPad: 166, bottomPad: 244, gap: 50, widths: [0.90, 0.84, 0.90, 0.84], heights: [1, 0.96, 1, 0.96], offsets: [0, 10, 0, -10] },
+      badge:     { sidePad: 88, topPad: 178, bottomPad: 254, gap: 54, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.98, 0.98, 0.98, 0.98], offsets: [0, 0, 0, 0] },
+      festive:   { sidePad: 76, topPad: 162, bottomPad: 238, gap: 48, widths: [0.92, 0.88, 0.92, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [-8, 8, -8, 8] },
+      romance:   { sidePad: 84, topPad: 178, bottomPad: 256, gap: 58, widths: [0.80, 0.90, 0.80, 0.90], heights: [1, 1, 1, 1], offsets: [14, -8, 14, -8] },
+      mystic:    { sidePad: 82, topPad: 172, bottomPad: 250, gap: 54, widths: [0.88, 0.82, 0.88, 0.82], heights: [1.02, 0.96, 1.02, 0.96], offsets: [8, -8, 8, -8] },
+      crescent:  { sidePad: 86, topPad: 182, bottomPad: 260, gap: 56, widths: [0.82, 0.88, 0.82, 0.88], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 10, 0, -10] },
+      countdown: { sidePad: 76, topPad: 166, bottomPad: 238, gap: 46, widths: [0.94, 0.86, 0.94, 0.86], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 12, 0, -12] },
+      harvest:   { sidePad: 80, topPad: 170, bottomPad: 246, gap: 52, widths: [0.88, 0.84, 0.88, 0.84], heights: [0.98, 1.02, 0.98, 1.02], offsets: [-6, 8, -6, 8] },
+      snow:      { sidePad: 90, topPad: 184, bottomPad: 262, gap: 58, widths: [0.80, 0.80, 0.80, 0.80], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+
+      pixel:     { sidePad: 82, topPad: 166, bottomPad: 238, gap: 48, widths: [0.88, 0.84, 0.88, 0.84], heights: [1, 1, 1, 1], offsets: [-8, 8, -8, 8] },
+      arcade:    { sidePad: 78, topPad: 162, bottomPad: 236, gap: 44, widths: [0.92, 0.88, 0.92, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [0, 10, 0, -10] },
+      quest:     { sidePad: 88, topPad: 176, bottomPad: 250, gap: 54, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, -8, 0, 8] },
+      cyber:     { sidePad: 74, topPad: 160, bottomPad: 232, gap: 44, widths: [0.94, 0.84, 0.94, 0.84], heights: [0.98, 1.04, 0.98, 1.04], offsets: [0, 12, 0, -12] },
+      fantasy:   { sidePad: 84, topPad: 176, bottomPad: 250, gap: 54, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 0, 0, 0] },
+      magic:     { sidePad: 90, topPad: 182, bottomPad: 258, gap: 56, widths: [0.82, 0.88, 0.82, 0.88], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -8, 10, -8] },
+      space:     { sidePad: 80, topPad: 168, bottomPad: 242, gap: 50, widths: [0.90, 0.80, 0.90, 0.80], heights: [0.96, 1.04, 0.96, 1.04], offsets: [-6, 16, -6, 16] },
+      boss:      { sidePad: 86, topPad: 176, bottomPad: 248, gap: 52, widths: [0.84, 0.90, 0.84, 0.90], heights: [1.02, 0.96, 1.02, 0.96], offsets: [0, 8, 0, -8] },
+      dungeon:   { sidePad: 82, topPad: 174, bottomPad: 246, gap: 50, widths: [0.88, 0.88, 0.88, 0.88], heights: [0.96, 1, 0.96, 1], offsets: [0, 0, 0, 0] },
+      console:   { sidePad: 92, topPad: 180, bottomPad: 252, gap: 54, widths: [0.80, 0.80, 0.80, 0.80], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+
+      dot:       { sidePad: 88, topPad: 178, bottomPad: 252, gap: 56, widths: [0.82, 0.82, 0.82, 0.82], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] },
+      dotWide:   { sidePad: 76, topPad: 170, bottomPad: 246, gap: 52, widths: [0.92, 0.92, 0.92, 0.92], heights: [0.92, 0.92, 0.92, 0.92], offsets: [0, 0, 0, 0] },
+      stripe:    { sidePad: 82, topPad: 176, bottomPad: 248, gap: 52, widths: [0.90, 0.84, 0.90, 0.84], heights: [0.96, 1.02, 0.96, 1.02], offsets: [-6, 8, -6, 8] },
+      rainbow:   { sidePad: 78, topPad: 170, bottomPad: 242, gap: 48, widths: [0.92, 0.86, 0.92, 0.86], heights: [0.96, 1.02, 0.96, 1.02], offsets: [0, 10, 0, -10] },
+      checker:   { sidePad: 84, topPad: 176, bottomPad: 252, gap: 54, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.98, 0.98, 0.98, 0.98], offsets: [0, 0, 0, 0] },
+      gingham:   { sidePad: 90, topPad: 184, bottomPad: 258, gap: 58, widths: [0.80, 0.86, 0.80, 0.86], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -10, 10, -10] },
+      grid:      { sidePad: 86, topPad: 180, bottomPad: 254, gap: 54, widths: [0.84, 0.90, 0.84, 0.90], heights: [0.94, 1.02, 0.94, 1.02], offsets: [0, 10, 0, -10] },
+      starry:    { sidePad: 80, topPad: 172, bottomPad: 246, gap: 52, widths: [0.88, 0.84, 0.88, 0.84], heights: [1, 1, 1, 1], offsets: [-10, 10, -10, 10] },
+      hearty:    { sidePad: 84, topPad: 178, bottomPad: 254, gap: 56, widths: [0.82, 0.90, 0.82, 0.90], heights: [0.98, 1.02, 0.98, 1.02], offsets: [12, -8, 12, -8] },
+      mix:       { sidePad: 78, topPad: 172, bottomPad: 244, gap: 50, widths: [0.92, 0.80, 0.92, 0.80], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, 14, 0, -14] },
+
+      feed:      { sidePad: 84, topPad: 190, bottomPad: 270, gap: 58, widths: [0.84, 0.84, 0.84, 0.84], heights: [0.94, 0.94, 0.94, 0.94], offsets: [0, 0, 0, 0] },
+      story:     { sidePad: 92, topPad: 204, bottomPad: 282, gap: 58, widths: [0.78, 0.78, 0.78, 0.78], heights: [1.02, 1.02, 1.02, 1.02], offsets: [0, 0, 0, 0] },
+      reels:     { sidePad: 80, topPad: 184, bottomPad: 268, gap: 60, widths: [0.90, 0.80, 0.90, 0.80], heights: [0.96, 1.04, 0.96, 1.04], offsets: [0, 14, 0, -14] },
+      vlog:      { sidePad: 86, topPad: 196, bottomPad: 278, gap: 58, widths: [0.86, 0.86, 0.86, 0.86], heights: [0.96, 1, 0.96, 1], offsets: [0, 0, 0, 0] },
+      ios:       { sidePad: 96, topPad: 206, bottomPad: 288, gap: 60, widths: [0.76, 0.76, 0.76, 0.76], heights: [1.02, 1.02, 1.02, 1.02], offsets: [0, 0, 0, 0] },
+      gallery:   { sidePad: 90, topPad: 200, bottomPad: 284, gap: 60, widths: [0.82, 0.88, 0.82, 0.88], heights: [0.96, 1.02, 0.96, 1.02], offsets: [8, -8, 8, -8] },
+      player:    { sidePad: 88, topPad: 198, bottomPad: 292, gap: 62, widths: [0.80, 0.90, 0.80, 0.90], heights: [0.98, 1.02, 0.98, 1.02], offsets: [10, -10, 10, -10] },
+      chat:      { sidePad: 86, topPad: 192, bottomPad: 286, gap: 60, widths: [0.88, 0.78, 0.88, 0.78], heights: [0.94, 1.04, 0.94, 1.04], offsets: [0, 18, 0, -18] },
+      profile:   { sidePad: 92, topPad: 200, bottomPad: 286, gap: 58, widths: [0.78, 0.86, 0.78, 0.86], heights: [1, 1, 1, 1], offsets: [12, -8, 12, -8] },
+      viral:     { sidePad: 82, topPad: 188, bottomPad: 274, gap: 58, widths: [0.90, 0.84, 0.90, 0.84], heights: [0.96, 1.02, 0.96, 1.02], offsets: [-8, 8, -8, 8] },
+
+      default:   { sidePad: 82, topPad: 170, bottomPad: 240, gap: 50, widths: [0.86, 0.86, 0.86, 0.86], heights: [1, 1, 1, 1], offsets: [0, 0, 0, 0] }
+    };
+    return presets[def.layout] || presets.default;
+  }
+
   function generateBuiltInSlots(def = {}) {
-    const category = def.category || '';
-    let sidePad = 68;
-    let topPad = 118;
-    let bottomPad = 148;
-    let gap = 44;
+    const layout = pickBuiltInLayout(def);
+    const sidePad = layout.sidePad;
+    const topPad = layout.topPad;
+    const bottomPad = layout.bottomPad;
+    const gap = layout.gap;
+    const baseW = FRAME_W - sidePad * 2;
+    const widths = layout.widths || [0.86, 0.86, 0.86, 0.86];
+    const heights = layout.heights || [1, 1, 1, 1];
+    const offsets = layout.offsets || [0, 0, 0, 0];
+    const availH = FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1);
+    const totalWeight = heights.reduce((a,b) => a + b, 0);
+    const rawHeights = heights.map(h => Math.floor(availH * h / totalWeight));
+    rawHeights[rawHeights.length - 1] += availH - rawHeights.reduce((a,b)=>a+b,0);
 
-    if (category === 'Social Media') {
-      sidePad = 74;
-      topPad = 138;
-      bottomPad = 152;
-      gap = 42;
-    } else if (category === 'Korean' || category === 'Floral' || category === 'Pattern') {
-      sidePad = 76;
-      topPad = 122;
-      bottomPad = 152;
-      gap = 46;
-    } else if (category === 'Film' || category === 'Elegant') {
-      sidePad = 64;
-      topPad = 114;
-      bottomPad = 144;
-      gap = 42;
-    } else if (category === 'Seasonal' || category === 'Gaming') {
-      sidePad = 70;
-      topPad = 122;
-      bottomPad = 150;
-      gap = 44;
-    }
-
-    const slotW = FRAME_W - sidePad * 2;
-    const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1)) / FRAME_SLOTS);
     const slots = [];
+    let y = topPad;
     for (let i = 0; i < FRAME_SLOTS; i++) {
-      slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH });
+      const w = Math.max(270, Math.round(baseW * (widths[i] || widths[widths.length - 1] || 0.86)));
+      const h = rawHeights[i];
+      const x = Math.round((FRAME_W - w) / 2 + (offsets[i] || 0));
+      slots.push({ x, y, w, h });
+      y += h + gap;
     }
     return slots;
   }
@@ -753,31 +856,221 @@
   }
 
   function drawSlotBorders(ctx, slots, def) {
-    slots.forEach((s, idx) => {
-      const r = 14;
-      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 10, withAlpha('#ffffff', .22), withAlpha(def.accent, .34), 2.5);
-      roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, r + 2, null, withAlpha(def.ink, .14), 1.5);
-      roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, r + 6, null, withAlpha(def.accent, .52), 2);
+    function tape(x, y, w=44, h=18, color=def.accent2, angle=0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle * Math.PI / 180);
+      roundRect(ctx, -w/2, -h/2, w, h, 6, withAlpha(color, .45), withAlpha('#ffffff', .18), 1);
+      ctx.restore();
+    }
+    function cornerSpark(x, y, icon='✦', color=def.accent) {
+      text(ctx, icon, x, y, 16, withAlpha(color, .95));
+    }
+    function slotLabel(s, txt, fill, color) {
+      roundRect(ctx, s.x + 12, s.y + 12, Math.min(120, s.w * .4), 28, 14, withAlpha(fill, .82), withAlpha(color, .22), 1.5);
+      text(ctx, txt, s.x + 24, s.y + 30, 12, color, 900, 'left');
+    }
 
-      // cute tiny corner accents so frames feel richer without eating photo space
+    slots.forEach((s, idx) => {
+      let r = 14;
+      let outerStroke = withAlpha(def.accent, .42);
+      let innerStroke = withAlpha(def.ink, .18);
+      let middleStroke = withAlpha(def.accent, .68);
+      let fill = withAlpha('#ffffff', .18);
+
+      if (def.category === 'Film') {
+        r = 8;
+        outerStroke = withAlpha(def.accent2, .55);
+        middleStroke = withAlpha(def.accent, .86);
+        fill = withAlpha('#000000', .06);
+      } else if (def.category === 'Elegant') {
+        r = 18;
+        outerStroke = withAlpha(def.accent2, .55);
+        middleStroke = withAlpha(def.accent, .78);
+        fill = withAlpha('#ffffff', .14);
+      } else if (def.category === 'Gaming') {
+        r = 10;
+        outerStroke = withAlpha(def.accent2, .5);
+        middleStroke = withAlpha(def.accent, .88);
+      } else if (def.category === 'Social Media') {
+        r = (def.motif === 'igstory' || def.motif === 'iphone' || def.motif === 'cameraRoll') ? 24 : 16;
+        outerStroke = withAlpha(def.accent2, .45);
+        middleStroke = withAlpha(def.accent, .82);
+      }
+
+      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 10, fill, outerStroke, 2.5);
+      roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, r + 2, null, innerStroke, 1.5);
+      roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, r + 6, null, middleStroke, 2);
+
       const corners = [
         [s.x - 12, s.y - 12],
         [s.x + s.w + 12, s.y - 12],
         [s.x - 12, s.y + s.h + 12],
         [s.x + s.w + 12, s.y + s.h + 12]
       ];
-      corners.forEach(([cx, cy], cidx) => {
-        const icon = ['✦', '♡', '✿', '★'][(idx + cidx) % 4];
-        text(ctx, icon, cx, cy, 13, withAlpha(cidx % 2 ? def.accent2 : def.accent, .95));
-      });
+
+      if (def.category === 'Korean') {
+        if (def.motif === 'diary' || def.motif === 'campus') {
+          tape(s.x + 42, s.y - 6, 46, 16, def.accent2, -10);
+          tape(s.x + s.w - 40, s.y - 8, 42, 16, def.accent, 8);
+        } else if (def.motif === 'ribbon') {
+          drawBow(ctx, s.x + s.w - 20, s.y + 18, withAlpha(def.accent, .74), def.ink, .6);
+        } else if (def.motif === 'cloud') {
+          circle(ctx, s.x + 14, s.y + 10, 10, withAlpha('#ffffff', .75));
+          circle(ctx, s.x + 26, s.y + 6, 12, withAlpha('#ffffff', .82));
+          circle(ctx, s.x + 40, s.y + 10, 10, withAlpha('#ffffff', .75));
+        } else if (def.motif === 'stamp') {
+          slotLabel(s, ['LOVE','SNS','CUTIE','BEST'][idx % 4], def.accent2, def.ink);
+        } else {
+          cornerSpark(s.x + 12, s.y + 14, idx % 2 ? '♡' : '✦', idx % 2 ? def.accent2 : def.accent);
+          cornerSpark(s.x + s.w - 14, s.y + s.h - 10, idx % 2 ? '✿' : '⋆', idx % 2 ? def.accent : def.accent2);
+        }
+      } else if (def.category === 'Film') {
+        for (let y = s.y + 10; y < s.y + s.h - 8; y += 22) {
+          roundRect(ctx, s.x - 18, y, 10, 14, 2, withAlpha(def.ink, .8));
+          roundRect(ctx, s.x + s.w + 8, y, 10, 14, 2, withAlpha(def.ink, .8));
+        }
+        text(ctx, `${String(idx + 1).padStart(2,'0')}`, s.x + s.w - 12, s.y + 20, 12, def.ink, 900, 'right');
+        if (def.motif === 'polaroid') {
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 18, 10, null, withAlpha(def.accent2, .4), 1.5);
+        }
+      } else if (def.category === 'Elegant') {
+        [[s.x + 10, s.y + 10],[s.x + s.w - 10, s.y + 10],[s.x + 10, s.y + s.h - 10],[s.x + s.w - 10, s.y + s.h - 10]].forEach(([cx,cy])=>{
+          drawStar(ctx, cx, cy, 8, def.accent, 4);
+        });
+        if (def.motif === 'pearl') {
+          circle(ctx, s.x + 20, s.y + s.h - 18, 5, withAlpha('#ffffff', .85), withAlpha(def.accent2, .6), 1);
+          circle(ctx, s.x + s.w - 20, s.y + 18, 5, withAlpha('#ffffff', .85), withAlpha(def.accent2, .6), 1);
+        }
+      } else if (def.category === 'Floral') {
+        const floralIcon = ({rose:'✿', sunflower:'✺', lavender:'❀', daisy:'✿', peony:'❀', leaf:'❃', wild:'✿', hydrangea:'✾', spring:'❀', sakura:'❀'})[def.motif] || '✿';
+        cornerSpark(s.x + 12, s.y + 14, floralIcon, def.accent);
+        cornerSpark(s.x + s.w - 12, s.y + s.h - 10, floralIcon, def.accent2);
+        line(ctx, s.x + 18, s.y + s.h + 8, s.x + s.w - 18, s.y + s.h + 8, withAlpha(def.accent, .24), 1.5);
+      } else if (def.category === 'Seasonal') {
+        const iconMap = {birthday:'🎈', graduation:'🎓', christmas:'❄', valentine:'♡', halloween:'☾', eid:'☪', newyear:'✦', summer:'☼', autumn:'✦', winter:'❄'};
+        cornerSpark(s.x + 12, s.y + 16, iconMap[def.motif] || '✦', def.accent);
+        slotLabel(s, ['snap 1','snap 2','snap 3','snap 4'][idx], def.accent2, def.ink);
+      } else if (def.category === 'Gaming') {
+        for (let px = 0; px < 3; px++) {
+          ctx.fillStyle = px % 2 ? def.accent2 : def.accent;
+          ctx.globalAlpha = .92;
+          ctx.fillRect(s.x - 12 + px * 8, s.y - 12, 7, 7);
+          ctx.fillRect(s.x + s.w - 11 - px * 8, s.y + s.h + 5, 7, 7);
+          ctx.globalAlpha = 1;
+        }
+        slotLabel(s, ['LV.1','LV.2','LV.3','LV.4'][idx], def.accent, def.ink);
+      } else if (def.category === 'Pattern') {
+        if (def.motif === 'polkadot') {
+          for (let dx of [16, s.w - 16]) {
+            circle(ctx, s.x + dx, s.y + 16, 5, withAlpha(def.accent, .8));
+            circle(ctx, s.x + dx, s.y + s.h - 16, 5, withAlpha(def.accent2, .8));
+          }
+        } else if (def.motif === 'stripe' || def.motif === 'rainbow') {
+          for (let k = 0; k < 5; k++) line(ctx, s.x + 10 + k * 18, s.y - 8, s.x - 4 + k * 18, s.y + 8, withAlpha(k % 2 ? def.accent2 : def.accent, .5), 2);
+        } else if (def.motif === 'checker' || def.motif === 'grid') {
+          for (let k = 0; k < 4; k++) {
+            ctx.fillStyle = k % 2 ? withAlpha(def.accent2, .35) : withAlpha(def.accent, .35);
+            ctx.fillRect(s.x + 8 + k * 10, s.y - 10, 8, 8);
+          }
+        } else if (def.motif === 'gingham') {
+          tape(s.x + s.w - 32, s.y + 14, 38, 16, def.accent, -6);
+        } else if (def.motif === 'heart' || def.motif === 'stars') {
+          cornerSpark(s.x + 14, s.y + 14, def.motif === 'heart' ? '♡' : '★', def.accent);
+          cornerSpark(s.x + s.w - 14, s.y + s.h - 10, def.motif === 'heart' ? '♥' : '✦', def.accent2);
+        }
+      } else if (def.category === 'Social Media') {
+        if (def.motif === 'igstory') {
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 28, null, withAlpha('#ffffff', .85), 2);
+          roundRect(ctx, s.x + 12, s.y + 12, 70, 8, 4, withAlpha('#ffffff', .72));
+        } else if (def.motif === 'igfeed' || def.motif === 'profile') {
+          roundRect(ctx, s.x - 10, s.y - 36, s.w + 20, 26, 12, withAlpha('#ffffff', .82), withAlpha(def.accent2, .25), 1);
+          circle(ctx, s.x + 16, s.y - 23, 7, def.accent);
+          line(ctx, s.x + 30, s.y - 23, s.x + 108, s.y - 23, withAlpha(def.ink, .32), 4);
+        } else if (def.motif === 'youtube') {
+          roundRect(ctx, s.x + 12, s.y + s.h - 32, 62, 18, 9, def.accent);
+          text(ctx, 'PLAY', s.x + 43, s.y + s.h - 19, 10, '#fff', 900);
+        } else if (def.motif === 'music') {
+          roundRect(ctx, s.x + 14, s.y + s.h - 26, s.w - 28, 10, 5, withAlpha(def.ink, .14));
+          roundRect(ctx, s.x + 14, s.y + s.h - 26, (s.w - 28) * .45, 10, 5, def.accent);
+        } else if (def.motif === 'chat') {
+          roundRect(ctx, s.x + s.w - 90, s.y + 14, 74, 20, 10, withAlpha(def.accent, .22), withAlpha(def.accent, .32), 1);
+          text(ctx, 'typing...', s.x + s.w - 53, s.y + 28, 9, def.ink, 700);
+        } else if (def.motif === 'tiktok') {
+          text(ctx, '♪', s.x + 16, s.y + 22, 18, def.accent);
+          text(ctx, '♥', s.x + s.w - 18, s.y + s.h - 12, 14, def.accent2);
+        } else if (def.motif === 'iphone' || def.motif === 'cameraRoll') {
+          text(ctx, idx === 0 ? 'LIVE' : 'HDR', s.x + s.w - 18, s.y + 18, 11, def.ink, 800, 'right');
+        }
+      } else {
+        corners.forEach(([cx, cy], cidx) => {
+          const icon = ['✦', '♡', '✿', '★'][(idx + cidx) % 4];
+          text(ctx, icon, cx, cy, 13, withAlpha(cidx % 2 ? def.accent2 : def.accent, .95));
+        });
+      }
 
       if (idx < slots.length - 1) {
         const gapY = s.y + s.h + (slots[idx + 1].y - (s.y + s.h)) / 2;
-        text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 20, withAlpha(def.accent2, .92));
-        line(ctx, 110, gapY, FRAME_W / 2 - 26, gapY, withAlpha(def.accent, .24), 1.5);
-        line(ctx, FRAME_W / 2 + 26, gapY, FRAME_W - 110, gapY, withAlpha(def.accent, .24), 1.5);
+        if (def.category === 'Film') {
+          text(ctx, ['01','02','03'][idx], FRAME_W / 2, gapY + 2, 14, withAlpha(def.ink, .82), 900);
+          line(ctx, 100, gapY, FRAME_W / 2 - 30, gapY, withAlpha(def.accent2, .36), 1.5);
+          line(ctx, FRAME_W / 2 + 30, gapY, FRAME_W - 100, gapY, withAlpha(def.accent2, .36), 1.5);
+        } else if (def.category === 'Gaming') {
+          roundRect(ctx, FRAME_W / 2 - 44, gapY - 12, 88, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
+          text(ctx, ['HP +5','XP +8','BONUS'][idx], FRAME_W / 2, gapY + 1, 12, def.ink, 900);
+        } else if (def.category === 'Social Media') {
+          text(ctx, ['♡','💬','↗'][idx], FRAME_W / 2, gapY + 1, 15, withAlpha(def.accent2, .95));
+          line(ctx, 112, gapY, FRAME_W / 2 - 24, gapY, withAlpha(def.accent, .2), 1.5);
+          line(ctx, FRAME_W / 2 + 24, gapY, FRAME_W - 112, gapY, withAlpha(def.accent, .2), 1.5);
+        } else {
+          text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 20, withAlpha(def.accent2, .92));
+          line(ctx, 110, gapY, FRAME_W / 2 - 26, gapY, withAlpha(def.accent, .24), 1.5);
+          line(ctx, FRAME_W / 2 + 26, gapY, FRAME_W - 110, gapY, withAlpha(def.accent, .24), 1.5);
+        }
       }
     });
+  }
+
+  function drawFooterNameZone(ctx, def, slots) {
+    const last = slots[slots.length - 1];
+    if (!last) return;
+    const zoneTop = last.y + last.h + 28;
+    const zoneBottom = FRAME_H - 42;
+    const zoneH = zoneBottom - zoneTop;
+    if (zoneH < 60) return;
+
+    const panelH = Math.min(68, Math.max(50, zoneH - 16));
+    const panelY = zoneTop + Math.max(8, (zoneH - panelH) / 2);
+    const panelX = 70;
+    const panelW = FRAME_W - 140;
+
+    if (def.category === 'Film') {
+      line(ctx, 84, zoneTop + 8, FRAME_W - 84, zoneTop + 8, withAlpha(def.accent2, .35), 2);
+      for (let x of [82, FRAME_W - 96]) {
+        roundRect(ctx, x, panelY + 8, 14, panelH - 16, 3, withAlpha(def.ink, .8));
+      }
+      roundRect(ctx, panelX + 18, panelY, panelW - 36, panelH, 14, withAlpha('#ffffff', .14), withAlpha(def.accent, .32), 1.5);
+    } else if (def.category === 'Social Media') {
+      roundRect(ctx, panelX, panelY, panelW, panelH, 28, withAlpha('#ffffff', .14), withAlpha(def.accent, .28), 1.5);
+      circle(ctx, panelX + 28, panelY + panelH / 2, 8, withAlpha(def.accent, .85));
+      line(ctx, panelX + 48, panelY + panelH / 2, panelX + panelW - 80, panelY + panelH / 2, withAlpha(def.ink, .18), 4);
+      text(ctx, '♡', panelX + panelW - 34, panelY + panelH / 2, 18, withAlpha(def.accent2, .92));
+    } else if (def.category === 'Gaming') {
+      roundRect(ctx, panelX, panelY, panelW, panelH, 12, withAlpha(def.accent, .10), withAlpha(def.accent2, .45), 2);
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = i % 2 ? withAlpha(def.accent2, .7) : withAlpha(def.accent, .7);
+        ctx.fillRect(panelX + 18 + i * 14, panelY + 12, 8, 8);
+      }
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = i % 2 ? withAlpha(def.accent, .7) : withAlpha(def.accent2, .7);
+        ctx.fillRect(panelX + panelW - 26 - i * 14, panelY + panelH - 20, 8, 8);
+      }
+    } else {
+      roundRect(ctx, panelX, panelY, panelW, panelH, 24, withAlpha('#ffffff', .14), withAlpha(def.accent, .24), 1.5);
+      line(ctx, panelX + 38, panelY + panelH / 2, panelX + panelW - 38, panelY + panelH / 2, withAlpha(def.ink, .18), 3);
+      text(ctx, '✦', panelX + 24, panelY + panelH / 2, 16, withAlpha(def.accent2, .85));
+      text(ctx, '✦', panelX + panelW - 24, panelY + panelH / 2, 16, withAlpha(def.accent2, .85));
+    }
   }
 
   // Render basic frame as PNG using canvas (591x1772)
@@ -827,6 +1120,7 @@
 
     // Foreground frame layer stays on top of photos.
     drawSlotBorders(ctx, slots, def);
+    drawFooterNameZone(ctx, def, slots);
     roundRect(ctx, 12, 12, W - 24, H - 24, 30, null, withAlpha(def.accent, .54), 3.5);
     roundRect(ctx, 26, 26, W - 52, H - 52, 24, null, withAlpha('#ffffff', .28), 1.5);
 

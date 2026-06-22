@@ -1239,9 +1239,10 @@
   }
 
 
-  async function shareOrDownloadBlob(blob, filename, title) {
+  async function shareOrDownloadBlob(blob, filename, title, options = {}) {
     if (!blob) throw new Error('Blob kosong');
     const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+    const suppressCancel = options.suppressCancel !== false;
 
     // Web Share API jalan paling aman di HTTPS + mobile browser.
     if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
@@ -1253,8 +1254,10 @@
         });
         return 'shared';
       } catch (e) {
-        // Kalau user cancel share sheet, jangan dianggap error besar.
-        if (e && e.name === 'AbortError') return 'cancelled';
+        // Di beberapa browser Android, balik dari share/print sheet bisa dilempar AbortError
+        // walaupun user tidak benar-benar membatalkan. Untuk tombol cetak, jangan tampilkan
+        // pesan "Share dibatalkan" karena bikin misleading.
+        if (e && e.name === 'AbortError') return suppressCancel ? 'handled' : 'cancelled';
         console.warn('Web Share gagal, fallback download:', e);
       }
     }
@@ -1324,10 +1327,10 @@
       ctx.drawImage(img, sx, sy, sw, sh, STRIP_W, 0, STRIP_W, STRIP_H);
 
       const blob = await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
-      const mode = await shareOrDownloadBlob(blob, `lux-cetak2strip-${Date.now()}.jpg`, 'Cetak 2 Strip LUX Photobooth');
+      const mode = await shareOrDownloadBlob(blob, `lux-cetak2strip-${Date.now()}.jpg`, 'Cetak 2 Strip LUX Photobooth', { suppressCancel: true });
 
-      if (mode === 'shared') showStatus('Web Share terbuka untuk Cetak 2 Strip');
-      else if (mode === 'cancelled') showStatus('Share dibatalkan');
+      if (mode === 'shared') showStatus('File Cetak 2 Strip sudah dibuka di share/print sheet');
+      else if (mode === 'handled') showStatus('File Cetak 2 Strip sudah diproses');
       else showStatus('Web Share tidak tersedia, file Cetak 2 Strip didownload');
     } catch(e) {
       console.error('cetak2Strip error:', e);
@@ -1371,10 +1374,10 @@
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, H);
 
       const blob = await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
-      const mode = await shareOrDownloadBlob(blob, `lux-cetak1strip-${Date.now()}.jpg`, 'Cetak 1 Strip LUX Photobooth');
+      const mode = await shareOrDownloadBlob(blob, `lux-cetak1strip-${Date.now()}.jpg`, 'Cetak 1 Strip LUX Photobooth', { suppressCancel: true });
 
-      if (mode === 'shared') showStatus('Web Share terbuka untuk Cetak 1 Strip');
-      else if (mode === 'cancelled') showStatus('Share dibatalkan');
+      if (mode === 'shared') showStatus('File Cetak 1 Strip sudah dibuka di share/print sheet');
+      else if (mode === 'handled') showStatus('File Cetak 1 Strip sudah diproses');
       else showStatus('Web Share tidak tersedia, file Cetak 1 Strip didownload');
     } catch(e) {
       console.error('cetak1Strip error:', e);

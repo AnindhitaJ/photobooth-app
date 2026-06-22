@@ -744,90 +744,110 @@
   }
 
   function drawElegantDecor(ctx, def) {
-    function pearlChain(y, color) {
-      for (let x = 78; x < FRAME_W - 76; x += 28) circle(ctx, x, y, 5, withAlpha('#ffffff', .92), withAlpha(color, .55), 1);
+    function pearlChain(y, color, r = 5, start = 78, end = FRAME_W - 76, step = 28) {
+      for (let x = start; x < end; x += step) circle(ctx, x, y, r, withAlpha('#ffffff', .92), withAlpha(color, .55), 1);
     }
     function flourish(x, y, color) {
       line(ctx, x - 18, y, x + 18, y, withAlpha(color, .68), 1.8);
       line(ctx, x, y - 18, x, y + 18, withAlpha(color, .68), 1.8);
       drawStar(ctx, x, y, 9, color, 4);
     }
-    function decoPanel(margin, stroke) {
+    function decoPanel(margin, stroke, inner = withAlpha(def.accent2, .45)) {
       roundRect(ctx, margin, margin, FRAME_W - margin * 2, FRAME_H - margin * 2, 28, null, stroke, 3);
-      roundRect(ctx, margin + 16, margin + 16, FRAME_W - (margin + 16) * 2, FRAME_H - (margin + 16) * 2, 24, null, withAlpha(def.accent2, .45), 1.5);
+      roundRect(ctx, margin + 16, margin + 16, FRAME_W - (margin + 16) * 2, FRAME_H - (margin + 16) * 2, 24, null, inner, 1.5);
     }
+    const headerX = FRAME_W / 2 + 42;
+    const topY = 58;
 
     if (def.id === 'elegant_black_gold') {
       decoPanel(14, def.accent);
       for (const [x, y] of [[56, 56], [FRAME_W - 56, 56], [56, FRAME_H - 56], [FRAME_W - 56, FRAME_H - 56]]) flourish(x, y, def.accent);
-      line(ctx, 96, 54, FRAME_W - 96, 54, withAlpha(def.accent2, .28), 1.5);
-      line(ctx, 96, FRAME_H - 54, FRAME_W - 96, FRAME_H - 54, withAlpha(def.accent2, .28), 1.5);
-      text(ctx, 'LUXE NOIR', FRAME_W / 2, 58, 24, def.accent, 900);
+      line(ctx, 122, 54, headerX - 56, 54, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, headerX + 56, 54, FRAME_W - 118, 54, withAlpha(def.accent2, .28), 1.5);
+      drawStar(ctx, headerX, 54, 10, def.accent2, 4);
+      text(ctx, 'LUXE NOIR', headerX, topY, 24, def.accent, 900);
     } else if (def.id === 'elegant_white_gold') {
       decoPanel(18, withAlpha(def.accent, .55));
-      for (let y = 90; y < FRAME_H - 100; y += 72) {
-        circle(ctx, 42, y, 3, withAlpha(def.accent, .72));
-        circle(ctx, FRAME_W - 42, y, 3, withAlpha(def.accent, .72));
+      pearlChain(60, def.accent2);
+      pearlChain(FRAME_H - 60, def.accent2);
+      for (let y = 118; y < FRAME_H - 130; y += 116) {
+        circle(ctx, 40, y, 3, withAlpha(def.accent, .72));
+        circle(ctx, FRAME_W - 40, y + 18, 3, withAlpha(def.accent, .72));
+        line(ctx, 48, y, 72, y, withAlpha(def.accent, .22), 1.5);
+        line(ctx, FRAME_W - 72, y + 18, FRAME_W - 48, y + 18, withAlpha(def.accent, .22), 1.5);
       }
-      pearlChain(60, def.accent2); pearlChain(FRAME_H - 60, def.accent2);
-      text(ctx, 'WHITE GOLD', FRAME_W / 2, 58, 22, def.accent, 900);
+      drawHeaderRibbon(ctx, 152, 34, FRAME_W - 304, 40, 'white gold', withAlpha('#ffffff', .74), withAlpha(def.accent2, .28), def.ink);
     } else if (def.id === 'elegant_rose_gold') {
       decoPanel(16, withAlpha(def.accent, .58));
-      pearlChain(58, def.accent2); pearlChain(FRAME_H - 58, def.accent2);
-      for (const x of [72, FRAME_W - 72]) drawBow(ctx, x, 60, withAlpha(def.accent, .72), def.ink, .6);
-      for (let y = 120; y < FRAME_H - 140; y += 170) text(ctx, '♡', 42, y, 18, withAlpha(def.accent2, .78));
-      text(ctx, 'rose glow', FRAME_W / 2, FRAME_H - 48, 18, def.accent, 900);
+      pearlChain(58, def.accent2, 4);
+      for (const x of [74, FRAME_W - 74]) drawBow(ctx, x, 60, withAlpha(def.accent2, .72), def.ink, .6);
+      for (let y = 126; y < FRAME_H - 126; y += 170) {
+        text(ctx, '♡', 42, y, 18, withAlpha(def.accent2, .78));
+        text(ctx, '♡', FRAME_W - 42, y + 42, 18, withAlpha(def.accent, .66));
+      }
+      drawHeaderRibbon(ctx, 168, 34, FRAME_W - 336, 40, 'rose glow', withAlpha('#ffffff', .62), withAlpha(def.accent2, .26), def.ink);
     } else if (def.id === 'elegant_silver_pearl') {
       decoPanel(18, withAlpha(def.accent, .5));
-      for (let i = 0; i < 10; i++) {
-        ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .48); ctx.lineWidth = 1.5;
-        const y = 92 + i * 150; ctx.moveTo(40, y); ctx.bezierCurveTo(170, y - 60, 330, y + 50, FRAME_W - 48, y - 10); ctx.stroke();
+      for (let i = 0; i < 9; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .44); ctx.lineWidth = 1.4;
+        const y = 96 + i * 150; ctx.moveTo(34, y); ctx.bezierCurveTo(160, y - 60, 330, y + 55, FRAME_W - 38, y - 8); ctx.stroke();
       }
-      for (const x of [90, FRAME_W - 90]) for (let y = 82; y < FRAME_H - 82; y += 34) circle(ctx, x, y, 4, withAlpha('#ffffff', .94), withAlpha(def.accent, .6), 1);
-      text(ctx, 'silver pearl', FRAME_W / 2, 58, 22, def.accent, 900);
+      for (const x of [84, FRAME_W - 84]) for (let y = 82; y < FRAME_H - 82; y += 34) circle(ctx, x, y, 4, withAlpha('#ffffff', .94), withAlpha(def.accent, .6), 1);
+      drawHeaderRibbon(ctx, 162, 34, FRAME_W - 324, 40, 'silver pearl', withAlpha('#ffffff', .78), withAlpha(def.accent2, .22), def.ink);
     } else if (def.id === 'elegant_emerald_luxury') {
       decoPanel(16, withAlpha(def.accent, .9));
-      for (let y = 68; y < FRAME_H - 68; y += 110) {
-        line(ctx, 28, y, 64, y, withAlpha(def.accent2, .55), 2);
-        line(ctx, FRAME_W - 64, y, FRAME_W - 28, y, withAlpha(def.accent2, .55), 2);
+      for (let y = 80; y < FRAME_H - 80; y += 104) {
+        line(ctx, 28, y, 70, y, withAlpha(def.accent2, .55), 2);
+        line(ctx, FRAME_W - 70, y, FRAME_W - 28, y, withAlpha(def.accent2, .55), 2);
       }
-      line(ctx, 110, 60, FRAME_W / 2 - 34, 60, withAlpha(def.accent2, .5), 2);
-      line(ctx, FRAME_W / 2 + 34, 60, FRAME_W - 110, 60, withAlpha(def.accent2, .5), 2);
-      drawStar(ctx, FRAME_W / 2, 60, 12, def.accent, 4);
-      text(ctx, 'emerald luxe', FRAME_W / 2, FRAME_H - 48, 18, def.accent2, 900);
+      line(ctx, 120, 60, headerX - 48, 60, withAlpha(def.accent2, .5), 2);
+      line(ctx, headerX + 48, 60, FRAME_W - 116, 60, withAlpha(def.accent2, .5), 2);
+      drawStar(ctx, headerX, 60, 12, def.accent, 4);
+      for (let y = 140; y < FRAME_H - 160; y += 200) {
+        roundRect(ctx, 34, y, 26, 42, 8, null, withAlpha(def.accent2, .25), 1.4);
+        roundRect(ctx, FRAME_W - 60, y + 40, 26, 42, 8, null, withAlpha(def.accent2, .25), 1.4);
+      }
+      text(ctx, 'emerald luxe', headerX, topY, 21, def.accent2, 900);
     } else if (def.id === 'elegant_royal_navy') {
       decoPanel(16, withAlpha(def.accent, .72));
-      text(ctx, '♛', FRAME_W / 2, 56, 24, def.accent, 900);
-      drawHeaderRibbon(ctx, 150, 76, FRAME_W - 300, 34, 'royal edition', withAlpha('#ffffff', .08), withAlpha(def.accent2, .22), def.ink);
-      for (let i = 0; i < 40; i++) drawStar(ctx, 44 + (i * 39) % (FRAME_W - 88), 118 + (i * 67) % (FRAME_H - 210), 5 + (i % 2), i % 2 ? def.accent : def.accent2, 4);
+      text(ctx, '♛', headerX, 56, 24, def.accent, 900);
+      drawHeaderRibbon(ctx, 170, 76, FRAME_W - 340, 34, 'royal edition', withAlpha('#ffffff', .08), withAlpha(def.accent2, .22), def.ink);
+      for (let i = 0; i < 32; i++) drawStar(ctx, 44 + (i * 41) % (FRAME_W - 88), 128 + (i * 69) % (FRAME_H - 220), 5 + (i % 2), i % 2 ? def.accent : def.accent2, 4);
+      for (let y = 160; y < FRAME_H - 150; y += 210) {
+        text(ctx, '✦', 42, y, 16, def.accent2, 900);
+        text(ctx, '✦', FRAME_W - 42, y + 36, 16, def.accent2, 900);
+      }
     } else if (def.id === 'elegant_champagne_gold') {
       decoPanel(18, withAlpha(def.accent, .52));
-      for (let i = 0; i < 36; i++) circle(ctx, 58 + (i * 19) % (FRAME_W - 116), 90 + (i * 53) % (FRAME_H - 180), 4 + (i % 3), withAlpha('#ffffff', .65), withAlpha(def.accent2, .4), 1);
-      drawHeaderRibbon(ctx, 142, 34, FRAME_W - 284, 40, 'champagne', withAlpha('#ffffff', .68), withAlpha(def.accent2, .34), def.ink);
+      for (let i = 0; i < 56; i++) circle(ctx, 58 + (i * 19) % (FRAME_W - 116), 90 + (i * 53) % (FRAME_H - 180), 3 + (i % 3), withAlpha('#ffffff', .7), withAlpha(def.accent2, .44), 1);
+      drawHeaderRibbon(ctx, 170, 34, FRAME_W - 340, 40, 'champagne', withAlpha('#ffffff', .68), withAlpha(def.accent2, .34), def.ink);
+      line(ctx, 126, FRAME_H - 88, FRAME_W - 126, FRAME_H - 88, withAlpha(def.accent, .2), 1.5);
     } else if (def.id === 'elegant_luxury_marble') {
       decoPanel(16, withAlpha(def.accent, .46));
-      for (let i = 0; i < 16; i++) {
-        ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent2 : def.accent, .34); ctx.lineWidth = 1.6;
-        const y = 74 + i * 100; ctx.moveTo(20, y); ctx.bezierCurveTo(130, y - 50, 270, y + 50, FRAME_W - 22, y - 8); ctx.stroke();
+      for (let i = 0; i < 18; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent2 : def.accent, .34); ctx.lineWidth = 1.5;
+        const y = 74 + i * 92; ctx.moveTo(18, y); ctx.bezierCurveTo(130, y - 50, 270, y + 50, FRAME_W - 20, y - 8); ctx.stroke();
       }
       flourish(62, 60, def.accent); flourish(FRAME_W - 62, FRAME_H - 60, def.accent2);
-      text(ctx, 'marble collection', FRAME_W / 2, 58, 20, def.accent, 900);
+      drawHeaderRibbon(ctx, 152, 34, FRAME_W - 304, 40, 'marble collection', withAlpha('#ffffff', .72), withAlpha(def.accent2, .24), def.ink);
     } else if (def.id === 'elegant_midnight_black') {
       decoPanel(14, withAlpha(def.accent2, .65));
-      for (let i = 0; i < 80; i++) drawStar(ctx, 34 + (i * 37) % (FRAME_W - 68), 42 + (i * 71) % (FRAME_H - 84), 5 + (i % 3), i % 2 ? def.accent : def.accent2, 4);
-      line(ctx, 88, 60, FRAME_W - 88, 60, withAlpha(def.accent, .22), 1.5);
-      text(ctx, 'midnight', FRAME_W / 2, 58, 22, def.accent2, 900);
+      for (let i = 0; i < 92; i++) drawStar(ctx, 34 + (i * 37) % (FRAME_W - 68), 42 + (i * 71) % (FRAME_H - 84), 4 + (i % 3), i % 2 ? def.accent : def.accent2, 4);
+      line(ctx, 124, 60, headerX - 46, 60, withAlpha(def.accent, .22), 1.5);
+      line(ctx, headerX + 46, 60, FRAME_W - 124, 60, withAlpha(def.accent, .22), 1.5);
+      text(ctx, '☾ midnight', headerX, topY, 20, def.accent2, 900);
       text(ctx, '✦', 68, FRAME_H - 52, 18, def.accent, 900);
       text(ctx, '✦', FRAME_W - 68, FRAME_H - 52, 18, def.accent, 900);
     } else if (def.id === 'elegant_wedding_elegant') {
       decoPanel(18, withAlpha(def.accent, .5));
-      drawHeaderRibbon(ctx, 168, 34, FRAME_W - 336, 40, 'with love', withAlpha('#ffffff', .84), withAlpha(def.accent2, .28), def.ink);
+      drawHeaderRibbon(ctx, 176, 34, FRAME_W - 352, 40, 'with love', withAlpha('#ffffff', .84), withAlpha(def.accent2, .28), def.ink);
       drawBow(ctx, 86, 56, withAlpha(def.accent2, .76), def.accent, .7);
       drawBow(ctx, FRAME_W - 86, 56, withAlpha(def.accent2, .76), def.accent, .7);
       for (let y = 100; y < FRAME_H - 120; y += 120) {
         text(ctx, '♡', 42, y, 15, withAlpha(def.accent2, .68));
         text(ctx, '♡', FRAME_W - 42, y + 30, 15, withAlpha(def.accent2, .68));
       }
+      line(ctx, 130, FRAME_H - 88, FRAME_W - 130, FRAME_H - 88, withAlpha(def.accent, .18), 1.2);
     }
   }
 
@@ -1066,9 +1086,54 @@
     circle(ctx, FRAME_W - 88, blankTop - 14, 4, def.accent2);
 
     if (def.category === 'Elegant') {
-      drawStar(ctx, FRAME_W / 2, zoneTop + 22, 10, def.accent, 4);
-      line(ctx, 132, zoneTop + 22, FRAME_W / 2 - 24, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
-      line(ctx, FRAME_W / 2 + 24, zoneTop + 22, FRAME_W - 132, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+      const drawDivider = (label, fill, stroke, color) => {
+        roundRect(ctx, FRAME_W / 2 - 92, zoneTop + 8, 184, 26, 13, fill, stroke, 1.4);
+        text(ctx, label, FRAME_W / 2, zoneTop + 21, 11, color, 900);
+      };
+      const flourishDivider = () => {
+        drawStar(ctx, FRAME_W / 2, zoneTop + 22, 10, def.accent, 4);
+        line(ctx, 132, zoneTop + 22, FRAME_W / 2 - 24, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+        line(ctx, FRAME_W / 2 + 24, zoneTop + 22, FRAME_W - 132, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+      };
+      if (def.id === 'elegant_black_gold') {
+        flourishDivider();
+      } else if (def.id === 'elegant_white_gold') {
+        for (let x = 150; x < FRAME_W - 146; x += 26) circle(ctx, x, zoneTop + 22, 4, withAlpha('#ffffff', .92), withAlpha(def.accent, .55), 1);
+        circle(ctx, FRAME_W / 2, zoneTop + 22, 5, def.accent);
+      } else if (def.id === 'elegant_rose_gold') {
+        drawBow(ctx, FRAME_W / 2 - 78, zoneTop + 22, withAlpha(def.accent2, .8), def.accent, .5);
+        drawBow(ctx, FRAME_W / 2 + 78, zoneTop + 22, withAlpha(def.accent2, .8), def.accent, .5);
+        text(ctx, '♡', FRAME_W / 2, zoneTop + 23, 12, withAlpha(def.accent, .88), 900);
+      } else if (def.id === 'elegant_silver_pearl') {
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .44); ctx.lineWidth = 1.1;
+          const yy = zoneTop + 18 + i * 8; ctx.moveTo(132, yy); ctx.bezierCurveTo(210, yy - 8, 300, yy + 8, FRAME_W - 132, yy); ctx.stroke();
+        }
+        circle(ctx, FRAME_W / 2, zoneTop + 22, 4, withAlpha('#ffffff', .94), withAlpha(def.accent, .62), 1);
+      } else if (def.id === 'elegant_emerald_luxury') {
+        line(ctx, 140, zoneTop + 22, FRAME_W / 2 - 30, zoneTop + 22, withAlpha(def.accent2, .42), 2);
+        line(ctx, FRAME_W / 2 + 30, zoneTop + 22, FRAME_W - 140, zoneTop + 22, withAlpha(def.accent2, .42), 2);
+        drawStar(ctx, FRAME_W / 2, zoneTop + 22, 10, def.accent, 4);
+      } else if (def.id === 'elegant_royal_navy') {
+        drawDivider('ROYAL EDIT', withAlpha('#ffffff', .08), withAlpha(def.accent2, .34), def.ink);
+        text(ctx, '♛', FRAME_W / 2, zoneTop + 53, 18, def.accent, 900);
+      } else if (def.id === 'elegant_champagne_gold') {
+        for (let x = 160; x < FRAME_W - 156; x += 24) circle(ctx, x, zoneTop + 20 + ((x/24)%2?2:-2), 3 + (Math.floor(x/24)%2), withAlpha('#ffffff', .72), withAlpha(def.accent2, .44), 1);
+      } else if (def.id === 'elegant_luxury_marble') {
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent2 : def.accent, .22); ctx.lineWidth = 1.4;
+          const yy = zoneTop + 18 + i * 8; ctx.moveTo(130, yy); ctx.bezierCurveTo(220, yy - 12, 270, yy + 12, FRAME_W - 130, yy - 2); ctx.stroke();
+        }
+      } else if (def.id === 'elegant_midnight_black') {
+        text(ctx, '✦', FRAME_W / 2 - 42, zoneTop + 22, 12, def.accent, 900);
+        text(ctx, '☾', FRAME_W / 2, zoneTop + 22, 11, def.accent2, 900);
+        text(ctx, '✦', FRAME_W / 2 + 42, zoneTop + 22, 12, def.accent, 900);
+      } else if (def.id === 'elegant_wedding_elegant') {
+        drawDivider('with love', withAlpha('#ffffff', .74), withAlpha(def.accent2, .22), def.ink);
+        text(ctx, '♡', FRAME_W / 2, zoneTop + 52, 14, withAlpha(def.accent2, .9), 900);
+      } else {
+        flourishDivider();
+      }
     } else if (def.category === 'Gaming') {
       roundRect(ctx, FRAME_W / 2 - 76, zoneTop + 8, 152, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
       text(ctx, 'PLAYER TAG', FRAME_W / 2, zoneTop + 20, 11, def.ink, 900);
@@ -1093,19 +1158,8 @@
       // Film header/decor is handled by drawFilmDecor().
       // Keep this branch empty to avoid duplicate labels in the thumbnail/output.
     } else if (def.category === 'Elegant') {
-      if (def.motif === 'luxury' || def.motif === 'royal') {
-        line(ctx, 130, 54, FRAME_W / 2 - 28, 54, withAlpha(def.accent, .35), 2);
-        line(ctx, FRAME_W / 2 + 28, 54, FRAME_W - 130, 54, withAlpha(def.accent, .35), 2);
-        drawStar(ctx, FRAME_W / 2, 54, 12, def.accent, 4);
-      } else if (def.motif === 'pearl') {
-        for (let x = 138; x < FRAME_W - 130; x += 30) circle(ctx, x, 54, 6, withAlpha('#ffffff', .88), withAlpha(def.accent2, .62), 1);
-      } else if (def.motif === 'marble') {
-        drawHeaderRibbon(ctx, 144, 34, FRAME_W - 288, 38, 'marble collection', withAlpha('#ffffff', .66), withAlpha(def.accent2, .34), def.ink);
-      } else if (def.motif === 'wedding') {
-        drawHeaderRibbon(ctx, 158, 34, FRAME_W - 316, 40, 'with love', withAlpha('#ffffff', .75), withAlpha(def.accent, .3), def.ink);
-      } else {
-        drawHeaderRibbon(ctx, 154, 34, FRAME_W - 308, 38, def.name.toLowerCase(), withAlpha('#ffffff', .7), withAlpha(def.accent2, .3), def.ink);
-      }
+      // Elegant header/decor is handled by drawElegantDecor().
+      // Keep this branch empty to avoid duplicate/stacked labels in the thumbnail/output.
     } else if (def.category === 'Floral') {
       const floralLabel = ({sakura:'sakura day', rose:'blue rose', sunflower:'sunny bloom', lavender:'lavender bloom', daisy:'daisy field', peony:'peony blush', leaf:'botanical green', wild:'wild flower', hydrangea:'hydrangea', spring:'spring bloom'})[def.motif] || def.name.toLowerCase();
       drawHeaderRibbon(ctx, 140, 34, FRAME_W - 280, 40, floralLabel, withAlpha('#ffffff', .64), withAlpha(def.accent, .28), def.ink);

@@ -357,10 +357,33 @@
   // so the frame ornaments are visible and the photo slots do not feel too tight.
   function generateBuiltInSlots(def = {}) {
     const category = def.category || '';
-    const sidePad = 54;
-    const topPad = category === 'Social Media' ? 118 : 102;
-    const bottomPad = 126;
-    const gap = 34;
+    let sidePad = 68;
+    let topPad = 118;
+    let bottomPad = 148;
+    let gap = 44;
+
+    if (category === 'Social Media') {
+      sidePad = 74;
+      topPad = 138;
+      bottomPad = 152;
+      gap = 42;
+    } else if (category === 'Korean' || category === 'Floral' || category === 'Pattern') {
+      sidePad = 76;
+      topPad = 122;
+      bottomPad = 152;
+      gap = 46;
+    } else if (category === 'Film' || category === 'Elegant') {
+      sidePad = 64;
+      topPad = 114;
+      bottomPad = 144;
+      gap = 42;
+    } else if (category === 'Seasonal' || category === 'Gaming') {
+      sidePad = 70;
+      topPad = 122;
+      bottomPad = 150;
+      gap = 44;
+    }
+
     const slotW = FRAME_W - sidePad * 2;
     const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (FRAME_SLOTS - 1)) / FRAME_SLOTS);
     const slots = [];
@@ -731,16 +754,28 @@
 
   function drawSlotBorders(ctx, slots, def) {
     slots.forEach((s, idx) => {
-      const r = 16;
-      // soft mat around each photo slot
-      roundRect(ctx, s.x - 14, s.y - 14, s.w + 28, s.h + 28, r + 12, withAlpha('#ffffff', .20), withAlpha(def.accent, .36), 3);
-      roundRect(ctx, s.x - 5, s.y - 5, s.w + 10, s.h + 10, r, null, withAlpha(def.ink, .18), 2);
-      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 8, null, withAlpha(def.accent, .62), idx % 2 ? 2 : 3);
+      const r = 14;
+      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 10, withAlpha('#ffffff', .22), withAlpha(def.accent, .34), 2.5);
+      roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, r + 2, null, withAlpha(def.ink, .14), 1.5);
+      roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, r + 6, null, withAlpha(def.accent, .52), 2);
+
+      // cute tiny corner accents so frames feel richer without eating photo space
+      const corners = [
+        [s.x - 12, s.y - 12],
+        [s.x + s.w + 12, s.y - 12],
+        [s.x - 12, s.y + s.h + 12],
+        [s.x + s.w + 12, s.y + s.h + 12]
+      ];
+      corners.forEach(([cx, cy], cidx) => {
+        const icon = ['✦', '♡', '✿', '★'][(idx + cidx) % 4];
+        text(ctx, icon, cx, cy, 13, withAlpha(cidx % 2 ? def.accent2 : def.accent, .95));
+      });
+
       if (idx < slots.length - 1) {
         const gapY = s.y + s.h + (slots[idx + 1].y - (s.y + s.h)) / 2;
-        text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 22, withAlpha(def.accent2, .95));
-        line(ctx, 82, gapY, FRAME_W / 2 - 30, gapY, withAlpha(def.accent, .28), 2);
-        line(ctx, FRAME_W / 2 + 30, gapY, FRAME_W - 82, gapY, withAlpha(def.accent, .28), 2);
+        text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 20, withAlpha(def.accent2, .92));
+        line(ctx, 110, gapY, FRAME_W / 2 - 26, gapY, withAlpha(def.accent, .24), 1.5);
+        line(ctx, FRAME_W / 2 + 26, gapY, FRAME_W - 110, gapY, withAlpha(def.accent, .24), 1.5);
       }
     });
   }
@@ -792,7 +827,8 @@
 
     // Foreground frame layer stays on top of photos.
     drawSlotBorders(ctx, slots, def);
-    roundRect(ctx, 10, 10, W - 20, H - 20, 28, null, withAlpha(def.accent, .60), 4);
+    roundRect(ctx, 12, 12, W - 24, H - 24, 30, null, withAlpha(def.accent, .54), 3.5);
+    roundRect(ctx, 26, 26, W - 52, H - 52, 24, null, withAlpha('#ffffff', .28), 1.5);
 
     const data = { src: c.toDataURL('image/png'), slots, w: W, h: H };
     builtInCache.set(def.id, data);

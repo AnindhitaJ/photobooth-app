@@ -443,14 +443,16 @@
 </div>
 
 <script>
-  const isGanciMode  = localStorage.getItem('captureFlow') === 'ganci';
-  const isProductMode = localStorage.getItem('captureFlow') === 'product';
+  const captureFlow = localStorage.getItem('captureFlow') || '';
+  const isGanciMode  = captureFlow === 'ganci';
+  const isProductMode = captureFlow === 'product';
+  const isPhotoboxMode = captureFlow === 'photobox';
   const ganciConfig  = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
   const slotCount    = (isGanciMode || isProductMode) ? 1 : parseInt(localStorage.getItem('slotCount') || '1');
   const templateName = isGanciMode
     ? ('Ganci ' + ((window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos'))
     : (localStorage.getItem('templateName') || 'Template');
-  document.getElementById('subText').textContent = (isGanciMode || isProductMode) ? '1 foto · retake bebas' : templateName + ' · ' + slotCount + ' foto';
+  document.getElementById('subText').textContent = (isGanciMode || isProductMode) ? '1 foto · retake bebas' : (isPhotoboxMode ? 'Photobox 4R · ' : '') + templateName + ' · ' + slotCount + ' foto';
   if (isGanciMode) {
     document.body.classList.add('ganci-mode');
     document.title = 'Kamera Ganci - LUX Photobooth';

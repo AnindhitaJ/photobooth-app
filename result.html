@@ -365,6 +365,8 @@
   // ─── State ───
   const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
   const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
+  const captureFlow    = localStorage.getItem('captureFlow') || '';
+  const isPhotoboxMode = captureFlow === 'photobox';
   const templateSrc    = localStorage.getItem('templateSrc');
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]').map(s => ({
     ...s,
@@ -390,6 +392,17 @@
   let finalGifURL     = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
+
+  if (isPhotoboxMode) {
+    document.title = 'Hasil Photobox 4R - LUX Photobooth';
+    const btnShare = document.getElementById('btnShare');
+    const btnCetak2 = document.getElementById('btnCetak2Strip');
+    if (btnShare) {
+      btnShare.querySelector('.btn-label').textContent = 'Cetak 4R';
+      btnShare.querySelector('.btn-badge').textContent = 'Print';
+    }
+    if (btnCetak2) btnCetak2.style.display = 'none';
+  }
 
   function loadImage(src) {
     return new Promise((resolve, reject) => {
@@ -1624,9 +1637,9 @@
     }
   }
 
-  // ─── Cetak 1 Strip: langsung buka print, bukan Web Share ───
+  // ─── Cetak 1 Strip / Cetak 4R: langsung buka print, bukan Web Share ───
   async function shareNative() {
-    console.log('[LUX] cetak1Strip print clicked', { hasFinalDataURL: !!finalDataURL });
+    console.log('[LUX] print clicked', { hasFinalDataURL: !!finalDataURL, isPhotoboxMode });
     const btn = document.getElementById('btnShare');
     if (!finalDataURL) {
       showStatus('Foto belum siap. Tunggu hasil selesai dulu ya.');
@@ -1637,39 +1650,51 @@
     btn.querySelector('.btn-label').textContent = 'Menyiapkan print...';
 
     try {
-      const TOTAL_W = 1181;
-      const STRIP_W = 590;
-      const H = 1772;
-      const canvas  = document.createElement('canvas');
-      canvas.width  = TOTAL_W;
-      canvas.height = H;
-      const ctx = canvas.getContext('2d');
+      let blob, filename, title;
 
-      // Tetap generate file yang sama: canvas 10×15 dengan 1 strip 5×15 di sisi kiri.
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, TOTAL_W, H);
+      if (isPhotoboxMode) {
+        // Photobox: hasilnya sudah full 4R/10×15, jadi langsung print hasil final.
+        blob = dataURLtoBlob(finalDataURL);
+        filename = `lux-photobox-4r-${Date.now()}.jpg`;
+        title = 'Cetak Photobox 4R';
+      } else {
+        const TOTAL_W = 1181;
+        const STRIP_W = 590;
+        const H = 1772;
+        const canvas  = document.createElement('canvas');
+        canvas.width  = TOTAL_W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
 
-      const img = await loadImageSafe(finalDataURL);
-      const scale = Math.max(STRIP_W / img.width, H / img.height);
-      const sw = STRIP_W / scale;
-      const sh = H / scale;
-      const sx = (img.width  - sw) / 2;
-      const sy = (img.height - sh) / 2;
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, H);
+        // Tetap generate file yang sama: canvas 10×15 dengan 1 strip 5×15 di sisi kiri.
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, TOTAL_W, H);
 
-      const blob = await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
-      const mode = await openPrintSetupWindow(blob, `lux-cetak1strip-${Date.now()}.jpg`, 'Cetak 1 Strip');
+        const img = await loadImageSafe(finalDataURL);
+        const scale = Math.max(STRIP_W / img.width, H / img.height);
+        const sw = STRIP_W / scale;
+        const sh = H / scale;
+        const sx = (img.width  - sw) / 2;
+        const sy = (img.height - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, H);
+
+        blob = await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
+        filename = `lux-cetak1strip-${Date.now()}.jpg`;
+        title = 'Cetak 1 Strip';
+      }
+
+      const mode = await openPrintSetupWindow(blob, filename, title);
 
       if (mode === 'print') {
-        showStatus('Membuka halaman print. Atur kertas, scale, margin, lalu print.');
+        showStatus(isPhotoboxMode ? 'Membuka halaman print Photobox 4R. Atur kertas, scale, margin, lalu print.' : 'Membuka halaman print. Atur kertas, scale, margin, lalu print.');
       } else {
         showStatus('Popup diblokir, print langsung dibuka. Kalau belum muncul, izinkan popup browser.');
       }
     } catch(e) {
-      console.error('cetak1Strip print error:', e);
-      showStatus('Gagal membuka print Cetak 1 Strip: ' + (e.message || e));
+      console.error('print error:', e);
+      showStatus('Gagal membuka print: ' + (e.message || e));
     } finally {
-      btn.querySelector('.btn-label').textContent = 'Cetak 1 Strip';
+      btn.querySelector('.btn-label').textContent = isPhotoboxMode ? 'Cetak 4R' : 'Cetak 1 Strip';
       btn.disabled = false;
     }
   }

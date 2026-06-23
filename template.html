@@ -265,6 +265,28 @@
     'Social Media'
   ];
   const HIDDEN_CATEGORIES = ['Elegant'];
+  const PHOTOBOX_CATEGORY = 'Photobox 4R';
+  const PHOTOBOX_W = 1181;
+  const PHOTOBOX_H = 1772;
+  const isPhotoboxMode = localStorage.getItem('captureFlow') === 'photobox';
+
+  function isPhotoboxCategory(cat) {
+    const c = String(cat || '').toLowerCase();
+    return c.includes('photobox') || c === '4r' || c.includes('4r');
+  }
+
+  function isPhotoboxTemplate(t) {
+    return t?.product_type === 'photobox' || isPhotoboxCategory(t?.category);
+  }
+
+  const PHOTOBOX_DEFS = [
+    { id:'photobox_soft_pink', name:'Soft Pink 4R', bg:'#fff1f7', accent:'#D84B7E', accent2:'#f9a8d4', ink:'#1D3557', layout:'four' },
+    { id:'photobox_clean_white', name:'Clean White 4R', bg:'#ffffff', accent:'#1D3557', accent2:'#E5B842', ink:'#1D3557', layout:'two' },
+    { id:'photobox_korean_cute', name:'Korean Cute 4R', bg:'#f5efff', accent:'#a78bfa', accent2:'#f9a8d4', ink:'#6d5b8d', layout:'three' },
+    { id:'photobox_gold_frame', name:'Gold Frame 4R', bg:'#fff8e1', accent:'#E5B842', accent2:'#D84B7E', ink:'#1D3557', layout:'big' },
+    { id:'photobox_navy_classic', name:'Navy Classic 4R', bg:'#1D3557', accent:'#E5B842', accent2:'#ffffff', ink:'#ffffff', layout:'four' },
+    { id:'photobox_party_pop', name:'Party Pop 4R', bg:'#fff7ed', accent:'#fb7185', accent2:'#60a5fa', ink:'#1D3557', layout:'three' }
+  ];
 
   const BUILTIN_FRAME_DEFS = [
     // Korean
@@ -1715,6 +1737,92 @@
     return data;
   }
 
+
+  function generatePhotoboxSlots(layout) {
+    const slots = [];
+    if (layout === 'two') {
+      slots.push({ x: 86, y: 240, w: 1009, h: 560, r: 0 });
+      slots.push({ x: 86, y: 860, w: 1009, h: 560, r: 0 });
+    } else if (layout === 'three') {
+      slots.push({ x: 88, y: 205, w: 1005, h: 570, r: 0 });
+      slots.push({ x: 88, y: 840, w: 485, h: 500, r: 0 });
+      slots.push({ x: 608, y: 840, w: 485, h: 500, r: 0 });
+    } else if (layout === 'big') {
+      slots.push({ x: 96, y: 220, w: 989, h: 820, r: 0 });
+      slots.push({ x: 96, y: 1105, w: 989, h: 360, r: 0 });
+    } else {
+      slots.push({ x: 82, y: 210, w: 488, h: 475, r: 0 });
+      slots.push({ x: 611, y: 210, w: 488, h: 475, r: 0 });
+      slots.push({ x: 82, y: 745, w: 488, h: 475, r: 0 });
+      slots.push({ x: 611, y: 745, w: 488, h: 475, r: 0 });
+    }
+    return slots;
+  }
+
+  function generatePhotoboxFrameSrc(def) {
+    const cacheKey = `photobox_${def.id}`;
+    if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
+    const W = PHOTOBOX_W, H = PHOTOBOX_H;
+    const slots = generatePhotoboxSlots(def.layout);
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.fillStyle = def.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Soft patterned background
+    for (let i = 0; i < 80; i++) {
+      const x = (i * 173) % W;
+      const y = (i * 229) % H;
+      const r = 7 + (i % 4) * 4;
+      ctx.fillStyle = withAlpha(i % 2 ? def.accent : def.accent2, i % 3 ? .13 : .2);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    roundRect(ctx, 34, 34, W - 68, H - 68, 42, withAlpha('#ffffff', .08), withAlpha(def.accent, .42), 4);
+    roundRect(ctx, 58, 58, W - 116, H - 116, 34, null, withAlpha(def.accent2, .30), 2);
+
+    text(ctx, 'PHOTOBOX 4R', W / 2, 110, 34, def.ink, 950);
+    text(ctx, 'lux photobooth', W / 2, 150, 18, withAlpha(def.ink, .62), 800);
+    text(ctx, 'print size 10×15', W / 2, H - 114, 20, withAlpha(def.ink, .68), 800);
+    text(ctx, '♡  ✦  memories in a box  ✦  ♡', W / 2, H - 72, 22, def.accent, 900);
+
+    slots.forEach((s, idx) => {
+      ctx.clearRect(s.x, s.y, s.w, s.h);
+      roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 30, null, withAlpha(def.accent, .72), 5);
+      roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 22, null, withAlpha('#ffffff', .92), 3);
+      roundRect(ctx, s.x + 18, s.y + 18, 110, 34, 17, withAlpha(def.bg, .88), withAlpha(def.accent2, .35), 1.5);
+      text(ctx, `Foto ${idx + 1}`, s.x + 73, s.y + 40, 15, def.ink, 900);
+    });
+
+    const data = { src: c.toDataURL('image/png'), slots, w: W, h: H };
+    builtInCache.set(cacheKey, data);
+    return data;
+  }
+
+  function getAllPhotoboxTemplates() {
+    return PHOTOBOX_DEFS.map(def => {
+      const data = generatePhotoboxFrameSrc(def);
+      return {
+        id: `__photobox_${def.id}__`,
+        name: def.name,
+        category: PHOTOBOX_CATEGORY,
+        isBuiltIn: true,
+        isPhotobox: true,
+        src: data.src,
+        slots: data.slots,
+        w: data.w,
+        h: data.h
+      };
+    });
+  }
+
+
   // Generate semua basic template (1 per warna)
   function getAllBasicTemplates() {
     return FRAME_COLORS.map((colorObj, i) => {
@@ -1735,6 +1843,7 @@
   }
 
   function getAllBuiltInTemplates() {
+    if (isPhotoboxMode) return getAllPhotoboxTemplates();
     return BUILTIN_FRAME_DEFS
       .filter((def) => !HIDDEN_CATEGORIES.includes(def.category))
       .map((def) => {
@@ -1816,8 +1925,9 @@
   }
 
   function getCategories() {
-    const fromDB = [...new Set(_dbTemplates.map(t => t.category).filter(c => !HIDDEN_CATEGORIES.includes(c)))];
-    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]').filter(c => !HIDDEN_CATEGORIES.includes(c));
+    if (isPhotoboxMode) return [PHOTOBOX_CATEGORY];
+    const fromDB = [...new Set(_dbTemplates.map(t => t.category).filter(c => !HIDDEN_CATEGORIES.includes(c) && !isPhotoboxCategory(c)))];
+    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]').filter(c => !HIDDEN_CATEGORIES.includes(c) && !isPhotoboxCategory(c));
     return [...new Set([...BUILTIN_CATEGORIES, ...fromDB, ...fromLS])];
   }
 
@@ -1826,7 +1936,7 @@
     const cats = getCategories();
     const el = document.getElementById('catTabs');
     let html = `<button class="cat-tab ${currentCat==='all'?'active':''}" onclick="filterCat('all')">Semua</button>`;
-    html += `<button class="cat-tab ${currentCat==='__basic__'?'active':''}" onclick="filterCat('__basic__')">Basic</button>`;
+    if (!isPhotoboxMode) html += `<button class="cat-tab ${currentCat==='__basic__'?'active':''}" onclick="filterCat('__basic__')">Basic</button>`;
     html += cats.map(c =>
       `<button class="cat-tab ${currentCat===c?'active':''}" onclick="filterCat('${c}')">${c}</button>`
     ).join('');
@@ -1868,11 +1978,14 @@
   // ─── Render templates ───
   function renderTemplates() {
     const grid = document.getElementById('templateGrid');
-    const saved = getSavedTemplates().filter(t => !HIDDEN_CATEGORIES.includes(t.category));
+    const saved = getSavedTemplates()
+      .filter(t => !HIDDEN_CATEGORIES.includes(t.category))
+      .filter(t => isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t));
     let templates = [];
-    const basicTemplates = getAllBasicTemplates();
+    const basicTemplates = isPhotoboxMode ? [] : getAllBasicTemplates();
     const builtInTemplates = getAllBuiltInTemplates();
     if (HIDDEN_CATEGORIES.includes(currentCat)) currentCat = 'all';
+    if (isPhotoboxMode && currentCat === '__basic__') currentCat = 'all';
     if (currentCat === 'all') {
       templates = [...basicTemplates, ...builtInTemplates, ...saved];
     } else if (currentCat === '__basic__') {
@@ -1891,7 +2004,7 @@
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;color:#a0a0b0;padding:48px 24px;">
           <h3 style="color:white;margin-bottom:8px">Belum ada template di kategori ini</h3>
-          <p>Admin perlu upload template dulu lewat menu ⚙️</p>
+          <p>${isPhotoboxMode ? 'Admin bisa upload template kategori Photobox 4R lewat menu ⚙️' : 'Admin perlu upload template dulu lewat menu ⚙️'}</p>
         </div>`;
       selectedTemplate = null;
       document.getElementById('infoBox').style.display = 'none';
@@ -1908,7 +2021,7 @@
       card.innerHTML = `
         ${basicBadge}
         <span class="selected-badge">✓ Dipilih</span>
-        <img src="${tmpl.src}" alt="${tmpl.name}" style="aspect-ratio:1/3;object-fit:cover;">
+        <img src="${tmpl.src}" alt="${tmpl.name}" style="aspect-ratio:${tmpl.w || 591} / ${tmpl.h || 1772};object-fit:cover;">
         <div class="template-name">
           ${tmpl.name}<br>
           <span style="color:#555;font-size:10px">${slotLen} foto</span>
@@ -1943,6 +2056,7 @@
     localStorage.setItem('templateW', t.w || 591);
     localStorage.setItem('templateH', t.h || 1772);
     localStorage.setItem('templateIsBasic', t.isBasic ? '1' : '0');
+    localStorage.setItem('templateProduct', isPhotoboxMode ? 'photobox' : 'photostrip');
     if (t.isBasic && t.frameColor) localStorage.setItem('basicFrameColor', JSON.stringify(t.frameColor));
     else localStorage.removeItem('basicFrameColor');
 
@@ -1956,7 +2070,8 @@
     const slots = selectedTemplate.slots || [];
     if (slots.length === 0) { alert('Template ini belum punya slot foto.'); return; }
 
-    localStorage.removeItem('captureFlow');
+    if (isPhotoboxMode) localStorage.setItem('captureFlow', 'photobox');
+    else localStorage.removeItem('captureFlow');
     localStorage.removeItem('ganciConfig');
     localStorage.removeItem('photos');
     localStorage.removeItem('filteredPhotos');
@@ -1977,6 +2092,16 @@
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modalOverlay')) tutupModal();
   });
+
+  if (isPhotoboxMode) {
+    document.title = 'Pilih Template Photobox 4R - LUX Photobooth';
+    const h2 = document.querySelector('h2');
+    const sub = document.querySelector('.sub');
+    if (h2) h2.textContent = 'Pilih Template Photobox 4R';
+    if (sub) sub.textContent = 'Pilih template 10×15 / 4R, nanti hasilnya langsung cetak 4R';
+    const btn = document.getElementById('btnLanjut');
+    if (btn) btn.textContent = 'Mulai Photobox →';
+  }
 
   // Init: load dari Supabase dulu
   (async () => {

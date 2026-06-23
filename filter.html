@@ -288,8 +288,16 @@
   const captureFlow = localStorage.getItem('captureFlow') || '';
   const isGanciMode = captureFlow === 'ganci';
   const isProductMode = captureFlow === 'product';
+  const isPhotoboxMode = captureFlow === 'photobox';
   const productLikeExportQuality = (isGanciMode || isProductMode) ? 0.98 : 0.92;
   const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
+  if (isPhotoboxMode) {
+    document.title = 'Filter Photobox 4R - LUX Photobooth';
+    const title = document.getElementById('pageTitle');
+    const sub = document.getElementById('pageSub');
+    if (title) title.textContent = 'Filter Photobox 4R';
+    if (sub) sub.textContent = 'Edit foto untuk layout 4R, lalu lihat hasil cetak.';
+  }
   if (isGanciMode) {
     document.body.classList.add('ganci-mode');
     document.title = 'Filter Ganci - LUX Photobooth';

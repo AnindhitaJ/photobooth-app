@@ -353,6 +353,15 @@
     return publicUrl;
   }
 
+  function buildDownloadPageURL(extra = {}) {
+    const params = new URLSearchParams({ photo: finalPublicURL });
+    const photos = (finalIndividualURLs || []).filter(Boolean);
+    photos.forEach(url => params.append('p', url));
+    if (finalGifURL) params.set('gif', finalGifURL);
+    if (extra.gif) params.set('gif', extra.gif);
+    return window.location.origin + '/download.html?' + params.toString();
+  }
+
   // ─── State ───
   const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
   const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
@@ -377,6 +386,8 @@
 
   let finalDataURL   = null;
   let finalPublicURL = null;
+  let finalIndividualURLs = [];
+  let finalGifURL     = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
 
@@ -597,7 +608,8 @@
       const photoBlob = dataURLtoBlob(finalDataURL);
       finalPublicURL = await uploadToSupabase(photoBlob, 'strip.jpg');
 
-      // Upload foto individual (parallel, fire-and-forget — tidak blokir QR)
+      // Upload foto individual dan ikutkan URL-nya ke link QR.
+      // Sebelumnya file satuan sudah masuk storage/db, tapi download page cuma dikasih param photo strip.
       const individualURLs = [];
       if (filteredPhotos.length > 0) {
         qrStatus.textContent = '⏫ Mengupload foto individual...';
@@ -614,19 +626,21 @@
           })
         );
       }
+      finalIndividualURLs = individualURLs.filter(Boolean);
 
       // Upload GIF kalau sudah di-generate
       let gifURL = '';
       if (gifBlob) {
         qrStatus.textContent = '⏫ Mengupload GIF...';
-        try { gifURL = await uploadToSupabase(gifBlob, 'animated.gif'); gifUploaded = true; } catch(e) {}
+        try {
+          gifURL = await uploadToSupabase(gifBlob, 'animated.gif');
+          finalGifURL = gifURL;
+          gifUploaded = true;
+        } catch(e) {}
       }
 
-      // Build QR URL
-      const params = new URLSearchParams({ photo: finalPublicURL });
-      if (gifURL) params.set('gif', gifURL);
-
-      const downloadPageURL = window.location.origin + '/download.html?' + params.toString();
+      // Build QR URL: strip + foto satuan + GIF
+      const downloadPageURL = buildDownloadPageURL({ gif: gifURL });
       const qrBox = document.getElementById('qrcodeModal');
       qrBox.innerHTML = '';
       new QRCode(qrBox, {
@@ -663,11 +677,11 @@
         try {
           const gifURL = await uploadToSupabase(gifBlob, 'animated.gif');
           gifUploaded = true;
-          // Update QR URL dengan gif
+          // Update QR URL dengan gif, tetap bawa foto satuan juga
+          finalGifURL = gifURL;
           const qrBox = document.getElementById('qrcodeModal');
           if (qrBox && finalPublicURL) {
-            const params = new URLSearchParams({ photo: finalPublicURL, gif: gifURL });
-            const downloadPageURL = window.location.origin + '/download?' + params.toString();
+            const downloadPageURL = buildDownloadPageURL({ gif: gifURL });
             qrBox.innerHTML = '';
             new QRCode(qrBox, {
               text: downloadPageURL, width: 220, height: 220,

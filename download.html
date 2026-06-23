@@ -72,6 +72,45 @@
       object-fit: contain; display: block;
     }
 
+    .individual-wrap {
+      background: white; border: 2px solid var(--border); border-radius: 20px;
+      padding: 16px; margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(216,75,126,0.08);
+      display: none;
+    }
+    .individual-wrap.visible { display: block; }
+    .individual-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .individual-title {
+      font-size: 11px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--text2);
+    }
+    .individual-count {
+      font-size: 11px; font-weight: 900; color: var(--orange);
+      background: #fff1f7; border: 1.5px solid var(--border);
+      padding: 4px 9px; border-radius: 999px;
+    }
+    .individual-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .individual-card {
+      border: 2px solid var(--border); border-radius: 14px;
+      overflow: hidden; background: #fffafd;
+    }
+    .individual-card img {
+      width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
+      background: #f7e8f0;
+    }
+    .individual-card button {
+      width: 100%; border: 0; background: white; color: var(--text);
+      padding: 10px 8px; font-weight: 900; font-family: inherit;
+      cursor: pointer;
+      border-top: 2px solid var(--border);
+    }
+
     /* ── Buttons ── */
     .btn-group { display: flex; flex-direction: column; gap: 10px; }
     .btn {
@@ -163,6 +202,14 @@
     <img id="preview" alt="Hasil foto">
   </div>
 
+  <div class="individual-wrap" id="individualWrap">
+    <div class="individual-head">
+      <div class="individual-title">📸 Foto Satuan</div>
+      <div class="individual-count" id="individualCount">0 foto</div>
+    </div>
+    <div class="individual-grid" id="individualGrid"></div>
+  </div>
+
   <div class="countdown-bar" id="countdownBar">
     <div class="countdown-icon">⏳</div>
     <div class="countdown-text">File ini akan dihapus otomatis dalam <span id="countdownText">14 hari</span> sejak foto diambil. Download sekarang!</div>
@@ -177,6 +224,15 @@
         <div class="btn-info-sub">Format JPG, kualitas penuh</div>
       </div>
       <span class="btn-badge">JPG</span>
+    </button>
+
+    <button class="btn btn-outline" id="btnIndividuals" onclick="dlAllIndividuals()" style="display:none">
+      <span class="btn-icon">📸</span>
+      <div class="btn-info">
+        <div class="btn-info-title">Download Foto Satuan</div>
+        <div class="btn-info-sub">Download semua foto individual</div>
+      </div>
+      <span class="btn-badge" id="individualBadge">0</span>
     </button>
 
     <button class="btn btn-gif" id="btnGif" onclick="dlGif()">
@@ -205,6 +261,10 @@
   const params   = new URLSearchParams(window.location.search);
   const photoURL = params.get('photo');
   const gifURL   = params.get('gif');
+  const individualURLs = [
+    ...params.getAll('p'),
+    ...(params.get('photos') ? params.get('photos').split('|') : [])
+  ].filter(Boolean);
 
   if (!photoURL) {
     showError('Link tidak valid', 'Scan ulang QR dari halaman photobooth.');
@@ -229,6 +289,8 @@
         document.getElementById('btnJpg').disabled = false;
         document.getElementById('btnShare').disabled = false;
 
+        renderIndividualPhotos();
+
         // Tampilkan GIF kalau ada
         if (gifURL) {
           document.getElementById('btnGif').classList.add('visible');
@@ -248,7 +310,7 @@
     const RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
     // Ambil timestamp dari URL foto
     function getTs() {
-      const m = photoURL.match(/results\/(\d{13})_/);
+      const m = photoURL.match(/results\/[^_]+_(\d{13})_/) || photoURL.match(/results\/(\d{13})_/);
       return m ? parseInt(m[1]) : Date.now();
     }
     function fmt(ms) {
@@ -288,6 +350,58 @@
     }
   }
 
+  function renderIndividualPhotos() {
+    if (!individualURLs.length) return;
+    const wrap = document.getElementById('individualWrap');
+    const grid = document.getElementById('individualGrid');
+    const count = document.getElementById('individualCount');
+    const btn = document.getElementById('btnIndividuals');
+    const badge = document.getElementById('individualBadge');
+
+    wrap.classList.add('visible');
+    count.textContent = individualURLs.length + ' foto';
+    btn.style.display = 'flex';
+    badge.textContent = individualURLs.length;
+
+    grid.innerHTML = individualURLs.map((url, i) => `
+      <div class="individual-card">
+        <img src="${url}" alt="Foto ${i + 1}" crossorigin="anonymous">
+        <button type="button" onclick="dlIndividual(${i})">Download Foto ${i + 1}</button>
+      </div>
+    `).join('');
+  }
+
+  async function dlIndividual(idx) {
+    const url = individualURLs[idx];
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Gagal fetch foto satuan');
+      const blob = await res.blob();
+      triggerDl(blob, `lux-foto-${idx + 1}-${Date.now()}.jpg`);
+      showToast(`✓ Foto ${idx + 1} didownload!`, 'success');
+    } catch(e) {
+      window.open(url, '_blank');
+      showToast('Dibuka di tab baru', '');
+    }
+  }
+
+  async function dlAllIndividuals() {
+    if (!individualURLs.length) return;
+    const btn = document.getElementById('btnIndividuals');
+    btn.disabled = true;
+    btn.querySelector('.btn-info-title').textContent = 'Mengunduh foto...';
+    try {
+      for (let i = 0; i < individualURLs.length; i++) {
+        await dlIndividual(i);
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    } finally {
+      btn.disabled = false;
+      btn.querySelector('.btn-info-title').textContent = 'Download Foto Satuan';
+    }
+  }
+
   async function dlGif() {
     if (!gifURL) return;
     const btn = document.getElementById('btnGif');
@@ -313,6 +427,15 @@
       const blob = await res.blob();
       const file = new File([blob], 'lux-photobooth.jpg', { type: 'image/jpeg' });
       const files = [file];
+
+      // Sertakan foto satuan jika ada
+      for (let i = 0; i < individualURLs.length; i++) {
+        try {
+          const ir = await fetch(individualURLs[i]);
+          const ib = await ir.blob();
+          files.push(new File([ib], `lux-foto-${i + 1}.jpg`, { type: 'image/jpeg' }));
+        } catch(e) {}
+      }
 
       // Sertakan GIF jika ada
       if (gifURL) {

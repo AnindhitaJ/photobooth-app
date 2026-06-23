@@ -268,13 +268,13 @@
       <button class="btn btn-cetak2strip" id="btnShare" onclick="shareNative()" disabled>
         <span class="btn-icon">🖨️</span>
         <span class="btn-label">Cetak 1 Strip</span>
-        <span class="btn-badge">5×15</span>
+        <span class="btn-badge">Print</span>
       </button>
 
       <button class="btn btn-cetak2strip" id="btnCetak2Strip" onclick="cetak2Strip()" disabled>
         <span class="btn-icon">🖨️</span>
         <span class="btn-label">Cetak 2 Strip</span>
-        <span class="btn-badge">10×15</span>
+        <span class="btn-badge">Print</span>
       </button>
 
 
@@ -357,7 +357,10 @@
   const filteredPhotos = JSON.parse(localStorage.getItem('filteredPhotos') || '[]');
   const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
   const templateSrc    = localStorage.getItem('templateSrc');
-  const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]');
+  const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]').map(s => ({
+    ...s,
+    r: Math.round((((Number(s?.r ?? s?.rotate ?? s?.rotation ?? 0) || 0) % 360) + 360) % 360)
+  }));
   const tmplW          = parseInt(localStorage.getItem('templateW') || '591');
   const tmplH          = parseInt(localStorage.getItem('templateH') || '1772');
   const isBasicTemplate = localStorage.getItem('templateIsBasic') === '1';
@@ -436,14 +439,18 @@
         const src  = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
         if (!src) continue;
         const photo = await loadImage(src);
+        const angle = ((Number(slot.r ?? slot.rotate ?? slot.rotation ?? 0) || 0) * Math.PI) / 180;
         const scale = Math.max(slot.w / photo.width, slot.h / photo.height);
         const sw = slot.w / scale, sh = slot.h / scale;
         const sx = (photo.width - sw) / 2, sy = (photo.height - sh) / 2;
+
         ctx.save();
+        ctx.translate(slot.x + slot.w / 2, slot.y + slot.h / 2);
+        ctx.rotate(angle);
         ctx.beginPath();
-        ctx.rect(slot.x, slot.y, slot.w, slot.h);
+        ctx.rect(-slot.w / 2, -slot.h / 2, slot.w, slot.h);
         ctx.clip();
-        ctx.drawImage(photo, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+        ctx.drawImage(photo, sx, sy, sw, sh, -slot.w / 2, -slot.h / 2, slot.w, slot.h);
         ctx.restore();
       }
 
@@ -1293,10 +1300,269 @@
     });
   }
 
+  function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Gagal membaca file print'));
+      reader.readAsDataURL(blob);
+    });
+  }
 
-  // ─── Cetak 2 Strip (10×15 cm, 2 strip 5×15 berdampingan tanpa gap) ───
+  function escapePrintText(value) {
+    return String(value || '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[ch]));
+  }
+
+  function buildPrintWindowHTML(imageDataURL, filename, title) {
+    const safeTitle = escapePrintText(title || 'Cetak 1 Strip');
+    const safeFilename = escapePrintText(filename || 'cetak-1-strip.jpg');
+    const imgJSON = JSON.stringify(imageDataURL);
+
+    return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${safeTitle}</title>
+  <style id="dynamicPrintStyle"></style>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f4f6fb;
+      color: #1D3557;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(255,255,255,.94);
+      border-bottom: 1px solid #e5e7eb;
+      box-shadow: 0 8px 24px rgba(15,23,42,.08);
+      padding: 14px;
+      backdrop-filter: blur(14px);
+    }
+    .controls h1 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+    .controls p {
+      margin: 0 0 12px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(105px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #475569;
+    }
+    select, input {
+      width: 100%;
+      border: 1.5px solid #dbe3ef;
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 11px;
+      font: inherit;
+      font-size: 13px;
+      color: #0f172a;
+      outline: none;
+    }
+    input[type="range"] { padding: 0; }
+    .btns { display: flex; gap: 8px; align-items: center; }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-weight: 900;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg,#D84B7E,#E5B842);
+      box-shadow: 0 6px 18px rgba(216,75,126,.22);
+      white-space: nowrap;
+    }
+    button.secondary {
+      color: #1D3557;
+      background: #eef2ff;
+      box-shadow: none;
+    }
+    .note {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .preview-wrap {
+      min-height: calc(100vh - 170px);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 16px;
+    }
+    .sheet {
+      background: white;
+      box-shadow: 0 14px 40px rgba(15,23,42,.18);
+      overflow: hidden;
+    }
+    .sheet img { display: block; height: auto; }
+    @media (max-width: 780px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      .btns { grid-column: 1 / -1; }
+      button { flex: 1; }
+    }
+    @media print {
+      .controls { display: none !important; }
+      .preview-wrap { padding: 0 !important; min-height: 0 !important; }
+      html, body { width: auto; height: auto; background: white !important; }
+      .sheet { box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h1>${safeTitle}</h1>
+    <p>Gambar yang dicetak tetap sama seperti generate Cetak 1 Strip. Kamu masih bisa atur printer, copies, warna, dan kualitas di dialog print browser.</p>
+    <div class="grid">
+      <label>Ukuran kertas
+        <select id="paper">
+          <option value="10x15" selected>10 × 15 cm</option>
+          <option value="4r">4R / 10.2 × 15.2 cm</option>
+          <option value="a4">A4</option>
+        </select>
+      </label>
+      <label>Posisi gambar
+        <select id="position">
+          <option value="flex-start" selected>Kiri</option>
+          <option value="center">Tengah</option>
+          <option value="flex-end">Kanan</option>
+        </select>
+      </label>
+      <label>Scale <span id="scaleText">100%</span>
+        <input id="scale" type="range" min="80" max="110" step="1" value="100">
+      </label>
+      <label>Margin <span id="marginText">0 mm</span>
+        <input id="margin" type="range" min="0" max="8" step="1" value="0">
+      </label>
+      <div class="btns">
+        <button type="button" onclick="window.print()">Print</button>
+        <button type="button" class="secondary" onclick="downloadImage()">Download</button>
+      </div>
+    </div>
+    <div class="note">Tip: di dialog print, pilih ukuran kertas yang sama, nonaktifkan header/footer, dan pakai scale 100% kalau ingin ukuran presisi.</div>
+  </div>
+  <div class="preview-wrap">
+    <div class="sheet" id="sheet">
+      <img id="printImg" alt="${safeFilename}">
+    </div>
+  </div>
+  <script>
+    const imageDataURL = ${imgJSON};
+    const filename = ${JSON.stringify(filename || 'cetak-1-strip.jpg')};
+    const sizes = {
+      '10x15': { w: 10, h: 15, label: '10 × 15 cm' },
+      '4r':   { w: 10.2, h: 15.2, label: '4R' },
+      'a4':   { w: 21, h: 29.7, label: 'A4' }
+    };
+    const img = document.getElementById('printImg');
+    img.src = imageDataURL;
+
+    function updatePrintLayout() {
+      const paper = document.getElementById('paper').value;
+      const pos = document.getElementById('position').value;
+      const scale = Number(document.getElementById('scale').value || 100);
+      const margin = Number(document.getElementById('margin').value || 0);
+      const size = sizes[paper] || sizes['10x15'];
+      const contentW = Math.max(1, size.w - (margin * 2 / 10));
+      const contentH = Math.max(1, size.h - (margin * 2 / 10));
+      const imgW = Math.max(.5, contentW * scale / 100);
+
+      document.getElementById('scaleText').textContent = scale + '%';
+      document.getElementById('marginText').textContent = margin + ' mm';
+
+      const style = document.getElementById('dynamicPrintStyle');
+      style.textContent =
+        '@page{size:' + size.w + 'cm ' + size.h + 'cm;margin:0;}' +
+        '.sheet{width:' + size.w + 'cm;height:' + size.h + 'cm;padding:' + margin + 'mm;display:flex;align-items:flex-start;justify-content:' + pos + ';}' +
+        '.sheet img{width:' + imgW + 'cm;max-width:' + contentW + 'cm;max-height:' + contentH + 'cm;object-fit:contain;}' +
+        '@media screen{.sheet{transform-origin:top center;}}';
+    }
+
+    function downloadImage() {
+      const a = document.createElement('a');
+      a.href = imageDataURL;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    ['paper','position','scale','margin'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updatePrintLayout);
+      document.getElementById(id).addEventListener('change', updatePrintLayout);
+    });
+
+    updatePrintLayout();
+    img.onload = () => setTimeout(() => window.print(), 450);
+  <\/script>
+</body>
+</html>`;
+  }
+
+  async function openPrintSetupWindow(blob, filename, title) {
+    if (!blob) throw new Error('Blob kosong');
+
+    const imageDataURL = await blobToDataURL(blob);
+    const popup = window.open('', '_blank', 'width=980,height=820');
+
+    if (!popup) {
+      // Fallback kalau popup diblokir: tetap buka print langsung via iframe.
+      const existing = document.getElementById('printFrame');
+      if (existing) existing.remove();
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'printFrame';
+      iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:none;';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(`<!DOCTYPE html><html><head>
+        <style>
+          @page { size: 10cm 15cm; margin: 0; }
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body { width:10cm; height:15cm; background:white; }
+          img { width:10cm; height:auto; display:block; }
+        </style>
+      </head><body><img src="${imageDataURL}" onload="setTimeout(function(){window.print()},250)"></body></html>`);
+      doc.close();
+      return 'iframe';
+    }
+
+    popup.document.open();
+    popup.document.write(buildPrintWindowHTML(imageDataURL, filename, title));
+    popup.document.close();
+    popup.focus();
+    return 'print';
+  }
+
+
+  // ─── Cetak 2 Strip: langsung buka print, bukan Web Share ───
   async function cetak2Strip() {
-    console.log('[LUX] cetak2Strip clicked', { hasFinalDataURL: !!finalDataURL });
+    console.log('[LUX] cetak2Strip print clicked', { hasFinalDataURL: !!finalDataURL });
     const btn = document.getElementById('btnCetak2Strip');
     if (!finalDataURL) {
       showStatus('Foto belum siap. Tunggu hasil selesai dulu ya.');
@@ -1304,7 +1570,7 @@
     }
 
     btn.disabled = true;
-    btn.querySelector('.btn-label').textContent = 'Memproses...';
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan print...';
 
     try {
       const STRIP_W = 590;
@@ -1321,29 +1587,32 @@
       const sx = (img.width  - sw) / 2;
       const sy = (img.height - sh) / 2;
 
+      // Tetap generate file yang sama: 10×15 berisi 2 strip 5×15 berdampingan tanpa gap.
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, sx, sy, sw, sh, 0,       0, STRIP_W, STRIP_H);
       ctx.drawImage(img, sx, sy, sw, sh, STRIP_W, 0, STRIP_W, STRIP_H);
 
       const blob = await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
-      const mode = await shareOrDownloadBlob(blob, `lux-cetak2strip-${Date.now()}.jpg`, 'Cetak 2 Strip LUX Photobooth', { suppressCancel: true });
+      const mode = await openPrintSetupWindow(blob, `lux-cetak2strip-${Date.now()}.jpg`, 'Cetak 2 Strip');
 
-      if (mode === 'shared') showStatus('File Cetak 2 Strip sudah dibuka di share/print sheet');
-      else if (mode === 'handled') showStatus('File Cetak 2 Strip sudah diproses');
-      else showStatus('Web Share tidak tersedia, file Cetak 2 Strip didownload');
+      if (mode === 'print') {
+        showStatus('Membuka halaman print Cetak 2 Strip. Atur kertas, scale, margin, lalu print.');
+      } else {
+        showStatus('Popup diblokir, print langsung dibuka. Kalau belum muncul, izinkan popup browser.');
+      }
     } catch(e) {
-      console.error('cetak2Strip error:', e);
-      showStatus('Gagal generate Cetak 2 Strip: ' + (e.message || e));
+      console.error('cetak2Strip print error:', e);
+      showStatus('Gagal membuka print Cetak 2 Strip: ' + (e.message || e));
     } finally {
       btn.querySelector('.btn-label').textContent = 'Cetak 2 Strip';
       btn.disabled = false;
     }
   }
 
-  // ─── Share ───
+  // ─── Cetak 1 Strip: langsung buka print, bukan Web Share ───
   async function shareNative() {
-    console.log('[LUX] cetak1Strip clicked', { hasFinalDataURL: !!finalDataURL });
+    console.log('[LUX] cetak1Strip print clicked', { hasFinalDataURL: !!finalDataURL });
     const btn = document.getElementById('btnShare');
     if (!finalDataURL) {
       showStatus('Foto belum siap. Tunggu hasil selesai dulu ya.');
@@ -1351,7 +1620,7 @@
     }
 
     btn.disabled = true;
-    btn.querySelector('.btn-label').textContent = 'Memproses...';
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan print...';
 
     try {
       const TOTAL_W = 1181;
@@ -1362,6 +1631,7 @@
       canvas.height = H;
       const ctx = canvas.getContext('2d');
 
+      // Tetap generate file yang sama: canvas 10×15 dengan 1 strip 5×15 di sisi kiri.
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, TOTAL_W, H);
 
@@ -1374,14 +1644,16 @@
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, H);
 
       const blob = await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
-      const mode = await shareOrDownloadBlob(blob, `lux-cetak1strip-${Date.now()}.jpg`, 'Cetak 1 Strip LUX Photobooth', { suppressCancel: true });
+      const mode = await openPrintSetupWindow(blob, `lux-cetak1strip-${Date.now()}.jpg`, 'Cetak 1 Strip');
 
-      if (mode === 'shared') showStatus('File Cetak 1 Strip sudah dibuka di share/print sheet');
-      else if (mode === 'handled') showStatus('File Cetak 1 Strip sudah diproses');
-      else showStatus('Web Share tidak tersedia, file Cetak 1 Strip didownload');
+      if (mode === 'print') {
+        showStatus('Membuka halaman print. Atur kertas, scale, margin, lalu print.');
+      } else {
+        showStatus('Popup diblokir, print langsung dibuka. Kalau belum muncul, izinkan popup browser.');
+      }
     } catch(e) {
-      console.error('cetak1Strip error:', e);
-      showStatus('Gagal generate Cetak 1 Strip: ' + (e.message || e));
+      console.error('cetak1Strip print error:', e);
+      showStatus('Gagal membuka print Cetak 1 Strip: ' + (e.message || e));
     } finally {
       btn.querySelector('.btn-label').textContent = 'Cetak 1 Strip';
       btn.disabled = false;

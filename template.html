@@ -22,7 +22,7 @@
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       background: var(--bg); color: var(--text);
-      min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px;
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 20px 118px;
     }
     body::before {
       content: ''; position: fixed; inset: 0; z-index: -1;
@@ -75,7 +75,7 @@
     .color-swatch.active { border-color: var(--orange) !important; transform: scale(1.2); box-shadow: 0 4px 12px rgba(216,75,126,0.4); }
     .template-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 12px; width: 100%; max-width: 860px; margin-bottom: 24px;
+      gap: 12px; width: 100%; max-width: 860px; margin-bottom: 110px;
     }
     .template-card {
       cursor: pointer; border-radius: 16px; overflow: hidden;
@@ -109,8 +109,20 @@
       box-shadow: 0 4px 14px rgba(229,184,66,0.2);
     }
     .btn-row {
-      display: flex; gap: 12px; width: 100%; max-width: 480px;
-      margin-bottom: 32px;
+      position: fixed;
+      left: 50%;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 80;
+      display: flex; gap: 12px; width: calc(100% - 28px); max-width: 480px;
+      margin: 0;
+      padding: 10px;
+      border-radius: 999px;
+      background: rgba(255, 248, 252, 0.88);
+      border: 2px solid rgba(245, 198, 218, 0.92);
+      box-shadow: 0 10px 32px rgba(29, 53, 87, 0.16);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
     .btn {
       flex: 1; display: flex; align-items: center; justify-content: center;
@@ -132,6 +144,17 @@
       box-shadow: 0 6px 20px rgba(216,75,126,0.45);
     }
     .btn-primary.aktif:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(216,75,126,0.5); }
+    @media (max-width: 430px) {
+      .btn-row {
+        width: calc(100% - 18px);
+        gap: 8px;
+        padding: 8px;
+      }
+      .btn {
+        font-size: 13px;
+        padding: 14px 12px;
+      }
+    }
     /* Admin modal */
     .modal-overlay {
       display: none; position: fixed; inset: 0; background: rgba(45,26,14,0.6);
@@ -410,7 +433,7 @@
     const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (slotCount - 1)) / slotCount);
     const slots = [];
     for (let i = 0; i < slotCount; i++) {
-      slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH });
+      slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH, r: 0 });
     }
     return slots;
   }
@@ -1109,10 +1132,10 @@
       text(ctx, 'sabrina.frame', 96, 50, 21, def.ink, 900, 'left');
       text(ctx, 'pop muse', 96, 68, 13.5, withAlpha(def.ink, .58), 700, 'left');
       text(ctx, '⋯', FRAME_W - 40, 54, 18, def.ink, 900);
-      text(ctx, 'liked by @luna.velvet and 8.1k others', 100, FRAME_H - 104, 15, withAlpha(def.ink, .7), 700, 'left');
-      tinyMetric(74, FRAME_H - 82, 92, '12.8k likes', withAlpha(def.accent, .12), def.ink);
-      tinyMetric(174, FRAME_H - 82, 92, '326 replies', withAlpha(def.accent2, .22), def.ink);
-      tinyMetric(274, FRAME_H - 82, 82, '59 saves', withAlpha(def.accent, .1), def.ink);
+      text(ctx, 'liked by @luna.velvet and 8.1k others', 40, FRAME_H - 104, 15, withAlpha(def.ink, .7), 700, 'left');
+      tinyMetric(34, FRAME_H - 82, 92, '12.8k likes', withAlpha(def.accent, .12), def.ink);
+      tinyMetric(134, FRAME_H - 82, 92, '326 replies', withAlpha(def.accent2, .22), def.ink);
+      tinyMetric(234, FRAME_H - 82, 82, '59 saves', withAlpha(def.accent, .1), def.ink);
     } else if (def.motif === 'igstory') {
       roundRect(ctx, 24, 20, FRAME_W - 48, 76, 30, withAlpha('#000000', .48), withAlpha('#ffffff', .16), 1.2);
       const colors = ['#f9ce34','#ee2a7b','#6228d7','#f9ce34'];
@@ -1753,6 +1776,16 @@
   let currentCat = 'all';
   let _dbTemplates = [];
 
+  function normalizeTemplateSlotAngle(slot) {
+    const raw = Number(slot?.r ?? slot?.rotate ?? slot?.rotation ?? 0) || 0;
+    return { ...slot, r: Math.round(((raw % 360) + 360) % 360) };
+  }
+
+  function getDeletedTemplateIds() {
+    try { return JSON.parse(localStorage.getItem('pb_deleted_template_ids') || '[]').map(String); }
+    catch(e) { return []; }
+  }
+
   async function loadTemplatesFromSupabase() {
     try {
       const token = Auth.getToken();
@@ -1761,11 +1794,16 @@
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
+      const deletedIds = getDeletedTemplateIds();
       // Pastikan slots selalu array (Supabase jsonb kadang return string)
-      _dbTemplates = data.map(t => ({
-        ...t,
-        slots: Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]')
-      }));
+      _dbTemplates = data
+        .filter(t => !deletedIds.includes(String(t.id)))
+        .map(t => {
+          let parsedSlots = [];
+          try { parsedSlots = Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]'); }
+          catch(e) { parsedSlots = []; }
+          return { ...t, slots: parsedSlots.map(normalizeTemplateSlotAngle) };
+        });
       console.log('[template] loaded', _dbTemplates.length, 'templates from Supabase');
     } catch(e) {
       console.error('[template] Load error:', e);
@@ -1901,14 +1939,14 @@
     localStorage.setItem('templateSrc', t.src);
     localStorage.setItem('templateSlots', JSON.stringify(t.slots || []));
     localStorage.setItem('templateName', t.name || 'Template');
-    localStorage.setItem('slotCount', (t.slots || []).length);
+    localStorage.setItem('slotCount', (t.slots || []).length || (t.category === 'Social Media' ? 3 : 0));
     localStorage.setItem('templateW', t.w || 591);
     localStorage.setItem('templateH', t.h || 1772);
     localStorage.setItem('templateIsBasic', t.isBasic ? '1' : '0');
     if (t.isBasic && t.frameColor) localStorage.setItem('basicFrameColor', JSON.stringify(t.frameColor));
     else localStorage.removeItem('basicFrameColor');
 
-    document.getElementById('slotCount').textContent = (t.slots || []).length;
+    document.getElementById('slotCount').textContent = (t.slots || []).length || (t.category === 'Social Media' ? 3 : 0);
     document.getElementById('infoBox').style.display = 'block';
     document.getElementById('btnLanjut').classList.add('aktif');
   }

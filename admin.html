@@ -144,10 +144,37 @@
       width: 11px; height: 11px;
       border-right: 2px solid white; border-bottom: 2px solid white;
     }
+    .rotate-handle {
+      position: absolute; top: -46px; left: 50%; transform: translateX(-50%);
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #1D3557; color: #fff; border: 3px solid rgba(255,255,255,0.95);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; cursor: grab;
+      box-shadow: 0 4px 12px rgba(29,53,87,0.32);
+      touch-action: none;
+    }
+    .slot-angle {
+      position: absolute; bottom: 5px; left: 6px;
+      font-size: 10px; font-weight: 900; color: #1D3557;
+      background: rgba(255,255,255,0.88); padding: 2px 7px; border-radius: 999px;
+      pointer-events: none;
+    }
+    .slot-rotate-tools {
+      position: absolute; right: 6px; bottom: 5px;
+      display: flex; gap: 4px;
+    }
+    .slot-rotate-btn {
+      width: 26px; height: 22px; border: none; border-radius: 999px;
+      background: rgba(29,53,87,0.92); color: #fff; font-size: 12px; font-weight: 900;
+      cursor: pointer; box-shadow: 0 2px 6px rgba(29,53,87,0.22);
+      touch-action: manipulation;
+    }
     @media (pointer: coarse) {
       .slot-box { border-width: 3px; }
       .resize-handle { width: 44px; height: 44px; bottom: -12px; right: -12px; }
+      .rotate-handle { width: 46px; height: 46px; top: -58px; font-size: 22px; }
       .slot-delete { width: 34px; height: 34px; font-size: 17px; }
+      .slot-rotate-btn { width: 34px; height: 28px; font-size: 14px; }
     }
 
     /* SLOT INFO */
@@ -612,6 +639,33 @@
   // ─── Categories (derived from Supabase templates) ───
   let _allTemplates = []; // cache
 
+  function getDeletedTemplateIds() {
+    try { return JSON.parse(localStorage.getItem('pb_deleted_template_ids') || '[]').map(String); }
+    catch(e) { return []; }
+  }
+
+  function rememberDeletedTemplate(id) {
+    if (!id) return;
+    const ids = getDeletedTemplateIds();
+    if (!ids.includes(String(id))) {
+      ids.push(String(id));
+      localStorage.setItem('pb_deleted_template_ids', JSON.stringify(ids));
+    }
+  }
+
+  function normalizeTemplateRecord(t) {
+    let parsedSlots = [];
+    try { parsedSlots = Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]'); }
+    catch(e) { parsedSlots = []; }
+    return {
+      ...t,
+      slots: parsedSlots.map(s => ({
+        ...s,
+        r: normalizeAngle(s.r || s.rotate || s.rotation || 0)
+      }))
+    };
+  }
+
   async function fetchAllTemplates() {
     try {
       const token = Auth.getToken();
@@ -619,7 +673,8 @@
         headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error(await res.text());
-      _allTemplates = await res.json();
+      const deletedIds = getDeletedTemplateIds();
+      _allTemplates = (await res.json()).map(normalizeTemplateRecord).filter(t => !deletedIds.includes(String(t.id)));
     } catch(e) {
       console.error('Fetch templates error:', e);
       _allTemplates = [];
@@ -810,7 +865,7 @@
       if (!xCols.length) continue;
       const x1 = xCols[0], x2 = xCols[xCols.length-1];
       if ((x2-x1) < W*0.1 || (y2-y1) < H*0.02) continue;
-      slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1 });
+      slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1, r: 0 });
     }
 
     document.getElementById('slotCount').textContent = slots.length;
@@ -818,19 +873,45 @@
     showToast(`${slots.length} slot terdeteksi`);
   }
 
+  function normalizeAngle(deg) {
+    const n = Number(deg) || 0;
+    return Math.round(((n % 360) + 360) % 360);
+  }
+
+  function applySlotBoxStyle(box, idx) {
+    const slot = slots[idx];
+    slot.r = normalizeAngle(slot.r || slot.rotate || slot.rotation || 0);
+    box.style.left = slot.x + 'px';
+    box.style.top = slot.y + 'px';
+    box.style.width = slot.w + 'px';
+    box.style.height = slot.h + 'px';
+    box.style.transform = `rotate(${slot.r}deg)`;
+    box.style.transformOrigin = 'center center';
+    const angle = box.querySelector('.slot-angle');
+    if (angle) angle.textContent = `${slot.r}°`;
+  }
+
   function renderSlots() {
     overlay.innerHTML = '';
     slots.forEach((slot, idx) => {
+      slot.r = normalizeAngle(slot.r || slot.rotate || slot.rotation || 0);
       const box = document.createElement('div');
       box.className = 'slot-box';
-      box.style.cssText = `left:${slot.x}px;top:${slot.y}px;width:${slot.w}px;height:${slot.h}px`;
       box.innerHTML = `
         <div class="slot-label">Foto ${idx+1}</div>
         <button class="slot-delete" onclick="deleteSlot(${idx})">×</button>
+        <div class="rotate-handle" data-idx="${idx}" title="Putar slot">↻</div>
+        <div class="slot-angle">${slot.r}°</div>
+        <div class="slot-rotate-tools">
+          <button class="slot-rotate-btn" onclick="rotateSlot(${idx}, -15); event.stopPropagation();" title="Putar kiri">−</button>
+          <button class="slot-rotate-btn" onclick="rotateSlot(${idx}, 15); event.stopPropagation();" title="Putar kanan">+</button>
+        </div>
         <div class="resize-handle" data-idx="${idx}"></div>
       `;
+      applySlotBoxStyle(box, idx);
       makeDraggable(box, idx);
       makeResizable(box.querySelector('.resize-handle'), box, idx);
+      makeRotatable(box.querySelector('.rotate-handle'), box, idx);
       overlay.appendChild(box);
     });
   }
@@ -872,7 +953,7 @@
   function makeDraggable(box, idx) {
     const start = e => {
       if (e.button != null && e.button !== 0) return;
-      if (e.target.classList.contains('resize-handle') || e.target.classList.contains('slot-delete')) return;
+      if (e.target.closest('.resize-handle, .slot-delete, .rotate-handle, .slot-rotate-btn, .slot-rotate-tools')) return;
       e.preventDefault();
       const p = getPointerXY(e);
       const sx = p.x, sy = p.y, sl = slots[idx].x, st = slots[idx].y;
@@ -881,8 +962,7 @@
         const q = getPointerXY(moveEvent);
         slots[idx].x = Math.max(0, Math.min(canvas.width - slots[idx].w, sl + q.x - sx));
         slots[idx].y = Math.max(0, Math.min(canvas.height - slots[idx].h, st + q.y - sy));
-        box.style.left = slots[idx].x + 'px';
-        box.style.top = slots[idx].y + 'px';
+        applySlotBoxStyle(box, idx);
       }, () => box.classList.remove('dragging'));
     };
     box.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
@@ -899,17 +979,47 @@
         const q = getPointerXY(moveEvent);
         slots[idx].w = Math.max(40, Math.min(canvas.width - slots[idx].x, sw + q.x - sx));
         slots[idx].h = Math.max(30, Math.min(canvas.height - slots[idx].y, sh + q.y - sy));
-        box.style.width = slots[idx].w + 'px';
-        box.style.height = slots[idx].h + 'px';
+        applySlotBoxStyle(box, idx);
       }, () => box.classList.remove('dragging'));
     };
     handle.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
     handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   }
 
+  function makeRotatable(handle, box, idx) {
+    if (!handle) return;
+    const start = e => {
+      if (e.button != null && e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      const overlayRect = overlay.getBoundingClientRect();
+      const slot = slots[idx];
+      const cx = overlayRect.left + slot.x + slot.w / 2;
+      const cy = overlayRect.top + slot.y + slot.h / 2;
+      const p = getPointerXY(e);
+      const startAngle = Math.atan2(p.y - cy, p.x - cx) * 180 / Math.PI;
+      const startRot = normalizeAngle(slot.r || 0);
+      box.classList.add('dragging');
+      bindDragMove(handle, e, moveEvent => {
+        const q = getPointerXY(moveEvent);
+        const nowAngle = Math.atan2(q.y - cy, q.x - cx) * 180 / Math.PI;
+        slots[idx].r = normalizeAngle(startRot + (nowAngle - startAngle));
+        applySlotBoxStyle(box, idx);
+      }, () => box.classList.remove('dragging'));
+    };
+    handle.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
+    handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  }
+
+  function rotateSlot(idx, delta) {
+    if (!slots[idx]) return;
+    slots[idx].r = normalizeAngle((slots[idx].r || 0) + delta);
+    renderSlots();
+  }
+
+
   function addSlotManual() {
     const W = canvas.width, H = canvas.height;
-    slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18) });
+    slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18), r: 0 });
     document.getElementById('slotCount').textContent = slots.length;
     renderSlots();
   }
@@ -945,6 +1055,7 @@
       const realSlots = slots.map(s => ({
         x: Math.round(s.x / scale), y: Math.round(s.y / scale),
         w: Math.round(s.w / scale), h: Math.round(s.h / scale),
+        r: normalizeAngle(s.r || 0),
       }));
 
       const tmpl = {
@@ -1026,17 +1137,41 @@
     if (!confirm('Hapus template ini?')) return;
     try {
       const token = Auth.getToken();
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${id}`, {
+      if (!token) throw new Error('Session admin tidak ditemukan. Login ulang dulu.');
+      const target = _allTemplates.find(t => String(t.id) === String(id));
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: {
           'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Authorization': `Bearer ${token}`,
+          'Prefer': 'return=minimal'
         }
       });
       if (!res.ok) throw new Error(await res.text());
-      _allTemplates = _allTemplates.filter(t => t.id != id);
+
+      // Simpan tombstone lokal supaya kalau ada cache / response lama, template tetap tidak muncul lagi.
+      rememberDeletedTemplate(id);
+      _allTemplates = _allTemplates.filter(t => String(t.id) !== String(id));
+
+      // Best-effort hapus file storage juga kalau path-nya masih bisa ditebak dari public URL.
+      try {
+        if (target?.src && target.src.includes(`/storage/v1/object/public/${BUCKET}/`)) {
+          const objectPath = decodeURIComponent(target.src.split(`/storage/v1/object/public/${BUCKET}/`)[1] || '');
+          if (objectPath) {
+            await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${objectPath}`, {
+              method: 'DELETE',
+              headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
+            });
+          }
+        }
+      } catch(storageErr) {
+        console.warn('Storage delete skipped:', storageErr);
+      }
+
       renderTemplateList();
       renderCatTabs();
+      renderCategoryTags();
       showToast('Template dihapus');
     } catch(e) {
       showToast('Gagal hapus: ' + e.message, true);

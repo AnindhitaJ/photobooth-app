@@ -270,6 +270,81 @@
       .photo-thumb, .photo-thumb-empty { width: 56px; height: 56px; }
       #btnAmbil, #btnLanjut { font-size: 15px; padding: 13px 22px; }
     }
+
+    /* Camera selector */
+    #cameraPickerBtn {
+      position: fixed;
+      top: calc(104px + env(safe-area-inset-top, 0px));
+      right: 18px;
+      z-index: 28;
+      border: 1.5px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.38);
+      color: #fff;
+      padding: 10px 13px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.28);
+      cursor: pointer;
+    }
+    #cameraPickerBtn:active { transform: scale(.97); }
+    #cameraPanel {
+      position: fixed;
+      top: calc(148px + env(safe-area-inset-top, 0px));
+      right: 14px;
+      z-index: 29;
+      width: min(330px, calc(100vw - 28px));
+      display: none;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(12, 16, 28, .88);
+      border: 1.5px solid rgba(255,255,255,.16);
+      box-shadow: 0 16px 44px rgba(0,0,0,.45);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    #cameraPanel.show { display: block; }
+    .cam-title {
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-size: 13px; font-weight: 900; margin-bottom: 10px;
+    }
+    #cameraSelect {
+      width: 100%;
+      padding: 12px 13px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      color: white;
+      font-weight: 750;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    #cameraSelect option { color:#111827; background:#fff; }
+    .cam-actions { display:flex; gap:8px; }
+    .cam-small-btn {
+      flex: 1;
+      border: 1.5px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.1);
+      color: white;
+      border-radius: 14px;
+      padding: 10px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .cam-small-btn.primary {
+      background: linear-gradient(135deg,#D84B7E,#E5B842);
+      border-color: transparent;
+    }
+    #cameraHelp {
+      margin-top: 10px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: rgba(255,255,255,.64);
+    }
+
   </style>
   <script src="/auth.js"></script>
   <script src="/ganci-utils.js"></script>
@@ -326,6 +401,22 @@
 </div>
 <div id="slotIndicator"></div>
 
+<button id="cameraPickerBtn" type="button" onclick="toggleCameraPanel()">🎥 Kamera</button>
+<div id="cameraPanel">
+  <div class="cam-title">
+    <span>Pilih Kamera</span>
+    <span style="opacity:.58;font-size:11px">internal / webcam</span>
+  </div>
+  <select id="cameraSelect" onchange="selectCameraDevice(this.value)">
+    <option value="">Kamera default</option>
+  </select>
+  <div class="cam-actions">
+    <button class="cam-small-btn" type="button" onclick="refreshCameraDevices()">Refresh</button>
+    <button class="cam-small-btn primary" type="button" onclick="closeCameraPanel()">Tutup</button>
+  </div>
+  <div id="cameraHelp">Kamera eksternal hanya muncul kalau sudah terbaca browser sebagai webcam. Kalau belum muncul, coba allow permission kamera lalu refresh.</div>
+</div>
+
 <!-- Strip -->
 <div id="photosStrip"></div>
 
@@ -374,6 +465,10 @@
   const statusMsg    = document.getElementById('statusMsg');
   const recIndicator = document.getElementById('recIndicator');
   const ganciFrameCanvas = document.getElementById('ganciFrameCanvas');
+  const cameraPanel  = document.getElementById('cameraPanel');
+  const cameraSelect = document.getElementById('cameraSelect');
+
+  let selectedCameraId = localStorage.getItem('selectedCameraId') || '';
 
   let photos         = new Array(slotCount).fill(null);
   let liveVideos     = new Array(slotCount).fill(null);
@@ -574,19 +669,107 @@
   }
 
   // ── Camera ──
+  function toggleCameraPanel() {
+    cameraPanel?.classList.toggle('show');
+    if (cameraPanel?.classList.contains('show')) refreshCameraDevices();
+  }
+
+  function closeCameraPanel() {
+    cameraPanel?.classList.remove('show');
+  }
+
+  function makeCameraLabel(device, idx) {
+    const raw = (device.label || '').trim();
+    if (raw) return raw;
+    return idx === 0 ? 'Kamera default' : `Kamera ${idx + 1}`;
+  }
+
+  async function refreshCameraDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      statusMsg.textContent = 'Browser belum support pilih kamera.';
+      return;
+    }
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(d => d.kind === 'videoinput');
+
+      cameraSelect.innerHTML = '<option value="">Kamera default</option>' + cameras.map((d, i) => {
+        const selected = d.deviceId === selectedCameraId ? 'selected' : '';
+        return `<option value="${d.deviceId}" ${selected}>${makeCameraLabel(d, i)}</option>`;
+      }).join('');
+
+      if (selectedCameraId && !cameras.some(d => d.deviceId === selectedCameraId)) {
+        selectedCameraId = '';
+        localStorage.removeItem('selectedCameraId');
+        cameraSelect.value = '';
+      }
+    } catch(e) {
+      console.warn('enumerateDevices gagal:', e);
+      statusMsg.textContent = 'Daftar kamera belum bisa dibaca.';
+    }
+  }
+
+  async function selectCameraDevice(deviceId) {
+    if (isCountingDown) {
+      statusMsg.textContent = 'Tunggu countdown selesai dulu ya.';
+      return;
+    }
+    selectedCameraId = deviceId || '';
+    if (selectedCameraId) localStorage.setItem('selectedCameraId', selectedCameraId);
+    else localStorage.removeItem('selectedCameraId');
+    statusMsg.textContent = selectedCameraId ? 'Mengganti kamera...' : 'Menggunakan kamera default...';
+    await startCamera();
+    setTimeout(updateFrameGuide, 500);
+  }
+
   async function startCamera() {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia not supported');
       if (stream) stream.getTracks().forEach(t => t.stop());
+
+      const videoConstraint = selectedCameraId
+        ? { deviceId: { exact: selectedCameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        : { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } };
+
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: videoConstraint,
         audio: false
       });
+
       video.srcObject = stream;
-      video.play().catch(() => {});
+      await video.play().catch(() => {});
+      btnAmbil.disabled = false;
+      statusMsg.textContent = '';
+      setTimeout(refreshCameraDevices, 250);
     } catch(e) {
-      statusMsg.textContent = 'Kamera tidak bisa diakses.';
+      console.warn('Kamera gagal:', e);
+
+      if (selectedCameraId) {
+        selectedCameraId = '';
+        localStorage.removeItem('selectedCameraId');
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
+            audio: false
+          });
+          video.srcObject = stream;
+          await video.play().catch(() => {});
+          btnAmbil.disabled = false;
+          statusMsg.textContent = 'Kamera pilihan tidak tersedia, pakai kamera default.';
+          setTimeout(refreshCameraDevices, 250);
+          return;
+        } catch(fallbackErr) {
+          console.warn('Fallback camera gagal:', fallbackErr);
+        }
+      }
+
+      statusMsg.textContent = 'Kamera tidak bisa diakses. Cek permission / pilih kamera lain.';
       btnAmbil.disabled = true;
     }
+  }
+
+  if (navigator.mediaDevices?.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', refreshCameraDevices);
   }
 
   // ── Live recording ──
@@ -808,6 +991,7 @@
 
   // Init
   renderIndicators(); renderStrip(); updateTitle(); updateVideoTransform();
+  refreshCameraDevices();
   window.addEventListener('resize', updateFrameGuide);
   if (isGanciMode) {
     document.getElementById('modeModal').style.display = 'none';

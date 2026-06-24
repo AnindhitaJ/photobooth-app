@@ -274,7 +274,7 @@
 
       <div class="btn-row">
         <button class="btn btn-ghost"  onclick="resetFilter()">↺ Reset</button>
-        <button class="btn btn-apply"  onclick="simpanFoto()">✓ Simpan Foto Ini</button>
+        <button class="btn btn-apply" type="button" onclick="downloadFotoIni()">⬇️ Download Foto Ini</button>
       </div>
       <div class="btn-row" id="applyAllRow">
         <button class="btn btn-apply" style="background:linear-gradient(135deg,#E5B842,#0099cc);box-shadow:0 6px 20px rgba(229,184,66,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
@@ -976,11 +976,47 @@
     filteredPhotos[currentIdx] = canvas.toDataURL('image/jpeg', productLikeExportQuality);
   }
 
-  window.simpanFoto = function() {
-    simpanFotoSilent();
-    statusBar.textContent = `Foto ${currentIdx + 1} tersimpan ✓`;
-    setTimeout(() => { statusBar.textContent = ''; }, 1500);
+  function downloadCanvasBlob(canvasEl, filename) {
+    return new Promise((resolve, reject) => {
+      if (!canvasEl || !canvasEl.width || !canvasEl.height) {
+        reject(new Error('Canvas belum siap'));
+        return;
+      }
+
+      canvasEl.toBlob(blob => {
+        if (!blob) {
+          reject(new Error('Gagal membuat file foto'));
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2500);
+        resolve();
+      }, 'image/jpeg', productLikeExportQuality);
+    });
+  }
+
+  window.downloadFotoIni = async function() {
+    try {
+      simpanFotoSilent(); // tetap update preview/filter state untuk flow lanjut hasil
+      await downloadCanvasBlob(canvas, `lux-foto-${currentIdx + 1}-${Date.now()}.jpg`);
+      statusBar.textContent = `Foto ${currentIdx + 1} mulai didownload ✓`;
+      setTimeout(() => { statusBar.textContent = ''; }, 1500);
+    } catch(e) {
+      console.error('download foto ini error:', e);
+      statusBar.textContent = 'Gagal download foto: ' + (e.message || e);
+    }
   };
+
+  // Backward compatibility kalau masih ada onclick lama di cache
+  window.simpanFoto = window.downloadFotoIni;
 
   async function goToResultPage() {
     const btn = document.getElementById('btnLanjutFilter');

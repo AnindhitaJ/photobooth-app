@@ -411,8 +411,10 @@
     if (category === 'Social Media') {
       sidePad = 128;
       topPad = 222;
-      bottomPad = 500;
-      gap = 98;
+      // Social template sebelumnya menyisakan area kosong terlalu besar di bawah slot terakhir.
+      // Dibuat lebih rapat supaya slot foto turun dan preview tidak terasa kosong.
+      bottomPad = 270;
+      gap = 74;
       slotCount = 3;
     } else if (category === 'Korean') {
       sidePad = 78;
@@ -1929,7 +1931,21 @@
   }
 
   function getCategories() {
-    if (isPhotoboxMode) return [PHOTOBOX_CATEGORY];
+    if (isPhotoboxMode) {
+      // Photobox tetap punya tab khusus built-in "Photobox 4R",
+      // tapi template upload harus tetap bisa difilter berdasarkan kategori/tema aslinya
+      // misalnya Cool, Food, Cute, dll.
+      const fromDB = [...new Set(
+        _dbTemplates
+          .filter(t => isPhotoboxTemplate(t))
+          .map(t => t.category)
+          .filter(c => c && !HIDDEN_CATEGORIES.includes(c))
+      )];
+
+      const ordered = [PHOTOBOX_CATEGORY, ...fromDB.filter(c => c !== PHOTOBOX_CATEGORY)];
+      return [...new Set(ordered)];
+    }
+
     const fromDB = [...new Set(_dbTemplates.map(t => t.category).filter(c => !HIDDEN_CATEGORIES.includes(c) && !isPhotoboxCategory(c)))];
     const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]').filter(c => !HIDDEN_CATEGORIES.includes(c) && !isPhotoboxCategory(c));
     return [...new Set([...BUILTIN_CATEGORIES, ...fromDB, ...fromLS])];
@@ -2008,7 +2024,7 @@
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;color:#a0a0b0;padding:48px 24px;">
           <h3 style="color:white;margin-bottom:8px">Belum ada template di kategori ini</h3>
-          <p>${isPhotoboxMode ? 'Admin bisa upload template kategori Photobox 4R lewat menu ⚙️' : 'Admin perlu upload template dulu lewat menu ⚙️'}</p>
+          <p>${isPhotoboxMode ? 'Belum ada template Photobox di kategori ini. Cek product type dan kategori template di Admin.' : 'Admin perlu upload template dulu lewat menu ⚙️'}</p>
         </div>`;
       selectedTemplate = null;
       document.getElementById('infoBox').style.display = 'none';

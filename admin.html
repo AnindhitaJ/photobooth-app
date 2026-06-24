@@ -57,9 +57,33 @@
     .btn-sm { padding: 7px 14px; font-size: 12px; }
 
     /* LAYOUT */
-    .layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
-    .editor-panel { flex: 1; min-width: 300px; }
-    .templates-panel { width: 320px; flex-shrink: 0; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(420px, 1fr) minmax(380px, 460px);
+      gap: 24px;
+      align-items: flex-start;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .editor-panel { min-width: 0; }
+    .templates-panel {
+      width: 100%;
+      position: sticky;
+      top: 18px;
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      padding-right: 6px;
+      scrollbar-width: thin;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .templates-panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+    }
 
     /* FORM */
     .form-group { margin-bottom: 14px; }
@@ -98,13 +122,22 @@
     /* CANVAS EDITOR */
     .canvas-wrapper {
       position: relative; display: none;
+      width: fit-content;
+      max-width: 100%;
       background: #f0ebe4; border-radius: 16px;
-      overflow: hidden; border: 2.5px solid var(--border);
-      margin-bottom: 16px; user-select: none;
+      overflow: visible; border: 2.5px solid var(--border);
+      margin: 0 auto 16px;
+      user-select: none;
       touch-action: none;
       box-shadow: 0 4px 20px rgba(216,75,126,0.12);
     }
-    #editorCanvas { display: block; touch-action: none; }
+    #editorCanvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      touch-action: none;
+      border-radius: 14px;
+    }
     .slot-overlay { position: absolute; inset: 0; pointer-events: none; touch-action: none; }
     .slot-box {
       position: absolute; border: 2.5px solid var(--orange);
@@ -203,6 +236,50 @@
     .product-type-note { font-size:11px; line-height:1.45; color:var(--text2); margin-top:8px; }
 
     /* RIGHT PANEL */
+    .product-list-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      padding: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .product-list-tab {
+      border: 2px solid transparent;
+      background: #fff8fc;
+      color: var(--text2);
+      border-radius: 14px;
+      padding: 9px 8px;
+      font-size: 12px;
+      font-weight: 900;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .product-list-tab.active {
+      background: linear-gradient(135deg,var(--orange),var(--yellow));
+      color: white;
+      box-shadow: 0 4px 14px rgba(216,75,126,.22);
+    }
+    .list-head-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .list-count {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--orange);
+      background: #fff1f7;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 9px;
+      white-space: nowrap;
+    }
     .cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
     .cat-tab {
       padding: 6px 14px; border-radius: 50px;
@@ -213,17 +290,17 @@
     .cat-tab.active { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 4px 12px rgba(216,75,126,0.35); }
 
     /* TEMPLATE LIST */
-    #templateList { display: flex; flex-direction: column; gap: 10px; }
+    #templateList { display: flex; flex-direction: column; gap: 9px; }
     .template-item {
-      background: white; border-radius: 14px; padding: 12px;
-      display: flex; gap: 12px; align-items: center;
+      background: white; border-radius: 14px; padding: 10px;
+      display: flex; gap: 11px; align-items: center;
       border: 2px solid var(--border);
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       transition: all 0.2s;
     }
     .template-item:hover { border-color: var(--orange); box-shadow: 0 4px 16px rgba(216,75,126,0.12); }
     .template-thumb {
-      width: 44px; height: 72px; object-fit: cover;
+      width: 48px; height: 76px; object-fit: cover;
       border-radius: 8px; flex-shrink: 0; background: var(--border);
       border: 1.5px solid var(--border);
     }
@@ -638,7 +715,17 @@
       <div id="catListManage"></div>
     </div>
 
-    <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Template Upload Tersimpan</h3>
+    <div class="list-head-row">
+      <h3 style="font-size:16px;font-weight:800;margin:0">Template Upload Tersimpan</h3>
+      <span class="list-count" id="templateListCount">0 template</span>
+    </div>
+
+    <div class="product-list-tabs" id="productListTabs">
+      <button type="button" class="product-list-tab active" onclick="filterProductList('all')">Semua</button>
+      <button type="button" class="product-list-tab" onclick="filterProductList('photostrip')">🎞️ Photostrip</button>
+      <button type="button" class="product-list-tab" onclick="filterProductList('photobox')">🖼️ Photobox 4R</button>
+    </div>
+
     <div class="cat-tabs" id="catTabs"></div>
     <div id="templateList"></div>
 
@@ -652,11 +739,13 @@
   const BUCKET = 'photobooth';
   const DEFAULT_UPLOAD_CATEGORIES = ['Photobox 4R'];
 
-  const DISPLAY_MAX_W = 320;
+  const DISPLAY_MAX_W = 420;
+  const DISPLAY_MAX_H = 620;
   let templateImg = null, templateDataURL = null;
   let slots = [], scale = 1;
   let selectedCategory = '';
   let selectedProductType = 'photostrip';
+  let filterProductType = 'all';
   let filterCategory = 'all';
 
   const canvas = document.getElementById('editorCanvas');
@@ -719,6 +808,14 @@
     return t?.product_type || (isPhotoboxCategory(t?.category) ? 'photobox' : 'photostrip');
   }
 
+  function updateUploadHint() {
+    const p = document.querySelector('#uploadArea p');
+    if (!p) return;
+    p.textContent = selectedProductType === 'photobox'
+      ? 'Ukuran ideal: 10×15 / 4R · Area foto: transparan atau hitam'
+      : 'Ukuran ideal: 591×1772 px · Area foto: transparan atau hitam';
+  }
+
   function selectProductType(type) {
     selectedProductType = type === 'photobox' ? 'photobox' : 'photostrip';
     document.getElementById('productTypePhotostrip')?.classList.toggle('active', selectedProductType === 'photostrip');
@@ -736,12 +833,18 @@
         localStorage.setItem('pb_categories', JSON.stringify(cats));
       }
     }
+    updateUploadHint();
     renderCategoryTags();
   }
 
-  function getCategories() {
+  function getCategories(scope = 'all') {
     // category = tema/desain, product_type = photostrip/photobox
-    const fromDB = [...new Set(_allTemplates.map(t => t.category))];
+    const fromDB = [...new Set(
+      _allTemplates
+        .filter(t => scope === 'all' || productTypeOfTemplate(t) === scope)
+        .map(t => t.category)
+        .filter(Boolean)
+    )];
     const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]');
     return [...new Set([...DEFAULT_UPLOAD_CATEGORIES, ...fromDB, ...fromLS])];
   }
@@ -778,8 +881,24 @@
     renderCategoryTags();
   }
 
+  function renderProductListTabs() {
+    const el = document.getElementById('productListTabs');
+    if (!el) return;
+    el.querySelectorAll('.product-list-tab').forEach(btn => btn.classList.remove('active'));
+    const idx = filterProductType === 'photostrip' ? 1 : filterProductType === 'photobox' ? 2 : 0;
+    el.querySelectorAll('.product-list-tab')[idx]?.classList.add('active');
+  }
+
+  function filterProductList(type) {
+    filterProductType = ['photostrip','photobox'].includes(type) ? type : 'all';
+    filterCategory = 'all';
+    renderProductListTabs();
+    renderCatTabs();
+    renderTemplateList();
+  }
+
   function renderCatTabs() {
-    const cats = getCategories();
+    const cats = getCategories(filterProductType);
     const el = document.getElementById('catTabs');
     let html = `<button class="cat-tab ${filterCategory==='all'?'active':''}" onclick="filterCat('all')">Semua</button>`;
     html += cats.map(c =>
@@ -859,7 +978,9 @@
       templateDataURL = e.target.result;
       templateImg = new Image();
       templateImg.onload = () => {
-        scale = Math.min(1, DISPLAY_MAX_W / templateImg.width);
+        // Preview editor dibuat proporsional dengan file asli, tapi dibatasi biar tetap manusiawi.
+        // Jadi template 4R besar tidak melebar full panel dan photostrip tinggi tidak terlalu jumbo.
+        scale = Math.min(1, DISPLAY_MAX_W / templateImg.width, DISPLAY_MAX_H / templateImg.height);
         const dw = Math.round(templateImg.width * scale);
         const dh = Math.round(templateImg.height * scale);
         canvas.width = dw; canvas.height = dh;
@@ -1143,6 +1264,7 @@
       _allTemplates.unshift(inserted);
       showToast('Template tersimpan di cloud! ✓');
       renderTemplateList();
+      renderProductListTabs();
       renderCatTabs();
       renderCategoryTags();
 
@@ -1170,12 +1292,21 @@
   // ─── Template List ───
   function renderTemplateList() {
     const list = document.getElementById('templateList');
-    const filtered = filterCategory === 'all'
-      ? _allTemplates
-      : _allTemplates.filter(t => t.category === filterCategory);
+    const countEl = document.getElementById('templateListCount');
+
+    const filtered = _allTemplates.filter(t => {
+      const productOk = filterProductType === 'all' || productTypeOfTemplate(t) === filterProductType;
+      const categoryOk = filterCategory === 'all' || t.category === filterCategory;
+      return productOk && categoryOk;
+    });
+
+    if (countEl) {
+      const label = filterProductType === 'photobox' ? 'Photobox' : filterProductType === 'photostrip' ? 'Photostrip' : 'template';
+      countEl.textContent = `${filtered.length} ${label}`;
+    }
 
     if (!filtered.length) {
-      list.innerHTML = '<div class="empty-state">Belum ada template di kategori ini</div>';
+      list.innerHTML = '<div class="empty-state">Belum ada template di filter ini</div>';
       return;
     }
 
@@ -1247,12 +1378,14 @@
 
   // Init
   renderCategoryTags();
+  renderProductListTabs();
   renderCatTabs();
   renderManageCats();
   // Init: load dari Supabase dulu
   (async () => {
     document.getElementById('templateList').innerHTML = '<div class="empty-state">Memuat template...</div>';
     await fetchAllTemplates();
+    renderProductListTabs();
     renderCatTabs();
     renderCategoryTags();
     renderManageCats();

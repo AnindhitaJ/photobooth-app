@@ -259,17 +259,39 @@
 
 <script>
   const params   = new URLSearchParams(window.location.search);
-  const photoURL = params.get('photo');
-  const gifURL   = params.get('gif');
-  const individualURLs = [
+  const manifestURL = params.get('m');
+  let photoURL = params.get('photo');
+  let gifURL   = params.get('gif');
+  let individualURLs = [
     ...params.getAll('p'),
     ...(params.get('photos') ? params.get('photos').split('|') : [])
   ].filter(Boolean);
 
-  if (!photoURL) {
-    showError('Link tidak valid', 'Scan ulang QR dari halaman photobooth.');
-  } else {
-    init();
+  loadFromParams();
+
+  async function loadFromParams() {
+    try {
+      if (manifestURL) {
+        document.getElementById('statusSub').textContent = 'Memuat daftar file...';
+        const res = await fetch(manifestURL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Manifest tidak bisa dimuat');
+        const manifest = await res.json();
+        photoURL = manifest.photo || photoURL;
+        gifURL = manifest.gif || gifURL;
+        individualURLs = Array.isArray(manifest.photos) ? manifest.photos.filter(Boolean) : individualURLs;
+      }
+
+      if (!photoURL) {
+        showError('Link tidak valid', 'Scan ulang QR dari halaman photobooth.');
+        return;
+      }
+
+      init();
+    } catch(e) {
+      console.error('Manifest load error:', e);
+      if (photoURL) init();
+      else showError('Link QR tidak bisa dimuat', 'Coba scan ulang QR dari halaman photobooth.');
+    }
   }
 
   async function init() {

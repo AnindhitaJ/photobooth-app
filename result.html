@@ -354,12 +354,32 @@
   }
 
   function buildDownloadPageURL(extra = {}) {
+    if (extra.manifest || finalManifestURL) {
+      return window.location.origin + '/download.html?' + new URLSearchParams({
+        m: extra.manifest || finalManifestURL
+      }).toString();
+    }
+
+    // Fallback lama kalau upload manifest gagal.
     const params = new URLSearchParams({ photo: finalPublicURL });
     const photos = (finalIndividualURLs || []).filter(Boolean);
     photos.forEach(url => params.append('p', url));
     if (finalGifURL) params.set('gif', finalGifURL);
     if (extra.gif) params.set('gif', extra.gif);
     return window.location.origin + '/download.html?' + params.toString();
+  }
+
+  async function uploadDownloadManifest({ photo, photos = [], gif = '' }) {
+    const manifest = {
+      version: 1,
+      type: isPhotoboxMode ? 'photobox' : 'photostrip',
+      photo,
+      photos: photos.filter(Boolean),
+      gif: gif || '',
+      createdAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    return await uploadToSupabase(blob, 'download-manifest.json');
   }
 
   // ─── State ───
@@ -436,6 +456,7 @@
   let finalPublicURL = null;
   let finalIndividualURLs = [];
   let finalGifURL     = '';
+  let finalManifestURL = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
 
@@ -706,13 +727,25 @@
         } catch(e) {}
       }
 
-      // Build QR URL: strip + foto satuan + GIF
-      const downloadPageURL = buildDownloadPageURL({ gif: gifURL });
+      // Build QR URL pendek: simpan semua URL ke manifest JSON di Supabase.
+      // Sebelumnya QR terlalu panjang karena membawa banyak URL foto satuan sebagai query params.
+      try {
+        finalManifestURL = await uploadDownloadManifest({
+          photo: finalPublicURL,
+          photos: finalIndividualURLs,
+          gif: gifURL
+        });
+      } catch(e) {
+        console.warn('Upload manifest gagal, fallback query panjang:', e);
+      }
+
+      const downloadPageURL = buildDownloadPageURL({ gif: gifURL, manifest: finalManifestURL });
       const qrBox = document.getElementById('qrcodeModal');
       qrBox.innerHTML = '';
       new QRCode(qrBox, {
-        text: downloadPageURL, width: 220, height: 220,
+        text: downloadPageURL, width: 260, height: 260,
         colorDark: '#1D3557', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
       });
       qrStatus.style.color = 'var(--text2)';
       const uploaded = individualURLs.filter(Boolean).length;
@@ -748,11 +781,21 @@
           finalGifURL = gifURL;
           const qrBox = document.getElementById('qrcodeModal');
           if (qrBox && finalPublicURL) {
-            const downloadPageURL = buildDownloadPageURL({ gif: gifURL });
+            try {
+              finalManifestURL = await uploadDownloadManifest({
+                photo: finalPublicURL,
+                photos: finalIndividualURLs,
+                gif: gifURL
+              });
+            } catch(e) {
+              console.warn('Update manifest GIF gagal:', e);
+            }
+            const downloadPageURL = buildDownloadPageURL({ gif: gifURL, manifest: finalManifestURL });
             qrBox.innerHTML = '';
             new QRCode(qrBox, {
-              text: downloadPageURL, width: 220, height: 220,
+              text: downloadPageURL, width: 260, height: 260,
               colorDark: '#1D3557', colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M
             });
           }
         } catch(e) { console.warn('Auto GIF upload gagal:', e); }

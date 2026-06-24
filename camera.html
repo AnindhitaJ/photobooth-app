@@ -197,11 +197,15 @@
       position: fixed; inset: 0; z-index: 999;
       background: rgba(0,0,0,0.88); backdrop-filter: blur(6px);
       display: flex; align-items: center; justify-content: center;
+      padding: 18px;
+      overflow-y: auto;
     }
     .mode-card {
-      background: #1D3557; border-radius: 22px; padding: 28px 24px;
-      width: 88%; max-width: 380px; border: 2px solid rgba(216,75,126,0.4);
+      background: #1D3557; border-radius: 22px; padding: 24px 20px;
+      width: 92%; max-width: 420px; border: 2px solid rgba(216,75,126,0.4);
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
     }
     .mode-card h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
     .mode-card p  { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
@@ -345,6 +349,21 @@
       color: rgba(255,255,255,.64);
     }
 
+    #modeModal #cameraPanel {
+      position: static;
+      display: block;
+      width: 100%;
+      margin: 14px 0 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.055);
+      border-color: rgba(255,255,255,.14);
+      box-shadow: none;
+    }
+    #modeModal #cameraSelect { margin-bottom: 8px; }
+    #modeModal #cameraHelp { margin-top: 8px; }
+    #modeModal .cam-actions { margin-top: 2px; }
+    #cameraPickerBtn { display: none; }
+
   </style>
   <script src="/auth.js"></script>
   <script src="/ganci-utils.js"></script>
@@ -365,7 +384,22 @@
 <div id="modeModal">
   <div class="mode-card">
     <h2>📸 Pilih Mode</h2>
-    <p>Pilih timer dulu, lalu pilih cara foto.</p>
+    <p>Pilih kamera input, timer, lalu pilih cara foto.</p>
+
+    <div id="cameraPanel">
+      <div class="cam-title">
+        <span>🎥 Pilih Kamera Input</span>
+        <span style="opacity:.58;font-size:11px">internal / webcam</span>
+      </div>
+      <select id="cameraSelect" onchange="selectCameraDevice(this.value)">
+        <option value="">Kamera default</option>
+      </select>
+      <div class="cam-actions">
+        <button class="cam-small-btn" type="button" onclick="refreshCameraDevices(true)">Izinkan / Refresh</button>
+        <button class="cam-small-btn primary" type="button" onclick="selectCameraDevice(cameraSelect.value)">Pakai Kamera Ini</button>
+      </div>
+      <div id="cameraHelp">Kamera eksternal hanya muncul kalau sudah terbaca browser sebagai webcam. Kalau nama kamera belum muncul, klik Izinkan / Refresh dulu.</div>
+    </div>
 
     <div class="timer-row">
       <button class="timer-opt" id="t3"  onclick="setTimer(3)">3 dtk</button>
@@ -400,22 +434,6 @@
   <div id="subText"></div>
 </div>
 <div id="slotIndicator"></div>
-
-<button id="cameraPickerBtn" type="button" onclick="toggleCameraPanel()">🎥 Kamera</button>
-<div id="cameraPanel">
-  <div class="cam-title">
-    <span>Pilih Kamera</span>
-    <span style="opacity:.58;font-size:11px">internal / webcam</span>
-  </div>
-  <select id="cameraSelect" onchange="selectCameraDevice(this.value)">
-    <option value="">Kamera default</option>
-  </select>
-  <div class="cam-actions">
-    <button class="cam-small-btn" type="button" onclick="refreshCameraDevices()">Refresh</button>
-    <button class="cam-small-btn primary" type="button" onclick="closeCameraPanel()">Tutup</button>
-  </div>
-  <div id="cameraHelp">Kamera eksternal hanya muncul kalau sudah terbaca browser sebagai webcam. Kalau belum muncul, coba allow permission kamera lalu refresh.</div>
-</div>
 
 <!-- Strip -->
 <div id="photosStrip"></div>
@@ -686,12 +704,22 @@
     return idx === 0 ? 'Kamera default' : `Kamera ${idx + 1}`;
   }
 
-  async function refreshCameraDevices() {
+  async function refreshCameraDevices(requestPermission = false) {
     if (!navigator.mediaDevices?.enumerateDevices) {
-      statusMsg.textContent = 'Browser belum support pilih kamera.';
+      if (statusMsg) statusMsg.textContent = 'Browser belum support pilih kamera.';
       return;
     }
     try {
+      // Nama kamera biasanya baru muncul setelah permission diberikan.
+      if (requestPermission && navigator.mediaDevices?.getUserMedia) {
+        try {
+          const temp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          temp.getTracks().forEach(t => t.stop());
+        } catch(e) {
+          console.warn('Permission kamera belum diberikan:', e);
+        }
+      }
+
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(d => d.kind === 'videoinput');
 
@@ -704,10 +732,17 @@
         selectedCameraId = '';
         localStorage.removeItem('selectedCameraId');
         cameraSelect.value = '';
+      } else if (selectedCameraId) {
+        cameraSelect.value = selectedCameraId;
       }
+
+      const help = document.getElementById('cameraHelp');
+      if (help) help.textContent = cameras.length
+        ? 'Pilih kamera yang mau dipakai. Kamera eksternal muncul kalau terbaca browser sebagai webcam.'
+        : 'Belum ada daftar kamera. Klik Izinkan / Refresh dan pastikan permission kamera di-allow.';
     } catch(e) {
       console.warn('enumerateDevices gagal:', e);
-      statusMsg.textContent = 'Daftar kamera belum bisa dibaca.';
+      if (statusMsg) statusMsg.textContent = 'Daftar kamera belum bisa dibaca.';
     }
   }
 
@@ -719,6 +754,15 @@
     selectedCameraId = deviceId || '';
     if (selectedCameraId) localStorage.setItem('selectedCameraId', selectedCameraId);
     else localStorage.removeItem('selectedCameraId');
+
+    const help = document.getElementById('cameraHelp');
+    if (!captureMode) {
+      if (help) help.textContent = selectedCameraId
+        ? 'Kamera dipilih. Sekarang pilih timer dan mode foto.'
+        : 'Kamera default dipilih. Sekarang pilih timer dan mode foto.';
+      return;
+    }
+
     statusMsg.textContent = selectedCameraId ? 'Mengganti kamera...' : 'Menggunakan kamera default...';
     await startCamera();
     setTimeout(updateFrameGuide, 500);

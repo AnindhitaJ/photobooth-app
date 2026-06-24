@@ -276,7 +276,7 @@
   }
 
   function isPhotoboxTemplate(t) {
-    return t?.product_type === 'photobox' || isPhotoboxCategory(t?.category);
+    return (t?.product_type || (isPhotoboxCategory(t?.category) ? 'photobox' : 'photostrip')) === 'photobox';
   }
 
   const PHOTOBOX_DEFS = [
@@ -1911,7 +1911,11 @@
           let parsedSlots = [];
           try { parsedSlots = Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]'); }
           catch(e) { parsedSlots = []; }
-          return { ...t, slots: parsedSlots.map(normalizeTemplateSlotAngle) };
+          return {
+            ...t,
+            product_type: t.product_type || (isPhotoboxCategory(t.category) ? 'photobox' : 'photostrip'),
+            slots: parsedSlots.map(normalizeTemplateSlotAngle)
+          };
         });
       console.log('[template] loaded', _dbTemplates.length, 'templates from Supabase');
     } catch(e) {
@@ -2056,7 +2060,7 @@
     localStorage.setItem('templateW', t.w || 591);
     localStorage.setItem('templateH', t.h || 1772);
     localStorage.setItem('templateIsBasic', t.isBasic ? '1' : '0');
-    localStorage.setItem('templateProduct', isPhotoboxMode ? 'photobox' : 'photostrip');
+    localStorage.setItem('templateProduct', isPhotoboxTemplate(t) ? 'photobox' : 'photostrip');
     if (t.isBasic && t.frameColor) localStorage.setItem('basicFrameColor', JSON.stringify(t.frameColor));
     else localStorage.removeItem('basicFrameColor');
 

@@ -127,11 +127,15 @@
         min-width: 0 !important;
       }
       .btn-row {
+        position: relative;
+        z-index: 1;
+      }
+      .btn-row.nav-row {
         position: sticky;
         bottom: max(10px, env(safe-area-inset-bottom));
-        z-index: 20;
-        background: rgba(255, 248, 252, 0.96);
-        backdrop-filter: blur(8px);
+        z-index: 80;
+        background: rgba(255, 248, 252, 0.98);
+        backdrop-filter: blur(10px);
         border-radius: 18px;
         padding: 8px;
         box-shadow: 0 -8px 24px rgba(216, 75, 126, 0.10);
@@ -140,6 +144,7 @@
         min-height: 46px;
         font-size: 13px;
         padding: 12px 14px;
+        pointer-events: auto;
       }
     }
 
@@ -274,9 +279,9 @@
       <div class="btn-row" id="applyAllRow">
         <button class="btn btn-apply" style="background:linear-gradient(135deg,#E5B842,#0099cc);box-shadow:0 6px 20px rgba(229,184,66,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
       </div>
-      <div class="btn-row">
-        <button class="btn btn-secondary" onclick="kembali()">← Balik</button>
-        <button class="btn btn-primary" id="btnLanjutFilter" onclick="lanjut()">Lihat Hasil →</button>
+      <div class="btn-row nav-row">
+        <button class="btn btn-secondary" type="button" onclick="kembali()">← Balik</button>
+        <button class="btn btn-primary" type="button" id="btnLanjutFilter" onclick="lanjut()">Lihat Hasil →</button>
       </div>
 
     </div>
@@ -289,7 +294,7 @@
   const isGanciMode = captureFlow === 'ganci';
   const isProductMode = captureFlow === 'product';
   const isPhotoboxMode = captureFlow === 'photobox';
-  const productLikeExportQuality = (isGanciMode || isProductMode) ? 0.98 : 0.92;
+  const productLikeExportQuality = (isGanciMode || isProductMode || isPhotoboxMode) ? 0.98 : 0.92;
   const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
   if (isPhotoboxMode) {
     document.title = 'Filter Photobox 4R - LUX Photobooth';
@@ -940,50 +945,67 @@
     setTimeout(() => { statusBar.textContent = ''; }, 1500);
   };
 
-  window.lanjut = function() {
-    simpanFotoSilent();
-    localStorage.setItem('filteredPhotos', JSON.stringify(filteredPhotos));
+  function goToResultPage() {
+    const btn = document.getElementById('btnLanjutFilter');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = isPhotoboxMode ? 'Memproses Photobox...' : 'Memproses...';
+      btn.style.pointerEvents = 'none';
+    }
 
-    if (isGanciMode) {
-      const frame = ganciConfig.frame || 'polos';
-      const frameLabel = (window.GanciFrames?.labels?.[frame]) || ganciConfig.frameLabel || frame;
-      const ganciState = {
-        mode: 'ganci',
-        photo: filteredPhotos[0] || photos[0] || null,
-        originalPhoto: photos[0] || null,
-        frame,
-        frameLabel,
-        bentuk: ganciConfig.bentuk || 'persegi',
-        filter: filterStates[0] || { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' },
-        config: ganciConfig,
-        updatedAt: new Date().toISOString()
-      };
-      try { localStorage.setItem('ganciState', JSON.stringify(ganciState)); } catch(e) {
-        alert('Storage penuh. Foto ganci belum bisa disimpan.');
+    try {
+      simpanFotoSilent();
+      localStorage.setItem('filteredPhotos', JSON.stringify(filteredPhotos));
+
+      if (isPhotoboxMode) {
+        localStorage.setItem('captureFlow', 'photobox');
+        localStorage.setItem('templateProduct', 'photobox');
+      }
+
+      if (isGanciMode) {
+        const frame = ganciConfig.frame || 'polos';
+        const frameLabel = (window.GanciFrames?.labels?.[frame]) || ganciConfig.frameLabel || frame;
+        const ganciState = {
+          mode: 'ganci',
+          photo: filteredPhotos[0] || photos[0] || null,
+          originalPhoto: photos[0] || null,
+          frame,
+          frameLabel,
+          bentuk: ganciConfig.bentuk || 'persegi',
+          filter: filterStates[0] || { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' },
+          config: ganciConfig,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem('ganciState', JSON.stringify(ganciState));
+        window.location.assign('/ganci?done=1');
         return;
       }
-      window.location.href = '/ganci?done=1';
-      return;
-    }
 
-    // Product mode: simpan foto ke productPhoto lalu balik ke menu asal
-    const returnUrl   = localStorage.getItem('captureReturnUrl') || '/result';
-    if (captureFlow === 'product') {
-      const photo = filteredPhotos[0] || photos[0] || null;
-      if (photo) {
-        try { localStorage.setItem('productPhoto', photo); } catch(e) {
-          alert('Storage penuh. Foto belum bisa disimpan.');
-          return;
-        }
+      // Product mode: simpan foto ke productPhoto lalu balik ke menu asal
+      const returnUrl = localStorage.getItem('captureReturnUrl') || '/result';
+      if (captureFlow === 'product') {
+        const photo = filteredPhotos[0] || photos[0] || null;
+        if (photo) localStorage.setItem('productPhoto', photo);
+        localStorage.removeItem('captureFlow');
+        localStorage.removeItem('captureReturnUrl');
+        window.location.assign(returnUrl);
+        return;
       }
-      localStorage.removeItem('captureFlow');
-      localStorage.removeItem('captureReturnUrl');
-      window.location.href = returnUrl;
-      return;
-    }
 
-    window.location.href = '/result';
-  };
+      window.location.assign('/result');
+    } catch(e) {
+      console.error('lanjut filter error:', e);
+      alert('Gagal lanjut ke hasil: ' + (e.message || e));
+      const btn = document.getElementById('btnLanjutFilter');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = isPhotoboxMode ? 'Lihat Hasil →' : 'Lihat Hasil →';
+        btn.style.pointerEvents = '';
+      }
+    }
+  }
+
+  window.lanjut = goToResultPage;
 
   window.kembali = function() {
     document.getElementById('confirmQuitModal').style.display = 'flex';
@@ -1004,6 +1026,14 @@
   window.batalKeluar = function() {
     document.getElementById('confirmQuitModal').style.display = 'none';
   };
+
+  const btnLanjutFilterEl = document.getElementById('btnLanjutFilter');
+  if (btnLanjutFilterEl) {
+    btnLanjutFilterEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      goToResultPage();
+    });
+  }
 
   // ── Init ─────────────────────────────────────────────────────────────────────
   switchPhoto(0);

@@ -294,8 +294,45 @@
   const isGanciMode = captureFlow === 'ganci';
   const isProductMode = captureFlow === 'product';
   const isPhotoboxMode = captureFlow === 'photobox';
-  const productLikeExportQuality = (isGanciMode || isProductMode || isPhotoboxMode) ? 0.98 : 0.92;
+  const productLikeExportQuality = (isGanciMode || isProductMode || isPhotoboxMode) ? 0.92 : 0.90;
   const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
+
+  const PHOTO_STORE_DB = 'lux-photo-temp-db';
+  const PHOTO_STORE_NAME = 'items';
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(PHOTO_STORE_DB, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(PHOTO_STORE_NAME);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB gagal dibuka'));
+    });
+  }
+
+  async function idbSet(key, value) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+      tx.objectStore(PHOTO_STORE_NAME).put(value, key);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB gagal menyimpan')); };
+    });
+  }
+
+  async function saveLargePhotoArray(key, value) {
+    const json = JSON.stringify(value);
+    try {
+      localStorage.setItem(key, json);
+      localStorage.removeItem(key + 'Store');
+      return 'localStorage';
+    } catch(e) {
+      await idbSet(key, value);
+      localStorage.removeItem(key);
+      localStorage.setItem(key + 'Store', 'indexedDB');
+      return 'indexedDB';
+    }
+  }
+
   if (isPhotoboxMode) {
     document.title = 'Filter Photobox 4R - LUX Photobooth';
     const title = document.getElementById('pageTitle');
@@ -945,7 +982,7 @@
     setTimeout(() => { statusBar.textContent = ''; }, 1500);
   };
 
-  function goToResultPage() {
+  async function goToResultPage() {
     const btn = document.getElementById('btnLanjutFilter');
     if (btn) {
       btn.disabled = true;
@@ -955,7 +992,8 @@
 
     try {
       simpanFotoSilent();
-      localStorage.setItem('filteredPhotos', JSON.stringify(filteredPhotos));
+      const storeMode = await saveLargePhotoArray('filteredPhotos', filteredPhotos);
+      console.log('[LUX] filteredPhotos saved via', storeMode);
 
       if (isPhotoboxMode) {
         localStorage.setItem('captureFlow', 'photobox');

@@ -88,6 +88,14 @@
       "destination": "/cms.html"
     },
     {
+      "source": "/event",
+      "destination": "/event.html"
+    },
+    {
+      "source": "/event-run",
+      "destination": "/event-run.html"
+    },
+    {
       "source": "/login",
       "destination": "/login.html"
     },

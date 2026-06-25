@@ -357,7 +357,7 @@
 
     function exportCertificateUrl(mode = 'original') {
       render();
-      if (mode !== 'fit') return canvas.toDataURL('image/png');
+      if (mode !== 'fit') return Auth.exportCanvasDataURL(canvas, 'image/png');
 
       const out = document.createElement('canvas');
       out.width = 1772;
@@ -367,7 +367,7 @@
       o.fillRect(0, 0, out.width, out.height);
       const pad = 24;
       o.drawImage(canvas, pad, pad, out.width - pad * 2, out.height - pad * 2);
-      return out.toDataURL('image/png');
+      return Auth.exportCanvasDataURL(out, 'image/png');
     }
 
     function saveOutput() {

@@ -462,6 +462,7 @@
 
 <script>
   const captureFlow = localStorage.getItem('captureFlow') || '';
+  const isEventMode = localStorage.getItem('eventMode') === '1';
   const isGanciMode  = captureFlow === 'ganci';
   const isProductMode = captureFlow === 'product';
   const isPhotoboxMode = captureFlow === 'photobox';
@@ -470,7 +471,7 @@
   const templateName = isGanciMode
     ? ('Ganci ' + ((window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos'))
     : (localStorage.getItem('templateName') || 'Template');
-  document.getElementById('subText').textContent = (isGanciMode || isProductMode) ? '1 foto · retake bebas' : (isPhotoboxMode ? 'Photobox 4R · ' : '') + templateName + ' · ' + slotCount + ' foto';
+  document.getElementById('subText').textContent = (isGanciMode || isProductMode) ? '1 foto · retake bebas' : (isEventMode ? 'Event · ' : '') + (isPhotoboxMode ? 'Photobox 4R · ' : '') + templateName + ' · ' + slotCount + ' foto';
   if (isGanciMode) {
     document.body.classList.add('ganci-mode');
     document.title = 'Kamera Ganci - LUX Photobooth';

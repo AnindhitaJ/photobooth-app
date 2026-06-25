@@ -432,6 +432,7 @@
   let filteredPhotosReady = false;
   const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
   const captureFlow    = localStorage.getItem('captureFlow') || '';
+  const isEventMode = localStorage.getItem('eventMode') === '1';
   const isPhotoboxMode = captureFlow === 'photobox';
   const templateSrc    = localStorage.getItem('templateSrc');
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]').map(s => ({
@@ -488,6 +489,18 @@
     const u8 = new Uint8Array(bstr.length);
     for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
     return new Blob([u8], { type: mime });
+  }
+
+  async function maybeWatermarkDataURL(dataURL, mime = 'image/jpeg', quality = 0.97) {
+    if (!Auth.needsProWatermark() || !dataURL) return dataURL;
+    const img = await loadImage(dataURL);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth || img.width;
+    c.height = img.naturalHeight || img.height;
+    const cc = c.getContext('2d');
+    cc.drawImage(img, 0, 0, c.width, c.height);
+    Auth.drawProWatermark(cc, c.width, c.height);
+    return c.toDataURL(mime, quality);
   }
 
   function triggerDownload(href, filename) {
@@ -609,8 +622,8 @@
         }
       }
 
-      // ── Watermark tiled diagonal hanya untuk akun nonaktif ──
-      if (!Auth.hasAccess() && !Auth.isSuperAdmin()) {
+      // ── Watermark tiled diagonal untuk akun Free ──
+      if (Auth.needsProWatermark()) {
         const w = canvas.width, h = canvas.height;
         ctx.save();
 
@@ -621,7 +634,7 @@
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        const text    = 'PROPERTY OF LUX PHOTOBOOTH';
+        const text    = 'PROPERTI OF LUX PHOTOBOOTH';
         const angle   = -Math.PI / 6; // -30 derajat
         const spacing = fontSize * 4;
 
@@ -705,7 +718,8 @@
           filteredPhotos.map(async (src, i) => {
             if (!src) return;
             try {
-              const blob = dataURLtoBlob(src);
+              const watermarkedSrc = await maybeWatermarkDataURL(src, 'image/jpeg', 0.97);
+              const blob = dataURLtoBlob(watermarkedSrc);
               const url  = await uploadToSupabase(blob, `foto-${i+1}.jpg`);
               individualURLs[i] = url;
             } catch(e) {
@@ -1895,7 +1909,7 @@
   async function fotoLagi() {
     ['photos','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
     await idbDelete('filteredPhotos');
-    window.location.href = '/';
+    window.location.href = isEventMode ? '/event-run' : '/';
   }
 
   generateResult();

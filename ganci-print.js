@@ -251,7 +251,7 @@
 
       pages.push({
         index: pageIndex,
-        dataUrl: canvas.toDataURL('image/jpeg', 0.98),
+        dataUrl: Auth.exportCanvasDataURL(canvas, 'image/jpeg', 0.98),
         title: `ganci-print-${Date.now()}-${pageIndex + 1}.jpg`
       });
     }

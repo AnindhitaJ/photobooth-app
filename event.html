@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1D3557">
+  <title>Event - LUX Photobooth</title>
+  <script src="/auth.js"></script>
+  <style>
+    :root{--orange:#D84B7E;--yellow:#E5B842;--navy:#1D3557;--bg:#FFF8FC;--card:#fff;--border:#fad0e4;--text:#1D3557;--text2:#6b7fa3;--green:#10b981;--red:#ef4444}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:22px}
+    body:before{content:'';position:fixed;inset:0;z-index:-1;background-image:radial-gradient(circle,rgba(216,75,126,.07) 1px,transparent 1px);background-size:28px 28px}
+    .wrap{max-width:1120px;margin:0 auto}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+    h1{font-size:28px;font-weight:950;letter-spacing:-.8px}
+    .sub{color:var(--text2);font-size:14px;margin-top:4px;font-weight:600}
+    .btn{border:0;border-radius:999px;padding:11px 16px;font-weight:900;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--yellow));color:white;box-shadow:0 6px 20px rgba(216,75,126,.22)}
+    .btn.secondary{background:white;color:var(--text2);border:2px solid var(--border);box-shadow:none}
+    .btn.danger{background:var(--red);box-shadow:none}
+    .btn:disabled{opacity:.48;cursor:not-allowed}
+    .pro-block{background:white;border:2px solid #fecaca;border-radius:24px;padding:30px;text-align:center;box-shadow:0 8px 28px rgba(29,53,87,.08);margin-top:60px}
+    .pro-block .icon{font-size:54px;margin-bottom:10px}
+    .grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:16px;align-items:start}
+    .card{background:white;border:2px solid var(--border);border-radius:22px;padding:18px;box-shadow:0 8px 24px rgba(29,53,87,.06)}
+    .card h2{font-size:18px;margin-bottom:12px}
+    .form-group{margin-bottom:14px}
+    label{display:block;font-size:12px;font-weight:900;color:var(--text);margin-bottom:7px}
+    input[type=text]{width:100%;border:2px solid var(--border);border-radius:14px;padding:12px 14px;font:inherit;color:var(--text);outline:none}
+    input[type=file]{display:none}
+    .upload{border:2px dashed var(--border);border-radius:18px;background:#fff8fc;padding:18px;text-align:center;cursor:pointer;color:var(--text2);font-weight:800}
+    .upload img{max-width:100%;max-height:170px;object-fit:contain;display:none;margin:0 auto 10px;border-radius:12px;background:#111}
+    .switch-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff8fc;border:2px solid var(--border);border-radius:16px;padding:12px;margin-bottom:14px}
+    .switch-title{font-size:13px;font-weight:900}
+    .switch-sub{font-size:11px;color:var(--text2);line-height:1.4}
+    .toggle{position:relative;width:48px;height:28px;flex:0 0 auto}
+    .toggle input{opacity:0;width:0;height:0}
+    .slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;cursor:pointer;transition:.2s}
+    .slider:before{content:'';position:absolute;width:22px;height:22px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+    .toggle input:checked + .slider{background:linear-gradient(135deg,var(--orange),var(--yellow))}
+    .toggle input:checked + .slider:before{transform:translateX(20px)}
+    .template-tools{display:flex;gap:8px;margin-bottom:10px}
+    .template-tools input{flex:1}
+    .template-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:420px;overflow:auto;padding-right:3px}
+    .tpl{border:2px solid var(--border);border-radius:16px;padding:8px;background:#fffafd;display:flex;gap:8px;align-items:center;cursor:pointer}
+    .tpl.active{border-color:var(--orange);background:#fff1f7}
+    .tpl input{width:18px;height:18px;accent-color:var(--orange)}
+    .tpl img{width:46px;height:70px;object-fit:cover;border-radius:9px;border:1px solid var(--border);background:#eee}
+    .tpl-info{min-width:0;text-align:left}
+    .tpl-name{font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tpl-meta{font-size:10px;color:var(--text2);margin-top:2px}
+    .event-list{display:flex;flex-direction:column;gap:10px}
+    .event-item{border:2px solid var(--border);border-radius:18px;background:#fff;padding:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .event-name{font-weight:950;font-size:15px}
+    .event-meta{font-size:12px;color:var(--text2);margin-top:2px}
+    .event-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+    .empty{padding:22px;text-align:center;color:var(--text2);border:2px dashed var(--border);border-radius:18px;background:#fffafd}
+    .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(18px);background:var(--text);color:white;border-radius:999px;padding:12px 18px;font-weight:900;font-size:13px;opacity:0;transition:.2s;z-index:50;max-width:calc(100vw - 28px);text-align:center}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast.err{background:var(--red)}
+    @media(max-width:850px){.grid{grid-template-columns:1fr}.template-list{grid-template-columns:1fr}.event-item{align-items:flex-start;flex-direction:column}.event-actions{justify-content:flex-start}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>🎉 Event Photobooth</h1>
+      <div class="sub">Buat event, pilih template yang boleh tampil, lalu jalankan mode event.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn secondary" onclick="location.href='/'">← Home</button>
+      <button class="btn secondary" onclick="location.href='/admin'">⚙️ Template</button>
+    </div>
+  </div>
+
+  <div id="accessBlock" class="pro-block" style="display:none">
+    <div class="icon">🔒</div>
+    <h2>Anda tidak memiliki akses ke Event ini</h2>
+    <p class="sub" style="margin:8px 0 16px">Ganti jadi PRO dengan hubungi admin.</p>
+    <button class="btn" onclick="location.href='/'">Kembali</button>
+  </div>
+
+  <div id="eventApp" class="grid" style="display:none">
+    <div class="card">
+      <h2 id="formTitle">Create Event</h2>
+      <input type="hidden" id="eventId">
+      <div class="form-group">
+        <label>Nama Event</label>
+        <input id="eventName" type="text" placeholder="contoh: Wedding Amel & Raka">
+      </div>
+
+      <div class="form-group">
+        <label>Welcome Screen PNG</label>
+        <div class="upload" id="welcomeUpload" onclick="document.getElementById('welcomeInput').click()">
+          <img id="welcomePreview" alt="Welcome preview">
+          <div id="welcomeUploadText">Klik untuk upload PNG welcome screen</div>
+          <div style="font-size:11px;margin-top:5px;line-height:1.45">Saran: PNG transparan 1080×1920, nanti kamera bisa kelihatan di belakang.</div>
+        </div>
+        <input id="welcomeInput" type="file" accept="image/png,image/webp,image/jpeg">
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <div class="switch-title">Tampilkan welcome di atas kamera</div>
+          <div class="switch-sub">Kalau ON, saat event dimulai kamera kebuka dan PNG welcome jadi overlay transparan.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="welcomeOverlay" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>Pilih Template yang Dimunculkan</label>
+        <div class="template-tools">
+          <input id="templateSearch" type="text" placeholder="Cari template..." oninput="renderTemplates()">
+          <button class="btn secondary" onclick="toggleAllTemplates()" type="button">Pilih Semua</button>
+        </div>
+        <div class="template-list" id="templateList"></div>
+      </div>
+
+      <button class="btn" id="btnSaveEvent" onclick="saveEvent()">💾 Simpan Event</button>
+      <button class="btn secondary" id="btnCancelEdit" onclick="resetForm()" style="display:none;margin-left:8px">Batal Edit</button>
+    </div>
+
+    <div class="card">
+      <h2>Mulai Event</h2>
+      <div id="eventList" class="event-list"></div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+  const BUCKET = 'photobooth';
+  let templates = [];
+  let events = [];
+  let welcomeFile = null;
+  let currentWelcomeURL = '';
+  let selectedTemplateIds = new Set();
+
+  if (!Auth.getSession()) location.href = '/login';
+
+  function hasEventAccess() {
+    return Auth.isSuperAdmin?.() || Auth.getPlanStatus?.() === 'pro';
+  }
+
+  function setAccessUI() {
+    if (!hasEventAccess()) {
+      document.getElementById('accessBlock').style.display = 'block';
+      document.getElementById('eventApp').style.display = 'none';
+      return false;
+    }
+    document.getElementById('accessBlock').style.display = 'none';
+    document.getElementById('eventApp').style.display = 'grid';
+    return true;
+  }
+
+  function toast(msg, err=false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (err ? ' err' : '');
+    setTimeout(() => t.className = 'toast', 2800);
+  }
+
+  function productTypeOfTemplate(t) {
+    const cat = String(t?.category || '').toLowerCase();
+    return t?.product_type || (cat.includes('photobox') || cat === '4r' || cat.includes('4r') ? 'photobox' : 'photostrip');
+  }
+
+  async function fetchTemplates() {
+    const token = Auth.getToken();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?select=*&order=created_at.desc`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    templates = await res.json();
+    renderTemplates();
+  }
+
+  function renderTemplates() {
+    const q = document.getElementById('templateSearch').value.trim().toLowerCase();
+    const list = document.getElementById('templateList');
+    const filtered = templates.filter(t => !q || String(t.name || '').toLowerCase().includes(q) || String(t.category || '').toLowerCase().includes(q));
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty" style="grid-column:1/-1">Belum ada template upload. Buat dulu di Admin Template.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(t => {
+      const checked = selectedTemplateIds.has(String(t.id));
+      const type = productTypeOfTemplate(t) === 'photobox' ? 'Photobox 4R' : 'Photostrip';
+      return `<label class="tpl ${checked ? 'active' : ''}">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTemplate('${t.id}', this.checked)">
+        <img src="${t.src}" alt="${t.name}" crossorigin="anonymous">
+        <span class="tpl-info">
+          <span class="tpl-name">${escapeHTML(t.name || 'Template')}</span>
+          <span class="tpl-meta">${type} · ${escapeHTML(t.category || '-')} · ${(t.slots || []).length} foto</span>
+        </span>
+      </label>`;
+    }).join('');
+  }
+
+  function toggleTemplate(id, checked) {
+    if (checked) selectedTemplateIds.add(String(id));
+    else selectedTemplateIds.delete(String(id));
+    renderTemplates();
+  }
+
+  function toggleAllTemplates() {
+    const q = document.getElementById('templateSearch').value.trim().toLowerCase();
+    const filtered = templates.filter(t => !q || String(t.name || '').toLowerCase().includes(q) || String(t.category || '').toLowerCase().includes(q));
+    const allSelected = filtered.every(t => selectedTemplateIds.has(String(t.id)));
+    filtered.forEach(t => allSelected ? selectedTemplateIds.delete(String(t.id)) : selectedTemplateIds.add(String(t.id)));
+    renderTemplates();
+  }
+
+  async function fetchEvents() {
+    const token = Auth.getToken();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/lux_events?select=*&order=created_at.desc`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    events = await res.json();
+    renderEvents();
+  }
+
+  function renderEvents() {
+    const el = document.getElementById('eventList');
+    if (!events.length) {
+      el.innerHTML = '<div class="empty">Belum ada event. Buat event dulu di form kiri.</div>';
+      return;
+    }
+    el.innerHTML = events.map(ev => {
+      const count = Array.isArray(ev.template_ids) ? ev.template_ids.length : 0;
+      return `<div class="event-item">
+        <div>
+          <div class="event-name">${escapeHTML(ev.name)}</div>
+          <div class="event-meta">${count} template · ${ev.welcome_screen_url ? 'welcome screen aktif' : 'tanpa welcome screen'}</div>
+        </div>
+        <div class="event-actions">
+          <button class="btn" onclick="startEvent('${ev.id}')">Mulai</button>
+          <button class="btn secondary" onclick="editEvent('${ev.id}')">Edit</button>
+          <button class="btn danger" onclick="deleteEvent('${ev.id}')">Hapus</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function escapeHTML(s) {
+    return String(s || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  }
+
+  document.getElementById('welcomeInput').addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    welcomeFile = file;
+    const url = URL.createObjectURL(file);
+    const img = document.getElementById('welcomePreview');
+    img.src = url;
+    img.style.display = 'block';
+    document.getElementById('welcomeUploadText').textContent = file.name;
+  });
+
+  async function uploadWelcomeIfNeeded() {
+    if (!welcomeFile) return currentWelcomeURL || '';
+    const token = Auth.getToken();
+    const userId = Auth.getUserId() || 'anon';
+    const safe = welcomeFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const path = `events/${userId}_${Date.now()}_${safe}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': welcomeFile.type || 'image/png',
+        'x-upsert': 'true'
+      },
+      body: welcomeFile
+    });
+    if (!res.ok) throw new Error('Upload welcome gagal: ' + await res.text());
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  }
+
+  async function saveEvent() {
+    if (!hasEventAccess()) { toast('Anda tidak memiliki akses ke Event ini. Ganti jadi PRO dengan hubungi admin.', true); return; }
+    const name = document.getElementById('eventName').value.trim();
+    if (!name) { toast('Isi nama event dulu.', true); return; }
+    if (!selectedTemplateIds.size) { toast('Pilih minimal 1 template.', true); return; }
+
+    const btn = document.getElementById('btnSaveEvent');
+    btn.disabled = true;
+    btn.textContent = '⏫ Menyimpan...';
+
+    try {
+      const id = document.getElementById('eventId').value || '';
+      const token = Auth.getToken();
+      const userId = Auth.getUserId();
+      const welcomeURL = await uploadWelcomeIfNeeded();
+      const payload = {
+        name,
+        user_id: userId,
+        welcome_screen_url: welcomeURL || null,
+        welcome_overlay_enabled: document.getElementById('welcomeOverlay').checked,
+        template_ids: Array.from(selectedTemplateIds),
+        is_active: true,
+        updated_at: new Date().toISOString()
+      };
+
+      const url = id
+        ? `${SUPABASE_URL}/rest/v1/lux_events?id=eq.${id}`
+        : `${SUPABASE_URL}/rest/v1/lux_events`;
+      const res = await fetch(url, {
+        method: id ? 'PATCH' : 'POST',
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+
+      toast(id ? 'Event berhasil diupdate ✓' : 'Event berhasil dibuat ✓');
+      resetForm();
+      await fetchEvents();
+    } catch(e) {
+      console.error(e);
+      toast('Gagal simpan event: ' + (e.message || e), true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Simpan Event';
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('formTitle').textContent = 'Create Event';
+    document.getElementById('eventId').value = '';
+    document.getElementById('eventName').value = '';
+    document.getElementById('welcomeOverlay').checked = true;
+    document.getElementById('welcomeInput').value = '';
+    document.getElementById('welcomePreview').style.display = 'none';
+    document.getElementById('welcomePreview').src = '';
+    document.getElementById('welcomeUploadText').textContent = 'Klik untuk upload PNG welcome screen';
+    document.getElementById('btnCancelEdit').style.display = 'none';
+    welcomeFile = null;
+    currentWelcomeURL = '';
+    selectedTemplateIds = new Set();
+    renderTemplates();
+  }
+
+  function editEvent(id) {
+    const ev = events.find(e => String(e.id) === String(id));
+    if (!ev) return;
+    document.getElementById('formTitle').textContent = 'Edit Event';
+    document.getElementById('eventId').value = ev.id;
+    document.getElementById('eventName').value = ev.name || '';
+    document.getElementById('welcomeOverlay').checked = ev.welcome_overlay_enabled !== false;
+    currentWelcomeURL = ev.welcome_screen_url || '';
+    welcomeFile = null;
+    selectedTemplateIds = new Set((ev.template_ids || []).map(String));
+    if (currentWelcomeURL) {
+      const img = document.getElementById('welcomePreview');
+      img.src = currentWelcomeURL;
+      img.style.display = 'block';
+      document.getElementById('welcomeUploadText').textContent = 'Welcome screen tersimpan. Upload ulang untuk mengganti.';
+    }
+    document.getElementById('btnCancelEdit').style.display = '';
+    renderTemplates();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function deleteEvent(id) {
+    if (!confirm('Hapus event ini?')) return;
+    try {
+      const token = Auth.getToken();
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/lux_events?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}`, Prefer: 'return=minimal' }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast('Event dihapus ✓');
+      await fetchEvents();
+    } catch(e) { toast('Gagal hapus: ' + e.message, true); }
+  }
+
+  function startEvent(id) {
+    const ev = events.find(e => String(e.id) === String(id));
+    if (!ev) return;
+    localStorage.setItem('activeEvent', JSON.stringify(ev));
+    localStorage.setItem('activeEventTemplateIds', JSON.stringify((ev.template_ids || []).map(String)));
+    localStorage.setItem('activeEventName', ev.name || 'Event');
+    if (ev.welcome_screen_url) localStorage.setItem('activeEventWelcomeURL', ev.welcome_screen_url);
+    else localStorage.removeItem('activeEventWelcomeURL');
+    localStorage.setItem('activeEventWelcomeOverlay', ev.welcome_overlay_enabled !== false ? '1' : '0');
+    location.href = '/event-run?id=' + encodeURIComponent(id);
+  }
+
+  (async function init() {
+    if (!setAccessUI()) return;
+    try {
+      await Promise.all([fetchTemplates(), fetchEvents()]);
+    } catch(e) {
+      console.error(e);
+      toast('Gagal load data. Pastikan SQL event sudah dijalankan.', true);
+    }
+  })();
+</script>
+</body>
+</html>

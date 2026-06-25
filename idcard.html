@@ -1004,7 +1004,7 @@
         drawStaticIdCard(cc, c, null);
       }
       latestIdCanvas = c;
-      return c.toDataURL(type === 'jpg' ? 'image/jpeg' : 'image/png', .98);
+      return Auth.exportCanvasDataURL(c, type === 'jpg' ? 'image/jpeg' : 'image/png', .98);
     }
 
     async function getPrintDataUrl() {
@@ -1038,7 +1038,7 @@
       pc.restore();
 
       latestPrintCanvas = print;
-      return print.toDataURL('image/png');
+      return Auth.exportCanvasDataURL(print, 'image/png');
     }
 
     function loadImage(src) {

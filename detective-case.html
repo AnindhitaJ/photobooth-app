@@ -284,7 +284,7 @@
     }
     function saveOutput() {
       render();
-      download(canvas.toDataURL('image/png'), `${cfg.filePrefix}-${timestamp()}.png`);
+      download(Auth.exportCanvasDataURL(canvas, 'image/png'), `${cfg.filePrefix}-${timestamp()}.png`);
       toast('File detective case berhasil disimpan ✓');
     }
     function openPrintModal() { document.getElementById('printModal').classList.add('show'); }

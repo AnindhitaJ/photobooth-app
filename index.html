@@ -389,16 +389,7 @@
             <span class="feature-desc">collectible card dengan stats & rarity</span>
           </span>
         </button>
-
-        <button class="feature-card portrait" onclick="bukaIconPortrait()">
-          <span class="feature-icon">👑</span>
-          <span>
-            <span class="feature-title">Icon Portrait</span>
-            <span class="feature-desc">portrait karakter ikonik premium</span>
-          </span>
-        </button>
-
-        <button class="feature-card certificate" onclick="bukaCertificate()">
+<button class="feature-card certificate" onclick="bukaCertificate()">
           <span class="feature-icon">📜</span>
           <span>
             <span class="feature-title">Certificate</span>
@@ -457,13 +448,12 @@
         badge.innerHTML = `<span style="background:#e0f2fe;color:#0369a1;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:800;">🆓 Free</span>`;
       }
 
-      // CMS link untuk super admin
-      if (Auth.isSuperAdmin()) {
-        const cms = document.createElement('div');
-        cms.style.cssText = 'position:absolute;top:16px;left:16px;z-index:10;';
-        cms.innerHTML = '<a href="/cms" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">⚙️ CMS</a>';
-        document.body.appendChild(cms);
-      }
+      // Top shortcut: Event + CMS
+      const topShortcut = document.createElement('div');
+      topShortcut.style.cssText = 'position:absolute;top:16px;left:16px;z-index:10;display:flex;gap:8px;flex-wrap:wrap;';
+      topShortcut.innerHTML = '<a href="/event" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">🎉 Event</a>' +
+        (Auth.isSuperAdmin() ? '<a href="/cms" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">⚙️ CMS</a>' : '');
+      document.body.appendChild(topShortcut);
 
       // Block akses hanya kalau akun dinonaktifkan oleh admin.
       if (status === 'inactive' && !Auth.isSuperAdmin()) {
@@ -493,7 +483,7 @@
     function bukaMagazine() { window.location.href = '/magazine'; }
     function bukaNewspaper() { window.location.href = '/newspaper'; }
     function bukaTradingCard() { window.location.href = '/trading-card'; }
-    function bukaIconPortrait() { window.location.href = '/icon-portrait'; }
+    function bukaIconPortrait() { return; }
     function bukaCertificate() { window.location.href = '/certificate'; }
     function bukaGameCharacter() { window.location.href = '/game-character'; }
     function bukaDetectiveCase() { window.location.href = '/detective-case'; }

@@ -348,7 +348,7 @@
     }
 
     function saveCover() {
-      const url = canvas.toDataURL('image/png');
+      const url = Auth.exportCanvasDataURL(canvas, 'image/png');
       const a = document.createElement('a');
       a.href = url;
       a.download = `${DEFAULT_FILE_PREFIX}-${timestamp()}.png`;
@@ -366,7 +366,7 @@
     }
 
     async function cetakCover() {
-      const url = canvas.toDataURL('image/png');
+      const url = Auth.exportCanvasDataURL(canvas, 'image/png');
       const file = dataUrlToFile(url, `${DEFAULT_FILE_PREFIX}-${timestamp()}.png`);
       try {
         if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {

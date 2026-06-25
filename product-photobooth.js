@@ -1157,9 +1157,9 @@
       o.fillStyle = '#ffffff'; o.fillRect(0,0,W,H);
       const pad = 55;
       o.drawImage(state.canvas, pad, pad, W-pad*2, H-pad*2);
-      return out.toDataURL('image/png');
+      return Auth.exportCanvasDataURL(out, 'image/png');
     }
-    return state.canvas.toDataURL('image/png');
+    return Auth.exportCanvasDataURL(state.canvas, 'image/png');
   }
 
   window.Product4R = {

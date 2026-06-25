@@ -268,7 +268,9 @@
   const PHOTOBOX_CATEGORY = 'Photobox 4R';
   const PHOTOBOX_W = 1181;
   const PHOTOBOX_H = 1772;
-  const isPhotoboxMode = localStorage.getItem('captureFlow') === 'photobox';
+  const isEventMode = localStorage.getItem('eventMode') === '1' || new URLSearchParams(window.location.search).has('event');
+  const eventTemplateIds = new Set(JSON.parse(localStorage.getItem('activeEventTemplateIds') || '[]').map(String));
+  const isPhotoboxMode = !isEventMode && localStorage.getItem('captureFlow') === 'photobox';
 
   function isPhotoboxCategory(cat) {
     const c = String(cat || '').toLowerCase();
@@ -2000,12 +2002,15 @@
     const grid = document.getElementById('templateGrid');
     const saved = getSavedTemplates()
       .filter(t => !HIDDEN_CATEGORIES.includes(t.category))
-      .filter(t => isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t));
+      .filter(t => {
+        if (isEventMode) return eventTemplateIds.has(String(t.id));
+        return isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t);
+      });
     let templates = [];
-    const basicTemplates = isPhotoboxMode ? [] : getAllBasicTemplates();
-    const builtInTemplates = getAllBuiltInTemplates();
+    const basicTemplates = (isPhotoboxMode || isEventMode) ? [] : getAllBasicTemplates();
+    const builtInTemplates = isEventMode ? [] : getAllBuiltInTemplates();
     if (HIDDEN_CATEGORIES.includes(currentCat)) currentCat = 'all';
-    if (isPhotoboxMode && currentCat === '__basic__') currentCat = 'all';
+    if ((isPhotoboxMode || isEventMode) && currentCat === '__basic__') currentCat = 'all';
     if (currentCat === 'all') {
       templates = [...basicTemplates, ...builtInTemplates, ...saved];
     } else if (currentCat === '__basic__') {
@@ -2024,7 +2029,7 @@
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;color:#a0a0b0;padding:48px 24px;">
           <h3 style="color:white;margin-bottom:8px">Belum ada template di kategori ini</h3>
-          <p>${isPhotoboxMode ? 'Belum ada template Photobox di kategori ini. Cek product type dan kategori template di Admin.' : 'Admin perlu upload template dulu lewat menu ⚙️'}</p>
+          <p>${isEventMode ? 'Belum ada template untuk event ini. Edit event dan pilih template dulu.' : (isPhotoboxMode ? 'Belum ada template Photobox di kategori ini. Cek product type dan kategori template di Admin.' : 'Admin perlu upload template dulu lewat menu ⚙️')}</p>
         </div>`;
       selectedTemplate = null;
       document.getElementById('infoBox').style.display = 'none';
@@ -2090,7 +2095,10 @@
     const slots = selectedTemplate.slots || [];
     if (slots.length === 0) { alert('Template ini belum punya slot foto.'); return; }
 
-    if (isPhotoboxMode) localStorage.setItem('captureFlow', 'photobox');
+    if (isEventMode) {
+      if (isPhotoboxTemplate(selectedTemplate)) localStorage.setItem('captureFlow', 'photobox');
+      else localStorage.removeItem('captureFlow');
+    } else if (isPhotoboxMode) localStorage.setItem('captureFlow', 'photobox');
     else localStorage.removeItem('captureFlow');
     localStorage.removeItem('ganciConfig');
     localStorage.removeItem('photos');
@@ -2113,7 +2121,16 @@
     if (e.target === document.getElementById('modalOverlay')) tutupModal();
   });
 
-  if (isPhotoboxMode) {
+  if (isEventMode) {
+    document.title = 'Pilih Template Event - LUX Photobooth';
+    const h2 = document.querySelector('h2');
+    const sub = document.querySelector('.sub');
+    const eventName = localStorage.getItem('activeEventName') || 'Event';
+    if (h2) h2.textContent = 'Pilih Template Event';
+    if (sub) sub.textContent = eventName + ' · hanya template yang dipilih di event yang tampil';
+    const btn = document.getElementById('btnLanjut');
+    if (btn) btn.textContent = 'Mulai Foto Event →';
+  } else if (isPhotoboxMode) {
     document.title = 'Pilih Template Photobox 4R - LUX Photobooth';
     const h2 = document.querySelector('h2');
     const sub = document.querySelector('.sub');

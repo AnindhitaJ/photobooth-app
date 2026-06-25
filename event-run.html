@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Mulai Event - LUX Photobooth</title>
+  <script src="/auth.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%;overflow:hidden;background:#000;color:white;font-family:'Segoe UI',system-ui,sans-serif}
+    video{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);z-index:1}
+    .dim{position:fixed;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.25),rgba(0,0,0,.48));z-index:2}
+    .welcome{position:fixed;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;pointer-events:none}
+    .welcome img{width:100%;height:100%;object-fit:contain}
+    .fallback{position:fixed;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;text-align:center;padding:26px}
+    .fallback-card{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(14px);border-radius:28px;padding:28px;max-width:420px}
+    .fallback-card h1{font-size:34px;line-height:1.05;margin-bottom:8px}
+    .fallback-card p{opacity:.78;font-weight:700}
+    .bottom{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:22px 20px max(22px,env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;background:linear-gradient(to top,rgba(0,0,0,.78),transparent)}
+    button{border:0;border-radius:999px;padding:15px 22px;font:inherit;font-weight:950;cursor:pointer}
+    .start{background:linear-gradient(135deg,#D84B7E,#E5B842);color:white;box-shadow:0 8px 28px rgba(216,75,126,.4)}
+    .secondary{background:rgba(255,255,255,.14);color:white;border:1.5px solid rgba(255,255,255,.22)}
+    .lock{position:fixed;inset:0;z-index:8;background:#FFF8FC;color:#1D3557;display:none;align-items:center;justify-content:center;text-align:center;padding:24px}
+    .lock-card{background:white;border:2px solid #fad0e4;border-radius:24px;padding:28px;box-shadow:0 14px 40px rgba(0,0,0,.08);max-width:380px}
+  </style>
+</head>
+<body>
+  <video id="video" autoplay playsinline muted></video>
+  <div class="dim"></div>
+  <div class="welcome" id="welcomeLayer"></div>
+  <div class="fallback" id="fallbackText">
+    <div class="fallback-card">
+      <h1 id="eventTitle">Event Photobooth</h1>
+      <p>Siap pilih template dan mulai foto ✨</p>
+    </div>
+  </div>
+  <div class="bottom">
+    <button class="secondary" onclick="location.href='/event'">← Event</button>
+    <button class="start" onclick="startCapture()">Mulai Event</button>
+  </div>
+  <div class="lock" id="lock">
+    <div class="lock-card">
+      <div style="font-size:48px;margin-bottom:8px">🔒</div>
+      <h2>Anda tidak memiliki akses ke Event ini</h2>
+      <p style="color:#6b7fa3;margin:8px 0 18px;font-weight:700">Ganti jadi PRO dengan hubungi admin.</p>
+      <button class="start" onclick="location.href='/'">Kembali</button>
+    </div>
+  </div>
+
+<script>
+  if (!Auth.getSession()) location.href = '/login';
+  const canAccess = Auth.isSuperAdmin?.() || Auth.getPlanStatus?.() === 'pro';
+  if (!canAccess) {
+    document.getElementById('lock').style.display = 'flex';
+  }
+
+  const ev = JSON.parse(localStorage.getItem('activeEvent') || '{}');
+  const name = localStorage.getItem('activeEventName') || ev.name || 'Event Photobooth';
+  const welcomeURL = localStorage.getItem('activeEventWelcomeURL') || ev.welcome_screen_url || '';
+  const overlayEnabled = (localStorage.getItem('activeEventWelcomeOverlay') || '1') !== '0';
+
+  document.getElementById('eventTitle').textContent = name;
+
+  if (welcomeURL && overlayEnabled) {
+    document.getElementById('fallbackText').style.display = 'none';
+    document.getElementById('welcomeLayer').innerHTML = `<img src="${welcomeURL}" alt="Welcome Screen">`;
+  }
+
+  async function startCamera() {
+    if (!canAccess) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      document.getElementById('video').srcObject = stream;
+    } catch(e) {
+      console.warn(e);
+    }
+  }
+
+  function startCapture() {
+    if (!canAccess) {
+      document.getElementById('lock').style.display = 'flex';
+      return;
+    }
+    localStorage.setItem('eventMode', '1');
+    localStorage.setItem('captureFlow', '');
+    location.href = '/template?event=' + encodeURIComponent(ev.id || '');
+  }
+
+  startCamera();
+</script>
+</body>
+</html>

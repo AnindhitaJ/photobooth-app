@@ -1022,7 +1022,7 @@
       ctx.fillRect(0, 0, out.width, out.height);
       ctx.drawImage(img, pad, pad, img.naturalWidth, img.naturalHeight);
 
-      return out.toDataURL('image/jpeg', 0.96);
+      return Auth.exportCanvasDataURL(out, 'image/jpeg', 0.96);
     }
 
 

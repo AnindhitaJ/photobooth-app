@@ -245,5 +245,71 @@ Object.assign(Auth, {
 
   isSuperAdmin() {
     return localStorage.getItem('sb_user_email') === 'luxphotobooth.id@gmail.com';
+  },
+
+  needsProWatermark() {
+    return !this.isSuperAdmin() && this.getPlanStatus() === 'free';
+  },
+
+  drawProWatermark(ctx, width, height, options = {}) {
+    if (!ctx || !width || !height || !this.needsProWatermark()) return;
+    const text = String(options.text || 'PROPERTI OF LUX PHOTOBOOTH');
+    const angle = (options.angleDeg ?? -28) * Math.PI / 180;
+    const alpha = options.alpha ?? 0.18;
+    const fontSize = Math.max(24, Math.round(Math.min(width, height) * 0.058));
+    const gapX = Math.max(fontSize * 2.2, 150);
+    const gapY = Math.max(fontSize * 1.9, 120);
+
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(angle);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+    ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.045));
+
+    const textW = Math.max(ctx.measureText(text).width, fontSize * 7.5);
+    const spanW = textW + gapX;
+    const diag = Math.ceil(Math.sqrt(width * width + height * height));
+    const cols = Math.ceil(diag / spanW) + 3;
+    const rows = Math.ceil(diag / gapY) + 3;
+
+    for (let row = -rows; row <= rows; row++) {
+      for (let col = -cols; col <= cols; col++) {
+        const x = col * spanW + ((row % 2) * spanW / 2);
+        const y = row * gapY;
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+      }
+    }
+    ctx.restore();
+  },
+
+  cloneCanvasForExport(canvas, options = {}) {
+    if (!canvas) return null;
+    const out = document.createElement('canvas');
+    out.width = canvas.width || 1;
+    out.height = canvas.height || 1;
+    const o = out.getContext('2d');
+    o.drawImage(canvas, 0, 0);
+    if (this.needsProWatermark() && options.watermark !== false) {
+      this.drawProWatermark(o, out.width, out.height, options);
+    }
+    return out;
+  },
+
+  exportCanvasDataURL(canvas, mime = 'image/png', quality, options = {}) {
+    const out = this.cloneCanvasForExport(canvas, options);
+    return out ? out.toDataURL(mime, quality) : '';
+  },
+
+  exportCanvasBlob(canvas, mime = 'image/png', quality, options = {}) {
+    const out = this.cloneCanvasForExport(canvas, options);
+    return new Promise(resolve => {
+      if (!out) return resolve(null);
+      out.toBlob(resolve, mime, quality);
+    });
   }
 });

@@ -17,10 +17,13 @@
     .fallback-card{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(14px);border-radius:28px;padding:28px;max-width:420px}
     .fallback-card h1{font-size:34px;line-height:1.05;margin-bottom:8px}
     .fallback-card p{opacity:.78;font-weight:700}
-    .bottom{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:22px 20px max(22px,env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;background:linear-gradient(to top,rgba(0,0,0,.78),transparent)}
+    .bottom{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:22px 20px max(22px,env(safe-area-inset-bottom));display:flex;gap:12px;justify-content:center;align-items:center;background:linear-gradient(to top,rgba(0,0,0,.78),transparent);flex-wrap:wrap}
     button{border:0;border-radius:999px;padding:15px 22px;font:inherit;font-weight:950;cursor:pointer}
     .start{background:linear-gradient(135deg,#D84B7E,#E5B842);color:white;box-shadow:0 8px 28px rgba(216,75,126,.4)}
+    .product-start{display:flex;align-items:center;gap:8px;min-width:178px;justify-content:center}
+    .product-start span{font-size:18px}
     .secondary{background:rgba(255,255,255,.14);color:white;border:1.5px solid rgba(255,255,255,.22)}
+    @media(max-width:620px){.bottom{display:grid;grid-template-columns:1fr 1fr;padding-left:14px;padding-right:14px}.secondary{grid-column:1/-1}.product-start{min-width:0;width:100%;padding-left:10px;padding-right:10px}}
     .lock{position:fixed;inset:0;z-index:8;background:#FFF8FC;color:#1D3557;display:none;align-items:center;justify-content:center;text-align:center;padding:24px}
     .lock-card{background:white;border:2px solid #fad0e4;border-radius:24px;padding:28px;box-shadow:0 14px 40px rgba(0,0,0,.08);max-width:380px}
   </style>
@@ -37,7 +40,8 @@
   </div>
   <div class="bottom">
     <button class="secondary" onclick="location.href='/event'">← Event</button>
-    <button class="start" onclick="startCapture()">Mulai Event</button>
+    <button class="start product-start" onclick="startCapture('photostrip')"><span>🎞️</span> Photostrip</button>
+    <button class="start product-start" onclick="startCapture('photobox')"><span>🖼️</span> Photobox 4R</button>
   </div>
   <div class="lock" id="lock">
     <div class="lock-card">
@@ -80,14 +84,17 @@
     }
   }
 
-  function startCapture() {
+  function startCapture(productType) {
     if (!canAccess) {
       document.getElementById('lock').style.display = 'flex';
       return;
     }
+    const type = productType === 'photobox' ? 'photobox' : 'photostrip';
     localStorage.setItem('eventMode', '1');
-    localStorage.setItem('captureFlow', '');
-    location.href = '/template?event=' + encodeURIComponent(ev.id || '');
+    localStorage.setItem('activeEventProductType', type);
+    if (type === 'photobox') localStorage.setItem('captureFlow', 'photobox');
+    else localStorage.removeItem('captureFlow');
+    location.href = '/template?event=' + encodeURIComponent(ev.id || '') + '&product=' + type;
   }
 
   startCamera();

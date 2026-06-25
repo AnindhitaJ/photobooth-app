@@ -263,24 +263,70 @@
     document.getElementById('welcomeUploadText').textContent = file.name;
   });
 
+  function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Gagal membaca welcome screen'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function compressWelcomeDataURL(file) {
+    const raw = await fileToDataURL(file);
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSide = 1600;
+        const ratio = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+        if (ratio >= 1) return resolve(raw);
+
+        const c = document.createElement('canvas');
+        c.width = Math.round((img.naturalWidth || img.width) * ratio);
+        c.height = Math.round((img.naturalHeight || img.height) * ratio);
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(raw);
+      img.src = raw;
+    });
+  }
+
   async function uploadWelcomeIfNeeded() {
     if (!welcomeFile) return currentWelcomeURL || '';
-    const token = Auth.getToken();
+
     const userId = Auth.getUserId() || 'anon';
     const safe = welcomeFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-    const path = `events/${userId}_${Date.now()}_${safe}`;
-    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON,
-        Authorization: `Bearer ${token}`,
-        'Content-Type': welcomeFile.type || 'image/png',
-        'x-upsert': 'true'
-      },
-      body: welcomeFile
-    });
-    if (!res.ok) throw new Error('Upload welcome gagal: ' + await res.text());
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+    // Pakai folder templates/event-welcome supaya mengikuti pola upload template yang sudah jalan.
+    const path = `templates/event-welcome/${userId}_${Date.now()}_${safe}`;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+        method: 'POST',
+        headers: {
+          // Disamakan dengan upload template di admin.html.
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+          'Content-Type': welcomeFile.type || 'image/png',
+          'x-upsert': 'true'
+        },
+        body: welcomeFile
+      });
+
+      if (res.ok) {
+        return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+      }
+
+      const msg = await res.text();
+      console.warn('Upload welcome ke Storage gagal, fallback ke data URL:', msg);
+    } catch(e) {
+      console.warn('Upload welcome exception, fallback ke data URL:', e);
+    }
+
+    // Fallback: simpan langsung sebagai data URL di kolom welcome_screen_url.
+    // Jadi event tetap bisa dibuat walaupun policy Storage belum diubah.
+    return await compressWelcomeDataURL(welcomeFile);
   }
 
   async function saveEvent() {

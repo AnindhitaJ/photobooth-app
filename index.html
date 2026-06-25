@@ -465,28 +465,42 @@
           </div>`;
       }
     });
+    function clearEventState() {
+      [
+        'eventMode',
+        'activeEvent',
+        'activeEventTemplateIds',
+        'activeEventName',
+        'activeEventWelcomeURL',
+        'activeEventWelcomeOverlay',
+        'activeEventProductType'
+      ].forEach(k => localStorage.removeItem(k));
+    }
+
     function mulai() { mulaiPhotostrip(); }
     function mulaiPhotostrip() {
+      clearEventState();
       localStorage.removeItem('captureFlow');
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
     }
     function mulaiPhotobox() {
+      clearEventState();
       localStorage.setItem('captureFlow', 'photobox');
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
     }
-    function bukaGanci() { window.location.href = '/ganci'; }
-    function bukaKalender() { window.location.href = '/kalender'; }
+    function bukaGanci() { clearEventState(); window.location.href = '/ganci'; }
+    function bukaKalender() { clearEventState(); window.location.href = '/kalender'; }
     function bukaGaleri() { window.location.href = '/gallery'; }
-    function bukaIdCard() { window.location.href = '/idcard'; }
-    function bukaMagazine() { window.location.href = '/magazine'; }
-    function bukaNewspaper() { window.location.href = '/newspaper'; }
-    function bukaTradingCard() { window.location.href = '/trading-card'; }
+    function bukaIdCard() { clearEventState(); window.location.href = '/idcard'; }
+    function bukaMagazine() { clearEventState(); window.location.href = '/magazine'; }
+    function bukaNewspaper() { clearEventState(); window.location.href = '/newspaper'; }
+    function bukaTradingCard() { clearEventState(); window.location.href = '/trading-card'; }
     function bukaIconPortrait() { return; }
-    function bukaCertificate() { window.location.href = '/certificate'; }
-    function bukaGameCharacter() { window.location.href = '/game-character'; }
-    function bukaDetectiveCase() { window.location.href = '/detective-case'; }
+    function bukaCertificate() { clearEventState(); window.location.href = '/certificate'; }
+    function bukaGameCharacter() { clearEventState(); window.location.href = '/game-character'; }
+    function bukaDetectiveCase() { clearEventState(); window.location.href = '/detective-case'; }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

@@ -32,3 +32,13 @@ Jalankan `supabase_profiles_whatsapp_v47.sql` di Supabase SQL Editor sebelum dep
 ## Analytics + Consent Ready v48
 
 Jalankan `supabase_analytics_consent_ready_v48.sql` di Supabase SQL Editor. Setelah deploy, buka `/admin` lalu tombol Analytics / Content Sharing.
+
+
+## WhatsApp display v52
+
+Jalankan `supabase_profiles_whatsapp_v52.sql` di Supabase SQL Editor jika kolom `profiles.whatsapp_number` belum ada. Nomor WA tampil di Admin Profile dan CMS Dashboard.
+
+
+## Analytics Accuracy v54
+
+`photo_sessions` sekarang hanya dicatat untuk final result (`strip.jpg`). File pendukung seperti foto satuan/GIF/live/manifest tidak dihitung sebagai session. Kalau data lama sudah terlanjur inflated, jalankan `supabase_fix_analytics_sessions_v54.sql`.

@@ -419,14 +419,119 @@
     .al-back { margin-top:14px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px; }
     .al-back:hover { color:var(--orange); }
 
+
+    /* ── Admin Sidebar Layout ── */
+    .admin-shell {
+      max-width: 1240px;
+      margin: 24px auto 0;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+      padding: 0 18px 32px;
+    }
+    .admin-sidebar {
+      position: sticky;
+      top: 18px;
+      z-index: 30;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: 0 8px 28px rgba(216,75,126,0.10);
+    }
+    .admin-side-title {
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .9px;
+      color: var(--text2);
+      text-transform: uppercase;
+      margin: 4px 8px 10px;
+    }
+    .admin-side-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .admin-side-link {
+      border: 2px solid transparent;
+      background: #fff8fc;
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 13px;
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .18s ease;
+    }
+    .admin-side-link:hover,
+    .admin-side-link.active {
+      border-color: var(--orange);
+      background: linear-gradient(135deg, rgba(216,75,126,.12), rgba(229,184,66,.12));
+      transform: translateX(2px);
+    }
+    .admin-side-link.external {
+      background: white;
+      border-color: var(--border);
+      color: var(--text2);
+    }
+    .admin-main {
+      min-width: 0;
+    }
+    .admin-section {
+      scroll-margin-top: 22px;
+      margin-bottom: 24px;
+    }
+    .admin-section-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 8px 26px rgba(216,75,126,0.07);
+    }
+    .admin-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .admin-section-header h1,
+    .admin-section-header h2 {
+      margin: 0;
+    }
+    @media (max-width: 900px) {
+      .admin-shell {
+        grid-template-columns: 1fr;
+        padding: 0 14px 28px;
+      }
+      .admin-sidebar {
+        position: static;
+      }
+      .admin-side-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 560px) {
+      .admin-side-nav {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* ── Membership Info ── */
     .membership-card {
       background: linear-gradient(135deg, #ffffff, #fff8fc);
       border: 2px solid var(--border);
       border-radius: 20px;
       padding: 18px 20px;
-      margin: 24px auto 0;
-      max-width: 800px;
+      margin: 0 0 16px;
+      max-width: none;
       box-shadow: 0 4px 18px rgba(216,75,126,0.08);
       display: grid;
       grid-template-columns: 1fr auto;
@@ -579,7 +684,19 @@
 </div>
 
 <div id="adminContent" style="display:none">
-
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-side-title">Admin Menu</div>
+      <nav class="admin-side-nav">
+        <a class="admin-side-link active" href="#profil-photobooth" onclick="setAdminNavActive(this)">👤 Profil Photobooth</a>
+        <a class="admin-side-link" href="#ganti-password" onclick="setAdminNavActive(this)">🔐 Ganti Password</a>
+        <a class="admin-side-link" href="#template-manager" onclick="setAdminNavActive(this)">⚙️ Template Manager</a>
+        <a class="admin-side-link external" href="/analytics">📊 Business Analytics</a>
+        <a class="admin-side-link external" href="/content-sharing">🤍 Content Sharing</a>
+        <a class="admin-side-link external" href="/template">← Kembali ke App</a>
+      </nav>
+    </aside>
+    <main class="admin-main">
 
 <!-- MEMBERSHIP INFO -->
 <div class="membership-card" id="membershipInfo">
@@ -597,7 +714,7 @@
 </div>
 
 <!-- PROFILE SECTION -->
-<div class="profile-section" style="max-width:800px;margin:24px auto 0;">
+<div class="profile-section admin-section" id="profil-photobooth" style="max-width:none;margin:0 0 24px;">
   <div class="profile-title">👤 Profil Photobooth</div>
   <div class="profile-grid">
     <div class="logo-upload-wrap">
@@ -615,6 +732,10 @@
         <label>Email</label>
         <input type="email" id="profileEmail" placeholder="email@kamu.com">
       </div>
+      <div class="profile-field">
+        <label>Nomor WhatsApp Aktif</label>
+        <input type="tel" id="profileWhatsapp" placeholder="Contoh: 081234567890" autocomplete="tel">
+      </div>
       <div class="watermark-row">
         <div>
           <div class="watermark-label">Tampilkan nama di hasil foto</div>
@@ -630,8 +751,11 @@
   <button class="btn-save-profile" id="btnSaveProfile" onclick="saveProfile()">💾 Simpan Perubahan</button>
   <div class="profile-status" id="profileStatus"></div>
 
-  <!-- Ganti Password -->
-  <div style="margin-top:20px;padding-top:20px;border-top:2px solid var(--border);">
+</div>
+
+<!-- PASSWORD SECTION -->
+<div class="profile-section admin-section" id="ganti-password" style="max-width:none;margin:0 0 24px;">
+  <div>
     <div class="profile-title" style="margin-bottom:14px;">🔐 Ganti Password</div>
     <div class="profile-fields">
       <div class="profile-field">
@@ -649,14 +773,13 @@
   </div>
 </div>
 
+<section class="admin-section" id="template-manager">
 <div class="header">
   <div>
     <h1>⚙️ Template Manager</h1>
     <p>Upload dan kelola template photobooth (output 5×15 cm / 591×1772 px)</p>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-    <button class="btn btn-secondary" onclick="window.location.href='/analytics'">📊 Analytics</button>
-    <button class="btn btn-secondary" onclick="window.location.href='/content-sharing'">🤍 Content Sharing</button>
     <button class="btn btn-secondary" onclick="window.location.href='/template'">← Kembali ke App</button>
   </div>
 </div>
@@ -749,6 +872,9 @@
 
   </div>
 </div>
+</section>
+    </main>
+  </div>
 
 <div class="toast" id="toast"></div>
 
@@ -1486,6 +1612,11 @@
   });
 
 
+  function setAdminNavActive(el) {
+    document.querySelectorAll('.admin-side-link').forEach(a => a.classList.remove('active'));
+    if (el && !el.classList.contains('external')) el.classList.add('active');
+  }
+
   function renderMembershipInfo() {
     const badge = document.getElementById('membershipBadge');
     const detail = document.getElementById('membershipDetail');
@@ -1526,6 +1657,7 @@
     if (p.logo_url) document.getElementById('logoPreview').src = p.logo_url;
     if (p.booth_name) document.getElementById('profileBoothName').value = p.booth_name;
     if (p.email) document.getElementById('profileEmail').value = p.email;
+    if (p.whatsapp_number) document.getElementById('profileWhatsapp').value = p.whatsapp_number;
     document.getElementById('watermarkToggle').checked = p.show_watermark !== false;
     renderMembershipInfo();
   }
@@ -1590,6 +1722,14 @@
     }
   }
 
+  function normalizeWhatsappProfile(value) {
+    return String(value || '').replace(/[\s\-().]/g, '');
+  }
+
+  function isValidWhatsappProfile(value) {
+    return /^\+?[0-9]{8,20}$/.test(value);
+  }
+
   // Save profile
   async function saveProfile() {
     const btn = document.getElementById('btnSaveProfile');
@@ -1597,6 +1737,11 @@
     btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
     status.style.display = 'none';
     try {
+      const whatsappNumber = normalizeWhatsappProfile(document.getElementById('profileWhatsapp')?.value || '');
+      if (whatsappNumber && !isValidWhatsappProfile(whatsappNumber)) {
+        throw new Error('Nomor WhatsApp tidak valid. Gunakan format 08..., 628..., atau +628...');
+      }
+
       // Upload logo kalau ada file baru
       const logoInput = document.getElementById('logoFileInput');
       let logoUrl = Auth.getProfile()?.logo_url || null;
@@ -1609,6 +1754,7 @@
       const result = await Auth.updateProfile({
         booth_name:     document.getElementById('profileBoothName').value.trim(),
         email:          document.getElementById('profileEmail').value.trim(),
+        whatsapp_number: whatsappNumber,
         logo_url:       logoUrl,
         show_watermark: document.getElementById('watermarkToggle').checked,
       });

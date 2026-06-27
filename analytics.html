@@ -16,7 +16,11 @@ label{display:block;font-size:12px;font-weight:900;color:var(--text2);text-trans
 if(!Auth.getSession()) location.href='/login';
 let sessions=[]; let consents=[]; let events=[];
 async function api(path){const token=Auth.getToken();const r=await fetch(SUPABASE_URL+path,{headers:{apikey:SUPABASE_ANON,Authorization:'Bearer '+token}}); if(!r.ok) throw new Error(await r.text()); return r.json();}
-async function load(){sessions=await api('/rest/v1/analytics_sessions_view?select=*&order=created_at.desc');consents=await api('/rest/v1/photo_consents?select=*&order=created_at.desc').catch(()=>[]);events=await api('/rest/v1/lux_events?select=id,name').catch(()=>[]);eventFilter.innerHTML='<option value="all">Semua Event</option>'+events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');render();}
+async function load(){sessions=(await api('/rest/v1/analytics_sessions_view?select=*&order=created_at.desc')).filter(s=>{
+  const fp=String(s.file_path||'');
+  if(!fp) return true;
+  return fp.endsWith('strip.jpg') || fp.includes('_strip.jpg');
+});consents=await api('/rest/v1/photo_consents?select=*&order=created_at.desc').catch(()=>[]);events=await api('/rest/v1/lux_events?select=id,name').catch(()=>[]);eventFilter.innerHTML='<option value="all">Semua Event</option>'+events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');render();}
 function inRange(d){const v=range.value;const t=new Date(d).getTime();const now=Date.now();if(v==='today')return new Date(d).toDateString()===new Date().toDateString();if(v==='week')return now-t<=7*864e5;if(v==='month')return now-t<=30*864e5;return true;}
 function filtered(){return sessions.filter(s=>inRange(s.created_at)&&(eventFilter.value==='all'||String(s.event_id)===eventFilter.value));}
 function countBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x)||'-';m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}

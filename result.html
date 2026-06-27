@@ -201,6 +201,22 @@
       }
     }
 
+  
+    .consent-overlay{display:none;position:fixed;inset:0;z-index:99999;background:rgba(29,53,87,.46);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:18px}
+    .consent-box{width:100%;max-width:520px;background:white;border:2px solid #fad0e4;border-radius:26px;padding:24px;box-shadow:0 20px 60px rgba(29,53,87,.24);color:#1D3557}
+    .consent-title{font-size:24px;font-weight:950;letter-spacing:-.6px;text-align:center;margin-bottom:8px}
+    .consent-desc{font-size:14px;color:#6b7fa3;font-weight:650;line-height:1.55;text-align:center;margin-bottom:16px}
+    .consent-check{display:flex;gap:10px;background:#fff8fc;border:2px solid #fad0e4;border-radius:16px;padding:12px;margin-bottom:10px;font-size:13px;line-height:1.45;font-weight:700}
+    .consent-check input{width:18px;height:18px;accent-color:#D84B7E;flex:0 0 auto;margin-top:2px}
+    .consent-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+    .consent-row input{width:100%;padding:12px;border-radius:14px;border:2px solid #fad0e4;background:#fff8fc;font:inherit;color:#1D3557}
+    .consent-note{font-size:12px;color:#6b7fa3;line-height:1.45;margin-bottom:14px}
+    .consent-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .consent-actions button{border:0;border-radius:999px;padding:13px 16px;font:inherit;font-weight:900;cursor:pointer}
+    .consent-actions .primary{background:linear-gradient(135deg,#D84B7E,#E5B842);color:white}
+    .consent-actions .secondary{background:white;color:#1D3557;border:2px solid #fad0e4}
+    @media(max-width:520px){.consent-row,.consent-actions{grid-template-columns:1fr}.consent-title{font-size:21px}}
+
   </style>
   <script src="/auth.js"></script>
 </head>
@@ -293,6 +309,26 @@
     </div>
   </div>
 
+
+<!-- CONSENT MODAL -->
+<div class="consent-overlay" id="resultConsentOverlay">
+  <div class="consent-box">
+    <div class="consent-title">Boleh kami repost foto kamu? 🤍</div>
+    <div class="consent-desc" id="resultConsentDesc">Persetujuan ini sukarela dan tidak memengaruhi proses download foto.</div>
+    <label class="consent-check"><input type="checkbox" id="resultPublishConsent"><span>Saya mengizinkan foto ini digunakan untuk kebutuhan promosi di media sosial maupun media pemasaran lainnya.</span></label>
+    <label class="consent-check"><input type="checkbox" id="resultTagConsent"><span>Saya bersedia akun media sosial saya ditandai (tag) apabila foto ini dipublikasikan.</span></label>
+    <div class="consent-row">
+      <input id="resultIgUsername" placeholder="Instagram @username">
+      <input id="resultTtUsername" placeholder="TikTok @username">
+    </div>
+    <div class="consent-note">Isi salah satu akun media sosial agar kami dapat memberikan credit atau melakukan tag apabila foto dipublikasikan. Pengisian akun bersifat opsional.</div>
+    <div class="consent-actions">
+      <button class="primary" onclick="submitResultConsent()">Simpan & Lanjut</button>
+      <button class="secondary" onclick="skipResultConsent()">Lewati dan Lanjut</button>
+    </div>
+  </div>
+</div>
+
 <!-- QR MODAL -->
 <div id="qrModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.72);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px;">
   <div class="qr-modal-box">
@@ -307,8 +343,11 @@
 <script>
   // ─── Supabase ───
   const BUCKET        = 'photobooth';
+  let resultConsentSettings = null;
+  let resultConsentDone = sessionStorage.getItem('lux_result_consent_done') === '1';
+  let pendingResultAction = null;
 
-  async function uploadToSupabase(blob, filename) {
+  async function uploadToSupabase(blob, filename, options = {}) {
     const token  = Auth.getToken();
     const userId = Auth.getUserId() || 'anon';
 
@@ -331,8 +370,9 @@
     }
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 
-    // Insert metadata ke photo_sessions
-    if (userId !== 'anon') {
+    // Insert metadata ke photo_sessions hanya untuk final result.
+    // File pendukung seperti foto satuan, GIF, live, dan manifest jangan dihitung sebagai session analytics.
+    if (userId !== 'anon' && options.trackSession) {
       try {
         await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions`, {
           method: 'POST',
@@ -349,7 +389,7 @@
             template_id: localStorage.getItem('templateId') || '',
             product_type: isPhotoboxMode ? 'photobox' : 'photostrip',
             photo_count: filteredPhotos.length || 1,
-            session_id: String(ts),
+            session_id: String(options.sessionId || ts),
             template_name: localStorage.getItem('templateName') || '',
             template_category: localStorage.getItem('templateCategory') || ''
           })
@@ -358,6 +398,108 @@
     }
 
     return publicUrl;
+  }
+
+  async function loadResultConsentSettings() {
+    const ownerId = Auth.getUserId();
+    if (!ownerId) return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/content_sharing_settings?user_id=eq.${ownerId}&select=*`, {
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${Auth.getToken()}`
+        }
+      });
+      if (!res.ok) {
+        console.warn('Consent setting fetch failed:', await res.text());
+        return null;
+      }
+      const data = await res.json();
+      resultConsentSettings = data?.[0] || null;
+      if (resultConsentSettings?.enabled) {
+        const brand = resultConsentSettings.instagram_brand || resultConsentSettings.tiktok_brand || Auth.getBoothName?.() || 'brand photobooth ini';
+        const desc = document.getElementById('resultConsentDesc');
+        if (desc) {
+          desc.textContent = (resultConsentSettings.consent_message || 'Kami ingin menggunakan beberapa hasil foto terbaik sebagai konten di Instagram atau TikTok.') +
+            ` ${brand}. Persetujuan ini sepenuhnya sukarela dan tidak memengaruhi proses download foto.`;
+        }
+      }
+      return resultConsentSettings;
+    } catch(e) {
+      console.warn('loadResultConsentSettings error:', e);
+      return null;
+    }
+  }
+
+  function cleanConsentUsername(v) {
+    v = String(v || '').trim();
+    if (!v) return '';
+    return v.startsWith('@') ? v : '@' + v;
+  }
+
+  function eventIdForConsent() {
+    try {
+      return localStorage.getItem('eventMode') === '1'
+        ? (JSON.parse(localStorage.getItem('activeEvent') || '{}').id || '')
+        : '';
+    } catch(e) { return ''; }
+  }
+
+  async function saveResultConsent(skipped = false) {
+    const ownerId = Auth.getUserId();
+    if (!ownerId) return;
+    const payload = {
+      user_id: ownerId,
+      session_id: String(Date.now()),
+      event_id: eventIdForConsent(),
+      publish_consent: skipped ? false : document.getElementById('resultPublishConsent').checked,
+      tag_consent: skipped ? false : document.getElementById('resultTagConsent').checked,
+      instagram_username: skipped ? '' : cleanConsentUsername(document.getElementById('resultIgUsername').value),
+      tiktok_username: skipped ? '' : cleanConsentUsername(document.getElementById('resultTtUsername').value),
+      final_photo_url: finalPublicURL || ''
+    };
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/photo_consents`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${Auth.getToken()}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) console.warn('saveResultConsent failed:', await res.text());
+    } catch(e) {
+      console.warn('saveResultConsent error:', e);
+    }
+  }
+
+  async function ensureResultConsent(action) {
+    pendingResultAction = action;
+    if (!resultConsentSettings) await loadResultConsentSettings();
+    if (resultConsentSettings?.enabled && !resultConsentDone) {
+      document.getElementById('resultConsentOverlay').style.display = 'flex';
+      return;
+    }
+    action();
+  }
+
+  async function submitResultConsent() {
+    await saveResultConsent(false);
+    resultConsentDone = true;
+    sessionStorage.setItem('lux_result_consent_done', '1');
+    document.getElementById('resultConsentOverlay').style.display = 'none';
+    if (pendingResultAction) pendingResultAction();
+  }
+
+  async function skipResultConsent() {
+    await saveResultConsent(true);
+    resultConsentDone = true;
+    sessionStorage.setItem('lux_result_consent_done', '1');
+    document.getElementById('resultConsentOverlay').style.display = 'none';
+    if (pendingResultAction) pendingResultAction();
   }
 
   function buildDownloadPageURL(extra = {}) {
@@ -702,6 +844,7 @@
       autoGenerateLive();
       // Tampilkan plan banner
       showPlanBanner();
+      loadResultConsentSettings();
 
     } catch(e) {
       console.error(e);
@@ -718,7 +861,7 @@
     try {
       // Upload foto strip (composite)
       const photoBlob = dataURLtoBlob(finalDataURL);
-      finalPublicURL = await uploadToSupabase(photoBlob, 'strip.jpg');
+      finalPublicURL = await uploadToSupabase(photoBlob, 'strip.jpg', { trackSession: true, sessionId: Date.now() });
 
       // Upload foto individual dan ikutkan URL-nya ke link QR.
       // Sebelumnya file satuan sudah masuk storage/db, tapi download page cuma dikasih param photo strip.
@@ -935,7 +1078,8 @@
   }
 
   // ─── QR Modal ───
-  function bukaQR() {
+  function bukaQR(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => bukaQR(true));
     const m = document.getElementById('qrModal');
     m.style.display = 'flex';
   }
@@ -947,7 +1091,8 @@
   });
 
   // ─── Download JPG ───
-  function downloadJpg() {
+  function downloadJpg(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => downloadJpg(true));
     if (!finalDataURL) return;
     if (finalPublicURL || finalManifestURL) {
       window.location.href = buildDownloadPageURL();
@@ -959,7 +1104,8 @@
 
   // ─── Live Fotostrip Video ───
   // Buat 1 video: semua slot live video tampil sekaligus dalam layout strip
-  async function downloadLive() {
+  async function downloadLive(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => downloadLive(true));
     const btn = document.getElementById('btnLive');
     if (liveMP4URL) {
       triggerDownload(liveMP4URL, `lux-fotostrip-live-${Date.now()}.webm`);
@@ -1111,7 +1257,8 @@
   let gifUploaded = false;
   let liveUploaded = false;
 
-  async function downloadGif() {
+  async function downloadGif(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => downloadGif(true));
     if (gifBlob) {
       triggerDownload(URL.createObjectURL(gifBlob), `lux-animated-${Date.now()}.gif`);
       showStatus('Download GIF ✓');
@@ -1855,7 +2002,8 @@
   }
 
   // ─── Download ZIP (works on desktop & mobile) ───
-  async function downloadZip() {
+  async function downloadZip(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => downloadZip(true));
     if (!finalDataURL) return;
     const btn = document.getElementById('btnZip');
     btn.disabled = true;
@@ -1923,6 +2071,7 @@
 
   async function fotoLagi() {
     ['photos','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem('lux_result_consent_done');
     await idbDelete('filteredPhotos');
     window.location.href = isEventMode ? '/event-run' : '/';
   }

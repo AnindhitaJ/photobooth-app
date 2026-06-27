@@ -164,6 +164,19 @@
       box-shadow: 0 2px 6px rgba(216,75,126,0.5);
       touch-action: manipulation;
     }
+    .slot-duplicate {
+      position: absolute; top: 4px; right: 38px;
+      background: #ffffff; color: var(--orange); border: 2px solid var(--orange); border-radius: 50%;
+      width: 28px; height: 28px; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(216,75,126,0.28);
+      touch-action: manipulation;
+      font-weight: 900;
+    }
+    .slot-duplicate:hover {
+      background: var(--orange);
+      color: #fff;
+    }
     .resize-handle {
       position: absolute; bottom: -7px; right: -7px;
       width: 34px; height: 34px; background: var(--orange);
@@ -207,6 +220,7 @@
       .resize-handle { width: 44px; height: 44px; bottom: -12px; right: -12px; }
       .rotate-handle { width: 46px; height: 46px; top: -58px; font-size: 22px; }
       .slot-delete { width: 34px; height: 34px; font-size: 17px; }
+      .slot-duplicate { width: 34px; height: 34px; font-size: 15px; right: 46px; }
       .slot-rotate-btn { width: 34px; height: 28px; font-size: 14px; }
     }
 
@@ -640,7 +654,11 @@
     <h1>⚙️ Template Manager</h1>
     <p>Upload dan kelola template photobooth (output 5×15 cm / 591×1772 px)</p>
   </div>
-  <button class="btn btn-secondary" onclick="window.location.href='/template'">← Kembali ke App</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+    <button class="btn btn-secondary" onclick="window.location.href='/analytics'">📊 Analytics</button>
+    <button class="btn btn-secondary" onclick="window.location.href='/content-sharing'">🤍 Content Sharing</button>
+    <button class="btn btn-secondary" onclick="window.location.href='/template'">← Kembali ke App</button>
+  </div>
 </div>
 
 <div class="layout">
@@ -1077,7 +1095,8 @@
       box.className = 'slot-box';
       box.innerHTML = `
         <div class="slot-label">Foto ${idx+1}</div>
-        <button class="slot-delete" onclick="deleteSlot(${idx})">×</button>
+        <button class="slot-duplicate" onclick="duplicateSlot(${idx}); event.stopPropagation();" title="Duplicate slot">⧉</button>
+        <button class="slot-delete" onclick="deleteSlot(${idx}); event.stopPropagation();" title="Hapus slot">×</button>
         <div class="rotate-handle" data-idx="${idx}" title="Putar slot">↻</div>
         <div class="slot-angle">${slot.r}°</div>
         <div class="slot-rotate-tools">
@@ -1131,7 +1150,7 @@
   function makeDraggable(box, idx) {
     const start = e => {
       if (e.button != null && e.button !== 0) return;
-      if (e.target.closest('.resize-handle, .slot-delete, .rotate-handle, .slot-rotate-btn, .slot-rotate-tools')) return;
+      if (e.target.closest('.resize-handle, .slot-delete, .slot-duplicate, .rotate-handle, .slot-rotate-btn, .slot-rotate-tools')) return;
       e.preventDefault();
       const p = getPointerXY(e);
       const sx = p.x, sy = p.y, sl = slots[idx].x, st = slots[idx].y;
@@ -1200,6 +1219,25 @@
     slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18), r: 0 });
     document.getElementById('slotCount').textContent = slots.length;
     renderSlots();
+  }
+
+  function duplicateSlot(idx) {
+    const source = slots[idx];
+    if (!source) return;
+
+    const offset = Math.max(14, Math.round(Math.min(source.w || 80, source.h || 80) * 0.08));
+    const clone = {
+      x: Math.min(Math.max(0, canvas.width - source.w), Math.max(0, (source.x || 0) + offset)),
+      y: Math.min(Math.max(0, canvas.height - source.h), Math.max(0, (source.y || 0) + offset)),
+      w: source.w,
+      h: source.h,
+      r: normalizeAngle(source.r || source.rotate || source.rotation || 0)
+    };
+
+    slots.splice(idx + 1, 0, clone);
+    document.getElementById('slotCount').textContent = slots.length;
+    renderSlots();
+    showToast(`Slot Foto ${idx + 1} diduplicate`);
   }
 
   function deleteSlot(idx) {

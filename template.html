@@ -2094,6 +2094,8 @@
     localStorage.setItem('templateSrc', t.src);
     localStorage.setItem('templateSlots', JSON.stringify(t.slots || []));
     localStorage.setItem('templateName', t.name || 'Template');
+    localStorage.setItem('templateId', t.id || '');
+    localStorage.setItem('templateCategory', t.category || '');
     localStorage.setItem('slotCount', (t.slots || []).length || (t.category === 'Social Media' ? 3 : 0));
     localStorage.setItem('templateW', t.w || 591);
     localStorage.setItem('templateH', t.h || 1772);

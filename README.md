@@ -27,3 +27,8 @@ Jalankan `supabase_analytics_consent_schema_v46.sql` di Supabase SQL Editor untu
 ## WhatsApp owner registration
 
 Jalankan `supabase_profiles_whatsapp_v47.sql` di Supabase SQL Editor sebelum deploy v47. Field register akan menyimpan `whatsapp_number` ke tabel `profiles`.
+
+
+## Analytics + Consent Ready v48
+
+Jalankan `supabase_analytics_consent_ready_v48.sql` di Supabase SQL Editor. Setelah deploy, buka `/admin` lalu tombol Analytics / Content Sharing.

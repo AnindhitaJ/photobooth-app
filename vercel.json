@@ -48,6 +48,14 @@
   ],
   "rewrites": [
     {
+      "source": "/content-sharing",
+      "destination": "/content-sharing.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/analytics.html"
+    },
+    {
       "source": "/detective-case",
       "destination": "/detective-case.html"
     },

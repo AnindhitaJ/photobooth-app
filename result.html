@@ -345,6 +345,13 @@
           body: JSON.stringify({
             user_id:    userId,
             file_path:  path,
+            event_id:   localStorage.getItem('eventMode') === '1' ? (JSON.parse(localStorage.getItem('activeEvent') || '{}').id || '') : '',
+            template_id: localStorage.getItem('templateId') || '',
+            product_type: isPhotoboxMode ? 'photobox' : 'photostrip',
+            photo_count: filteredPhotos.length || 1,
+            session_id: String(ts),
+            template_name: localStorage.getItem('templateName') || '',
+            template_category: localStorage.getItem('templateCategory') || ''
           })
         });
       } catch(e) { console.warn('Insert photo_sessions gagal:', e); }
@@ -938,7 +945,11 @@
   // ─── Download JPG ───
   function downloadJpg() {
     if (!finalDataURL) return;
-    triggerDownload(finalPublicURL || finalDataURL, `lux-photobooth-${Date.now()}.jpg`);
+    if (finalPublicURL || finalManifestURL) {
+      window.location.href = buildDownloadPageURL();
+      return;
+    }
+    triggerDownload(finalDataURL, `lux-photobooth-${Date.now()}.jpg`);
     showStatus('Download foto dimulai ✓');
   }
 

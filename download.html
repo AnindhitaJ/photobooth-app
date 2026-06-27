@@ -180,6 +180,19 @@
       animation: spin 0.8s linear infinite; margin: 0 auto 12px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+  
+    .consent-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(29,53,87,.42);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:18px}
+    .consent-box{width:100%;max-width:520px;background:white;border:2px solid var(--border);border-radius:26px;padding:24px;box-shadow:0 20px 60px rgba(29,53,87,.22)}
+    .consent-title{font-size:24px;font-weight:950;letter-spacing:-.6px;text-align:center;margin-bottom:8px}
+    .consent-desc{font-size:14px;color:var(--text2);font-weight:650;line-height:1.55;text-align:center;margin-bottom:16px}
+    .consent-check{display:flex;gap:10px;background:#fff8fc;border:2px solid var(--border);border-radius:16px;padding:12px;margin-bottom:10px;font-size:13px;line-height:1.45;font-weight:700}
+    .consent-check input{width:18px;height:18px;accent-color:var(--orange);flex:0 0 auto;margin-top:2px}
+    .consent-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+    .consent-row input{width:100%;padding:12px;border-radius:14px;border:2px solid var(--border);background:#fff8fc;font:inherit}
+    .consent-note{font-size:12px;color:var(--text2);line-height:1.45;margin-bottom:14px}
+    .consent-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:520px){.consent-row,.consent-actions{grid-template-columns:1fr}.consent-title{font-size:21px}}
+
   </style>
   <script src="/auth.js"></script>
 </head>
@@ -255,6 +268,25 @@
   </div>
 </div>
 
+
+<div class="consent-overlay" id="consentOverlay">
+  <div class="consent-box">
+    <div class="consent-title">Boleh kami repost foto kamu? 🤍</div>
+    <div class="consent-desc" id="consentDesc">Persetujuan ini sukarela dan tidak memengaruhi proses download foto.</div>
+    <label class="consent-check"><input type="checkbox" id="publishConsent"><span>Saya mengizinkan foto ini digunakan untuk kebutuhan promosi di media sosial maupun media pemasaran lainnya.</span></label>
+    <label class="consent-check"><input type="checkbox" id="tagConsent"><span>Saya bersedia akun media sosial saya ditandai (tag) apabila foto ini dipublikasikan.</span></label>
+    <div class="consent-row">
+      <input id="igUsername" placeholder="Instagram @username">
+      <input id="ttUsername" placeholder="TikTok @username">
+    </div>
+    <div class="consent-note">Isi salah satu akun media sosial agar kami dapat memberikan credit atau melakukan tag apabila foto dipublikasikan. Pengisian akun bersifat opsional.</div>
+    <div class="consent-actions">
+      <button class="btn btn-jpg" onclick="submitConsentAndContinue()">Simpan & Download</button>
+      <button class="btn btn-outline" onclick="skipConsentAndContinue()">Lewati dan Download</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -266,6 +298,103 @@
     ...params.getAll('p'),
     ...(params.get('photos') ? params.get('photos').split('|') : [])
   ].filter(Boolean);
+
+  let consentSettings = null;
+  let consentDone = sessionStorage.getItem('lux_consent_done_' + (photoURL || manifestURL || 'x')) === '1';
+  let pendingDownloadAction = null;
+
+
+  function getOwnerIdFromURL(url) {
+    const m = String(url || '').match(/results\/([^_\/]+)_\d{13}_/);
+    return m ? m[1] : '';
+  }
+
+  async function loadConsentSettings() {
+    const ownerId = getOwnerIdFromURL(photoURL);
+    if (!ownerId) return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/content_sharing_settings?user_id=eq.${ownerId}&select=*`, {
+        headers: { apikey: SUPABASE_ANON }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      consentSettings = data?.[0] || null;
+      if (consentSettings?.enabled) {
+        const brand = consentSettings.instagram_brand || consentSettings.tiktok_brand || 'brand photobooth ini';
+        document.getElementById('consentDesc').textContent =
+          (consentSettings.consent_message || 'Kami ingin menggunakan beberapa hasil foto terbaik sebagai konten di Instagram atau TikTok.') +
+          ` ${brand}. Persetujuan ini sepenuhnya sukarela dan tidak memengaruhi proses download foto.`;
+      }
+      return consentSettings;
+    } catch(e) {
+      console.warn('load consent settings failed', e);
+      return null;
+    }
+  }
+
+  function needConsent() {
+    return !!(consentSettings && consentSettings.enabled && !consentDone);
+  }
+
+  async function ensureConsentThen(action) {
+    pendingDownloadAction = action;
+    if (!consentSettings) await loadConsentSettings();
+    if (needConsent()) {
+      document.getElementById('consentOverlay').style.display = 'flex';
+      return;
+    }
+    action();
+  }
+
+  function cleanUsername(v) {
+    v = String(v || '').trim();
+    if (!v) return '';
+    return v.startsWith('@') ? v : '@' + v;
+  }
+
+  async function saveConsentPayload({ skipped = false } = {}) {
+    const ownerId = getOwnerIdFromURL(photoURL);
+    if (!ownerId) return;
+    const payload = {
+      user_id: ownerId,
+      session_id: String((photoURL.match(/_(\d{13})_/) || [])[1] || ''),
+      event_id: params.get('event') || '',
+      publish_consent: skipped ? false : document.getElementById('publishConsent').checked,
+      tag_consent: skipped ? false : document.getElementById('tagConsent').checked,
+      instagram_username: skipped ? '' : cleanUsername(document.getElementById('igUsername').value),
+      tiktok_username: skipped ? '' : cleanUsername(document.getElementById('ttUsername').value),
+      final_photo_url: photoURL
+    };
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/photo_consents`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) { console.warn('save consent failed', e); }
+  }
+
+  async function submitConsentAndContinue() {
+    await saveConsentPayload({ skipped: false });
+    consentDone = true;
+    sessionStorage.setItem('lux_consent_done_' + (photoURL || manifestURL || 'x'), '1');
+    document.getElementById('consentOverlay').style.display = 'none';
+    if (pendingDownloadAction) pendingDownloadAction();
+  }
+
+  async function skipConsentAndContinue() {
+    await saveConsentPayload({ skipped: true });
+    consentDone = true;
+    sessionStorage.setItem('lux_consent_done_' + (photoURL || manifestURL || 'x'), '1');
+    document.getElementById('consentOverlay').style.display = 'none';
+    if (pendingDownloadAction) pendingDownloadAction();
+  }
+
 
   loadFromParams();
 
@@ -286,10 +415,11 @@
         return;
       }
 
+      await loadConsentSettings();
       init();
     } catch(e) {
       console.error('Manifest load error:', e);
-      if (photoURL) init();
+      if (photoURL) { await loadConsentSettings(); init(); }
       else showError('Link QR tidak bisa dimuat', 'Coba scan ulang QR dari halaman photobooth.');
     }
   }
@@ -393,7 +523,8 @@
     `).join('');
   }
 
-  async function dlIndividual(idx) {
+  async function dlIndividual(idx, skipConsent = false) {
+    if (!skipConsent) return ensureConsentThen(() => dlIndividual(idx, true));
     const url = individualURLs[idx];
     if (!url) return;
     try {
@@ -408,7 +539,8 @@
     }
   }
 
-  async function dlAllIndividuals() {
+  async function dlAllIndividuals(skipConsent = false) {
+    if (!skipConsent) return ensureConsentThen(() => dlAllIndividuals(true));
     if (!individualURLs.length) return;
     const btn = document.getElementById('btnIndividuals');
     btn.disabled = true;
@@ -424,7 +556,8 @@
     }
   }
 
-  async function dlGif() {
+  async function dlGif(skipConsent = false) {
+    if (!skipConsent) return ensureConsentThen(() => dlGif(true));
     if (!gifURL) return;
     const btn = document.getElementById('btnGif');
     btn.disabled = true;
@@ -443,7 +576,8 @@
     }
   }
 
-  async function sharePhoto() {
+  async function sharePhoto(skipConsent = false) {
+    if (!skipConsent) return ensureConsentThen(() => sharePhoto(true));
     try {
       const res  = await fetch(photoURL);
       const blob = await res.blob();

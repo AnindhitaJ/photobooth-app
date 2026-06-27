@@ -57,3 +57,12 @@ Jalankan `supabase_fix_register_whatsapp_v62.sql` di Supabase SQL Editor. Regist
 ## Tutorial feature v63
 
 Menambahkan halaman `/tutorial`, submenu Tutorial di Admin, serta popup onboarding di index kalau akun belum punya template.
+
+
+## Web/PWA Latest v68
+
+Versi ini kembali fokus ke web-based PWA saja:
+- Tidak ada APK / Android project.
+- Kamera memakai kamera browser seperti sebelumnya (`navigator.mediaDevices`).
+- Tetap membawa fitur terakhir sebelum eksperimen Android bridge: admin unified sidebar, tutorial owner, gallery product split, register WA fix, analytics/content sharing, event, dan PWA cache.
+- Deploy ZIP ini ke Vercel.

@@ -42,3 +42,13 @@ Jalankan `supabase_profiles_whatsapp_v52.sql` di Supabase SQL Editor jika kolom 
 ## Analytics Accuracy v54
 
 `photo_sessions` sekarang hanya dicatat untuk final result (`strip.jpg`). File pendukung seperti foto satuan/GIF/live/manifest tidak dihitung sebagai session. Kalau data lama sudah terlanjur inflated, jalankan `supabase_fix_analytics_sessions_v54.sql`.
+
+
+## Gallery Product Split v61
+
+Jika Galeri tampil 0 sesi setelah cleanup metadata, jalankan `supabase_restore_gallery_metadata_v61.sql` di Supabase SQL Editor untuk restore metadata dari Storage.
+
+
+## Register WhatsApp fix v62
+
+Jalankan `supabase_fix_register_whatsapp_v62.sql` di Supabase SQL Editor. Register sekarang upsert profile supaya `whatsapp_number` tidak kosong.

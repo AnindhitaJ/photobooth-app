@@ -151,6 +151,61 @@
     .empty-title { font-size:18px; font-weight:800; margin-bottom:6px; }
     .empty-sub { font-size:13px; color:var(--text2); font-weight:500; }
 
+
+    /* ── PRODUCT FILTER TABS ── */
+    .product-filter-tabs {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-left:6px;
+    }
+    .product-filter-tab {
+      appearance:none;
+      -webkit-appearance:none;
+      padding:10px 16px;
+      border-radius:50px;
+      border:2px solid var(--border);
+      background:white;
+      color:var(--text2);
+      font-size:13px;
+      font-weight:900;
+      cursor:pointer;
+      font-family:inherit;
+      line-height:1;
+      transition:all .16s ease;
+      box-shadow:0 2px 8px rgba(0,0,0,.04);
+    }
+    .product-filter-tab:hover {
+      border-color:var(--orange);
+      color:var(--orange);
+      transform:translateY(-1px);
+    }
+    .product-filter-tab.active {
+      background:linear-gradient(135deg,var(--orange),var(--yellow));
+      color:white;
+      border-color:transparent;
+      box-shadow:0 4px 14px rgba(216,75,126,.25);
+    }
+    .product-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:4px 8px;
+      border-radius:999px;
+      background:#fff8fc;
+      border:1.5px solid var(--border);
+      color:var(--text2);
+      font-size:10px;
+      font-weight:900;
+      margin-top:5px;
+    }
+    @media(max-width:720px){
+      .product-filter-tabs{width:100%;margin-left:0}
+      .product-filter-tab{flex:1;min-width:0;padding:10px 9px;font-size:12px}
+    }
+
+
     /* ── PRINT SELECTION ── */
     .session-card.print-selected {
       border-color: var(--yellow); border-width: 3px;
@@ -376,7 +431,7 @@
     <div id="emptyState" class="empty-state" style="display:none">
       <div class="empty-icon">📷</div>
       <div class="empty-title">Belum ada foto</div>
-      <div class="empty-sub">Belum ada sesi foto tersimpan</div>
+      <div class="empty-sub" id="emptySub">Belum ada sesi foto tersimpan untuk filter ini</div>
     </div>
     <div class="sessions-grid" id="sessionsGrid"></div>
   </div>
@@ -667,7 +722,15 @@
     const empty = document.getElementById('emptyState');
     document.getElementById('countBadge').textContent = filtered.length + ' sesi';
 
-    if (!filtered.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+    if (!filtered.length) {
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+      const emptySub = document.getElementById('emptySub');
+      if (emptySub) emptySub.textContent = allSessions.length
+        ? 'Tidak ada sesi untuk filter yang dipilih.'
+        : 'Belum ada sesi foto tersimpan. Kalau foto lama hilang setelah cleanup metadata, jalankan SQL restore v61.';
+      return;
+    }
     empty.style.display = 'none';
 
     grid.innerHTML = filtered.map(s => {

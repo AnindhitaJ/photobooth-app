@@ -323,6 +323,7 @@
   </div>
 
   <div class="top-actions">
+    <button class="top-action-btn" onclick="bukaAdmin()">⚙️ Admin</button>
     <button class="top-action-btn" onclick="bukaGaleri()">🖼️ Galeri</button>
     <button class="top-action-btn" onclick="Auth.logout()">Logout</button>
   </div>
@@ -452,7 +453,8 @@
       const topShortcut = document.createElement('div');
       topShortcut.style.cssText = 'position:absolute;top:16px;left:16px;z-index:10;display:flex;gap:8px;flex-wrap:wrap;';
       topShortcut.innerHTML = '<a href="/event" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">🎉 Event</a>' +
-        (Auth.isSuperAdmin() ? '<a href="/cms" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">⚙️ CMS</a>' : '');
+        '<a href="/admin" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">⚙️ Admin</a>' +
+        (Auth.isSuperAdmin() ? '<a href="/cms" style="background:var(--navy,#1D3557);color:#E5B842;padding:7px 14px;border-radius:50px;font-size:12px;font-weight:800;text-decoration:none;">CMS</a>' : '');
       document.body.appendChild(topShortcut);
 
       // Block akses hanya kalau akun dinonaktifkan oleh admin.

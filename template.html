@@ -38,12 +38,7 @@
       background: linear-gradient(135deg, var(--orange), var(--purple));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .admin-btn {
-      background: white; border: 2px solid var(--border); color: var(--text2);
-      font-size: 18px; cursor: pointer; padding: 8px 12px; border-radius: 12px;
-      transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .admin-btn:hover { border-color: var(--orange); transform: rotate(15deg); }
+    .admin-btn { display: none; }
     h2 { font-size: 24px; font-weight: 900; margin-bottom: 4px; text-align: center; color: var(--text); }
     p.sub { font-size: 14px; color: var(--text2); margin-bottom: 16px; text-align: center; font-weight: 500; }
     .cat-tabs {
@@ -193,7 +188,6 @@
 
   <div class="top-bar">
     <div class="logo-text" style="display:flex;align-items:center;gap:8px;"><img data-auth-logo src="/logo.png" alt="LUX Photobooth" style="height:36px;width:36px;border-radius:50%;object-fit:cover;"><span>LUX PHOTOBOOTH</span></div>
-    <button class="admin-btn" onclick="bukaAdmin()" title="Admin">⚙️</button>
   </div>
 
   <h2>Pilih Template</h2>

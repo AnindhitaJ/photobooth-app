@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v118';
+const CACHE_NAME = 'lux-photobooth-v122';
 const ASSETS = [
   '/',
   '/index.html',

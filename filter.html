@@ -96,6 +96,20 @@
     }
     .apply-note span { font-weight: 700; color: var(--orange); }
     .btn-row { display: flex; gap: 10px; }
+    .filter-actions-sticky {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: sticky;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 90;
+      background: rgba(255, 248, 252, 0.98);
+      backdrop-filter: blur(12px);
+      border-radius: 22px;
+      padding: 10px;
+      box-shadow: 0 -10px 28px rgba(216, 75, 126, 0.14);
+      margin-top: 2px;
+    }
     .btn {
       flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
       border: none; cursor: pointer; font-weight: 700; font-size: 14px;
@@ -119,7 +133,7 @@
   
     /* iPad / tablet fix: jangan sampai action button ketutup karena viewport terlalu zoom */
     @media (min-width: 700px) and (max-width: 1180px), (max-height: 820px) {
-      body { overflow-x: hidden; }
+      body { overflow-x: hidden; padding-bottom: 118px; }
       .page-wrap, .main-wrap, .app-wrap, .container {
         max-width: 100% !important;
       }
@@ -130,15 +144,8 @@
         position: relative;
         z-index: 1;
       }
-      .btn-row.nav-row {
-        position: sticky;
+      .filter-actions-sticky {
         bottom: max(10px, env(safe-area-inset-bottom));
-        z-index: 80;
-        background: rgba(255, 248, 252, 0.98);
-        backdrop-filter: blur(10px);
-        border-radius: 18px;
-        padding: 8px;
-        box-shadow: 0 -8px 24px rgba(216, 75, 126, 0.10);
       }
       .btn-row .btn {
         min-height: 46px;
@@ -272,16 +279,18 @@
         Tiap foto bisa beda filter.
       </div>
 
-      <div class="btn-row">
-        <button class="btn btn-ghost"  onclick="resetFilter()">↺ Reset</button>
-        <button class="btn btn-apply" type="button" onclick="downloadFotoIni()">⬇️ Download Foto Ini</button>
-      </div>
-      <div class="btn-row" id="applyAllRow">
-        <button class="btn btn-apply" style="background:linear-gradient(135deg,#E5B842,#0099cc);box-shadow:0 6px 20px rgba(229,184,66,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
-      </div>
-      <div class="btn-row nav-row">
-        <button class="btn btn-secondary" type="button" onclick="kembali()">← Balik</button>
-        <button class="btn btn-primary" type="button" id="btnLanjutFilter" onclick="lanjut()">Lihat Hasil →</button>
+      <div class="filter-actions-sticky">
+        <div class="btn-row">
+          <button class="btn btn-ghost"  onclick="resetFilter()">↺ Reset</button>
+          <button class="btn btn-apply" type="button" onclick="downloadFotoIni()">⬇️ Download Foto Ini</button>
+        </div>
+        <div class="btn-row" id="applyAllRow">
+          <button class="btn btn-apply" style="background:linear-gradient(135deg,#E5B842,#0099cc);box-shadow:0 6px 20px rgba(229,184,66,0.35);width:100%" onclick="terapkanSemua()">✦ Terapkan ke Semua Foto</button>
+        </div>
+        <div class="btn-row nav-row">
+          <button class="btn btn-secondary" type="button" onclick="kembali()">← Balik</button>
+          <button class="btn btn-primary" type="button" id="btnLanjutFilter" onclick="lanjut()">Lihat Hasil →</button>
+        </div>
       </div>
 
     </div>

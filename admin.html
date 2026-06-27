@@ -454,8 +454,9 @@
       gap: 8px;
     }
     .admin-side-link {
-      border: 2px solid transparent;
-      background: #fff8fc;
+      width: 100%;
+      border: 2px solid var(--border);
+      background: #fff;
       color: var(--text);
       border-radius: 16px;
       padding: 12px 13px;
@@ -467,17 +468,20 @@
       align-items: center;
       gap: 8px;
       transition: all .18s ease;
+      font-family: inherit;
+      text-align: left;
     }
     .admin-side-link:hover,
     .admin-side-link.active {
       border-color: var(--orange);
       background: linear-gradient(135deg, rgba(216,75,126,.12), rgba(229,184,66,.12));
+      color: var(--text);
       transform: translateX(2px);
     }
     .admin-side-link.external {
-      background: white;
+      background: #fff;
       border-color: var(--border);
-      color: var(--text2);
+      color: var(--text);
     }
     .admin-main {
       min-width: 0;
@@ -692,12 +696,12 @@
     <aside class="admin-sidebar">
       <div class="admin-side-title">Admin Menu</div>
       <nav class="admin-side-nav">
-        <a class="admin-side-link active" href="#profil-photobooth" onclick="showAdminSection('profil-photobooth', this); return false;">👤 Profil Photobooth</a>
-        <a class="admin-side-link" href="#ganti-password" onclick="showAdminSection('ganti-password', this); return false;">🔐 Ganti Password</a>
-        <a class="admin-side-link" href="#template-manager" onclick="showAdminSection('template-manager', this); return false;">⚙️ Template Manager</a>
-        <a class="admin-side-link external" href="/analytics">📊 Business Analytics</a>
-        <a class="admin-side-link external" href="/content-sharing">🤍 Content Sharing</a>
-        <a class="admin-side-link external" href="/template">← Kembali ke App</a>
+        <button type="button" class="admin-side-link active" data-section="profil-photobooth" onclick="showAdminSection('profil-photobooth', this)">👤 Profil Photobooth</button>
+        <button type="button" class="admin-side-link" data-section="ganti-password" onclick="showAdminSection('ganti-password', this)">🔐 Ganti Password</button>
+        <button type="button" class="admin-side-link" data-section="template-manager" onclick="showAdminSection('template-manager', this)">⚙️ Template Manager</button>
+        <button type="button" class="admin-side-link external" onclick="window.location.href='/analytics'">📊 Business Analytics</button>
+        <button type="button" class="admin-side-link external" onclick="window.location.href='/content-sharing'">🤍 Content Sharing</button>
+        <button type="button" class="admin-side-link external" onclick="window.location.href='/'">← Kembali ke App</button>
       </nav>
     </aside>
     <main class="admin-main">
@@ -1626,8 +1630,8 @@
     document.querySelectorAll('.admin-section').forEach(sec => {
       sec.classList.toggle('active-section', sec.id === sectionId);
     });
-    setAdminNavActive(el || document.querySelector(`.admin-side-link[href="#${sectionId}"]`));
-    history.replaceState(null, '', '#' + sectionId);
+    setAdminNavActive(el || document.querySelector(`.admin-side-link[data-section="${sectionId}"]`));
+    if (location.hash) history.replaceState(null, '', '/admin');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 

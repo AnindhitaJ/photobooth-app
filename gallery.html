@@ -360,6 +360,11 @@
     <span class="filter-label">📅 Tanggal:</span>
     <input type="date" id="filterDate" class="filter-date" onchange="applyFilter()">
     <button class="btn-clear-filter" id="btnClearFilter" onclick="clearFilter()">✕ Hapus</button>
+    <div class="product-filter-tabs">
+      <button class="product-filter-tab active" id="prodAll" onclick="setProductFilter('all')">Semua</button>
+      <button class="product-filter-tab" id="prodPhotostrip" onclick="setProductFilter('photostrip')">🎞️ Photostrip</button>
+      <button class="product-filter-tab" id="prodPhotobox" onclick="setProductFilter('photobox')">🖼️ Photobox 4R</button>
+    </div>
     <div class="count-badge" id="countBadge">0 sesi</div>
   </div>
 
@@ -420,8 +425,8 @@
 <!-- PRINT MODAL -->
 <div class="modal-wrap" id="printModal" style="position:fixed;inset:0;z-index:9000;display:none;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px;">
   <div style="background:white;border-radius:24px;padding:28px;max-width:480px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);animation:popIn 0.25s ease;">
-    <div style="font-size:19px;font-weight:900;margin-bottom:6px;color:var(--text);">🖨️ Print Sekaligus</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">2 strip akan digabung dalam ukuran 10×15 cm siap cetak.</div>
+    <div style="font-size:19px;font-weight:900;margin-bottom:6px;color:var(--text);" id="printModalTitle">🖨️ Print Sekaligus</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;" id="printModalSub">2 strip akan digabung dalam ukuran 10×15 cm siap cetak.</div>
     <div id="printPreview" style="display:flex;gap:12px;margin-bottom:20px;justify-content:center;"></div>
     <div style="display:flex;gap:10px;">
       <button onclick="closePrintModal()" style="flex:1;padding:14px;border-radius:50px;border:2px solid var(--border);background:white;color:var(--text2);font-size:14px;font-weight:700;cursor:pointer;">Batal</button>
@@ -554,7 +559,18 @@
         }
 
         const key = ts;
-        if (!sessMap[key]) sessMap[key] = { ts, strip: null, individuals: [], gif: null };
+        if (!sessMap[key]) sessMap[key] = {
+          ts,
+          strip: null,
+          individuals: [],
+          gif: null,
+          productType: row.product_type || '',
+          templateName: row.template_name || '',
+          templateCategory: row.template_category || ''
+        };
+        if (row.product_type) sessMap[key].productType = row.product_type;
+        if (row.template_name) sessMap[key].templateName = row.template_name;
+        if (row.template_category) sessMap[key].templateCategory = row.template_category;
 
         const url = `${SUPABASE_URL}/storage/v1/object/public/photobooth/${path}`;
 
@@ -593,11 +609,38 @@
     }
   }
 
+
+  function normalizeProductType(s) {
+    const raw = String(s?.productType || '').toLowerCase();
+    if (raw === 'photobox' || raw === 'photostrip') return raw;
+    const cat = String(s?.templateCategory || '').toLowerCase();
+    const name = String(s?.templateName || '').toLowerCase();
+    if (cat.includes('photobox') || cat.includes('4r') || name.includes('photobox') || name.includes('4r')) return 'photobox';
+    return 'photostrip';
+  }
+
+  function productLabel(s) {
+    return normalizeProductType(s) === 'photobox' ? '🖼️ Photobox 4R' : '🎞️ Photostrip';
+  }
+
+  function setProductFilter(type) {
+    currentProductFilter = type || 'all';
+    document.getElementById('prodAll').classList.toggle('active', currentProductFilter === 'all');
+    document.getElementById('prodPhotostrip').classList.toggle('active', currentProductFilter === 'photostrip');
+    document.getElementById('prodPhotobox').classList.toggle('active', currentProductFilter === 'photobox');
+    applyFilter();
+  }
+
+
   // ── FILTER ───────────────────────────────────────────────────────────
   function applyFilter() {
     const dv = document.getElementById('filterDate').value;
     document.getElementById('btnClearFilter').style.display = dv ? 'block' : 'none';
-    filtered = dv ? allSessions.filter(s => s.dateStr === dv) : [...allSessions];
+    filtered = allSessions.filter(s => {
+      const dateOk = dv ? s.dateStr === dv : true;
+      const productOk = currentProductFilter === 'all' ? true : normalizeProductType(s) === currentProductFilter;
+      return dateOk && productOk;
+    });
     selected = [];
     updateActionBar();
     renderGrid();
@@ -645,6 +688,7 @@
             <div>
               <div class="session-date">${dateLabel}</div>
               <div class="session-date" style="opacity:0.7">${timeLabel}</div>
+              <div class="product-badge">${productLabel(s)}</div>
             </div>
             ${indCount ? `<div class="session-count">${indCount} foto</div>` : ''}
           </div>
@@ -684,7 +728,10 @@
       label.textContent = 'sesi dipilih';
     } else if (mode === 'print') {
       delBtn.style.display = 'none'; printBtn.style.display = 'block';
-      label.textContent = '/ 2 strip dipilih';
+      const first = selected.length ? allSessions.find(s => s.ts === selected[0]) : null;
+      label.textContent = first && normalizeProductType(first) === 'photobox'
+        ? '/ 1 photobox dipilih'
+        : '/ 2 strip dipilih';
     }
     bar.classList.toggle('visible', selected.length > 0 && mode !== 'view');
   }
@@ -773,22 +820,47 @@
 
   // ── PRINT ────────────────────────────────────────────────────────────
   function togglePrintSelect(ts) {
+    const sess = allSessions.find(s => s.ts === ts);
+    if (!sess) return;
+    const product = normalizeProductType(sess);
     const i = selected.indexOf(ts);
-    if (i > -1) { selected.splice(i, 1); }
-    else {
+
+    if (i > -1) {
+      selected.splice(i, 1);
+    } else if (product === 'photobox') {
+      // Photobox 4R sudah format 10×15, jadi cukup pilih 1 dan langsung print file itu.
+      selected = [ts];
+    } else {
+      const hasPhotobox = selected.some(x => normalizeProductType(allSessions.find(s => s.ts === x)) === 'photobox');
+      if (hasPhotobox) selected = [];
       if (selected.length >= 2) { showToast('⚠️ Maksimal 2 strip untuk print'); return; }
       selected.push(ts);
     }
+
     updateActionBar();
     renderGrid();
   }
 
   function openPrintModal() {
-    if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
-    const sessions = selected.map(ts => allSessions.find(s => s.ts === ts));
-    document.getElementById('printPreview').innerHTML = sessions.map(s =>
-      `<img src="${s.strip.url}" alt="strip" crossorigin="anonymous" style="width:calc(50% - 6px);border-radius:12px;border:2px solid var(--border);object-fit:cover;aspect-ratio:9/16;">`
-    ).join('');
+    if (!selected.length) { showToast('❌ Pilih foto dulu untuk print'); return; }
+    const sessions = selected.map(ts => allSessions.find(s => s.ts === ts)).filter(Boolean);
+    const firstProduct = normalizeProductType(sessions[0]);
+
+    if (firstProduct === 'photobox') {
+      if (selected.length !== 1) { showToast('❌ Photobox 4R cukup pilih 1 file saja'); return; }
+      document.getElementById('printModalTitle').textContent = '🖨️ Print Photobox 4R';
+      document.getElementById('printModalSub').textContent = 'Photobox sudah ukuran 10×15 / 4R, jadi langsung print 1 file tanpa gabung 2 strip.';
+      document.getElementById('printPreview').innerHTML =
+        `<img src="${sessions[0].strip.url}" alt="photobox" crossorigin="anonymous" style="width:52%;max-height:360px;border-radius:12px;border:2px solid var(--border);object-fit:contain;">`;
+    } else {
+      if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
+      document.getElementById('printModalTitle').textContent = '🖨️ Print 2 Strip';
+      document.getElementById('printModalSub').textContent = '2 strip akan digabung dalam ukuran 10×15 cm siap cetak.';
+      document.getElementById('printPreview').innerHTML = sessions.map(s =>
+        `<img src="${s.strip.url}" alt="strip" crossorigin="anonymous" style="width:calc(50% - 6px);border-radius:12px;border:2px solid var(--border);object-fit:cover;aspect-ratio:9/16;">`
+      ).join('');
+    }
+
     document.getElementById('printModal').style.display = 'flex';
     document.getElementById('printProgress').style.display = 'none';
     document.getElementById('btnGenPrint').disabled = false;
@@ -798,13 +870,26 @@
   function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
 
   async function generatePrint() {
-    if (selected.length !== 2) return;
+    if (!selected.length) return;
     const btn  = document.getElementById('btnGenPrint');
     const prog = document.getElementById('printProgress');
     const bar  = document.getElementById('printProgBar');
     const txt  = document.getElementById('printProgressText');
     btn.disabled = true; prog.style.display = 'block';
     try {
+      const sessions = selected.map(ts => allSessions.find(s => s.ts === ts)).filter(Boolean);
+      const firstProduct = normalizeProductType(sessions[0]);
+
+      if (firstProduct === 'photobox') {
+        bar.style.width = '35%'; txt.textContent = 'Menyiapkan Photobox 4R...';
+        await triggerDownload(sessions[0].strip.url, `lux-photobox-4r-${Date.now()}.jpg`);
+        bar.style.width = '100%'; txt.textContent = 'Selesai ✓';
+        setTimeout(() => { closePrintModal(); showToast('✅ File Photobox 4R siap print!', 'success'); clearSelection(); }, 600);
+        return;
+      }
+
+      if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
+
       const PW = 1181, PH = 1772;
       const canvas = document.createElement('canvas');
       canvas.width = PW; canvas.height = PH;
@@ -812,7 +897,6 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,PW,PH);
       const slotW = Math.floor(PW/2);
       bar.style.width = '20%'; txt.textContent = 'Memuat strip 1...';
-      const sessions = selected.map(ts => allSessions.find(s => s.ts === ts));
       const img1 = await loadImage(sessions[0].strip.url);
       bar.style.width = '50%'; txt.textContent = 'Memuat strip 2...';
       const img2 = await loadImage(sessions[1].strip.url);
@@ -828,7 +912,7 @@
         a.href = URL.createObjectURL(blob);
         a.download = `lux-print-10x15-${Date.now()}.jpg`;
         a.click();
-        setTimeout(() => { closePrintModal(); showToast('✅ File print berhasil!', 'success'); }, 800);
+        setTimeout(() => { closePrintModal(); showToast('✅ File print berhasil!', 'success'); clearSelection(); }, 800);
       }, 'image/jpeg', 0.95);
     } catch(e) {
       txt.textContent = '⚠️ Gagal: ' + e.message;

@@ -752,13 +752,38 @@
             }
 
             // Font size: proporsional dengan gap, min 18px max 52px
-            const fontSize = Math.max(18, Math.min(52, Math.floor(gapH * 0.38)));
-            const centerX  = tmplW / 2;
+            const baseFontSize = Math.max(18, Math.min(52, Math.floor(gapH * 0.38)));
             const centerY  = bottomOfLastSlot + gapH / 2;
+
+            function getWatermarkColumns() {
+              const usableSlots = (slots || []).filter(s => Number.isFinite(Number(s.x)) && Number.isFinite(Number(s.w)) && Number(s.w) > 0);
+              if (usableSlots.length < 2) return [{ x: tmplW / 2, maxW: tmplW * 0.86 }];
+
+              const centers = usableSlots
+                .map(s => Number(s.x) + Number(s.w) / 2)
+                .sort((a, b) => a - b);
+
+              const left = centers.filter(x => x < tmplW * 0.46);
+              const right = centers.filter(x => x > tmplW * 0.54);
+
+              // Kalau template 10×15 berisi 2 strip/2 kolom, watermark nama harus tampil di masing-masing kolom.
+              if (left.length && right.length) {
+                const leftMin = Math.min(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) < tmplW * 0.46).map(s => Number(s.x)));
+                const leftMax = Math.max(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) < tmplW * 0.46).map(s => Number(s.x) + Number(s.w)));
+                const rightMin = Math.min(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) > tmplW * 0.54).map(s => Number(s.x)));
+                const rightMax = Math.max(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) > tmplW * 0.54).map(s => Number(s.x) + Number(s.w)));
+
+                return [
+                  { x: (leftMin + leftMax) / 2, maxW: Math.max(80, (leftMax - leftMin) * 1.05) },
+                  { x: (rightMin + rightMax) / 2, maxW: Math.max(80, (rightMax - rightMin) * 1.05) }
+                ];
+              }
+
+              return [{ x: tmplW / 2, maxW: tmplW * 0.86 }];
+            }
 
             ctx.save();
             ctx.globalAlpha = 0.70;
-            ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.letterSpacing = '3px';
@@ -766,7 +791,17 @@
             // Pakai nama booth dari profil, kalau watermark enabled
             if (Auth.showWatermark()) {
               const boothName = Auth.getBoothName().toUpperCase();
-              ctx.fillText(boothName, centerX, centerY);
+              const columns = getWatermarkColumns();
+
+              columns.forEach(col => {
+                let fontSize = baseFontSize;
+                ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+                while (ctx.measureText(boothName).width > col.maxW && fontSize > 14) {
+                  fontSize -= 2;
+                  ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+                }
+                ctx.fillText(boothName, col.x, centerY);
+              });
             }
             ctx.restore();
           }

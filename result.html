@@ -361,14 +361,16 @@
   }
 
   function buildDownloadPageURL(extra = {}) {
+    const ownerId = Auth.getUserId() || '';
     if (extra.manifest || finalManifestURL) {
       return window.location.origin + '/download.html?' + new URLSearchParams({
-        m: extra.manifest || finalManifestURL
+        m: extra.manifest || finalManifestURL,
+        owner: ownerId
       }).toString();
     }
 
     // Fallback lama kalau upload manifest gagal.
-    const params = new URLSearchParams({ photo: finalPublicURL });
+    const params = new URLSearchParams({ photo: finalPublicURL, owner: ownerId });
     const photos = (finalIndividualURLs || []).filter(Boolean);
     photos.forEach(url => params.append('p', url));
     if (finalGifURL) params.set('gif', finalGifURL);
@@ -380,6 +382,8 @@
     const manifest = {
       version: 1,
       type: isPhotoboxMode ? 'photobox' : 'photostrip',
+      ownerId: Auth.getUserId() || '',
+      eventId: localStorage.getItem('eventMode') === '1' ? (JSON.parse(localStorage.getItem('activeEvent') || '{}').id || '') : '',
       photo,
       photos: photos.filter(Boolean),
       gif: gif || '',

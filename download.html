@@ -294,6 +294,8 @@
   const manifestURL = params.get('m');
   let photoURL = params.get('photo');
   let gifURL   = params.get('gif');
+  let ownerId  = params.get('owner') || '';
+  let eventId  = params.get('event') || '';
   let individualURLs = [
     ...params.getAll('p'),
     ...(params.get('photos') ? params.get('photos').split('|') : [])
@@ -310,8 +312,11 @@
   }
 
   async function loadConsentSettings() {
-    const ownerId = getOwnerIdFromURL(photoURL);
-    if (!ownerId) return null;
+    ownerId = ownerId || getOwnerIdFromURL(photoURL);
+    if (!ownerId) {
+      console.warn('Consent skipped: owner id tidak ditemukan dari URL.');
+      return null;
+    }
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/content_sharing_settings?user_id=eq.${ownerId}&select=*`, {
         headers: { apikey: SUPABASE_ANON }
@@ -319,6 +324,7 @@
       if (!res.ok) return null;
       const data = await res.json();
       consentSettings = data?.[0] || null;
+      if (!consentSettings) console.warn('Consent skipped: setting owner belum ada/nonaktif untuk owner', ownerId);
       if (consentSettings?.enabled) {
         const brand = consentSettings.instagram_brand || consentSettings.tiktok_brand || 'brand photobooth ini';
         document.getElementById('consentDesc').textContent =
@@ -358,7 +364,7 @@
     const payload = {
       user_id: ownerId,
       session_id: String((photoURL.match(/_(\d{13})_/) || [])[1] || ''),
-      event_id: params.get('event') || '',
+      event_id: eventId || '',
       publish_consent: skipped ? false : document.getElementById('publishConsent').checked,
       tag_consent: skipped ? false : document.getElementById('tagConsent').checked,
       instagram_username: skipped ? '' : cleanUsername(document.getElementById('igUsername').value),
@@ -407,6 +413,8 @@
         const manifest = await res.json();
         photoURL = manifest.photo || photoURL;
         gifURL = manifest.gif || gifURL;
+        ownerId = manifest.ownerId || ownerId;
+        eventId = manifest.eventId || eventId;
         individualURLs = Array.isArray(manifest.photos) ? manifest.photos.filter(Boolean) : individualURLs;
       }
 

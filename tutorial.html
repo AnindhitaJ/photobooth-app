@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Tutorial - Lux Photobooth</title>
+  <script src="/auth.js"></script>
+  <style>
+    :root{--orange:#D84B7E;--yellow:#E5B842;--navy:#1D3557;--bg:#FFF8FC;--card:#fff;--border:#fad0e4;--text:#1D3557;--text2:#6b7fa3}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:22px}
+    body:before{content:'';position:fixed;inset:0;z-index:-1;background-image:radial-gradient(circle,rgba(216,75,126,.08) 1px,transparent 1px);background-size:28px 28px}
+    .wrap{max-width:1120px;margin:0 auto}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:10px}.brand img{width:42px;height:42px;border-radius:50%;object-fit:cover}
+    h1{font-size:30px;font-weight:950;letter-spacing:-.8px}.sub{color:var(--text2);font-size:14px;font-weight:700;margin-top:3px;line-height:1.45}
+    .btn{border:0;border-radius:999px;padding:12px 18px;font:inherit;font-weight:900;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--yellow));color:white;box-shadow:0 8px 22px rgba(216,75,126,.18);text-decoration:none;display:inline-flex;gap:8px;align-items:center;justify-content:center}
+    .btn.secondary{background:white;color:var(--text);border:2px solid var(--border);box-shadow:none}.btn.dark{background:var(--navy);color:var(--yellow)}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0 22px}
+    .tutorial-card{background:white;border:2px solid var(--border);border-radius:24px;padding:18px;box-shadow:0 8px 26px rgba(216,75,126,.08);cursor:pointer;transition:.18s;min-height:170px;display:flex;flex-direction:column;justify-content:space-between}
+    .tutorial-card:hover{transform:translateY(-3px);border-color:var(--orange);box-shadow:0 12px 32px rgba(216,75,126,.15)}
+    .icon{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--orange),var(--yellow));color:white;font-size:24px;box-shadow:0 8px 20px rgba(216,75,126,.15)}
+    .tutorial-title{font-size:18px;font-weight:950;margin:12px 0 6px}.tutorial-desc{font-size:13px;color:var(--text2);font-weight:700;line-height:1.45}
+    .panel{background:white;border:2px solid var(--border);border-radius:26px;padding:22px;box-shadow:0 8px 26px rgba(29,53,87,.06);display:none}.panel.active{display:block}
+    .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .progress{height:10px;background:#f8c9df;border-radius:999px;overflow:hidden;margin:14px 0}.progress span{display:block;height:100%;background:linear-gradient(135deg,var(--orange),var(--yellow));width:0%;transition:.25s}
+    .stepbox{display:grid;grid-template-columns:54px 1fr;gap:14px;align-items:start;padding:18px;background:#fff8fc;border:2px solid var(--border);border-radius:20px;min-height:170px}
+    .stepnum{width:54px;height:54px;border-radius:18px;background:var(--navy);color:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:950}
+    .step-title{font-size:22px;font-weight:950;margin-bottom:8px}.step-desc{font-size:15px;color:var(--text2);font-weight:650;line-height:1.65}.step-desc b{color:var(--text)}
+    .tip{margin-top:12px;padding:12px 14px;border-radius:16px;background:white;border:2px dashed var(--border);font-size:13px;color:var(--text2);font-weight:750;line-height:1.5}
+    .actions{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:16px}.actions .left,.actions .right{display:flex;gap:10px;flex-wrap:wrap}
+    .coach-overlay{display:none;position:fixed;inset:0;background:rgba(29,53,87,.55);z-index:9999;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(8px)}
+    .coach{width:100%;max-width:560px;background:white;border:2px solid var(--border);border-radius:28px;padding:24px;box-shadow:0 28px 80px rgba(0,0,0,.25);animation:pop .18s ease}
+    @keyframes pop{from{transform:scale(.96);opacity:.6}to{transform:scale(1);opacity:1}}
+    .coach-kicker{font-size:12px;font-weight:950;letter-spacing:.9px;color:var(--orange);text-transform:uppercase;margin-bottom:8px}.coach h2{font-size:26px;letter-spacing:-.6px;margin-bottom:8px}.coach p{font-size:15px;color:var(--text2);font-weight:650;line-height:1.6;margin-bottom:14px}
+    .coach-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.pill{display:inline-flex;padding:5px 10px;border-radius:999px;background:#fff8fc;border:1.5px solid var(--border);font-size:12px;font-weight:900;color:var(--text2);margin-top:8px}
+    @media(max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:820px){.grid{grid-template-columns:1fr}.stepbox{grid-template-columns:1fr}.actions{display:grid}.actions .left,.actions .right{display:grid}.btn{width:100%}}
+  </style>
+
+<script>
+(function(){
+  if (new URLSearchParams(location.search).get('embedded') === '1') {
+    document.documentElement.classList.add('embedded-mode');
+  }
+})();
+</script>
+
+
+<style>
+  html.embedded-mode body { padding: 16px !important; }
+  html.embedded-mode .top a[href="/admin"],
+  html.embedded-mode .top a[href="/"],
+  html.embedded-mode .top a[href="/analytics"],
+  html.embedded-mode .top a[href="/content-sharing"],
+  html.embedded-mode .top .btn.secondary { display: none !important; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="brand"><img data-auth-logo src="/logo.png" alt="Lux"><div><h1>📚 Tutorial Lux Photobooth</h1><div class="sub">Pilih panduan sesuai kebutuhan. Tutorial ini dibuat step-by-step, ada tooltip/pop up, dan bisa langsung diarahkan ke halaman terkait.</div></div></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn secondary" href="/admin">← Admin</a>
+      <a class="btn secondary" href="/">Beranda</a>
+    </div>
+  </div>
+
+  <div class="grid" id="tutorialGrid"></div>
+
+  <section class="panel" id="tutorialPanel">
+    <div class="panel-head">
+      <div>
+        <h2 id="panelTitle" style="font-size:24px;font-weight:950">Tutorial</h2>
+        <div class="sub" id="panelSub">Ikuti langkahnya satu per satu.</div>
+      </div>
+      <button class="btn secondary" onclick="closeTutorial()">Tutup</button>
+    </div>
+    <div class="progress"><span id="progressFill"></span></div>
+    <div class="stepbox">
+      <div class="stepnum" id="stepNum">1</div>
+      <div>
+        <div class="step-title" id="stepTitle">Judul Step</div>
+        <div class="step-desc" id="stepDesc"></div>
+        <div class="tip" id="stepTip"></div>
+        <div id="stepTarget" class="pill"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="left">
+        <button class="btn secondary" onclick="prevStep()">← Sebelumnya</button>
+        <button class="btn secondary" onclick="restartStep()">↺ Ulang</button>
+      </div>
+      <div class="right">
+        <button class="btn dark" onclick="openCoach()">💬 Pop up panduan</button>
+        <button class="btn" onclick="nextStep()">Lanjut →</button>
+        <button class="btn secondary" id="goTargetBtn" onclick="goTarget()">Buka halaman terkait</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="coach-overlay" id="coachOverlay">
+  <div class="coach">
+    <div class="coach-kicker" id="coachKicker">Step 1</div>
+    <h2 id="coachTitle">Judul</h2>
+    <p id="coachBody">Deskripsi</p>
+    <div class="coach-actions">
+      <button class="btn secondary" onclick="closeCoach()">Tutup</button>
+      <button class="btn" onclick="closeCoach(); nextStep();">Saya mengerti →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+if (!Auth.getSession()) location.href = '/login';
+
+const tutorials = {
+  all: {
+    icon:'🚀', title:'Tutorial Semua / End-to-End', desc:'Dari daftar/login, admin, upload template, ambil foto, filter, hasil, galeri, sampai print.',
+    target:'/',
+    steps:[
+      ['Masuk akun', 'Login atau daftar akun photobooth. Untuk owner baru, isi nama photobooth, email, password, dan nomor WhatsApp aktif.', 'Kalau masih Free, fitur tetap bisa dicoba tapi hasil foto memakai watermark properti Lux.', '/login'],
+      ['Kenali Free vs Pro', '<b>Free</b>: bisa pakai app, tapi hasil foto diberi watermark dan beberapa fitur bisnis bisa dibatasi. <b>Pro</b>: watermark hilang, akses event, template manager, analytics, consent, dan fitur owner lebih lengkap.', 'Kalau butuh upgrade, hubungi admin Lux untuk aktivasi PRO.', '/admin'],
+      ['Buka Admin', 'Dari beranda klik tombol <b>⚙️ Admin</b>. Di sidebar ada Profil Photobooth, Ganti Password, Template Manager, Business Analytics, Content Sharing, dan Tutorial.', 'Admin adalah pusat pengaturan owner.', '/admin'],
+      ['Upload template', 'Masuk <b>Template Manager</b>, pilih jenis template Photostrip atau Photobox 4R, upload PNG/JPG template, lalu atur slot foto.', 'Gunakan tombol duplicate slot kalau bentuk slot sama.', '/admin#template-manager'],
+      ['Mulai foto', 'Kembali ke Beranda, pilih Photostrip atau Photobox 4R, pilih template, lalu masuk kamera.', 'Photostrip biasanya 5×15; Photobox 4R langsung 10×15.', '/'],
+      ['Filter dan hasil', 'Setelah foto selesai, user bisa edit filter per foto, apply ke semua, lalu lihat hasil.', 'Tombol action di filter sudah sticky agar tidak hilang saat scroll.', '/filter'],
+      ['Download / QR / Print', 'Di halaman hasil, user bisa download, scan QR, atau print. Untuk Photobox 4R, print cukup satu file; untuk Photostrip bisa cetak 1 atau 2 strip.', 'Kalau consent aktif, popup izin repost muncul sebelum download/QR.', '/result'],
+      ['Galeri', 'Semua hasil final masuk Galeri. Galeri bisa difilter Photostrip dan Photobox 4R.', 'Photobox 4R tidak perlu pilih 2 strip saat print dari galeri.', '/gallery']
+    ]
+  },
+  upload: {
+    icon:'⚙️', title:'Tutorial Upload Template', desc:'Panduan khusus upload template, setting slot, duplicate slot, dan simpan template.',
+    target:'/admin#template-manager',
+    steps:[
+      ['Buka Template Manager', 'Masuk ke Admin lalu pilih submenu <b>⚙️ Template Manager</b>.', 'Pastikan akun Pro kalau fitur template custom dibatasi.', '/admin#template-manager'],
+      ['Pilih jenis template', 'Pilih apakah template ini <b>Photostrip</b> atau <b>Photobox 4R</b>. Ini penting supaya galeri, print, dan analytics tidak tercampur.', 'Photobox 4R = 10×15; Photostrip = strip 5×15.', '/admin#template-manager'],
+      ['Upload gambar template', 'Upload file template PNG/JPG. Disarankan PNG transparan kalau ingin area foto terlihat rapi.', 'Gunakan ukuran besar agar hasil print tidak pecah.', '/admin#template-manager'],
+      ['Atur slot foto', 'Buat slot foto, geser, resize, rotate, dan sesuaikan dengan area kosong di template.', 'Tombol ⧉ bisa duplicate slot supaya ukuran sama.', '/admin#template-manager'],
+      ['Simpan template', 'Isi nama template, kategori, jumlah foto, lalu simpan. Setelah itu template muncul di halaman pilih template.', 'Coba tes 1x foto untuk cek crop dan posisi.', '/template']
+    ]
+  },
+  photo: {
+    icon:'📸', title:'Tutorial Ambil Foto', desc:'Panduan buat user akhir dari pilih produk sampai download hasil.',
+    target:'/',
+    steps:[
+      ['Pilih produk', 'Di beranda pilih <b>Photostrip</b> atau <b>Photobox 4R</b>.', 'Photostrip bisa cetak 1/2 strip. Photobox langsung 4R.', '/'],
+      ['Pilih template', 'Pilih template yang disukai. Kalau sedang Event, hanya template yang dipilih owner yang muncul.', 'Klik Mulai Foto setelah template dipilih.', '/template'],
+      ['Izinkan kamera', 'Browser akan minta izin kamera. Klik Allow/Izinkan.', 'Kalau kamera tidak muncul, cek permission browser dan device.', '/camera'],
+      ['Pose sesuai countdown', 'Ambil foto sesuai jumlah slot. Setiap foto akan otomatis masuk ke layout.', 'Gunakan tombol ulang kalau hasil kurang pas.', '/camera'],
+      ['Edit filter', 'Setelah foto selesai, pilih filter, blush, bibir, atau haluskan kulit.', 'Bisa beda filter per foto, atau apply ke semua.', '/filter'],
+      ['Download hasil', 'Klik Lihat Hasil, lalu download, scan QR, atau print.', 'Kalau owner aktifkan consent, isi/skip popup dulu. Download tetap bisa.', '/result']
+    ]
+  },
+  event: {
+    icon:'🎉', title:'Tutorial Event', desc:'Cara buat event, pilih welcome screen, pilih template khusus event, dan mulai event.',
+    target:'/event',
+    steps:[
+      ['Buka Event', 'Dari beranda klik <b>🎉 Event</b>.', 'Fitur Event bisa dibatasi untuk akun Pro.', '/event'],
+      ['Create Event', 'Klik Create Event, isi nama event, upload welcome screen jika perlu, lalu pilih template yang boleh muncul.', 'Welcome screen PNG transparan bisa dipakai sebagai overlay kamera.', '/event'],
+      ['Pilih produk event', 'Saat event dimulai, user bisa pilih Photostrip atau Photobox 4R sesuai yang diaktifkan.', 'Event hanya menampilkan template yang sudah dipilih owner.', '/event'],
+      ['Mulai sesi event', 'Klik Mulai Event. Alur user mirip beranda biasa, tapi template lebih terkontrol.', 'Cocok untuk wedding, birthday, corporate, dan booth ramai.', '/event']
+    ]
+  },
+  gallery: {
+    icon:'🖼️', title:'Tutorial Galeri & Print', desc:'Cara lihat hasil, filter Photostrip/Photobox, print, dan hapus sesi.',
+    target:'/gallery',
+    steps:[
+      ['Buka Galeri', 'Dari beranda klik <b>Galeri</b>. Masukkan password kalau diminta.', 'Galeri berisi hasil final yang tersimpan.', '/gallery'],
+      ['Filter produk', 'Gunakan filter <b>Photostrip</b> atau <b>Photobox 4R</b> supaya hasil tidak tercampur.', 'Data lama mungkin perlu restore metadata jika sempat kosong.', '/gallery'],
+      ['Print Photostrip', 'Masuk mode Print, pilih tepat 2 photostrip untuk digabung jadi 10×15.', 'Ini untuk cetak 2 strip berdampingan.', '/gallery'],
+      ['Print Photobox 4R', 'Untuk Photobox 4R, pilih 1 file saja karena sudah ukuran 10×15.', 'Tidak perlu pilih 2 strip.', '/gallery'],
+      ['Hapus sesi', 'Masuk mode Hapus, pilih sesi, lalu konfirmasi.', 'Hapus permanen dari server, jadi hati-hati.', '/gallery']
+    ]
+  },
+  analytics: {
+    icon:'📊', title:'Tutorial Analytics & Consent', desc:'Cara aktifkan consent repost, lihat analytics, dan export data.',
+    target:'/content-sharing',
+    steps:[
+      ['Content Sharing', 'Masuk Admin > Content Sharing. Aktifkan consent kalau owner ingin minta izin repost otomatis.', 'User tetap bisa download walau tidak memberi izin.', '/content-sharing'],
+      ['Isi brand', 'Isi Instagram/TikTok brand dan pesan consent.', 'Ini yang muncul di popup sebelum download.', '/content-sharing'],
+      ['Monitoring consent', 'Lihat siapa yang boleh dipublish, boleh ditag, dan username IG/TikTok pelanggan.', 'Data bisa diexport CSV.', '/content-sharing'],
+      ['Business Analytics', 'Buka Analytics untuk melihat total session, peak hours, template populer, kategori populer, dan consent rate.', 'Data paling akurat untuk sesi baru setelah tracking aktif.', '/analytics']
+    ]
+  },
+  firstSetup: {
+    icon:'🧭', title:'Setup Awal Owner Baru', desc:'Panduan awal setelah daftar: profil, WA, logo, template pertama, dan tes hasil.',
+    target:'/admin',
+    steps:[
+      ['Lengkapi profil', 'Buka Admin > Profil Photobooth. Isi nama photobooth, email, nomor WhatsApp aktif, dan upload logo.', 'Logo akan tampil di header/user flow kalau auth logo aktif.', '/admin'],
+      ['Cek watermark nama', 'Aktifkan atau matikan opsi tampilkan nama di hasil foto sesuai kebutuhan brand.', 'Akun Free tetap punya watermark properti Lux di hasil.', '/admin'],
+      ['Pahami Free vs Pro', 'Free cocok untuk coba-coba. Pro cocok untuk dipakai jualan karena akses event, analytics, consent, template manager, dan hasil lebih profesional.', 'Upgrade lewat admin Lux/CMS.', '/admin'],
+      ['Buat template pertama', 'Masuk Template Manager, upload minimal 1 template Photostrip atau Photobox.', 'Tanpa template, user akan bingung saat mulai foto.', '/admin#template-manager'],
+      ['Tes alur penuh', 'Ambil 1 sesi foto dari Beranda sampai Download dan Galeri.', 'Tes sebelum dipakai event beneran.', '/']
+    ]
+  },
+  photostrip: {
+    icon:'🎞️', title:'Tutorial Photostrip', desc:'Fokus alur photostrip 5×15, cetak 1 strip, cetak 2 strip, dan galeri.',
+    target:'/',
+    steps:[
+      ['Pilih Photostrip', 'Dari Beranda klik Photostrip.', 'Photostrip cocok untuk booth klasik 5×15.', '/'],
+      ['Pilih template strip', 'Pilih template dengan jumlah foto sesuai kebutuhan, misalnya 3 foto, 4 foto, atau 6 foto.', 'Pastikan template bukan Photobox 4R.', '/template'],
+      ['Ambil foto', 'Ikuti countdown sampai semua slot terisi.', 'Gunakan kamera eksternal kalau tersedia.', '/camera'],
+      ['Filter per foto', 'Edit foto satu per satu atau apply ke semua.', 'Filter per foto bisa beda.', '/filter'],
+      ['Cetak 1 strip', 'Di hasil pilih Cetak 1 Strip untuk layout 10×15 yang berisi 1 strip di sisi kiri.', 'Cocok kalau kertas 4R dipotong manual.', '/result'],
+      ['Cetak 2 strip', 'Pilih Cetak 2 Strip untuk menggandakan strip kiri-kanan dalam 10×15.', 'Ini yang biasanya dipakai buat print 2 strip sekaligus.', '/result']
+    ]
+  },
+  photobox: {
+    icon:'🖼️', title:'Tutorial Photobox 4R', desc:'Fokus alur Photobox ukuran 10×15 / 4R dan cara print tanpa pilih 2 strip.',
+    target:'/',
+    steps:[
+      ['Pilih Photobox 4R', 'Dari Beranda klik Photobox 4R.', 'Photobox langsung hasil 10×15, bukan strip 5×15.', '/'],
+      ['Pilih template 4R', 'Pilih template kategori Photobox 4R atau product type Photobox.', 'Kalau template 4R masuk photostrip, cek product_type di Template Manager.', '/template'],
+      ['Ambil foto', 'Ambil foto sesuai slot template.', 'Biasanya layout 4R punya posisi yang lebih bebas.', '/camera'],
+      ['Lihat hasil', 'Hasil akhir sudah full 10×15.', 'Tidak perlu digandakan seperti cetak 2 strip.', '/result'],
+      ['Print Photobox', 'Klik Cetak 4R atau print dari galeri dengan memilih 1 file Photobox saja.', 'Kalau galeri minta 2 strip, berarti product_type-nya belum kebaca.', '/gallery']
+    ]
+  },
+  cameraTroubleshoot: {
+    icon:'🎥', title:'Troubleshooting Kamera', desc:'Kalau kamera tidak muncul, blur, salah kamera, atau permission ditolak.',
+    target:'/camera',
+    steps:[
+      ['Izinkan permission', 'Saat browser/app meminta izin kamera, pilih Allow/Izinkan.', 'Kalau terlanjur blokir, reset permission dari setting browser.', '/camera'],
+      ['Pilih kamera', 'Gunakan tombol Kamera kalau tersedia untuk pilih webcam internal/eksternal.', 'Di tablet, kamera eksternal biasanya perlu HDMI capture card atau app bridge.', '/camera'],
+      ['Refresh device', 'Kalau kamera tidak muncul, refresh halaman kamera atau cabut-pasang kamera.', 'Pastikan kamera tidak sedang dipakai app lain.', '/camera'],
+      ['Cek lighting', 'Kalau hasil gelap/blur, tambah pencahayaan dan bersihkan lensa.', 'Lighting lebih ngaruh daripada filter.', '/camera'],
+      ['Mode browser', 'Gunakan Chrome terbaru untuk WebRTC paling aman.', 'Safari/iOS bisa lebih ketat soal permission.', '/camera']
+    ]
+  },
+  printTroubleshoot: {
+    icon:'🖨️', title:'Troubleshooting Print', desc:'Panduan ukuran 10×15, 4R, margin, scale, dan hasil kepotong.',
+    target:'/result',
+    steps:[
+      ['Pilih mode print', 'Photostrip punya Cetak 1 Strip dan Cetak 2 Strip. Photobox punya Cetak 4R.', 'Jangan pakai Cetak 2 Strip untuk Photobox.', '/result'],
+      ['Pilih kertas', 'Di dialog print pilih 10×15 / 4R kalau tersedia.', 'Kalau printer tidak punya 4R, pakai custom paper size.', '/result'],
+      ['Atur scale', 'Gunakan scale 100% dulu. Kalau kepotong, turunkan 95% atau 90%.', 'Matikan fit-to-page kalau hasil jadi terlalu kecil.', '/result'],
+      ['Atur margin', 'Untuk borderless, pilih margin 0 dan mode borderless printer.', 'Printer rumahan kadang tetap menyisakan margin fisik.', '/result'],
+      ['Tes 1 lembar', 'Sebelum event, print test satu lembar untuk cek warna, crop, dan posisi.', 'Simpan preset printer kalau sudah pas.', '/result']
+    ]
+  },
+  freePro: {
+    icon:'⭐', title:'Free vs Pro', desc:'Penjelasan fitur Free/Pro untuk owner dan apa yang dibatasi.',
+    target:'/admin',
+    steps:[
+      ['Free', 'Free bisa dipakai mencoba alur utama photobooth, tapi hasil foto memakai watermark properti Lux dan beberapa fitur bisnis bisa dibatasi.', 'Cocok untuk testing awal.', '/admin'],
+      ['Pro', 'Pro membuka pengalaman komersial: event, template manager, analytics, content sharing consent, dan hasil lebih clean.', 'Cocok untuk booth berbayar.', '/admin'],
+      ['Event access', 'Kalau akun Free membuka Event dan dibatasi, tampil pesan upgrade Pro.', 'Owner bisa hubungi admin untuk upgrade.', '/event'],
+      ['Watermark', 'Watermark properti Lux dipakai sebagai proteksi di Free. Nama photobooth di hasil bisa diatur dari profil.', 'Untuk hasil tanpa watermark properti, upgrade Pro.', '/admin'],
+      ['Aktivasi Pro', 'Untuk aktivasi Pro, owner bisa hubungi admin Lux Photobooth.', 'Pastikan masa berlaku Pro sudah sesuai setelah diaktifkan.', '/admin']
+    ]
+  },
+  consentCustomer: {
+    icon:'🤍', title:'Tutorial Consent Pelanggan', desc:'Apa yang pelanggan lihat dan bagaimana data consent masuk dashboard.',
+    target:'/content-sharing',
+    steps:[
+      ['Aktifkan consent', 'Owner aktifkan Content Sharing dari admin.', 'Kalau nonaktif, pelanggan langsung download tanpa popup.', '/content-sharing'],
+      ['Pelanggan selesai foto', 'Setelah hasil jadi dan pelanggan klik download/QR, popup consent muncul.', 'Consent tidak boleh menghambat download.', '/result'],
+      ['Izin publikasi', 'Checkbox pertama mengatur apakah foto boleh diposting untuk promosi.', 'Pelanggan boleh tidak setuju.', '/result'],
+      ['Izin tagging', 'Checkbox kedua terpisah untuk izin tag akun sosial.', 'Boleh publish tapi tidak tag.', '/result'],
+      ['Username opsional', 'Pelanggan bisa isi Instagram/TikTok, tapi tetap opsional.', 'Data masuk ke monitoring consent.', '/content-sharing']
+    ]
+  },
+  qrDownload: {
+    icon:'📱', title:'Tutorial QR & Download Page', desc:'Cara QR membawa final foto, foto satuan, GIF, dan consent.',
+    target:'/download',
+    steps:[
+      ['Scan QR', 'Di halaman hasil klik Scan QR, lalu user scan dari HP.', 'QR membuka halaman download publik.', '/result'],
+      ['Final photo', 'Download page menampilkan final strip/photobox.', 'Ini file utama yang biasanya dibagikan.', '/download'],
+      ['Foto satuan', 'Kalau tersedia, download page juga menampilkan foto individual.', 'Berguna untuk user simpan foto mentah.', '/download'],
+      ['GIF', 'Kalau GIF aktif, user bisa download GIF animasi.', 'Butuh beberapa foto agar GIF bisa dibuat.', '/download'],
+      ['Consent', 'Jika Content Sharing aktif, popup consent muncul sebelum download.', 'Tetap ada tombol Lewati dan Download.', '/download']
+    ]
+  },
+  maintenance: {
+    icon:'🧹', title:'Tutorial Maintenance Data', desc:'Cleanup galeri, restore metadata, dan hal yang dicek kalau data kosong.',
+    target:'/gallery',
+    steps:[
+      ['Cleanup 14 hari', 'Galeri bisa dibersihkan otomatis setiap 14 hari lewat Supabase cron.', 'Cleanup bisa hapus metadata dan/atau storage sesuai query yang dipasang.', '/gallery'],
+      ['Kalau galeri 0 sesi', 'Cek apakah photo_sessions kosong karena metadata terhapus.', 'Storage foto mungkin masih ada.', '/gallery'],
+      ['Restore metadata', 'Jalankan SQL restore metadata dari file Storage kalau file masih ada.', 'File supabase_restore_gallery_metadata_v61.sql sudah disiapkan.', '/gallery'],
+      ['Analytics inflated', 'Kalau analytics terlalu besar, bersihkan row photo_sessions yang bukan final result.', 'Jangan hapus storage kalau masih butuh file.', '/analytics'],
+      ['Tes setelah cleanup', 'Setelah menjalankan SQL, refresh galeri dan cek filter Photostrip/Photobox.', 'Hard refresh kalau PWA cache masih lama.', '/gallery']
+    ]
+  },
+  dbSetup: {
+    icon:'🗄️', title:'Tutorial Setup Supabase', desc:'Panduan tabel/kolom penting agar fitur owner berjalan.',
+    target:'/admin',
+    steps:[
+      ['Profiles', 'profiles menyimpan booth_name, email, logo, membership, dan whatsapp_number.', 'WA perlu trigger signup agar tidak null.', '/admin'],
+      ['Templates', 'templates perlu product_type photostrip/photobox supaya galeri dan print tidak tercampur.', 'Ini penting untuk Photobox 4R.', '/admin#template-manager'],
+      ['Photo sessions', 'photo_sessions menyimpan metadata hasil foto final untuk galeri dan analytics.', 'Jangan hitung foto satuan/GIF sebagai session.', '/gallery'],
+      ['Lux events', 'lux_events menyimpan event, welcome screen, template_ids, dan product_types.', 'Event butuh RLS policy owner.', '/event'],
+      ['Consent tables', 'content_sharing_settings dan photo_consents dipakai untuk consent repost/tag.', 'Public insert diperlukan untuk download page.', '/content-sharing']
+    ]
+  }
+};
+
+let currentKey = null;
+let currentIdx = 0;
+
+function renderCards(){
+  tutorialGrid.innerHTML = Object.entries(tutorials).map(([key,t]) => `
+    <button class="tutorial-card" onclick="startTutorial('${key}')">
+      <div>
+        <div class="icon">${t.icon}</div>
+        <div class="tutorial-title">${t.title}</div>
+        <div class="tutorial-desc">${t.desc}</div>
+      </div>
+      <span class="pill">${t.steps.length} langkah</span>
+    </button>
+  `).join('');
+}
+
+function startTutorial(key){
+  currentKey = key; currentIdx = 0;
+  tutorialPanel.classList.add('active');
+  renderStep();
+  tutorialPanel.scrollIntoView({behavior:'smooth', block:'start'});
+  setTimeout(openCoach, 250);
+}
+
+function renderStep(){
+  const t = tutorials[currentKey];
+  const s = t.steps[currentIdx];
+  panelTitle.textContent = t.title;
+  panelSub.textContent = t.desc;
+  stepNum.textContent = currentIdx + 1;
+  stepTitle.textContent = s[0];
+  stepDesc.innerHTML = s[1];
+  stepTip.textContent = s[2] || '';
+  stepTarget.textContent = 'Halaman terkait: ' + (s[3] || t.target || '-');
+  progressFill.style.width = Math.round(((currentIdx+1)/t.steps.length)*100) + '%';
+  goTargetBtn.textContent = 'Buka ' + (s[3] || t.target || 'halaman');
+}
+
+function nextStep(){
+  const t = tutorials[currentKey];
+  if (currentIdx < t.steps.length - 1) { currentIdx++; renderStep(); openCoach(); }
+  else { closeCoach(); alert('Tutorial selesai ✓'); }
+}
+function prevStep(){ if(currentIdx>0){currentIdx--; renderStep(); openCoach();} }
+function restartStep(){ currentIdx=0; renderStep(); openCoach(); }
+function closeTutorial(){ tutorialPanel.classList.remove('active'); closeCoach(); currentKey=null; }
+function openCoach(){
+  if(!currentKey) return;
+  const s = tutorials[currentKey].steps[currentIdx];
+  coachKicker.textContent = `Step ${currentIdx+1} dari ${tutorials[currentKey].steps.length}`;
+  coachTitle.textContent = s[0];
+  coachBody.innerHTML = s[1] + (s[2] ? `<br><br><b>Tips:</b> ${s[2]}` : '');
+  coachOverlay.style.display='flex';
+}
+function closeCoach(){ coachOverlay.style.display='none'; }
+function goTarget(){
+  const t = tutorials[currentKey];
+  const s = t.steps[currentIdx];
+  window.location.href = s[3] || t.target || '/';
+}
+coachOverlay.addEventListener('click', e => { if(e.target === coachOverlay) closeCoach(); });
+
+renderCards();
+const q = new URLSearchParams(location.search);
+if (q.get('start') && tutorials[q.get('start')]) startTutorial(q.get('start'));
+</script>
+</body>
+</html>

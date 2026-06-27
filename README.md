@@ -52,3 +52,8 @@ Jika Galeri tampil 0 sesi setelah cleanup metadata, jalankan `supabase_restore_g
 ## Register WhatsApp fix v62
 
 Jalankan `supabase_fix_register_whatsapp_v62.sql` di Supabase SQL Editor. Register sekarang upsert profile supaya `whatsapp_number` tidak kosong.
+
+
+## Tutorial feature v63
+
+Menambahkan halaman `/tutorial`, submenu Tutorial di Admin, serta popup onboarding di index kalau akun belum punya template.

@@ -501,6 +501,37 @@
       padding: 22px;
       box-shadow: 0 8px 26px rgba(216,75,126,0.07);
     }
+    .admin-iframe-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 8px 26px rgba(216,75,126,0.07);
+      min-height: calc(100vh - 90px);
+    }
+    .admin-iframe-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--border);
+      background: #fff8fc;
+    }
+    .admin-iframe-title {
+      font-size: 16px;
+      font-weight: 950;
+      color: var(--text);
+    }
+    .admin-iframe {
+      width: 100%;
+      height: calc(100vh - 155px);
+      min-height: 680px;
+      border: 0;
+      display: block;
+      background: #fff8fc;
+    }
     .admin-section-header {
       display: flex;
       align-items: center;
@@ -699,8 +730,9 @@
         <button type="button" class="admin-side-link active" data-section="profil-photobooth" onclick="showAdminSection('profil-photobooth', this)">👤 Profil Photobooth</button>
         <button type="button" class="admin-side-link" data-section="ganti-password" onclick="showAdminSection('ganti-password', this)">🔐 Ganti Password</button>
         <button type="button" class="admin-side-link" data-section="template-manager" onclick="showAdminSection('template-manager', this)">⚙️ Template Manager</button>
-        <button type="button" class="admin-side-link external" onclick="window.location.href='/analytics'">📊 Business Analytics</button>
-        <button type="button" class="admin-side-link external" onclick="window.location.href='/content-sharing'">🤍 Content Sharing</button>
+        <button type="button" class="admin-side-link" data-section="business-analytics" onclick="showAdminEmbedded('business-analytics', this, '/analytics?embedded=1', '📊 Business Analytics')">📊 Business Analytics</button>
+        <button type="button" class="admin-side-link" data-section="content-sharing" onclick="showAdminEmbedded('content-sharing', this, '/content-sharing?embedded=1', '🤍 Content Sharing')">🤍 Content Sharing</button>
+        <button type="button" class="admin-side-link" data-section="tutorial-admin" onclick="showAdminEmbedded('tutorial-admin', this, '/tutorial?embedded=1', '📚 Tutorial')">📚 Tutorial</button>
         <button type="button" class="admin-side-link external" onclick="window.location.href='/'">← Kembali ke App</button>
       </nav>
     </aside>
@@ -880,6 +912,36 @@
 
   </div>
 </div>
+</section>
+
+<section class="admin-section" id="business-analytics">
+  <div class="admin-iframe-card">
+    <div class="admin-iframe-head">
+      <div class="admin-iframe-title" id="analyticsFrameTitle">📊 Business Analytics</div>
+      <button class="btn btn-secondary" onclick="reloadAdminFrame('adminAnalyticsFrame')">↻ Refresh</button>
+    </div>
+    <iframe class="admin-iframe" id="adminAnalyticsFrame" title="Business Analytics"></iframe>
+  </div>
+</section>
+
+<section class="admin-section" id="content-sharing">
+  <div class="admin-iframe-card">
+    <div class="admin-iframe-head">
+      <div class="admin-iframe-title" id="contentFrameTitle">🤍 Content Sharing</div>
+      <button class="btn btn-secondary" onclick="reloadAdminFrame('adminContentFrame')">↻ Refresh</button>
+    </div>
+    <iframe class="admin-iframe" id="adminContentFrame" title="Content Sharing"></iframe>
+  </div>
+</section>
+
+<section class="admin-section" id="tutorial-admin">
+  <div class="admin-iframe-card">
+    <div class="admin-iframe-head">
+      <div class="admin-iframe-title" id="tutorialFrameTitle">📚 Tutorial</div>
+      <button class="btn btn-secondary" onclick="reloadAdminFrame('adminTutorialFrame')">↻ Refresh</button>
+    </div>
+    <iframe class="admin-iframe" id="adminTutorialFrame" title="Tutorial"></iframe>
+  </div>
 </section>
     </main>
   </div>
@@ -1635,10 +1697,41 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function showAdminEmbedded(sectionId, el, src, title) {
+    showAdminSection(sectionId, el);
+
+    const frameMap = {
+      'business-analytics': 'adminAnalyticsFrame',
+      'content-sharing': 'adminContentFrame',
+      'tutorial-admin': 'adminTutorialFrame'
+    };
+    const frame = document.getElementById(frameMap[sectionId]);
+    if (frame && (!frame.src || !frame.src.includes(src.replace(/^\//, '')))) {
+      frame.src = src;
+    }
+  }
+
+  function reloadAdminFrame(frameId) {
+    const frame = document.getElementById(frameId);
+    if (frame && frame.src) frame.src = frame.src;
+  }
+
   function openAdminSectionFromHash() {
     const id = (location.hash || '#profil-photobooth').replace('#', '');
-    const allowed = ['profil-photobooth', 'ganti-password', 'template-manager'];
-    showAdminSection(allowed.includes(id) ? id : 'profil-photobooth');
+    const localAllowed = ['profil-photobooth', 'ganti-password', 'template-manager'];
+    if (localAllowed.includes(id)) return showAdminSection(id);
+
+    if (id === 'business-analytics' || id === 'analytics') {
+      return showAdminEmbedded('business-analytics', null, '/analytics?embedded=1', '📊 Business Analytics');
+    }
+    if (id === 'content-sharing') {
+      return showAdminEmbedded('content-sharing', null, '/content-sharing?embedded=1', '🤍 Content Sharing');
+    }
+    if (id === 'tutorial' || id === 'tutorial-admin') {
+      return showAdminEmbedded('tutorial-admin', null, '/tutorial?embedded=1', '📚 Tutorial');
+    }
+
+    showAdminSection('profil-photobooth');
   }
 
   function renderMembershipInfo() {

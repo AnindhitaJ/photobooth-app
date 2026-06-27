@@ -48,6 +48,10 @@
   ],
   "rewrites": [
     {
+      "source": "/tutorial",
+      "destination": "/tutorial.html"
+    },
+    {
       "source": "/content-sharing",
       "destination": "/content-sharing.html"
     },

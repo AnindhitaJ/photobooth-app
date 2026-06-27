@@ -485,6 +485,10 @@
     .admin-section {
       scroll-margin-top: 22px;
       margin-bottom: 24px;
+      display: none;
+    }
+    .admin-section.active-section {
+      display: block;
     }
     .admin-section-card {
       background: white;
@@ -688,9 +692,9 @@
     <aside class="admin-sidebar">
       <div class="admin-side-title">Admin Menu</div>
       <nav class="admin-side-nav">
-        <a class="admin-side-link active" href="#profil-photobooth" onclick="setAdminNavActive(this)">👤 Profil Photobooth</a>
-        <a class="admin-side-link" href="#ganti-password" onclick="setAdminNavActive(this)">🔐 Ganti Password</a>
-        <a class="admin-side-link" href="#template-manager" onclick="setAdminNavActive(this)">⚙️ Template Manager</a>
+        <a class="admin-side-link active" href="#profil-photobooth" onclick="showAdminSection('profil-photobooth', this); return false;">👤 Profil Photobooth</a>
+        <a class="admin-side-link" href="#ganti-password" onclick="showAdminSection('ganti-password', this); return false;">🔐 Ganti Password</a>
+        <a class="admin-side-link" href="#template-manager" onclick="showAdminSection('template-manager', this); return false;">⚙️ Template Manager</a>
         <a class="admin-side-link external" href="/analytics">📊 Business Analytics</a>
         <a class="admin-side-link external" href="/content-sharing">🤍 Content Sharing</a>
         <a class="admin-side-link external" href="/template">← Kembali ke App</a>
@@ -714,7 +718,7 @@
 </div>
 
 <!-- PROFILE SECTION -->
-<div class="profile-section admin-section" id="profil-photobooth" style="max-width:none;margin:0 0 24px;">
+<div class="profile-section admin-section active-section" id="profil-photobooth" style="max-width:none;margin:0 0 24px;">
   <div class="profile-title">👤 Profil Photobooth</div>
   <div class="profile-grid">
     <div class="logo-upload-wrap">
@@ -1592,6 +1596,7 @@
         document.getElementById('adminContent').style.display = 'block';
         loadProfile();
         renderMembershipInfo();
+        openAdminSectionFromHash();
       } else {
         const errData = await res.json().catch(() => ({}));
         console.error('reAuth failed:', errData);
@@ -1615,6 +1620,21 @@
   function setAdminNavActive(el) {
     document.querySelectorAll('.admin-side-link').forEach(a => a.classList.remove('active'));
     if (el && !el.classList.contains('external')) el.classList.add('active');
+  }
+
+  function showAdminSection(sectionId, el) {
+    document.querySelectorAll('.admin-section').forEach(sec => {
+      sec.classList.toggle('active-section', sec.id === sectionId);
+    });
+    setAdminNavActive(el || document.querySelector(`.admin-side-link[href="#${sectionId}"]`));
+    history.replaceState(null, '', '#' + sectionId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openAdminSectionFromHash() {
+    const id = (location.hash || '#profil-photobooth').replace('#', '');
+    const allowed = ['profil-photobooth', 'ganti-password', 'template-manager'];
+    showAdminSection(allowed.includes(id) ? id : 'profil-photobooth');
   }
 
   function renderMembershipInfo() {

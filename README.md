@@ -66,3 +66,8 @@ Versi ini kembali fokus ke web-based PWA saja:
 - Kamera memakai kamera browser seperti sebelumnya (`navigator.mediaDevices`).
 - Tetap membawa fitur terakhir sebelum eksperimen Android bridge: admin unified sidebar, tutorial owner, gallery product split, register WA fix, analytics/content sharing, event, dan PWA cache.
 - Deploy ZIP ini ke Vercel.
+
+
+## Flip Foto per photo v69
+
+Menambahkan opsi `Flip Foto` di halaman filter. Flip bisa per foto, dan tombol `Terapkan ke Semua Foto` ikut menerapkan state flip ke semua foto.

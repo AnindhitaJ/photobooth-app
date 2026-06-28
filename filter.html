@@ -213,6 +213,14 @@
       </div>
 
       <div class="filter-group">
+        <div class="filter-label">Flip Foto</div>
+        <div class="pill-row" id="grpFlip">
+          <button class="pill active" data-val="false" onclick="setPill('flip',this)">Normal</button>
+          <button class="pill" data-val="true" onclick="setPill('flip',this)">↔️ Flip</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
         <div class="filter-label">Cerahkan Wajah</div>
         <div class="pill-row" id="grpBrightness">
           <button class="pill active" data-val="0"  onclick="setPill('brightness',this)">Off</button>
@@ -276,7 +284,7 @@
 
       <div class="apply-note" id="applyNote">
         Filter diterapkan ke <span>Foto <span id="currentPhotoNum">1</span></span>.
-        Tiap foto bisa beda filter.
+        Tiap foto bisa beda filter dan flip.
       </div>
 
       <div class="filter-actions-sticky">
@@ -358,9 +366,23 @@
     document.getElementById('btnLanjutFilter').textContent = 'Simpan Ganci ✓';
   }
 
-  let filterStates   = photos.map(() => ({ tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' }));
+  let filterStates   = photos.map(() => ({ tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off', flip:false }));
   let filteredPhotos = [...photos];
   let currentIdx     = 0;
+
+  function normalizeFilterState(s) {
+    return {
+      tone: s?.tone || 'normal',
+      brightness: Number(s?.brightness || 0),
+      smooth: Number(s?.smooth || 0),
+      lip: s?.lip || 'off',
+      blush: s?.blush || 'off',
+      flip: !!s?.flip
+    };
+  }
+
+  filterStates = filterStates.map(normalizeFilterState);
+
 
   const canvas    = document.getElementById('previewCanvas');
   const ctx       = canvas.getContext('2d');
@@ -872,12 +894,25 @@
         ctx.restore();
       } catch(e) { console.warn('lip error:', e); }
     }
+
+    // ── 6. Flip final photo ─────────────────────────────────────────────────────
+    // Flip dilakukan di akhir supaya face beauty filter tetap presisi di wajah asli.
+    if (s.flip) {
+      const flipC = document.createElement('canvas');
+      flipC.width = W; flipC.height = H;
+      const fctx = flipC.getContext('2d');
+      fctx.translate(W, 0);
+      fctx.scale(-1, 1);
+      fctx.drawImage(canvas, 0, 0, W, H);
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(flipC, 0, 0);
+    }
   }
 
   // ── Load UI state dari filterStates ─────────────────────────────────────────
   function loadFilterUI(s) {
     // Reset semua pills ke Off/Normal
-    ['grpTone','grpBrightness','grpSmooth'].forEach(id => {
+    ['grpTone','grpBrightness','grpSmooth','grpFlip'].forEach(id => {
       document.getElementById(id).querySelectorAll('.pill').forEach((p, i) => {
         p.classList.toggle('active', i === 0);
       });
@@ -909,6 +944,13 @@
         p.classList.add('active');
       }
     });
+    // Flip
+    document.querySelectorAll('#grpFlip .pill').forEach(p => {
+      if ((p.dataset.val === 'true') === !!s.flip) {
+        document.querySelectorAll('#grpFlip .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+      }
+    });
     // Lip
     if (s.lip !== 'off') {
       document.querySelectorAll('#grpLip .swatch').forEach(el => {
@@ -931,7 +973,7 @@
 
   // ── Event handlers ───────────────────────────────────────────────────────────
   window.setPill = function(type, btn) {
-    const val = (type === 'tone') ? btn.dataset.val : parseFloat(btn.dataset.val);
+    const val = (type === 'tone') ? btn.dataset.val : (type === 'flip' ? btn.dataset.val === 'true' : parseFloat(btn.dataset.val));
     filterStates[currentIdx][type] = val;
     const row = btn.closest('.pill-row');
     row.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
@@ -975,7 +1017,7 @@
   };
 
   window.resetFilter = function() {
-    filterStates[currentIdx] = { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' };
+    filterStates[currentIdx] = { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off', flip:false };
     loadFilterUI(filterStates[currentIdx]);
     applyFilter();
   };
@@ -1055,7 +1097,7 @@
           frame,
           frameLabel,
           bentuk: ganciConfig.bentuk || 'persegi',
-          filter: filterStates[0] || { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off' },
+          filter: filterStates[0] || { tone:'normal', brightness:0, smooth:0, lip:'off', blush:'off', flip:false },
           config: ganciConfig,
           updatedAt: new Date().toISOString()
         };

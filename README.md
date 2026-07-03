@@ -76,3 +76,8 @@ Menambahkan opsi `Flip Foto` di halaman filter. Flip bisa per foto, dan tombol `
 ## Share 1/2 Strip v70
 
 Menambahkan tombol `Share 1 Strip` dan `Share 2 Strip` di halaman result. Share memakai Web Share API jika device/browser support, fallback otomatis download file jika tidak support.
+
+
+## Result layout differentiate print share v71
+
+Membedakan visual action `Print / Cetak` dan `Share / Bagikan` di halaman result. Print memakai warna pink-gold, Share memakai warna teal-navy, dan keduanya digroup dengan heading/hint terpisah.

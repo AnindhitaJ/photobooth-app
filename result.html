@@ -293,6 +293,18 @@
         <span class="btn-badge">Print</span>
       </button>
 
+      <button class="btn btn-cetak2strip" id="btnShare1Strip" onclick="share1Strip()" disabled>
+        <span class="btn-icon">📤</span>
+        <span class="btn-label">Share 1 Strip</span>
+        <span class="btn-badge">Share</span>
+      </button>
+
+      <button class="btn btn-cetak2strip" id="btnShare2Strip" onclick="share2Strip()" disabled>
+        <span class="btn-icon">📤</span>
+        <span class="btn-label">Share 2 Strip</span>
+        <span class="btn-badge">Share</span>
+      </button>
+
 
       <div class="divider"></div>
 
@@ -618,11 +630,18 @@
     document.title = 'Hasil Photobox 4R - LUX Photobooth';
     const btnShare = document.getElementById('btnShare');
     const btnCetak2 = document.getElementById('btnCetak2Strip');
+    const btnShare1 = document.getElementById('btnShare1Strip');
+    const btnShare2 = document.getElementById('btnShare2Strip');
     if (btnShare) {
       btnShare.querySelector('.btn-label').textContent = 'Cetak 4R';
       btnShare.querySelector('.btn-badge').textContent = 'Print';
     }
     if (btnCetak2) btnCetak2.style.display = 'none';
+    if (btnShare1) {
+      btnShare1.querySelector('.btn-label').textContent = 'Share 4R';
+      btnShare1.querySelector('.btn-badge').textContent = 'Share';
+    }
+    if (btnShare2) btnShare2.style.display = 'none';
   }
 
   function loadImage(src) {
@@ -863,7 +882,7 @@
 
       const hasLive = livePhotos.some(Boolean);
       startCountdown();
-      ['btnJpg','btnShare','btnZip','btnCetak2Strip','btnQR'].forEach(id => {
+      ['btnJpg','btnShare','btnZip','btnCetak2Strip','btnShare1Strip','btnShare2Strip','btnQR'].forEach(id => {
         document.getElementById(id).disabled = false;
       });
       document.getElementById('btnLive').disabled = !hasLive;
@@ -1592,7 +1611,7 @@
         await navigator.share({
           files: [file],
           title: title || 'LUX Photobooth',
-          text: 'File siap cetak dari LUX Photobooth'
+          text: options.text || 'Hasil foto dari LUX Photobooth ✨'
         });
         return 'shared';
       } catch (e) {
@@ -1892,6 +1911,137 @@
     popup.document.close();
     popup.focus();
     return 'print';
+  }
+
+
+
+  // ─── Share Strip helpers ───────────────────────────────────────────────────
+  async function buildSingleStripBlobForShare() {
+    if (!finalDataURL) throw new Error('Foto belum siap');
+
+    if (isPhotoboxMode) {
+      return dataURLtoBlob(finalDataURL);
+    }
+
+    // Share 1 strip = file strip 5×15 tanpa area kosong.
+    const STRIP_W = 590;
+    const STRIP_H = 1772;
+    const canvas  = document.createElement('canvas');
+    canvas.width  = STRIP_W;
+    canvas.height = STRIP_H;
+    const ctx = canvas.getContext('2d');
+
+    const img = await loadImageSafe(finalDataURL);
+    const scale = Math.max(STRIP_W / img.width, STRIP_H / img.height);
+    const sw = STRIP_W / scale;
+    const sh = STRIP_H / scale;
+    const sx = (img.width  - sw) / 2;
+    const sy = (img.height - sh) / 2;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, STRIP_W, STRIP_H);
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, STRIP_H);
+
+    return await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
+  }
+
+  async function buildDoubleStripBlobForShare() {
+    if (!finalDataURL) throw new Error('Foto belum siap');
+
+    if (isPhotoboxMode) {
+      return dataURLtoBlob(finalDataURL);
+    }
+
+    // Share 2 strip = file 10×15 dengan 2 strip berdampingan.
+    const STRIP_W = 590;
+    const STRIP_H = 1772;
+    const canvas  = document.createElement('canvas');
+    canvas.width  = STRIP_W * 2;
+    canvas.height = STRIP_H;
+    const ctx = canvas.getContext('2d');
+
+    const img = await loadImageSafe(finalDataURL);
+    const scale = Math.max(STRIP_W / img.width, STRIP_H / img.height);
+    const sw = STRIP_W / scale;
+    const sh = STRIP_H / scale;
+    const sx = (img.width  - sw) / 2;
+    const sy = (img.height - sh) / 2;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, sx, sy, sw, sh, 0,       0, STRIP_W, STRIP_H);
+    ctx.drawImage(img, sx, sy, sw, sh, STRIP_W, 0, STRIP_W, STRIP_H);
+
+    return await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);
+  }
+
+  async function shareStripBlob(blob, filename, label) {
+    const mode = await shareOrDownloadBlob(blob, filename, `LUX Photobooth - ${label}`, {
+      text: `${label} dari LUX Photobooth ✨`,
+      suppressCancel: true
+    });
+
+    if (mode === 'shared') {
+      showStatus(`${label} siap dibagikan ✓`);
+    } else if (mode === 'downloaded') {
+      showStatus('Device/browser belum support share file, jadi file didownload dulu ya.');
+    } else {
+      showStatus(`${label} dibuka di share sheet.`);
+    }
+  }
+
+  async function share1Strip(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => share1Strip(true));
+
+    const btn = document.getElementById('btnShare1Strip');
+    if (!finalDataURL) {
+      showStatus('Foto belum siap. Tunggu hasil selesai dulu ya.');
+      return;
+    }
+
+    btn.disabled = true;
+    const oldLabel = btn.querySelector('.btn-label').textContent;
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan share...';
+
+    try {
+      const blob = await buildSingleStripBlobForShare();
+      const label = isPhotoboxMode ? 'Share 4R' : 'Share 1 Strip';
+      const filename = isPhotoboxMode
+        ? `lux-share-photobox-4r-${Date.now()}.jpg`
+        : `lux-share-1strip-${Date.now()}.jpg`;
+      await shareStripBlob(blob, filename, label);
+    } catch(e) {
+      console.error('share1Strip error:', e);
+      showStatus('Gagal share: ' + (e.message || e), '#e94560');
+    } finally {
+      btn.querySelector('.btn-label').textContent = oldLabel;
+      btn.disabled = false;
+    }
+  }
+
+  async function share2Strip(skipConsent = false) {
+    if (!skipConsent) return ensureResultConsent(() => share2Strip(true));
+
+    const btn = document.getElementById('btnShare2Strip');
+    if (!finalDataURL) {
+      showStatus('Foto belum siap. Tunggu hasil selesai dulu ya.');
+      return;
+    }
+
+    btn.disabled = true;
+    const oldLabel = btn.querySelector('.btn-label').textContent;
+    btn.querySelector('.btn-label').textContent = 'Menyiapkan share...';
+
+    try {
+      const blob = await buildDoubleStripBlobForShare();
+      await shareStripBlob(blob, `lux-share-2strip-${Date.now()}.jpg`, 'Share 2 Strip');
+    } catch(e) {
+      console.error('share2Strip error:', e);
+      showStatus('Gagal share 2 strip: ' + (e.message || e), '#e94560');
+    } finally {
+      btn.querySelector('.btn-label').textContent = oldLabel;
+      btn.disabled = false;
+    }
   }
 
 

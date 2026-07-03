@@ -71,3 +71,8 @@ Versi ini kembali fokus ke web-based PWA saja:
 ## Flip Foto per photo v69
 
 Menambahkan opsi `Flip Foto` di halaman filter. Flip bisa per foto, dan tombol `Terapkan ke Semua Foto` ikut menerapkan state flip ke semua foto.
+
+
+## Share 1/2 Strip v70
+
+Menambahkan tombol `Share 1 Strip` dan `Share 2 Strip` di halaman result. Share memakai Web Share API jika device/browser support, fallback otomatis download file jika tidak support.

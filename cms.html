@@ -272,7 +272,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  console.log('CMS_PRO_ACTIVE_PICKER_FINAL_V44');
+  console.log('CMS_PASSWORD_VERIFY_V72');
   const CMS_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
   const CMS_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
   const SUPER_ADMIN_EMAIL = 'luxphotobooth.id@gmail.com';
@@ -557,7 +557,7 @@
         throw new Error(data.error || `HTTP ${res.status}`);
       }
 
-      showToast('✅ Password berhasil diganti', 'success');
+      showToast(data.message || '✅ Password berhasil diganti dan terverifikasi', 'success');
       closePasswordModal();
     } catch(e) {
       console.error(e);

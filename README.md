@@ -81,3 +81,21 @@ Menambahkan tombol `Share 1 Strip` dan `Share 2 Strip` di halaman result. Share 
 ## Result layout differentiate print share v71
 
 Membedakan visual action `Print / Cetak` dan `Share / Bagikan` di halaman result. Print memakai warna pink-gold, Share memakai warna teal-navy, dan keduanya digroup dengan heading/hint terpisah.
+
+
+## CMS Password Verify v72
+
+Fix/guard untuk fitur Ganti Password di CMS:
+- Edge Function `admin-change-password` sekarang update password lewat Supabase Auth Admin API.
+- Function mengambil user dari `auth.users`, bukan hanya percaya row `profiles`.
+- Function melakukan verification login dengan password baru jika `SUPABASE_ANON_KEY` tersedia.
+- CMS hanya menampilkan sukses jika function return `ok: true`.
+
+Deploy Edge Function:
+```bash
+supabase functions deploy admin-change-password
+supabase secrets set SUPABASE_URL="https://PROJECT.supabase.co"
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY="SERVICE_ROLE_KEY"
+supabase secrets set SUPABASE_ANON_KEY="ANON_KEY"
+supabase secrets set SUPER_ADMIN_EMAIL="luxphotobooth.id@gmail.com"
+```

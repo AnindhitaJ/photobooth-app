@@ -147,6 +147,94 @@
     }
     .btn-modal-confirm:disabled { opacity:0.6; cursor:not-allowed; }
 
+    .modal-box-wide { max-width: 620px; }
+    .receipt-summary {
+      background:#fffbeb;
+      border:2px solid #fde68a;
+      color:#78350f;
+      border-radius:16px;
+      padding:14px 15px;
+      font-size:14px;
+      font-weight:750;
+      line-height:1.55;
+      margin-bottom:14px;
+    }
+    .receipt-meta {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .receipt-pill {
+      background:#f8fafc;
+      border:2px solid var(--border);
+      border-radius:14px;
+      padding:10px 12px;
+    }
+    .receipt-pill-label {
+      font-size:10px;
+      font-weight:900;
+      color:var(--text2);
+      letter-spacing:.7px;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+    .receipt-pill-value {
+      font-size:13px;
+      font-weight:850;
+      color:var(--text);
+      line-height:1.35;
+      word-break:break-word;
+    }
+    .receipt-textarea {
+      width:100%;
+      min-height:165px;
+      border:2px solid var(--border);
+      border-radius:16px;
+      padding:12px 14px;
+      font-size:12px;
+      line-height:1.55;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color:var(--text);
+      resize:vertical;
+      background:#fff;
+      margin-bottom:12px;
+    }
+    .receipt-actions {
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:10px;
+    }
+    .receipt-btn {
+      border:0;
+      border-radius:50px;
+      padding:11px 12px;
+      font:inherit;
+      font-size:13px;
+      font-weight:850;
+      cursor:pointer;
+      text-align:center;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+    }
+    .receipt-btn.primary { background:linear-gradient(135deg,var(--yellow),#c9972a); color:white; }
+    .receipt-btn.secondary { background:#e0f2fe; color:#0369a1; }
+    .receipt-btn.dark { background:var(--navy); color:white; }
+    .receipt-save-status {
+      font-size:12px;
+      font-weight:750;
+      color:var(--text2);
+      margin:-4px 0 12px;
+    }
+    @media(max-width:640px){
+      .receipt-meta{grid-template-columns:1fr}
+      .receipt-actions{grid-template-columns:1fr}
+    }
+
+
     /* ── TOAST ── */
     .toast {
       position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -225,8 +313,8 @@
 <!-- PRO ACTIVATION MODAL -->
 <div class="modal-wrap" id="proModal">
   <div class="modal-box">
-    <div class="modal-title">⭐ Aktifkan PRO</div>
-    <div class="modal-sub">Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">user</span></div>
+    <div class="modal-title" id="proModalTitle">⭐ Aktifkan PRO</div>
+    <div class="modal-sub" id="proModalSub">Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">user</span></div>
     <div class="duration-options">
       <label class="duration-opt selected" id="opt1week">
         <input type="radio" name="duration" value="1week" checked onchange="onDurationChange()">
@@ -269,6 +357,49 @@
   </div>
 </div>
 
+
+<!-- PRO RECEIPT MODAL -->
+<div class="modal-wrap" id="proReceiptModal">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-title">✅ Bukti Perpanjangan / Aktivasi PRO</div>
+    <div class="modal-sub">Bukti ini bisa dicopy, didownload, atau dibuka ke draft email owner.</div>
+
+    <div class="receipt-summary" id="proReceiptSummary">—</div>
+
+    <div class="receipt-meta">
+      <div class="receipt-pill">
+        <div class="receipt-pill-label">Akun Owner</div>
+        <div class="receipt-pill-value" id="proReceiptEmail">—</div>
+      </div>
+      <div class="receipt-pill">
+        <div class="receipt-pill-label">Berlaku sampai</div>
+        <div class="receipt-pill-value" id="proReceiptEnd">—</div>
+      </div>
+      <div class="receipt-pill">
+        <div class="receipt-pill-label">Sebelumnya</div>
+        <div class="receipt-pill-value" id="proReceiptBefore">—</div>
+      </div>
+      <div class="receipt-pill">
+        <div class="receipt-pill-label">Sekarang</div>
+        <div class="receipt-pill-value" id="proReceiptAfter">—</div>
+      </div>
+    </div>
+
+    <div class="receipt-save-status" id="proReceiptSaveStatus">—</div>
+    <textarea class="receipt-textarea" id="proReceiptText" readonly></textarea>
+
+    <div class="receipt-actions">
+      <button class="receipt-btn secondary" onclick="copyProReceipt()">📋 Copy</button>
+      <button class="receipt-btn primary" onclick="downloadProReceipt()">💾 Download Bukti</button>
+      <a class="receipt-btn dark" id="proReceiptEmailLink" href="#" target="_blank" rel="noopener">✉️ Buka Email</a>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-modal-cancel" onclick="closeProReceiptModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -280,6 +411,7 @@
   let allUsers = [];
   let selectedUserId = null;
   let selectedPasswordUserId = null;
+  let currentProReceipt = null;
 
   // ── AUTH CHECK ───────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', async () => {
@@ -355,9 +487,10 @@
         ? `<button class="btn-sm btn-deactivate" onclick="toggleActive('${u.id}', false)">⛔ Nonaktifkan</button>`
         : `<button class="btn-sm btn-activate" onclick="toggleActive('${u.id}', true)">✅ Aktifkan</button>`;
 
+      const safeEmail = (u.email || '').replace(/'/g, '&#39;');
       const proBtn = status !== 'pro'
-        ? `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${u.email||''}')">⭐ Aktifkan PRO</button>`
-        : `<button class="btn-sm btn-free" onclick="setFree('${u.id}')">🆓 Jadikan Free</button>`;
+        ? `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${safeEmail}')">⭐ Aktifkan PRO</button>`
+        : `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${safeEmail}')">⏳ Perpanjang PRO</button><button class="btn-sm btn-free" onclick="setFree('${u.id}')">🆓 Jadikan Free</button>`;
 
       const passBtn = `<button class="btn-sm btn-password" onclick="openPasswordModal('${u.id}','${(u.email||'').replace(/'/g, '&#39;')}')">🔑 Ganti Password</button>`;
       const waBtn = u.whatsapp_number
@@ -571,10 +704,25 @@
   // ── PRO MODAL ─────────────────────────────────────────────────────────
   function openProModal(userId, email) {
     selectedUserId = userId;
-    document.getElementById('modalUserEmail').textContent = email || userId;
+    const user = allUsers.find(u => u.id === userId) || {};
+    const status = getPlanStatus(user);
+    const isExtend = status === 'pro';
+
+    document.getElementById('modalUserEmail').textContent = email || user.email || userId;
+    const title = document.getElementById('proModalTitle');
+    const sub = document.getElementById('proModalSub');
+    const btn = document.getElementById('btnConfirmPro');
+
+    if (title) title.textContent = isExtend ? '⏳ Perpanjang PRO' : '⭐ Aktifkan PRO';
+    if (sub) sub.innerHTML = isExtend
+      ? `Pilih durasi perpanjangan PRO untuk <span class="modal-user" id="modalUserEmail">${email || user.email || userId}</span>`
+      : `Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">${email || user.email || userId}</span>`;
+    if (btn) btn.textContent = isExtend ? '⏳ Perpanjang PRO' : '⭐ Aktifkan PRO';
+
     document.querySelector('input[value="1week"]').checked = true;
     document.querySelectorAll('.duration-opt').forEach(el => el.classList.remove('selected'));
     document.querySelector('#opt1week').classList.add('selected');
+    document.getElementById('customDate').value = '';
     document.getElementById('customDateWrap').style.display = 'none';
     document.getElementById('proModal').classList.add('open');
   }
@@ -591,6 +739,163 @@
     document.getElementById(map[val]).classList.add('selected');
   }
 
+
+  function formatDateTimeID(value) {
+    if (!value) return '—';
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('id-ID', {
+      weekday:'long',
+      year:'numeric',
+      month:'long',
+      day:'numeric',
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+  }
+
+  function remainingDaysUntil(value) {
+    if (!value) return 0;
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return 0;
+    return Math.max(0, Math.ceil((d.getTime() - Date.now()) / (24*60*60*1000)));
+  }
+
+  function durationLabel(val, proEnd) {
+    if (val === '1week') return '1 Minggu (7 hari)';
+    if (val === '1month') return '1 Bulan (30 hari)';
+    if (val === '3month') return '3 Bulan (90 hari)';
+    return `Custom sampai ${formatDateTimeID(proEnd)}`;
+  }
+
+  function buildProReceiptText(r) {
+    const actionLabel = r.actionType === 'extend_pro' ? 'Perpanjangan PRO' : 'Aktivasi PRO';
+    const previous = r.wasPro
+      ? `Sebelumnya: PRO aktif, sisa ${r.previousDaysLeft} hari, berlaku sampai ${formatDateTimeID(r.previousProEndsAt)}`
+      : `Sebelumnya: ${r.previousPlanLabel}`;
+    const after = `Sekarang: PRO aktif, sisa ${r.newDaysLeft} hari, berlaku sampai ${formatDateTimeID(r.newProEndsAt)}`;
+
+    return [
+      `Bukti ${actionLabel} Lux Photobooth`,
+      ``,
+      `Akun Owner       : ${r.email || '-'}`,
+      `Nama Photobooth  : ${r.boothName || '-'}`,
+      `User ID          : ${r.userId}`,
+      ``,
+      previous,
+      after,
+      `Durasi dipilih   : ${r.durationLabel}`,
+      ``,
+      `Diproses oleh    : ${r.performedByEmail || '-'}`,
+      `Waktu proses     : ${formatDateTimeID(r.performedAt)}`,
+      `Status simpan DB : ${r.savedToDb ? 'Tersimpan' : 'Belum tersimpan / SQL log belum aktif'}`,
+      ``,
+      `Catatan: email ini dibuat otomatis dari CMS Lux Photobooth sebagai bukti perubahan status akun owner.`
+    ].join('\n');
+  }
+
+  function makeProReceiptSummary(r) {
+    if (r.actionType === 'extend_pro') {
+      return `Akun ${r.email} sudah diperpanjang. Sisa PRO sebelumnya ${r.previousDaysLeft} hari, sekarang menjadi ${r.newDaysLeft} hari. Berlaku sampai ${formatDateTimeID(r.newProEndsAt)}.`;
+    }
+    return `Akun ${r.email} sudah diubah statusnya menjadi PRO selama ${r.newDaysLeft} hari. Berlaku sampai ${formatDateTimeID(r.newProEndsAt)}.`;
+  }
+
+  async function saveProExtensionLog(receipt) {
+    const session = Auth.getSession();
+    if (!session?.access_token) throw new Error('Session tidak ditemukan');
+
+    const payload = {
+      owner_user_id: receipt.userId,
+      owner_email: receipt.email || null,
+      owner_booth_name: receipt.boothName || null,
+      previous_plan: receipt.previousPlan || null,
+      previous_pro_ends_at: receipt.previousProEndsAt || null,
+      previous_days_left: receipt.previousDaysLeft,
+      new_plan: 'pro',
+      new_pro_ends_at: receipt.newProEndsAt,
+      new_days_left: receipt.newDaysLeft,
+      duration_label: receipt.durationLabel,
+      action_type: receipt.actionType,
+      performed_by: session.user?.id || null,
+      performed_by_email: receipt.performedByEmail || null,
+      receipt_text: buildProReceiptText({ ...receipt, savedToDb: true })
+    };
+
+    const res = await fetch(`${CMS_URL}/rest/v1/pro_extension_logs`, {
+      method: 'POST',
+      headers: {
+        'apikey': CMS_ANON,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const raw = await res.text();
+      let msg = raw || `HTTP ${res.status}`;
+      try { const e = JSON.parse(raw); msg = e.message || e.error || e.details || msg; } catch(_) {}
+      throw new Error(msg);
+    }
+  }
+
+  function showProReceiptModal(receipt) {
+    currentProReceipt = receipt;
+    const summary = makeProReceiptSummary(receipt);
+    const text = buildProReceiptText(receipt);
+
+    document.getElementById('proReceiptSummary').textContent = summary;
+    document.getElementById('proReceiptEmail').textContent = receipt.email || '—';
+    document.getElementById('proReceiptEnd').textContent = formatDateTimeID(receipt.newProEndsAt);
+    document.getElementById('proReceiptBefore').textContent = receipt.wasPro
+      ? `PRO, sisa ${receipt.previousDaysLeft} hari`
+      : receipt.previousPlanLabel;
+    document.getElementById('proReceiptAfter').textContent = `PRO, sisa ${receipt.newDaysLeft} hari`;
+    document.getElementById('proReceiptSaveStatus').textContent = receipt.savedToDb
+      ? '✅ Bukti perubahan juga tersimpan di tabel pro_extension_logs.'
+      : '⚠️ Bukti belum tersimpan ke database. Jalankan SQL pro_extension_logs v73 dulu, tapi bukti tetap bisa dicopy/download/email manual.';
+    document.getElementById('proReceiptText').value = text;
+
+    const subject = encodeURIComponent(`Konfirmasi ${receipt.actionType === 'extend_pro' ? 'Perpanjangan' : 'Aktivasi'} PRO Lux Photobooth`);
+    const body = encodeURIComponent(text);
+    const emailTo = encodeURIComponent(receipt.email || '');
+    const emailLink = document.getElementById('proReceiptEmailLink');
+    emailLink.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;
+
+    document.getElementById('proReceiptModal').classList.add('open');
+  }
+
+  function closeProReceiptModal() {
+    document.getElementById('proReceiptModal').classList.remove('open');
+  }
+
+  async function copyProReceipt() {
+    const text = document.getElementById('proReceiptText').value || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('📋 Bukti disalin', 'success');
+    } catch(e) {
+      document.getElementById('proReceiptText').select();
+      showToast('Silakan copy manual dari textarea', 'error');
+    }
+  }
+
+  function downloadProReceipt() {
+    const text = document.getElementById('proReceiptText').value || '';
+    const email = (currentProReceipt?.email || 'owner').replace(/[^a-z0-9@._-]/gi, '_');
+    const filename = `bukti-pro-${email}-${Date.now()}.txt`;
+    const blob = new Blob([text], { type:'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+
   async function confirmActivatePro() {
     if (!selectedUserId) return;
     const val = document.querySelector('input[name="duration"]:checked').value;
@@ -602,14 +907,26 @@
     if (val === 'custom') {
       const d = document.getElementById('customDate').value;
       if (!d) { showToast('❌ Pilih tanggal custom', 'error'); return; }
-      proEnd = new Date(d);
+      proEnd = new Date(d + 'T23:59:59');
     }
 
     const btn = document.getElementById('btnConfirmPro');
-    btn.disabled = true; btn.textContent = '⏳ Mengaktifkan...';
+    const userBefore = allUsers.find(u => u.id === selectedUserId) || {};
+    const wasPro = getPlanStatus(userBefore) === 'pro';
+    const previousProEndsAt = userBefore.pro_ends_at || null;
+    const previousDaysLeft = remainingDaysUntil(previousProEndsAt);
+    const previousPlan = userBefore.plan || (wasPro ? 'pro' : 'free');
+    const previousPlanLabel = wasPro
+      ? `PRO, sisa ${previousDaysLeft} hari`
+      : (userBefore.is_active === false ? 'Nonaktif / Free' : 'Free');
+
+    btn.disabled = true;
+    btn.textContent = wasPro ? '⏳ Memperpanjang...' : '⏳ Mengaktifkan...';
+
     try {
       const session = Auth.getSession();
       if (!session?.access_token) throw new Error('Session tidak ditemukan, silakan login ulang');
+
       const res = await fetch(`${CMS_URL}/rest/v1/profiles?id=eq.${selectedUserId}`, {
         method: 'PATCH',
         headers: {
@@ -618,31 +935,67 @@
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ plan: 'pro', pro_ends_at: proEnd.toISOString(), is_active: true, updated_at: new Date().toISOString() })
+        body: JSON.stringify({
+          plan: 'pro',
+          pro_ends_at: proEnd.toISOString(),
+          is_active: true,
+          updated_at: new Date().toISOString()
+        })
       });
+
       const raw = await res.text();
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`;
         try { const e = JSON.parse(raw); errMsg = e.message || e.error || e.details || errMsg; } catch(_) {}
         throw new Error(errMsg);
       }
-      // Update local state
+
       let updated = null;
       try { const arr = JSON.parse(raw); updated = Array.isArray(arr) ? arr[0] : null; } catch(_) {}
+
       const idx = allUsers.findIndex(u => u.id === selectedUserId);
       if (idx !== -1) {
         allUsers[idx] = { ...allUsers[idx], plan: 'pro', pro_ends_at: proEnd.toISOString(), is_active: true, ...(updated || {}) };
       }
+
+      const receipt = {
+        userId: selectedUserId,
+        email: (updated && updated.email) || userBefore.email || document.getElementById('modalUserEmail')?.textContent || '',
+        boothName: (updated && updated.booth_name) || userBefore.booth_name || '',
+        actionType: wasPro ? 'extend_pro' : 'activate_pro',
+        wasPro,
+        previousPlan,
+        previousPlanLabel,
+        previousProEndsAt,
+        previousDaysLeft,
+        newProEndsAt: proEnd.toISOString(),
+        newDaysLeft: remainingDaysUntil(proEnd),
+        durationLabel: durationLabel(val, proEnd),
+        performedAt: new Date().toISOString(),
+        performedByEmail: localStorage.getItem('sb_user_email') || '',
+        savedToDb: false
+      };
+
+      try {
+        await saveProExtensionLog(receipt);
+        receipt.savedToDb = true;
+      } catch(logErr) {
+        console.warn('pro_extension_logs not saved:', logErr);
+      }
+
       renderStats();
       renderTable(allUsers);
       closeProModal();
-      showToast(`⭐ PRO aktif s/d ${proEnd.toLocaleDateString('id-ID')}`, 'success');
-      setTimeout(loadUsers, 600);
+      showProReceiptModal(receipt);
+      showToast(wasPro ? '✅ Perpanjangan PRO berhasil' : '✅ Aktivasi PRO berhasil', 'success');
+      setTimeout(loadUsers, 800);
     } catch(e) {
       console.error('confirmActivatePro error:', e);
-      showToast('❌ Gagal aktifkan PRO: ' + e.message, 'error');
+      showToast('❌ Gagal aktifkan/perpanjang PRO: ' + e.message, 'error');
     } finally {
-      btn.disabled = false; btn.textContent = '⭐ Aktifkan PRO';
+      btn.disabled = false;
+      const userNow = allUsers.find(u => u.id === selectedUserId) || {};
+      btn.textContent = getPlanStatus(userNow) === 'pro' ? '⏳ Perpanjang PRO' : '⭐ Aktifkan PRO';
     }
   }
 

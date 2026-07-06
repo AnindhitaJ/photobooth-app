@@ -99,3 +99,8 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY="SERVICE_ROLE_KEY"
 supabase secrets set SUPABASE_ANON_KEY="ANON_KEY"
 supabase secrets set SUPER_ADMIN_EMAIL="luxphotobooth.id@gmail.com"
 ```
+
+
+## PRO Receipt v73
+
+CMS sekarang menampilkan pop up bukti aktivasi/perpanjangan PRO dengan ringkasan, copy, download TXT, dan mailto draft email owner. Jalankan `supabase_pro_extension_logs_v73.sql` agar bukti juga tersimpan di database.

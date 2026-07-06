@@ -104,3 +104,8 @@ supabase secrets set SUPER_ADMIN_EMAIL="luxphotobooth.id@gmail.com"
 ## PRO Receipt v73
 
 CMS sekarang menampilkan pop up bukti aktivasi/perpanjangan PRO dengan ringkasan, copy, download TXT, dan mailto draft email owner. Jalankan `supabase_pro_extension_logs_v73.sql` agar bukti juga tersimpan di database.
+
+
+## PRO Receipt PDF v74
+
+Bukti PRO tidak lagi menampilkan User ID dan Status simpan DB. Tombol download sekarang menghasilkan file PDF receipt, bukan TXT.

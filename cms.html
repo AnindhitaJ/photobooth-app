@@ -385,12 +385,11 @@
       </div>
     </div>
 
-    <div class="receipt-save-status" id="proReceiptSaveStatus">—</div>
     <textarea class="receipt-textarea" id="proReceiptText" readonly></textarea>
 
     <div class="receipt-actions">
       <button class="receipt-btn secondary" onclick="copyProReceipt()">📋 Copy</button>
-      <button class="receipt-btn primary" onclick="downloadProReceipt()">💾 Download Bukti</button>
+      <button class="receipt-btn primary" onclick="downloadProReceipt()">📄 Download PDF</button>
       <a class="receipt-btn dark" id="proReceiptEmailLink" href="#" target="_blank" rel="noopener">✉️ Buka Email</a>
     </div>
 
@@ -780,7 +779,6 @@
       ``,
       `Akun Owner       : ${r.email || '-'}`,
       `Nama Photobooth  : ${r.boothName || '-'}`,
-      `User ID          : ${r.userId}`,
       ``,
       previous,
       after,
@@ -788,9 +786,8 @@
       ``,
       `Diproses oleh    : ${r.performedByEmail || '-'}`,
       `Waktu proses     : ${formatDateTimeID(r.performedAt)}`,
-      `Status simpan DB : ${r.savedToDb ? 'Tersimpan' : 'Belum tersimpan / SQL log belum aktif'}`,
       ``,
-      `Catatan: email ini dibuat otomatis dari CMS Lux Photobooth sebagai bukti perubahan status akun owner.`
+      `Catatan: bukti ini dibuat otomatis dari CMS Lux Photobooth sebagai bukti perubahan status akun owner.`
     ].join('\n');
   }
 
@@ -853,9 +850,6 @@
       ? `PRO, sisa ${receipt.previousDaysLeft} hari`
       : receipt.previousPlanLabel;
     document.getElementById('proReceiptAfter').textContent = `PRO, sisa ${receipt.newDaysLeft} hari`;
-    document.getElementById('proReceiptSaveStatus').textContent = receipt.savedToDb
-      ? '✅ Bukti perubahan juga tersimpan di tabel pro_extension_logs.'
-      : '⚠️ Bukti belum tersimpan ke database. Jalankan SQL pro_extension_logs v73 dulu, tapi bukti tetap bisa dicopy/download/email manual.';
     document.getElementById('proReceiptText').value = text;
 
     const subject = encodeURIComponent(`Konfirmasi ${receipt.actionType === 'extend_pro' ? 'Perpanjangan' : 'Aktivasi'} PRO Lux Photobooth`);
@@ -882,11 +876,141 @@
     }
   }
 
+  function pdfSafeText(value) {
+    return String(value || '')
+      .normalize('NFKD')
+      .replace(/[^\x20-\x7E]/g, '')
+      .replace(/\\/g, '\\\\')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)');
+  }
+
+  function wrapPdfText(ctx, text, maxChars) {
+    const words = String(text || '').split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+    words.forEach(word => {
+      const next = line ? `${line} ${word}` : word;
+      if (next.length > maxChars) {
+        if (line) lines.push(line);
+        line = word;
+      } else {
+        line = next;
+      }
+    });
+    if (line) lines.push(line);
+    return lines.length ? lines : [''];
+  }
+
+  function makeReceiptPdfBlob(receipt) {
+    const actionLabel = receipt.actionType === 'extend_pro' ? 'Perpanjangan PRO' : 'Aktivasi PRO';
+    const title = `Bukti ${actionLabel}`;
+    const subtitle = 'Lux Photobooth Owner Account';
+    const summary = makeProReceiptSummary(receipt);
+
+    const rows = [
+      ['Akun Owner', receipt.email || '-'],
+      ['Nama Photobooth', receipt.boothName || '-'],
+      ['Sebelumnya', receipt.wasPro ? `PRO, sisa ${receipt.previousDaysLeft} hari, sampai ${formatDateTimeID(receipt.previousProEndsAt)}` : receipt.previousPlanLabel],
+      ['Sekarang', `PRO, sisa ${receipt.newDaysLeft} hari, sampai ${formatDateTimeID(receipt.newProEndsAt)}`],
+      ['Durasi dipilih', receipt.durationLabel],
+      ['Diproses oleh', receipt.performedByEmail || '-'],
+      ['Waktu proses', formatDateTimeID(receipt.performedAt)]
+    ];
+
+    const pageW = 595.28;
+    const pageH = 841.89;
+    const left = 56;
+    let y = 780;
+    const ops = [];
+
+    function text(x, yPos, size, value) {
+      ops.push(`BT /F1 ${size} Tf ${x} ${yPos} Td (${pdfSafeText(value)}) Tj ET`);
+    }
+    function rect(x, yPos, w, h) {
+      ops.push(`${x} ${yPos} ${w} ${h} re S`);
+    }
+    function fillRect(x, yPos, w, h, gray='0.96') {
+      ops.push(`${gray} g ${x} ${yPos} ${w} ${h} re f 0 g`);
+    }
+    function line(x1, y1, x2, y2) {
+      ops.push(`${x1} ${y1} m ${x2} ${y2} l S`);
+    }
+
+    // Border & header
+    ops.push('0.12 0.21 0.34 RG 0.12 0.21 0.34 rg');
+    rect(36, 36, pageW - 72, pageH - 72);
+    fillRect(36, 730, pageW - 72, 75, '0.94');
+
+    text(left, 778, 22, title);
+    text(left, 754, 12, subtitle);
+    text(410, 778, 11, 'CMS Receipt');
+    text(410, 758, 10, new Date(receipt.performedAt || Date.now()).toLocaleDateString('id-ID'));
+
+    // Summary box
+    y = 696;
+    fillRect(left, y - 48, pageW - 112, 58, '0.98');
+    rect(left, y - 48, pageW - 112, 58);
+    text(left + 14, y - 12, 12, 'Ringkasan');
+    const sumLines = wrapPdfText(null, summary, 78).slice(0, 2);
+    sumLines.forEach((ln, idx) => text(left + 14, y - 30 - (idx * 14), 10, ln));
+
+    // Detail table
+    y = 610;
+    text(left, y + 24, 14, 'Detail Perubahan Status');
+    line(left, y + 12, pageW - left, y + 12);
+
+    rows.forEach(([label, value]) => {
+      const rowH = 46;
+      fillRect(left, y - rowH + 8, pageW - 112, rowH, '0.995');
+      rect(left, y - rowH + 8, pageW - 112, rowH);
+      text(left + 14, y - 8, 10, label);
+      const lines = wrapPdfText(null, value, 58).slice(0, 2);
+      lines.forEach((ln, idx) => text(left + 170, y - 8 - (idx * 13), 10, ln));
+      y -= rowH;
+    });
+
+    // Footer note
+    y -= 12;
+    line(left, y, pageW - left, y);
+    y -= 24;
+    text(left, y, 10, 'Catatan: bukti ini dibuat otomatis dari CMS Lux Photobooth sebagai bukti perubahan status akun owner.');
+    text(left, 58, 9, 'Lux Photobooth - PRO Account Receipt');
+
+    const stream = ops.join('\n');
+    const objects = [];
+    objects.push('<< /Type /Catalog /Pages 2 0 R >>');
+    objects.push('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>`);
+    objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+    objects.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+
+    let pdf = '%PDF-1.4\n';
+    const offsets = [0];
+    objects.forEach((obj, idx) => {
+      offsets[idx + 1] = pdf.length;
+      pdf += `${idx + 1} 0 obj\n${obj}\nendobj\n`;
+    });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n`;
+    pdf += '0000000000 65535 f \n';
+    for (let i = 1; i <= objects.length; i++) {
+      pdf += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+
+    return new Blob([pdf], { type: 'application/pdf' });
+  }
+
   function downloadProReceipt() {
-    const text = document.getElementById('proReceiptText').value || '';
-    const email = (currentProReceipt?.email || 'owner').replace(/[^a-z0-9@._-]/gi, '_');
-    const filename = `bukti-pro-${email}-${Date.now()}.txt`;
-    const blob = new Blob([text], { type:'text/plain;charset=utf-8' });
+    if (!currentProReceipt) {
+      showToast('❌ Data bukti belum tersedia', 'error');
+      return;
+    }
+
+    const email = (currentProReceipt.email || 'owner').replace(/[^a-z0-9@._-]/gi, '_');
+    const filename = `bukti-pro-${email}-${Date.now()}.pdf`;
+    const blob = makeReceiptPdfBlob(currentProReceipt);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -894,7 +1018,6 @@
     a.click();
     URL.revokeObjectURL(url);
   }
-
 
   async function confirmActivatePro() {
     if (!selectedUserId) return;

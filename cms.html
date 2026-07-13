@@ -440,7 +440,7 @@
       renderStats();
       renderTable(allUsers);
     } catch(e) {
-      document.getElementById('tableWrap').innerHTML = `<div class="empty">❌ Gagal memuat data: ${escapeHTML(e.message)}</div>`;
+      document.getElementById('tableWrap').innerHTML = `<div class="empty">❌ Gagal memuat data: ${e.message}</div>`;
     }
   }
 
@@ -466,16 +466,6 @@
     document.getElementById('statInactive').textContent = inactive;
   }
 
-  function escapeHTML(value) {
-    return String(value ?? '').replace(/[&<>"']/g, char => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[char]);
-  }
-
-  function inlineArg(value) {
-    return encodeURIComponent(String(value ?? '')).replace(/'/g, '%27');
-  }
-
   function renderTable(users) {
     if (!users.length) {
       document.getElementById('tableWrap').innerHTML = '<div class="empty">Belum ada akun terdaftar</div>';
@@ -492,33 +482,30 @@
 
       const endDate = u.pro_ends_at ? new Date(u.pro_ends_at).toLocaleDateString('id-ID') : '—';
       const endInfo = status === 'pro' ? (u.pro_ends_at ? `s/d ${endDate}` : 'PRO aktif') : '—';
-      const idArg = inlineArg(u.id);
-      const emailArg = inlineArg(u.email || '');
-      const waArg = inlineArg(u.whatsapp_number || '');
 
       const activeBtn = u.is_active
-        ? `<button class="btn-sm btn-deactivate" onclick="toggleActive(decodeURIComponent('${idArg}'), false)">⛔ Nonaktifkan</button>`
-        : `<button class="btn-sm btn-activate" onclick="toggleActive(decodeURIComponent('${idArg}'), true)">✅ Aktifkan</button>`;
+        ? `<button class="btn-sm btn-deactivate" onclick="toggleActive('${u.id}', false)">⛔ Nonaktifkan</button>`
+        : `<button class="btn-sm btn-activate" onclick="toggleActive('${u.id}', true)">✅ Aktifkan</button>`;
 
+      const safeEmail = (u.email || '').replace(/'/g, '&#39;');
       const proBtn = status !== 'pro'
-        ? `<button class="btn-sm btn-pro" onclick="openProModal(decodeURIComponent('${idArg}'),decodeURIComponent('${emailArg}'))">⭐ Aktifkan PRO</button>`
-        : `<button class="btn-sm btn-pro" onclick="openProModal(decodeURIComponent('${idArg}'),decodeURIComponent('${emailArg}'))">⏳ Perpanjang PRO</button><button class="btn-sm btn-free" onclick="setFree(decodeURIComponent('${idArg}'))">🆓 Jadikan Free</button>`;
+        ? `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${safeEmail}')">⭐ Aktifkan PRO</button>`
+        : `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${safeEmail}')">⏳ Perpanjang PRO</button><button class="btn-sm btn-free" onclick="setFree('${u.id}')">🆓 Jadikan Free</button>`;
 
-      const passBtn = `<button class="btn-sm btn-password" onclick="openPasswordModal(decodeURIComponent('${idArg}'),decodeURIComponent('${emailArg}'))">🔑 Ganti Password</button>`;
+      const passBtn = `<button class="btn-sm btn-password" onclick="openPasswordModal('${u.id}','${(u.email||'').replace(/'/g, '&#39;')}')">🔑 Ganti Password</button>`;
       const waBtn = u.whatsapp_number
-        ? `<button class="btn-sm btn-free" onclick="copyWhatsapp(decodeURIComponent('${waArg}'))">📱 Copy WA</button>`
+        ? `<button class="btn-sm btn-free" onclick="copyWhatsapp('${String(u.whatsapp_number || '').replace(/'/g, '&#39;')}')">📱 Copy WA</button>`
         : '';
-      const created = u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '—';
 
       return `<tr>
         <td>
-          <div style="font-weight:700">${escapeHTML(u.booth_name || '—')}</div>
-          <div style="font-size:11px;color:var(--text2)">${escapeHTML(u.email || '—')}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px">📱 ${escapeHTML(u.whatsapp_number || 'Belum ada nomor WA')}</div>
+          <div style="font-weight:700">${u.booth_name || '—'}</div>
+          <div style="font-size:11px;color:var(--text2)">${u.email || '—'}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">📱 ${u.whatsapp_number || 'Belum ada nomor WA'}</div>
         </td>
         <td>${badge}</td>
-        <td style="font-size:12px;color:var(--text2)">${escapeHTML(endInfo)}</td>
-        <td style="font-size:12px;color:var(--text2)">${escapeHTML(created)}</td>
+        <td style="font-size:12px;color:var(--text2)">${endInfo}</td>
+        <td style="font-size:12px;color:var(--text2)">${new Date(u.created_at).toLocaleDateString('id-ID')}</td>
         <td><div class="btn-actions">${proBtn}${activeBtn}${passBtn}${waBtn}</div></td>
       </tr>`;
     }).join('');
@@ -727,8 +714,8 @@
 
     if (title) title.textContent = isExtend ? '⏳ Perpanjang PRO' : '⭐ Aktifkan PRO';
     if (sub) sub.innerHTML = isExtend
-      ? `Pilih durasi perpanjangan PRO untuk <span class="modal-user" id="modalUserEmail">${escapeHTML(email || user.email || userId)}</span>`
-      : `Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">${escapeHTML(email || user.email || userId)}</span>`;
+      ? `Pilih durasi perpanjangan PRO untuk <span class="modal-user" id="modalUserEmail">${email || user.email || userId}</span>`
+      : `Pilih durasi PRO untuk <span class="modal-user" id="modalUserEmail">${email || user.email || userId}</span>`;
     if (btn) btn.textContent = isExtend ? '⏳ Perpanjang PRO' : '⭐ Aktifkan PRO';
 
     document.querySelector('input[value="1week"]').checked = true;

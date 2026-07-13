@@ -697,6 +697,7 @@
   const tmplW          = parseInt(localStorage.getItem('templateW') || '591');
   const tmplH          = parseInt(localStorage.getItem('templateH') || '1772');
   const isBasicTemplate = localStorage.getItem('templateIsBasic') === '1';
+  const templatePhotoLayer = localStorage.getItem('templatePhotoLayer') === 'front' ? 'front' : 'behind';
 
   const canvas = document.getElementById('resultCanvas');
   const ctx    = canvas.getContext('2d');
@@ -812,6 +813,11 @@
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, tmplW, tmplH);
 
+      const templateImage = templateSrc ? await loadImage(templateSrc) : null;
+      if (templateImage && templatePhotoLayer === 'front') {
+        ctx.drawImage(templateImage, 0, 0, tmplW, tmplH);
+      }
+
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i];
         const src  = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
@@ -832,9 +838,8 @@
         ctx.restore();
       }
 
-      if (templateSrc) {
-        const tmpl = await loadImage(templateSrc);
-        ctx.drawImage(tmpl, 0, 0, tmplW, tmplH);
+      if (templateImage && templatePhotoLayer === 'behind') {
+        ctx.drawImage(templateImage, 0, 0, tmplW, tmplH);
       }
 
       // ── Teks "LUX PHOTOBOOTH" di area bawah (hanya template custom) ──

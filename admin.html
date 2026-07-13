@@ -326,6 +326,11 @@
       font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
       margin-top: 4px; border: 1px solid rgba(216,75,126,0.2);
     }
+    .template-layer-select {
+      margin-top: 7px; width: 100%; max-width: 220px; padding: 6px 8px;
+      border: 1.5px solid var(--border); border-radius: 9px; background: #fff;
+      color: var(--text); font-family: inherit; font-size: 11px; font-weight: 800;
+    }
     .empty-state {
       text-align: center; color: var(--text2); font-size: 13px; font-weight: 500;
       padding: 28px 16px; border: 2.5px dashed var(--border); border-radius: 14px;
@@ -872,6 +877,15 @@
       <div class="product-type-note" id="productTypeNote">Photostrip = template strip 5×15 dengan cetak 1/2 strip.</div>
     </div>
 
+    <div class="product-type-box">
+      <label>Posisi Foto terhadap Template</label>
+      <div class="product-type-row">
+        <button type="button" class="product-type-option active" id="photoLayerBehind" onclick="selectPhotoLayer('behind')">🖼️ Foto di Belakang</button>
+        <button type="button" class="product-type-option" id="photoLayerFront" onclick="selectPhotoLayer('front')">📷 Foto di Depan</button>
+      </div>
+      <div class="product-type-note" id="photoLayerNote">Mode belakang: template digambar di atas foto. Ini adalah perilaku default dan cocok untuk frame PNG transparan.</div>
+    </div>
+
     <div class="editor-controls" id="editorControls" style="display:none">
       <button class="btn btn-secondary btn-sm" onclick="addSlotManual()">➕ Tambah Slot</button>
       <button class="btn btn-secondary btn-sm" onclick="autoDetect()">🔍 Auto Detect</button>
@@ -960,6 +974,7 @@
   let slots = [], scale = 1;
   let selectedCategory = '';
   let selectedProductType = 'photostrip';
+  let selectedPhotoLayer = 'behind';
   let filterProductType = 'all';
   let filterCategory = 'all';
 
@@ -991,6 +1006,7 @@
     return {
       ...t,
       product_type: t.product_type || (isPhotoboxCategory(t.category) ? 'photobox' : 'photostrip'),
+      photo_layer: t.photo_layer === 'front' ? 'front' : 'behind',
       slots: parsedSlots.map(s => ({
         ...s,
         r: normalizeAngle(s.r || s.rotate || s.rotation || 0)
@@ -1050,6 +1066,16 @@
     }
     updateUploadHint();
     renderCategoryTags();
+  }
+
+  function selectPhotoLayer(layer) {
+    selectedPhotoLayer = layer === 'front' ? 'front' : 'behind';
+    document.getElementById('photoLayerBehind')?.classList.toggle('active', selectedPhotoLayer === 'behind');
+    document.getElementById('photoLayerFront')?.classList.toggle('active', selectedPhotoLayer === 'front');
+    const note = document.getElementById('photoLayerNote');
+    if (note) note.textContent = selectedPhotoLayer === 'front'
+      ? 'Mode depan: template digambar lebih dulu, lalu foto menutup bagian template yang berada di area slot.'
+      : 'Mode belakang: template digambar di atas foto. Ini adalah perilaku default dan cocok untuk frame PNG transparan.';
   }
 
   function getCategories(scope = 'all') {
@@ -1479,6 +1505,7 @@
         name,
         category: selectedCategory,
         product_type: selectedProductType,
+        photo_layer: selectedPhotoLayer,
         src: imageURL,
         slots: realSlots,
         w: templateImg.width, h: templateImg.height,
@@ -1514,6 +1541,8 @@
       document.getElementById('slotInfo').style.display = 'none';
       btn.style.display = 'none';
       templateDataURL = null; templateImg = null; slots = [];
+      selectedPhotoLayer = 'behind';
+      selectPhotoLayer('behind');
       document.getElementById('fileInput').value = '';
 
     } catch(e) {
@@ -1556,10 +1585,48 @@
           <h4>${t.name}</h4>
           <p>${(t.slots||[]).length} slot foto · ${t.w||591}×${t.h||1772}px</p>
           <span class="cat-badge">${productTypeOfTemplate(t) === 'photobox' ? 'Photobox 4R' : 'Photostrip'} · ${t.category}</span>
+          <span class="cat-badge">Foto ${t.photo_layer === 'front' ? 'di depan' : 'di belakang'}</span>
+          <select class="template-layer-select" aria-label="Posisi foto ${t.name}" onchange="ubahPhotoLayer('${t.id}', this.value, this)">
+            <option value="behind" ${t.photo_layer !== 'front' ? 'selected' : ''}>Foto di belakang template</option>
+            <option value="front" ${t.photo_layer === 'front' ? 'selected' : ''}>Foto di depan template</option>
+          </select>
         </div>
         <button class="btn btn-danger" onclick="hapusTemplate('${t.id}')">Hapus</button>
       </div>
     `).join('');
+  }
+
+  async function ubahPhotoLayer(id, layer, selectEl) {
+    const normalizedLayer = layer === 'front' ? 'front' : 'behind';
+    const target = _allTemplates.find(t => String(t.id) === String(id));
+    const previousLayer = target?.photo_layer === 'front' ? 'front' : 'behind';
+    if (!target || normalizedLayer === previousLayer) return;
+
+    if (selectEl) selectEl.disabled = true;
+    try {
+      const token = Auth.getToken();
+      if (!token) throw new Error('Session admin tidak ditemukan. Login ulang dulu.');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ photo_layer: normalizedLayer })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const [updated] = await res.json();
+      Object.assign(target, normalizeTemplateRecord(updated || { ...target, photo_layer: normalizedLayer }));
+      renderTemplateList();
+      showToast(`Posisi foto diubah ke ${normalizedLayer === 'front' ? 'depan' : 'belakang'}`);
+    } catch(e) {
+      if (selectEl) selectEl.value = previousLayer;
+      showToast('Gagal mengubah posisi foto: ' + e.message, true);
+    } finally {
+      if (selectEl) selectEl.disabled = false;
+    }
   }
 
   async function hapusTemplate(id) {
@@ -1617,6 +1684,7 @@
 
   // Init
   renderCategoryTags();
+  selectPhotoLayer('behind');
   renderProductListTabs();
   renderCatTabs();
   renderManageCats();

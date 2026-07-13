@@ -13,6 +13,15 @@ Teknologi utama:
 - Vercel static hosting, rewrites, serverless API, dan cron.
 - PWA dengan service worker dan manifest.
 
+## Pengaturan layer foto per template
+
+Template Manager sekarang menyimpan urutan layer pada setiap template:
+
+- **Foto di belakang template** (`behind`) — foto dirender lebih dulu lalu PNG template berada di atasnya. Ini default dan tetap dipakai oleh seluruh template lama.
+- **Foto di depan template** (`front`) — PNG template dirender lebih dulu lalu foto berada di atasnya pada area slot.
+
+Pilihan dapat ditentukan saat membuat template dan dapat diubah lagi dari daftar template tersimpan tanpa upload ulang. Untuk project Supabase yang sudah berjalan, jalankan `supabase/migrations/0002_template_photo_layer.sql` atau `supabase db push` sebelum memakai kontrol tersebut.
+
 ## Deployment paling cepat
 
 ### 1. Upload ke GitHub
@@ -29,7 +38,7 @@ window.LUX_CONFIG = Object.freeze({
   SUPABASE_ANON_KEY: 'PUBLIC_ANON_KEY',
   SUPER_ADMIN_EMAIL: 'admin@example.com',
   STORAGE_BUCKET: 'photobooth',
-  APP_VERSION: 'redeploy-ready-v1'
+  APP_VERSION: 'redeploy-ready-v1.1-photo-layer'
 });
 ```
 
@@ -37,11 +46,20 @@ Anon key adalah public browser key. Jangan pernah menaruh `service_role` key di 
 
 ### 3. Siapkan Supabase database
 
-Buka Supabase SQL Editor dan jalankan satu file berikut:
+Untuk project baru, buka Supabase SQL Editor dan jalankan seluruh migration berikut secara berurutan:
 
 ```text
 supabase/migrations/0001_full_redeploy_schema.sql
+supabase/migrations/0002_template_photo_layer.sql
 ```
+
+Untuk project lama yang sebelumnya sudah memakai paket redeploy-ready v1, jalankan juga:
+
+```text
+supabase/migrations/0002_template_photo_layer.sql
+```
+
+Dengan Supabase CLI, kedua migration dapat diterapkan berurutan menggunakan `supabase db push`.
 
 File tersebut membuat atau melengkapi:
 
@@ -114,6 +132,7 @@ GitHub Actions akan menjalankan pemeriksaan yang sama pada setiap push dan pull 
 - Database menolak perubahan plan, masa PRO, dan status aktif dari akun owner biasa.
 - Policy Event memverifikasi status PRO aktif di database.
 - Konfigurasi Supabase browser dipusatkan di `config.js`.
+- Template Manager mendukung urutan layer foto depan/belakang per template, termasuk perubahan pada template lama.
 - Struktur `admin-toggle-active` dipindahkan ke lokasi Supabase CLI yang benar tanpa menghapus salinan lama.
 - Service worker mencakup seluruh halaman produk dan melakukan runtime cache untuk aset lokal.
 - Semua file asli dipertahankan; daftar checksum tersedia di `FILE_MANIFEST.sha256`.
@@ -124,6 +143,7 @@ GitHub Actions akan menjalankan pemeriksaan yang sama pada setiap push dan pull 
 api/cleanup.js                             Vercel cron cleanup
 config.js                                 konfigurasi browser aktif
 supabase/migrations/0001_full_redeploy_schema.sql
+supabase/migrations/0002_template_photo_layer.sql
 supabase/functions/admin-change-password/
 supabase/functions/admin-toggle-active/
 scripts/validate_repo.py                  pemeriksaan integritas

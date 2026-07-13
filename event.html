@@ -298,8 +298,7 @@
   async function uploadWelcomeIfNeeded() {
     if (!welcomeFile) return currentWelcomeURL || '';
 
-    const userId = Auth.getUserId();
-    if (!userId) throw new Error('Session user tidak ditemukan. Login ulang.');
+    const userId = Auth.getUserId() || 'anon';
     const safe = welcomeFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
     // Pakai folder templates/event-welcome supaya mengikuti pola upload template yang sudah jalan.
     const path = `templates/event-welcome/${userId}/${Date.now()}_${safe}`;

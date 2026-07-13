@@ -816,42 +816,30 @@
 
     function mulaiFotoGanci() {
       updatePreview();
-      const config = getGanciConfig();
       LocalCamera.open({
-        seconds: 3,
-        // Pass frame config so local-camera.js can show overlay + filter preview
-        frameOpts: {
-          frame:       config.frame,
-          bentuk:      config.bentuk,
-          cornerStyle: config.cornerStyle,
-          ganciW:      config.ganciW,
-          ganciH:      config.ganciH,
-        },
-        // Callback now receives (filteredDataUrl, meta) where meta = { rawPhoto, filter }
-        onCapture: (photo, meta) => {
-          const freshConfig = getGanciConfig();
-          const rawPhoto = meta?.rawPhoto || photo;
-          const filterTone = meta?.filter?.tone || 'normal';
+        seconds: 5,
+        onCapture: (photo) => {
+          const config = getGanciConfig();
           const saved = {
-            photo,                        // filtered composite (pakai di preview & print)
-            originalPhoto: rawPhoto,      // foto mentah tanpa filter
-            filter: { tone: filterTone },
+            photo,
+            originalPhoto: photo,
+            filter: { tone: 'normal' },
             beautify: state.beautify,
             mode: 'ganci',
-            bentuk: freshConfig.bentuk,
-            cornerStyle: freshConfig.cornerStyle,
-            frame: freshConfig.frame,
-            frameLabel: freshConfig.frameLabel,
-            ukuranKertas: freshConfig.ukuranKertas,
-            customW: freshConfig.customW,
-            customH: freshConfig.customH,
-            ganciW: freshConfig.ganciW,
-            ganciH: freshConfig.ganciH,
-            jumlah: freshConfig.jumlah,
-            config: freshConfig,
+            bentuk: config.bentuk,
+            cornerStyle: config.cornerStyle,
+            frame: config.frame,
+            frameLabel: config.frameLabel,
+            ukuranKertas: config.ukuranKertas,
+            customW: config.customW,
+            customH: config.customH,
+            ganciW: config.ganciW,
+            ganciH: config.ganciH,
+            jumlah: config.jumlah,
+            config,
             updatedAt: new Date().toISOString()
           };
-          localStorage.setItem('ganciConfig', JSON.stringify(freshConfig));
+          localStorage.setItem('ganciConfig', JSON.stringify(config));
           localStorage.setItem('ganciState', JSON.stringify(saved));
           localStorage.removeItem('photos');
           localStorage.removeItem('filteredPhotos');

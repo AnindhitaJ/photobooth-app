@@ -475,7 +475,11 @@
         tc.putImageData(id, 0, 0);
       }
 
-      // Clip to shape, draw photo
+      // 1. Background hitam
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, outW, outH);
+
+      // 2. Clip ke shape ganci, draw foto (filtered)
       ctx.save();
       if (window.GanciFrames) {
         window.GanciFrames.shapePath(ctx, 0, 0, outW, outH, opts.bentuk || 'persegi', opts.cornerStyle || 'rounded');
@@ -486,14 +490,16 @@
       ctx.drawImage(tmpC, 0, 0, outW, outH);
       ctx.restore();
 
-      // Frame overlay
+      // 3. Border + dekorasi frame saja (showPlaceholder=false, photo=null)
+      //    drawFrame hanya menggambar stroke + ornamen tanpa menulis ulang foto
       if (opts.frame && window.GanciFrames) {
         window.GanciFrames.drawFrame(ctx, {
           x: 0, y: 0, w: outW, h: outH,
           bentuk: opts.bentuk || 'persegi',
           cornerStyle: opts.cornerStyle || 'rounded',
           frame: opts.frame,
-          showPlaceholder: false,
+          showPlaceholder: false,   // jangan overwrite foto kita
+          photo: null,
           hook: false,
         });
       }

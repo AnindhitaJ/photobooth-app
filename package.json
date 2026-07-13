@@ -1,0 +1,14 @@
+{
+  "name": "lux-photobooth-redeploy-ready",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static PWA photobooth app with Supabase and Vercel deployment support.",
+  "scripts": {
+    "validate": "python3 scripts/validate_repo.py",
+    "serve": "python3 -m http.server 4173"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

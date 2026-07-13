@@ -375,6 +375,7 @@
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     .toast.success { background:#06a870; }
   </style>
+  <script src="/config.js"></script>
   <script src="/auth.js"></script>
 </head>
 <body>
@@ -1033,7 +1034,7 @@
         method: 'DELETE',
         headers: {
           'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${SUPABASE_ANON}`,
+          'Authorization': `Bearer ${Auth.getToken()}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ prefixes: paths })

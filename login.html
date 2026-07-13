@@ -167,9 +167,10 @@
   </div>
 </div>
 
+<script src="/config.js"></script>
 <script>
-  const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+  const SUPABASE_URL = window.LUX_CONFIG?.SUPABASE_URL || '';
+  const SUPABASE_ANON = window.LUX_CONFIG?.SUPABASE_ANON_KEY || '';
 
   // Cek kalau ini redirect dari email reset password
   const _hash = new URLSearchParams(window.location.hash.substring(1));

@@ -703,6 +703,7 @@
     .profile-status.ok { color: #06a870; }
     .profile-status.err { color: #e94560; }
   </style>
+  <script src="/config.js"></script>
   <script src="/auth.js"></script>
 </head>
 <body>
@@ -1156,11 +1157,15 @@
 
   async function uploadTemplateImage(dataURL, name) {
     const blob = dataURLtoBlob(dataURL);
-    const filename = `templates/${Date.now()}_${name.replace(/\s+/g,'_')}.png`;
+    const userId = Auth.getUserId();
+    if (!userId) throw new Error('Session user tidak ditemukan. Login ulang.');
+    const safeName = name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+    const filename = `templates/${userId}/${Date.now()}_${safeName}.png`;
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filename}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${Auth.getToken()}`,
         'Content-Type': 'image/png',
         'x-upsert': 'true',
       },

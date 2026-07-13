@@ -3,8 +3,14 @@
  * Include di semua halaman yang butuh session
  */
 
-const SUPABASE_URL  = 'https://eguiubpsijwjwxaxvkhi.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o';
+const LUX_CONFIG = window.LUX_CONFIG || {};
+const SUPABASE_URL  = LUX_CONFIG.SUPABASE_URL || '';
+const SUPABASE_ANON = LUX_CONFIG.SUPABASE_ANON_KEY || '';
+const LUX_SUPER_ADMIN_EMAIL = LUX_CONFIG.SUPER_ADMIN_EMAIL || 'luxphotobooth.id@gmail.com';
+
+if (!SUPABASE_URL || !SUPABASE_ANON) {
+  console.error('Konfigurasi Supabase belum lengkap. Periksa /config.js.');
+}
 
 const Auth = {
   // Ambil session dari localStorage
@@ -244,7 +250,7 @@ Object.assign(Auth, {
   },
 
   isSuperAdmin() {
-    return localStorage.getItem('sb_user_email') === 'luxphotobooth.id@gmail.com';
+    return localStorage.getItem('sb_user_email') === LUX_SUPER_ADMIN_EMAIL;
   },
 
   needsProWatermark() {

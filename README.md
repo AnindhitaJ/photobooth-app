@@ -1,111 +1,138 @@
-# photobooth-app
+# LUX Photobooth — Redeploy Ready
 
-## Supabase migration
+Repositori lengkap aplikasi web/PWA LUX Photobooth. Versi ini mempertahankan seluruh file dan fitur dari paket asli, lalu menambahkan konfigurasi terpusat, schema Supabase penuh, struktur Edge Function yang benar, cron cleanup yang diperbaiki, dokumentasi deployment, serta validasi otomatis untuk GitHub Actions.
 
-Untuk fitur Photostrip / Photobox yang DB-aware, jalankan file `supabase_templates_product_type.sql` di Supabase SQL Editor.
+## Isi aplikasi
 
+Aplikasi mencakup login/register, template manager, kamera browser, beauty filter, hasil photostrip/photobox, print/share/QR/download, galeri, analytics, consent content sharing, event mode, CMS super-admin, Ganci, Kalender, ID Card, Magazine, Newspaper, Trading Card, Icon Portrait, Certificate, Game Character, dan Detective Case.
 
-## Event feature setup
+Teknologi utama:
 
-Jalankan `supabase_lux_events.sql` di Supabase SQL Editor sebelum memakai fitur Event.
-Fitur Event dibatasi untuk akun PRO atau super admin. Akun Free akan melihat pesan upgrade.
+- HTML, CSS, dan JavaScript tanpa build framework.
+- Supabase Auth, Postgres, Storage, Row Level Security, dan Edge Functions.
+- Vercel static hosting, rewrites, serverless API, dan cron.
+- PWA dengan service worker dan manifest.
 
+## Deployment paling cepat
 
-## Event welcome upload fix v41
+### 1. Upload ke GitHub
 
-Welcome screen Event sekarang mencoba upload ke Storage.
-Kalau Storage ditolak RLS 403, aplikasi otomatis fallback menyimpan welcome screen sebagai data URL di `lux_events.welcome_screen_url`, jadi create event tetap berhasil.
+Upload **isi folder repositori ini** ke root repository. Jangan mengunggah folder pembungkus tambahan apabila Vercel diarahkan ke root repository.
 
-File `supabase_event_welcome_storage_policy_optional.sql` hanya opsional kalau ingin menyimpan welcome screen sebagai public file di bucket.
+### 2. Konfigurasi browser
 
+File `config.js` sudah menunjuk ke project Supabase yang digunakan paket asli. Untuk project Supabase baru, ubah nilai berikut:
 
-## Supabase Analytics + Consent Schema
-
-Jalankan `supabase_analytics_consent_schema_v46.sql` di Supabase SQL Editor untuk persiapan analytics, event tracking, dan content sharing consent.
-
-
-## WhatsApp owner registration
-
-Jalankan `supabase_profiles_whatsapp_v47.sql` di Supabase SQL Editor sebelum deploy v47. Field register akan menyimpan `whatsapp_number` ke tabel `profiles`.
-
-
-## Analytics + Consent Ready v48
-
-Jalankan `supabase_analytics_consent_ready_v48.sql` di Supabase SQL Editor. Setelah deploy, buka `/admin` lalu tombol Analytics / Content Sharing.
-
-
-## WhatsApp display v52
-
-Jalankan `supabase_profiles_whatsapp_v52.sql` di Supabase SQL Editor jika kolom `profiles.whatsapp_number` belum ada. Nomor WA tampil di Admin Profile dan CMS Dashboard.
-
-
-## Analytics Accuracy v54
-
-`photo_sessions` sekarang hanya dicatat untuk final result (`strip.jpg`). File pendukung seperti foto satuan/GIF/live/manifest tidak dihitung sebagai session. Kalau data lama sudah terlanjur inflated, jalankan `supabase_fix_analytics_sessions_v54.sql`.
-
-
-## Gallery Product Split v61
-
-Jika Galeri tampil 0 sesi setelah cleanup metadata, jalankan `supabase_restore_gallery_metadata_v61.sql` di Supabase SQL Editor untuk restore metadata dari Storage.
-
-
-## Register WhatsApp fix v62
-
-Jalankan `supabase_fix_register_whatsapp_v62.sql` di Supabase SQL Editor. Register sekarang upsert profile supaya `whatsapp_number` tidak kosong.
-
-
-## Tutorial feature v63
-
-Menambahkan halaman `/tutorial`, submenu Tutorial di Admin, serta popup onboarding di index kalau akun belum punya template.
-
-
-## Web/PWA Latest v68
-
-Versi ini kembali fokus ke web-based PWA saja:
-- Tidak ada APK / Android project.
-- Kamera memakai kamera browser seperti sebelumnya (`navigator.mediaDevices`).
-- Tetap membawa fitur terakhir sebelum eksperimen Android bridge: admin unified sidebar, tutorial owner, gallery product split, register WA fix, analytics/content sharing, event, dan PWA cache.
-- Deploy ZIP ini ke Vercel.
-
-
-## Flip Foto per photo v69
-
-Menambahkan opsi `Flip Foto` di halaman filter. Flip bisa per foto, dan tombol `Terapkan ke Semua Foto` ikut menerapkan state flip ke semua foto.
-
-
-## Share 1/2 Strip v70
-
-Menambahkan tombol `Share 1 Strip` dan `Share 2 Strip` di halaman result. Share memakai Web Share API jika device/browser support, fallback otomatis download file jika tidak support.
-
-
-## Result layout differentiate print share v71
-
-Membedakan visual action `Print / Cetak` dan `Share / Bagikan` di halaman result. Print memakai warna pink-gold, Share memakai warna teal-navy, dan keduanya digroup dengan heading/hint terpisah.
-
-
-## CMS Password Verify v72
-
-Fix/guard untuk fitur Ganti Password di CMS:
-- Edge Function `admin-change-password` sekarang update password lewat Supabase Auth Admin API.
-- Function mengambil user dari `auth.users`, bukan hanya percaya row `profiles`.
-- Function melakukan verification login dengan password baru jika `SUPABASE_ANON_KEY` tersedia.
-- CMS hanya menampilkan sukses jika function return `ok: true`.
-
-Deploy Edge Function:
-```bash
-supabase functions deploy admin-change-password
-supabase secrets set SUPABASE_URL="https://PROJECT.supabase.co"
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY="SERVICE_ROLE_KEY"
-supabase secrets set SUPABASE_ANON_KEY="ANON_KEY"
-supabase secrets set SUPER_ADMIN_EMAIL="luxphotobooth.id@gmail.com"
+```js
+window.LUX_CONFIG = Object.freeze({
+  SUPABASE_URL: 'https://PROJECT_REF.supabase.co',
+  SUPABASE_ANON_KEY: 'PUBLIC_ANON_KEY',
+  SUPER_ADMIN_EMAIL: 'admin@example.com',
+  STORAGE_BUCKET: 'photobooth',
+  APP_VERSION: 'redeploy-ready-v1'
+});
 ```
 
+Anon key adalah public browser key. Jangan pernah menaruh `service_role` key di `config.js`.
 
-## PRO Receipt v73
+### 3. Siapkan Supabase database
 
-CMS sekarang menampilkan pop up bukti aktivasi/perpanjangan PRO dengan ringkasan, copy, download TXT, dan mailto draft email owner. Jalankan `supabase_pro_extension_logs_v73.sql` agar bukti juga tersimpan di database.
+Buka Supabase SQL Editor dan jalankan satu file berikut:
 
+```text
+supabase/migrations/0001_full_redeploy_schema.sql
+```
 
-## PRO Receipt PDF v74
+File tersebut membuat atau melengkapi:
 
-Bukti PRO tidak lagi menampilkan User ID dan Status simpan DB. Tombol download sekarang menghasilkan file PDF receipt, bukan TXT.
+- `profiles`
+- `templates`
+- `photo_sessions`
+- `lux_events`
+- `content_sharing_settings`
+- `photo_consents`
+- `pro_extension_logs`
+- `id_cards`
+- `analytics_sessions_view`
+- trigger profile pengguna baru
+- bucket Storage `photobooth`
+- seluruh policy RLS utama
+
+Sebelum menggunakan email super-admin yang berbeda, ganti email di `config.js`, migration SQL, dan secret Edge Function.
+
+### 4. Deploy Supabase Edge Functions
+
+Dengan Supabase CLI:
+
+```bash
+supabase link --project-ref PROJECT_REF
+supabase secrets set SUPER_ADMIN_EMAIL="admin@example.com"
+supabase secrets set SUPABASE_ANON_KEY="PUBLIC_ANON_KEY"
+supabase functions deploy admin-change-password --no-verify-jwt
+supabase functions deploy admin-toggle-active --no-verify-jwt
+```
+
+`SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` tersedia otomatis di environment Edge Function Supabase.
+
+### 5. Deploy ke Vercel
+
+Import repository GitHub ke Vercel. Framework preset dapat menggunakan **Other** dan tidak membutuhkan build command.
+
+Tambahkan environment variables berikut di Vercel:
+
+```text
+SUPABASE_URL=https://PROJECT_REF.supabase.co
+SUPABASE_ANON_KEY=PUBLIC_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY=SERVER_ONLY_SERVICE_ROLE_KEY
+CRON_SECRET=LONG_RANDOM_SECRET
+RETENTION_DAYS=14
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` dan `CRON_SECRET` hanya digunakan oleh `/api/cleanup` dan tidak boleh masuk ke file browser.
+
+### 6. Validasi sebelum push
+
+```bash
+python3 scripts/validate_repo.py
+```
+
+Atau:
+
+```bash
+npm run validate
+```
+
+GitHub Actions akan menjalankan pemeriksaan yang sama pada setiap push dan pull request.
+
+## Perbaikan utama pada versi ini
+
+- Cleanup mengenali format baru `userId_timestamp_filename` dan format lama `timestamp_filename`.
+- Cleanup menggunakan service role server-side, melakukan pagination, dan menghapus metadata `photo_sessions` terkait.
+- Upload template dan welcome event menggunakan JWT pengguna, bukan anon token.
+- Penghapusan file galeri menggunakan JWT pengguna.
+- Toggle status akun CMS menggunakan Edge Function server-side.
+- Database menolak perubahan plan, masa PRO, dan status aktif dari akun owner biasa.
+- Policy Event memverifikasi status PRO aktif di database.
+- Konfigurasi Supabase browser dipusatkan di `config.js`.
+- Struktur `admin-toggle-active` dipindahkan ke lokasi Supabase CLI yang benar tanpa menghapus salinan lama.
+- Service worker mencakup seluruh halaman produk dan melakukan runtime cache untuk aset lokal.
+- Semua file asli dipertahankan; daftar checksum tersedia di `FILE_MANIFEST.sha256`.
+
+## Struktur penting
+
+```text
+api/cleanup.js                             Vercel cron cleanup
+config.js                                 konfigurasi browser aktif
+supabase/migrations/0001_full_redeploy_schema.sql
+supabase/functions/admin-change-password/
+supabase/functions/admin-toggle-active/
+scripts/validate_repo.py                  pemeriksaan integritas
+.github/workflows/validate.yml             CI GitHub
+vercel.json                                routes, headers, cron
+```
+
+Panduan lebih rinci tersedia di [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+## Batas verifikasi
+
+Pemeriksaan statis dan integritas repositori telah dijalankan. Kamera fisik, printer, Web Share API, dan koneksi ke Supabase produksi tetap perlu smoke test setelah deployment karena bergantung pada browser, izin perangkat, policy project, dan environment deployment.

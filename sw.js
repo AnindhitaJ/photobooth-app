@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.2-photo-handoff-fix';
+const CACHE_NAME = 'lux-photobooth-v1.3-storage-handoff';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -45,11 +45,17 @@ const CORE_ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(CORE_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+
+    // Satu asset yang gagal tidak boleh menggagalkan instalasi service worker baru.
+    await Promise.allSettled(CORE_ASSETS.map(async asset => {
+      const response = await fetch(asset, { cache: 'reload' });
+      if (response.ok) await cache.put(asset, response);
+    }));
+
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {

@@ -1,16 +1,39 @@
-LUX Photobooth — patch foto hitam/kosong
+LUX PHOTOBOOTH — STORAGE HANDOFF FIX V2
+======================================
 
-Ganti tiga file di root deployment:
-1. filter.html
-2. camera.html
-3. sw.js
+MASALAH YANG DIPERBAIKI
+- Filter menampilkan “Foto tidak ditemukan di penyimpanan browser”.
+- Foto tersimpan di IndexedDB tetapi tidak terbaca karena marker localStorage hilang.
+- Safari/iPad kehabisan kuota localStorage saat membawa beberapa foto base64.
+- camera.html, filter.html, dan result.html dapat berasal dari cache versi berbeda.
+- Instalasi service worker baru dapat gagal apabila satu asset gagal di-cache.
 
-Perubahan utama:
-- tombol hasil dinonaktifkan sampai gambar benar-benar selesai dimuat;
-- canvas bawaan 300x150 tidak lagi disimpan sebagai foto;
-- klik ganda pada tombol hasil dicegah;
-- transfer camera -> filter memakai IndexedDB jika localStorage Safari penuh/gagal;
-- filter dapat membaca foto dari localStorage maupun IndexedDB;
-- cache service worker dinaikkan agar file lama tidak terus dipakai.
+FILE YANG WAJIB DITIMPA
+1. camera.html
+2. filter.html
+3. result.html
+4. sw.js
 
-Setelah deploy, tutup tab/PWA lama lalu buka ulang. Jika masih memakai versi cache lama, hapus data situs atau reinstall PWA sekali.
+CARA PASANG
+1. Timpa keempat file tersebut di root repository.
+2. Commit dan deploy ulang ke Vercel.
+3. Tunggu deployment benar-benar selesai.
+4. Pada iPad:
+   - Tutup semua tab aplikasi.
+   - Hapus aplikasi PWA dari Home Screen bila dipasang sebagai PWA.
+   - Safari > Settings > Advanced > Website Data.
+   - Cari domain aplikasi dan hapus datanya.
+   - Buka ulang domain dan ambil foto baru.
+5. Jangan melanjutkan sesi foto lama setelah deploy. Ambil ulang foto agar token sesi baru dibuat.
+
+PERUBAHAN TEKNIS
+- Kamera menyimpan foto ke IndexedDB sebagai storage utama.
+- Kamera membuat photoSession ID dan meneruskannya melalui URL.
+- Filter selalu memeriksa IndexedDB secara langsung, tanpa bergantung pada marker localStorage.
+- Filter melakukan tiga kali retry pembacaan untuk lifecycle Safari.
+- Result membaca filteredPhotos/photos langsung dari IndexedDB sebagai fallback.
+- Service worker memakai cache versi baru dan instalasinya tidak gagal hanya karena satu asset bermasalah.
+
+CATATAN
+- Keempat file harus berasal dari paket ini. Mengganti hanya filter.html dapat tetap menghasilkan mismatch cache.
+- JavaScript inline dan standalone sudah melewati pemeriksaan sintaks Node.js.

@@ -356,32 +356,89 @@
     } catch(e) {}
   }
 
-  async function loadLargePhotoArray(key) {
-    if (localStorage.getItem(key + 'Store') === 'indexedDB') {
-      const value = await idbGet(key);
-      return Array.isArray(value) ? value : [];
-    }
+  function normalizePhotoArray(value) {
+    const candidate = Array.isArray(value)
+      ? value
+      : (value && Array.isArray(value.photos) ? value.photos : []);
+    return candidate.filter(item => typeof item === 'string' && item.length > 32);
+  }
+
+  function getPhotoSessionId() {
+    const fromUrl = new URLSearchParams(location.search).get('photoSession') || '';
+    if (fromUrl) return fromUrl;
     try {
-      const value = JSON.parse(localStorage.getItem(key) || '[]');
-      return Array.isArray(value) ? value : [];
-    } catch(e) {
-      return [];
+      return sessionStorage.getItem('luxPhotoSessionId')
+        || localStorage.getItem('photosSessionId')
+        || '';
+    } catch (_) {
+      return '';
     }
+  }
+
+  async function loadLargePhotoArray(key) {
+    const sessionId = key === 'photos' ? getPhotoSessionId() : '';
+    const idbKeys = sessionId ? [`${key}:${sessionId}`, key] : [key];
+
+    // Selalu periksa IndexedDB. Jangan bergantung pada key penanda di localStorage.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      for (const idbKey of idbKeys) {
+        try {
+          const stored = normalizePhotoArray(await idbGet(idbKey));
+          if (stored.length) return stored;
+        } catch (e) {
+          console.warn('[LUX] IndexedDB read failed:', idbKey, e);
+        }
+      }
+
+      try {
+        const stored = normalizePhotoArray(JSON.parse(localStorage.getItem(key) || '[]'));
+        if (stored.length) return stored;
+      } catch (e) {
+        console.warn('[LUX] localStorage read failed:', e);
+      }
+
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 180));
+    }
+
+    return [];
   }
 
   async function saveLargePhotoArray(key, value) {
     const json = JSON.stringify(value);
+    let idbSaved = false;
+    let localSaved = false;
+    let idbError = null;
+    let localError = null;
+
+    try {
+      await idbSet(key, value);
+      idbSaved = true;
+    } catch (e) {
+      idbError = e;
+      console.warn('[LUX] IndexedDB save failed:', e);
+    }
+
     try {
       localStorage.setItem(key, json);
-      localStorage.removeItem(key + 'Store');
-      await idbDelete(key);
-      return 'localStorage';
-    } catch(e) {
-      await idbSet(key, value);
-      localStorage.removeItem(key);
-      localStorage.setItem(key + 'Store', 'indexedDB');
-      return 'indexedDB';
+      localSaved = true;
+    } catch (e) {
+      localError = e;
+      try { localStorage.removeItem(key); } catch (_) {}
+      console.warn('[LUX] localStorage save failed:', e);
     }
+
+    try {
+      if (idbSaved) localStorage.setItem(key + 'Store', 'indexedDB');
+      else if (localSaved) localStorage.setItem(key + 'Store', 'localStorage');
+    } catch (_) {}
+
+    if (!idbSaved && !localSaved) {
+      throw new Error(idbError?.message || localError?.message || 'Penyimpanan browser tidak tersedia');
+    }
+
+    return idbSaved && localSaved
+      ? 'IndexedDB + localStorage'
+      : (idbSaved ? 'IndexedDB' : 'localStorage');
   }
 
   const photos = await loadLargePhotoArray('photos');
@@ -1276,7 +1333,7 @@
   } else {
     photoReady = false;
     setContinueButtonReady(false, 'Foto Tidak Ditemukan');
-    statusBar.textContent = 'Foto tidak ditemukan di penyimpanan browser. Kembali dan ambil ulang foto.';
+    statusBar.textContent = 'Foto tidak ditemukan. Pastikan camera.html dan filter.html berasal dari patch yang sama, lalu ambil ulang foto.';
   }
 })().catch(error => {
   console.error('filter init error:', error);

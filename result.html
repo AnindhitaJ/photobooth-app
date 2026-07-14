@@ -645,7 +645,11 @@
   function idbOpen() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(PHOTO_STORE_DB, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(PHOTO_STORE_NAME);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(PHOTO_STORE_NAME)) {
+          req.result.createObjectStore(PHOTO_STORE_NAME);
+        }
+      };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error || new Error('IndexedDB gagal dibuka'));
     });
@@ -674,13 +678,27 @@
     } catch(e) {}
   }
 
+  function normalizePhotoArray(value) {
+    const candidate = Array.isArray(value)
+      ? value
+      : (value && Array.isArray(value.photos) ? value.photos : []);
+    return candidate.filter(item => typeof item === 'string' && item.length > 32);
+  }
+
   async function loadLargePhotoArray(key) {
-    if (localStorage.getItem(key + 'Store') === 'indexedDB') {
-      const value = await idbGet(key);
-      return Array.isArray(value) ? value : [];
+    // IndexedDB diperiksa langsung; marker localStorage tidak lagi menjadi syarat.
+    try {
+      const fromIdb = normalizePhotoArray(await idbGet(key));
+      if (fromIdb.length) return fromIdb;
+    } catch (e) {
+      console.warn('[LUX] IndexedDB read failed:', key, e);
     }
-    try { return JSON.parse(localStorage.getItem(key) || '[]'); }
-    catch(e) { return []; }
+
+    try {
+      return normalizePhotoArray(JSON.parse(localStorage.getItem(key) || '[]'));
+    } catch(e) {
+      return [];
+    }
   }
 
   let filteredPhotos = [];
@@ -807,7 +825,7 @@
         filteredPhotosReady = true;
       }
       if (!filteredPhotos.length) {
-        filteredPhotos = JSON.parse(localStorage.getItem('photos') || '[]');
+        filteredPhotos = await loadLargePhotoArray('photos');
       }
 
       ctx.fillStyle = '#ffffff';
@@ -2357,6 +2375,7 @@
     ['photos','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('lux_result_consent_done');
     await idbDelete('filteredPhotos');
+    await idbDelete('photos');
     window.location.href = isEventMode ? '/event-run' : '/';
   }
 

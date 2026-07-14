@@ -529,6 +529,17 @@
     });
   }
 
+  async function idbGet(key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTO_STORE_NAME, 'readonly');
+      const req = tx.objectStore(PHOTO_STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error || new Error('IndexedDB gagal membaca'));
+      tx.oncomplete = () => db.close();
+    });
+  }
+
   async function idbDelete(key) {
     try {
       const db = await idbOpen();
@@ -541,19 +552,58 @@
     } catch(e) {}
   }
 
-  async function saveLargePhotoArray(key, value) {
+  function createPhotoSessionId() {
+    if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
+  async function saveLargePhotoArray(key, value, sessionId = '') {
     const json = JSON.stringify(value);
+    let idbSaved = false;
+    let localSaved = false;
+    let idbError = null;
+    let localError = null;
+
+    // IndexedDB menjadi penyimpanan utama karena localStorage Safari cepat penuh.
+    try {
+      await idbSet(key, value);
+      idbSaved = true;
+
+      if (sessionId) {
+        await idbSet(`${key}:${sessionId}`, value);
+        const verified = await idbGet(`${key}:${sessionId}`);
+        if (!Array.isArray(verified) || verified.filter(Boolean).length !== value.filter(Boolean).length) {
+          throw new Error('Verifikasi data foto IndexedDB gagal');
+        }
+      }
+    } catch (e) {
+      idbError = e;
+      console.warn('[LUX] IndexedDB save failed:', e);
+    }
+
+    // localStorage hanya salinan kompatibilitas untuk browser/perangkat yang masih mampu.
     try {
       localStorage.setItem(key, json);
-      localStorage.removeItem(key + 'Store');
-      await idbDelete(key);
-      return 'localStorage';
-    } catch(e) {
-      await idbSet(key, value);
-      localStorage.removeItem(key);
-      localStorage.setItem(key + 'Store', 'indexedDB');
-      return 'indexedDB';
+      localSaved = true;
+    } catch (e) {
+      localError = e;
+      try { localStorage.removeItem(key); } catch (_) {}
+      console.warn('[LUX] localStorage save failed:', e);
     }
+
+    try {
+      if (idbSaved) localStorage.setItem(key + 'Store', 'indexedDB');
+      else if (localSaved) localStorage.setItem(key + 'Store', 'localStorage');
+    } catch (_) {}
+
+    if (!idbSaved && !localSaved) {
+      const reason = idbError?.message || localError?.message || 'penyimpanan browser tidak tersedia';
+      throw new Error(`Foto gagal disimpan: ${reason}`);
+    }
+
+    return idbSaved && localSaved
+      ? 'IndexedDB + localStorage'
+      : (idbSaved ? 'IndexedDB' : 'localStorage');
   }
 
   // Pan/Zoom
@@ -1053,8 +1103,13 @@
       localStorage.removeItem('filteredPhotosStore');
       localStorage.removeItem('livePhotos');
 
-      const storeMode = await saveLargePhotoArray('photos', photos);
-      console.log('[LUX] photos saved via', storeMode);
+      const photoSessionId = createPhotoSessionId();
+      const storeMode = await saveLargePhotoArray('photos', photos, photoSessionId);
+      console.log('[LUX] photos saved via', storeMode, 'session', photoSessionId);
+
+      // Token kecil ini ikut di URL, sehingga filter tidak bergantung pada marker localStorage.
+      try { sessionStorage.setItem('luxPhotoSessionId', photoSessionId); } catch (_) {}
+      try { localStorage.setItem('photosSessionId', photoSessionId); } catch (_) {}
 
       const validLive = liveVideos.filter(Boolean);
       if (validLive.length > 0) {
@@ -1074,7 +1129,7 @@
         try { localStorage.setItem('ganciState', JSON.stringify(initialState)); } catch(e) {}
       }
 
-      window.location.assign('/filter');
+      window.location.assign(`/filter?photoSession=${encodeURIComponent(photoSessionId)}&handoff=2`);
     } catch(e) {
       console.error('simpan foto sebelum filter error:', e);
       isSavingPhotos = false;

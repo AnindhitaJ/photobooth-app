@@ -305,6 +305,7 @@
     ].forEach(eventStorageRemove);
   }
   const eventTemplateIds = new Set(parseEventTemplateIds());
+  const eventId = templateParams.get('event') || eventStorageGet('activeEventId') || '';
   const eventProductType = (templateParams.get('product') || eventStorageGet('activeEventProductType') || '').toLowerCase();
   const isPhotoboxMode = !isEventMode && localStorage.getItem('captureFlow') === 'photobox';
 
@@ -1969,7 +1970,62 @@
     return _dbTemplates;
   }
 
+  function eventProductMatches(t) {
+    if (!isEventMode) return true;
+    return eventProductType === 'photobox' ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t);
+  }
+
+  function getEventSelectedTemplates() {
+    if (!isEventMode) return [];
+    return _dbTemplates
+      .filter(t => eventTemplateIds.has(String(t.id)))
+      .filter(eventProductMatches)
+      .filter(t => !HIDDEN_CATEGORIES.includes(t.category));
+  }
+
+  async function loadEventTemplateSelection() {
+    if (!isEventMode || !eventId) return;
+
+    try {
+      const token = Auth.getToken();
+      const url = `${SUPABASE_URL}/rest/v1/lux_events?id=eq.${encodeURIComponent(eventId)}&select=id,name,template_ids&limit=1`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${token}`
+        },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error(await res.text());
+
+      const rows = await res.json();
+      const ev = rows?.[0];
+      if (!ev) return;
+
+      const ids = Array.isArray(ev.template_ids) ? ev.template_ids.map(String) : [];
+      eventTemplateIds.clear();
+      ids.forEach(id => eventTemplateIds.add(id));
+
+      eventStorageSet('activeEventId', String(ev.id || eventId));
+      eventStorageSet('activeEventTemplateIds', JSON.stringify(ids));
+      if (ev.name) eventStorageSet('activeEventName', ev.name);
+    } catch (e) {
+      // Tetap gunakan data session/local storage bila request database gagal.
+      console.warn('[template] Gagal refresh pilihan template event:', e);
+    }
+  }
+
   function getCategories() {
+    if (isEventMode) {
+      // Hanya kategori yang benar-benar dimiliki template terpilih pada event
+      // dan sesuai jenis produk yang sedang dipilih.
+      return [...new Set(
+        getEventSelectedTemplates()
+          .map(t => String(t.category || '').trim())
+          .filter(Boolean)
+      )];
+    }
+
     if (isPhotoboxMode) {
       // Photobox tetap punya tab khusus built-in "Photobox 4R",
       // tapi template upload harus tetap bisa difilter berdasarkan kategori/tema aslinya
@@ -1994,12 +2050,32 @@
   function renderCatTabs() {
     const cats = getCategories();
     const el = document.getElementById('catTabs');
-    let html = `<button class="cat-tab ${currentCat==='all'?'active':''}" onclick="filterCat('all')">Semua</button>`;
-    if (!isPhotoboxMode) html += `<button class="cat-tab ${currentCat==='__basic__'?'active':''}" onclick="filterCat('__basic__')">Basic</button>`;
-    html += cats.map(c =>
-      `<button class="cat-tab ${currentCat===c?'active':''}" onclick="filterCat('${c}')">${c}</button>`
-    ).join('');
-    el.innerHTML = html;
+
+    if (isEventMode && currentCat !== 'all' && !cats.includes(currentCat)) {
+      currentCat = 'all';
+    }
+
+    el.replaceChildren();
+
+    const addTab = (label, value) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `cat-tab ${currentCat === value ? 'active' : ''}`;
+      button.textContent = label;
+      button.addEventListener('click', () => filterCat(value));
+      el.appendChild(button);
+    };
+
+    addTab('Semua', 'all');
+
+    if (!isPhotoboxMode && !isEventMode) {
+      addTab('Basic', '__basic__');
+    }
+
+    cats.forEach(c => addTab(c, c));
+
+    // Tidak menampilkan bar kategori kosong pada event tanpa template valid.
+    el.style.display = isEventMode && cats.length === 0 ? 'none' : '';
   }
 
   function filterCat(cat) {
@@ -2038,16 +2114,11 @@
   // ─── Render templates ───
   function renderTemplates() {
     const grid = document.getElementById('templateGrid');
-    const saved = getSavedTemplates()
-      .filter(t => !HIDDEN_CATEGORIES.includes(t.category))
-      .filter(t => {
-        if (isEventMode) {
-          const eventOk = eventTemplateIds.has(String(t.id));
-          const productOk = eventProductType === 'photobox' ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t);
-          return eventOk && productOk;
-        }
-        return isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t);
-      });
+    const saved = isEventMode
+      ? getEventSelectedTemplates()
+      : getSavedTemplates()
+          .filter(t => !HIDDEN_CATEGORIES.includes(t.category))
+          .filter(t => isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t));
     let templates = [];
     const basicTemplates = (isPhotoboxMode || isEventMode) ? [] : getAllBasicTemplates();
     const builtInTemplates = isEventMode ? [] : getAllBuiltInTemplates();
@@ -2071,7 +2142,11 @@
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;color:#a0a0b0;padding:48px 24px;">
           <h3 style="color:white;margin-bottom:8px">Belum ada template di kategori ini</h3>
-          <p>${isEventMode ? ('Belum ada template ' + (eventProductType === 'photobox' ? 'Photobox 4R' : 'Photostrip') + ' untuk event ini. Edit event dan pilih template dengan jenis produk tersebut.') : (isPhotoboxMode ? 'Belum ada template Photobox di kategori ini. Cek product type dan kategori template di Admin.' : 'Admin perlu upload template dulu lewat menu ⚙️')}</p>
+          <p>${isEventMode
+            ? (eventTemplateIds.size === 0
+                ? 'Event ini belum memiliki template terpilih. Edit event lalu pilih minimal satu template.'
+                : ('Tidak ada template terpilih yang cocok untuk ' + (eventProductType === 'photobox' ? 'Photobox 4R' : 'Photostrip') + (currentCat !== 'all' ? ' pada kategori ' + currentCat : '') + '.'))
+            : (isPhotoboxMode ? 'Belum ada template Photobox di kategori ini. Cek product type dan kategori template di Admin.' : 'Admin perlu upload template dulu lewat menu ⚙️')}</p>
         </div>`;
       selectedTemplate = null;
       document.getElementById('infoBox').style.display = 'none';
@@ -2191,7 +2266,10 @@
   (async () => {
     const grid = document.getElementById('templateGrid');
     if (grid) grid.innerHTML = '<div style="color:#a0a0b0;text-align:center;padding:32px;width:100%">⏳ Memuat template...</div>';
-    await loadTemplatesFromSupabase();
+    await Promise.all([
+      loadTemplatesFromSupabase(),
+      loadEventTemplateSelection()
+    ]);
     renderCatTabs();
     renderColorSwatches();
     renderTemplates();

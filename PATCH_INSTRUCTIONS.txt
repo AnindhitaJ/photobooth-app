@@ -1,36 +1,35 @@
-LUX PHOTOBOOTH — IPAD MULAI EVENT FIX V3
+LUX PHOTOBOOTH — EVENT TEMPLATE FILTER V4
 ========================================
 
-GEJALA
-- Tombol “Mulai” di halaman Event terlihat bisa ditekan, tetapi iPad tidak berpindah halaman.
-- Biasanya terjadi pada event yang memakai welcome screen atau setelah beberapa sesi foto.
+TUJUAN
+Pada halaman Pilih Template Event:
+- Template yang tampil hanya template yang dipilih pada event.
+- Kategori yang tampil hanya kategori dari template yang dipilih.
+- Template tetap difilter sesuai tombol Photostrip atau Photobox 4R.
+- Jika session/localStorage Safari hilang, template_ids event diambil ulang langsung dari Supabase.
 
-AKAR MASALAH
-- event.html menyimpan seluruh objek event ke localStorage.
-- welcome_screen_url dapat berupa data URL PNG berukuran beberapa MB ketika upload Storage fallback.
-- Nilai welcome itu disimpan lagi pada key terpisah, sehingga data besar diduplikasi.
-- Safari/iPad melempar QuotaExceededError secara sinkron. Karena error tidak ditangkap, baris navigasi tidak pernah dijalankan.
+FILE MINIMAL YANG WAJIB DITIMPA
+1. template.html
+2. sw.js
 
-FILE YANG DITIMPA
-1. event.html
-2. event-run.html
-3. template.html
-4. result.html
-5. sw.js
+FILE LAIN DALAM PAKET
+- event.html
+- event-run.html
+- result.html
+
+Ketiga file tersebut adalah salinan kumulatif dari patch iPad Event V3. Timpa juga bila patch V3 belum pernah dipasang.
 
 CARA PASANG
-1. Timpa kelima file di root repository.
-2. Commit dan deploy ulang ke Vercel.
-3. Hapus PWA lama dari Home Screen iPad bila terpasang.
-4. Hapus Website Data untuk domain aplikasi di Settings > Safari > Advanced > Website Data.
-5. Buka ulang aplikasi dan buat/mulai event kembali.
+1. Timpa template.html dan sw.js di root repository.
+2. Bila V3 belum dipasang, timpa seluruh file HTML dalam paket.
+3. Commit dan deploy ulang ke Vercel.
+4. Di iPad, tutup tab/PWA lama.
+5. Hapus website data domain aplikasi atau hapus lalu pasang ulang PWA.
+6. Buka Event, edit event, pastikan template yang dibutuhkan tercentang, simpan, lalu tekan Mulai.
 
-PERUBAHAN
-- Welcome screen besar tidak lagi disalin ke localStorage.
-- Metadata event yang disimpan hanya ID, nama, template IDs, dan status overlay.
-- sessionStorage dipakai sebagai jalur utama dan localStorage sebagai kompatibilitas/fallback.
-- event-run mengambil welcome screen langsung dari Supabase berdasarkan event ID URL.
-- Semua operasi Web Storage dibungkus try/catch sehingga kegagalan storage tidak membatalkan navigasi.
-- Payload foto lama dibersihkan ketika memulai sesi event baru untuk membebaskan kuota Safari.
-- template dan result dapat membaca metadata event dari sessionStorage atau localStorage.
-- Cache service worker dinaikkan agar iPad tidak memakai file event lama.
+HASIL YANG DIHARAPKAN
+Contoh: event hanya memilih template kategori “baru1” dan “Photostrip”.
+Halaman event hanya menampilkan tab:
+- Semua
+- baru1
+dan hanya kartu template terpilih dalam kategori tersebut.

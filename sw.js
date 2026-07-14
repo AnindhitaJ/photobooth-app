@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.4-ipad-event-start';
+const CACHE_NAME = 'lux-photobooth-v1.5-event-template-filter';
 const CORE_ASSETS = [
   '/',
   '/index.html',

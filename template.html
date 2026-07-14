@@ -2014,6 +2014,21 @@
     return _dbTemplates;
   }
 
+  // Template bawaan bersifat global: tersedia untuk semua user tanpa record database.
+  // Template upload tetap dibatasi oleh user_id melalui loadTemplatesFromSupabase().
+  function getGlobalBuiltInTemplates() {
+    if (isEventMode) return [];
+
+    const builtIns = getAllBuiltInTemplates();
+    return isPhotoboxMode
+      ? builtIns
+      : [...getAllBasicTemplates(), ...builtIns];
+  }
+
+  function getNonEventTemplates() {
+    return [...getGlobalBuiltInTemplates(), ...getSavedTemplates()];
+  }
+
   function eventProductMatches(t) {
     if (!isEventMode) return true;
     return eventProductType === 'photobox' ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t);
@@ -2072,20 +2087,20 @@
 
     if (isPhotoboxMode) {
       return [...new Set(
-        _dbTemplates
+        getNonEventTemplates()
           .filter(t => isPhotoboxTemplate(t))
           .map(t => String(t.category || '').trim())
-          .filter(c => c && !HIDDEN_CATEGORIES.includes(c))
+          .filter(c => c && c !== '__basic__' && !HIDDEN_CATEGORIES.includes(c))
       )];
     }
 
-    // Mode template biasa: kategori hanya berasal dari template milik user.
-    // Kategori built-in dan kategori lokal lama tidak ikut ditampilkan.
+    // Mode template biasa: gabungkan kategori template global dan template milik user.
+    // Basic tetap tampil pada tab Semua, tetapi tidak dibuat sebagai tab kategori teknis.
     return [...new Set(
-      _dbTemplates
+      getNonEventTemplates()
         .filter(t => !isPhotoboxTemplate(t))
         .map(t => String(t.category || '').trim())
-        .filter(c => c && !HIDDEN_CATEGORIES.includes(c))
+        .filter(c => c && c !== '__basic__' && !HIDDEN_CATEGORIES.includes(c))
     )];
   }
 
@@ -2155,7 +2170,7 @@
     const grid = document.getElementById('templateGrid');
     const saved = isEventMode
       ? getEventSelectedTemplates()
-      : getSavedTemplates()
+      : getNonEventTemplates()
           .filter(t => !HIDDEN_CATEGORIES.includes(t.category))
           .filter(t => isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t));
     let templates = [];
@@ -2181,8 +2196,8 @@
                 ? 'Event ini belum memiliki template terpilih. Edit event lalu pilih minimal satu template.'
                 : ('Tidak ada template terpilih yang cocok untuk ' + (eventProductType === 'photobox' ? 'Photobox 4R' : 'Photostrip') + (currentCat !== 'all' ? ' pada kategori ' + currentCat : '') + '.'))
             : (isPhotoboxMode
-                ? 'Akun ini belum memiliki template Photobox pada kategori tersebut.'
-                : 'Akun ini belum memiliki template pada kategori tersebut. Upload template melalui halaman Admin.')}</p>
+                ? 'Tidak ada template Photobox yang cocok pada kategori tersebut.'
+                : 'Tidak ada template yang cocok pada kategori tersebut.')}</p>
         </div>`;
       selectedTemplate = null;
       document.getElementById('infoBox').style.display = 'none';
@@ -2298,7 +2313,7 @@
     if (btn) btn.textContent = 'Mulai Photobox →';
   } else {
     const sub = document.querySelector('.sub');
-    if (sub) sub.textContent = 'Hanya template yang dimiliki akun ini yang ditampilkan';
+    if (sub) sub.textContent = 'Template bawaan tersedia untuk semua akun; template upload hanya tampil untuk pemiliknya';
   }
 
   // Init: load dari Supabase dulu

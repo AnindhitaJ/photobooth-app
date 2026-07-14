@@ -1,19 +1,18 @@
-LUX PHOTOBOOTH — USER-OWNED TEMPLATE FILTER V5
-=============================================
+LUX PHOTOBOOTH — GLOBAL BUILT-IN TEMPLATE FIX V1.7
+=================================================
 
 TUJUAN
-Pada halaman /template biasa, hanya template yang memiliki:
-  templates.user_id = ID user yang sedang login
-yang ditampilkan, termasuk ketika user tersebut adalah super-admin.
+- Template Built-in dan Basic tampil untuk semua user.
+- Template upload dari Supabase tetap hanya tampil kepada pemiliknya:
+  templates.user_id = ID user yang sedang login.
 
 PERUBAHAN
-- Query Supabase ditambah filter user_id=eq.<JWT sub>.
-- ID pemilik diambil dari JWT sesi, bukan sb_user_id yang mudah diubah.
-- Hasil query difilter ulang di browser berdasarkan user_id.
-- Template Built-in/Basic tidak lagi ditampilkan karena bukan milik user.
-- Kategori hanya berasal dari template milik user.
-- Kategori lama dari localStorage tidak ikut ditampilkan.
-- Cache service worker dinaikkan agar template.html baru diterima perangkat.
+- Daftar non-event sekarang menggabungkan template global dan template milik user.
+- Kategori Built-in kembali ditampilkan.
+- Kategori teknis __basic__ tidak dibuat menjadi tab, tetapi Basic tersedia pada tab Semua.
+- Photobox Built-in kembali tersedia pada alur Photobox.
+- Event mode tidak diubah: tetap hanya menampilkan template database yang dipilih pada event.
+- Cache service worker dinaikkan ke lux-photobooth-v1.7-global-builtins.
 
 FILE YANG WAJIB DITIMPA
 1. template.html
@@ -23,10 +22,9 @@ CARA PASANG
 1. Timpa kedua file di root repository.
 2. Commit dan deploy ulang ke Vercel.
 3. Tutup semua tab/PWA lama.
-4. Hapus website data domain aplikasi atau uninstall lalu install ulang PWA.
-5. Login ulang dan buka /template.
+4. Buka ulang aplikasi.
+5. Bila template lama masih tampil, hapus website data domain aplikasi atau uninstall/install ulang PWA.
 
-CATATAN DATA
-- Template lama yang user_id-nya NULL tidak akan tampil.
-- Pastikan setiap template yang memang dimiliki user memiliki user_id yang benar.
-- Patch ini membatasi tampilan aplikasi. RLS database tetap harus benar untuk keamanan server-side.
+CATATAN KEAMANAN
+Template upload tetap difilter menggunakan user_id dari subject JWT dan difilter ulang di browser.
+Template Built-in tidak berasal dari database sehingga tidak memiliki user_id dan memang bersifat global.

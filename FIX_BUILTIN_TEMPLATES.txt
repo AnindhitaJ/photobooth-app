@@ -1,0 +1,14 @@
+LUX PHOTOBOOTH — FIX GLOBAL BUILT-IN TEMPLATES
+================================================
+
+Perubahan:
+1. Template Built-in dan Basic kembali ditambahkan ke daftar template non-event.
+2. Template bawaan bersifat global dan muncul untuk semua user.
+3. Template hasil upload tetap dibatasi berdasarkan templates.user_id user login.
+4. Kategori menggabungkan kategori Built-in dan kategori template milik user.
+5. Cache service worker dinaikkan ke v1.7 agar template.html terbaru diterima perangkat.
+
+Catatan:
+- Event mode tetap hanya menampilkan template database yang dipilih pada event.
+- Setelah deploy, tutup seluruh tab/PWA lama lalu buka ulang. Bila versi lama masih muncul,
+  hapus data situs atau uninstall/install ulang PWA untuk membersihkan service-worker cache.

@@ -1,0 +1,16 @@
+LUX Photobooth — patch foto hitam/kosong
+
+Ganti tiga file di root deployment:
+1. filter.html
+2. camera.html
+3. sw.js
+
+Perubahan utama:
+- tombol hasil dinonaktifkan sampai gambar benar-benar selesai dimuat;
+- canvas bawaan 300x150 tidak lagi disimpan sebagai foto;
+- klik ganda pada tombol hasil dicegah;
+- transfer camera -> filter memakai IndexedDB jika localStorage Safari penuh/gagal;
+- filter dapat membaca foto dari localStorage maupun IndexedDB;
+- cache service worker dinaikkan agar file lama tidak terus dipakai.
+
+Setelah deploy, tutup tab/PWA lama lalu buka ulang. Jika masih memakai versi cache lama, hapus data situs atau reinstall PWA sekali.

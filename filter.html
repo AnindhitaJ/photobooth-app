@@ -298,7 +298,7 @@
         </div>
         <div class="btn-row nav-row">
           <button class="btn btn-secondary" type="button" onclick="kembali()">← Balik</button>
-          <button class="btn btn-primary" type="button" id="btnLanjutFilter" onclick="lanjut()">Lihat Hasil →</button>
+          <button class="btn btn-primary" type="button" id="btnLanjutFilter" disabled>Memuat Foto...</button>
         </div>
       </div>
 
@@ -306,24 +306,31 @@
   </div>
 
 <script>
-  const photos    = JSON.parse(localStorage.getItem('photos') || '[]');
-  const slotCount = photos.length;
-  const captureFlow = localStorage.getItem('captureFlow') || '';
-  const isGanciMode = captureFlow === 'ganci';
-  const isProductMode = captureFlow === 'product';
-  const isPhotoboxMode = captureFlow === 'photobox';
-  const productLikeExportQuality = (isGanciMode || isProductMode || isPhotoboxMode) ? 0.92 : 0.90;
-  const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
-
+(async function initFilterApp() {
   const PHOTO_STORE_DB = 'lux-photo-temp-db';
   const PHOTO_STORE_NAME = 'items';
 
   function idbOpen() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(PHOTO_STORE_DB, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(PHOTO_STORE_NAME);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(PHOTO_STORE_NAME)) {
+          req.result.createObjectStore(PHOTO_STORE_NAME);
+        }
+      };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error || new Error('IndexedDB gagal dibuka'));
+    });
+  }
+
+  async function idbGet(key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTO_STORE_NAME, 'readonly');
+      const req = tx.objectStore(PHOTO_STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error || new Error('IndexedDB gagal membaca'));
+      tx.oncomplete = () => db.close();
     });
   }
 
@@ -337,11 +344,37 @@
     });
   }
 
+  async function idbDelete(key) {
+    try {
+      const db = await idbOpen();
+      return new Promise(resolve => {
+        const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+        tx.objectStore(PHOTO_STORE_NAME).delete(key);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch(e) {}
+  }
+
+  async function loadLargePhotoArray(key) {
+    if (localStorage.getItem(key + 'Store') === 'indexedDB') {
+      const value = await idbGet(key);
+      return Array.isArray(value) ? value : [];
+    }
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(value) ? value : [];
+    } catch(e) {
+      return [];
+    }
+  }
+
   async function saveLargePhotoArray(key, value) {
     const json = JSON.stringify(value);
     try {
       localStorage.setItem(key, json);
       localStorage.removeItem(key + 'Store');
+      await idbDelete(key);
       return 'localStorage';
     } catch(e) {
       await idbSet(key, value);
@@ -350,6 +383,15 @@
       return 'indexedDB';
     }
   }
+
+  const photos = await loadLargePhotoArray('photos');
+  const slotCount = photos.length;
+  const captureFlow = localStorage.getItem('captureFlow') || '';
+  const isGanciMode = captureFlow === 'ganci';
+  const isProductMode = captureFlow === 'product';
+  const isPhotoboxMode = captureFlow === 'photobox';
+  const productLikeExportQuality = (isGanciMode || isProductMode || isPhotoboxMode) ? 0.92 : 0.90;
+  const ganciConfig = (() => { try { return JSON.parse(localStorage.getItem('ganciConfig') || '{}'); } catch(e) { return {}; } })();
 
   if (isPhotoboxMode) {
     document.title = 'Filter Photobox 4R - LUX Photobooth';
@@ -391,6 +433,21 @@
 
   let allLandmarks = [];
   let currentImg   = new Image();
+  let photoReady = false;
+  let isProcessingResult = false;
+  let activeLoadToken = 0;
+
+  function readyButtonLabel() {
+    return isGanciMode ? 'Simpan Ganci ✓' : 'Lihat Hasil →';
+  }
+
+  function setContinueButtonReady(ready, text) {
+    const btn = document.getElementById('btnLanjutFilter');
+    if (!btn) return;
+    btn.disabled = !ready;
+    btn.style.pointerEvents = ready ? '' : 'none';
+    btn.textContent = text || (ready ? readyButtonLabel() : 'Memuat Foto...');
+  }
 
   // ── Build tabs ──────────────────────────────────────────────────────────────
   const tabsEl = document.getElementById('photoTabs');
@@ -404,16 +461,24 @@
 
   // ── Switch foto ─────────────────────────────────────────────────────────────
   function switchPhoto(idx) {
-    if (!photos[idx]) return;
+    const src = photos[idx];
+    if (!src) {
+      photoReady = false;
+      setContinueButtonReady(false, 'Foto Tidak Tersedia');
+      statusBar.textContent = 'Data foto tidak ditemukan. Kembali dan ambil ulang foto.';
+      return;
+    }
 
-    // Simpan state foto sebelumnya hanya kalau canvas sudah pernah terisi.
-    // Di mode Ganci, beberapa elemen UI multi-photo memang tidak ditampilkan,
-    // jadi akses DOM harus aman agar filter tetap jalan.
-    if (canvas.width > 0 && canvas.height > 0) {
+    // Jangan pernah menyimpan canvas bawaan 300×150 atau canvas dari foto lain.
+    if (photoReady && currentImg.complete && currentImg.naturalWidth > 0) {
       simpanFotoSilent();
     }
 
+    const loadToken = ++activeLoadToken;
     currentIdx = idx;
+    photoReady = false;
+    setContinueButtonReady(false, 'Memuat Foto...');
+    statusBar.textContent = 'Memuat foto...';
 
     document.querySelectorAll('.photo-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
 
@@ -423,24 +488,46 @@
     loadFilterUI(filterStates[idx]);
 
     allLandmarks = [];
-    currentImg   = new Image();
-    currentImg.onload = async () => {
-      canvas.width  = currentImg.width;
-      canvas.height = currentImg.height;
-      // Gambar dulu agar preview langsung muncul
-      ctx.drawImage(currentImg, 0, 0);
-      statusBar.textContent = 'Mendeteksi wajah...';
-      await loadMediaPipe();
+    const image = new Image();
+    image.decoding = 'async';
+    currentImg = image;
+
+    image.onload = async () => {
+      if (loadToken !== activeLoadToken || currentIdx !== idx) return;
+
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      if (!width || !height) {
+        image.onerror();
+        return;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(image, 0, 0, width, height);
+
+      photoReady = true;
+      setContinueButtonReady(true);
+      statusBar.textContent = 'Foto siap. Mendeteksi wajah...';
+
+      await loadMediaPipe(image);
+      if (loadToken !== activeLoadToken || currentIdx !== idx || currentImg !== image) return;
       applyFilter();
     };
-    currentImg.onerror = () => {
-      statusBar.textContent = 'Foto gagal dimuat. Silakan retake foto.';
+
+    image.onerror = () => {
+      if (loadToken !== activeLoadToken) return;
+      photoReady = false;
+      setContinueButtonReady(false, 'Foto Gagal Dimuat');
+      statusBar.textContent = 'Foto gagal dimuat. Kembali dan ambil ulang foto.';
     };
-    currentImg.src = photos[idx];
+
+    image.src = src;
   }
 
   // ── MediaPipe face landmark ──────────────────────────────────────────────────
-  async function loadMediaPipe() {
+  async function loadMediaPipe(image = currentImg) {
     try {
       const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
       const { FaceLandmarker, FilesetResolver } = vision;
@@ -454,7 +541,7 @@
         },
         runningMode: 'IMAGE', numFaces: 4
       });
-      const result = faceLandmarker.detect(currentImg);
+      const result = faceLandmarker.detect(image);
       allLandmarks = result.faceLandmarks || [];
       const n = allLandmarks.length;
       statusBar.textContent = n > 0 ? n + ' wajah terdeteksi ✓' : 'Wajah tidak terdeteksi';
@@ -629,6 +716,7 @@
   // ── MAIN applyFilter ─────────────────────────────────────────────────────────
   function applyFilter() {
     if (!filterStates[currentIdx]) return;
+    if (!currentImg || !currentImg.complete || !currentImg.naturalWidth || !canvas.width || !canvas.height) return;
     const s = filterStates[currentIdx];
     const W = canvas.width, H = canvas.height;
     const faces = allLandmarks.length > 0 ? allLandmarks : [];
@@ -1024,8 +1112,20 @@
   };
 
   function simpanFotoSilent() {
-    if (!canvas.width || !canvas.height) return;
+    if (
+      !photoReady ||
+      !currentImg ||
+      !currentImg.complete ||
+      !currentImg.naturalWidth ||
+      !currentImg.naturalHeight ||
+      !canvas.width ||
+      !canvas.height
+    ) {
+      return false;
+    }
+
     filteredPhotos[currentIdx] = canvas.toDataURL('image/jpeg', productLikeExportQuality);
+    return true;
   }
 
   function downloadCanvasBlob(canvasEl, filename) {
@@ -1057,7 +1157,9 @@
 
   window.downloadFotoIni = async function() {
     try {
-      simpanFotoSilent(); // tetap update preview/filter state untuk flow lanjut hasil
+      if (!simpanFotoSilent()) {
+        throw new Error('Foto masih dimuat. Tunggu sampai preview muncul.');
+      }
       await downloadCanvasBlob(canvas, `lux-foto-${currentIdx + 1}-${Date.now()}.jpg`);
       statusBar.textContent = `Foto ${currentIdx + 1} mulai didownload ✓`;
       setTimeout(() => { statusBar.textContent = ''; }, 1500);
@@ -1071,6 +1173,15 @@
   window.simpanFoto = window.downloadFotoIni;
 
   async function goToResultPage() {
+    if (isProcessingResult) return;
+
+    if (!photoReady) {
+      statusBar.textContent = 'Foto masih dimuat. Tunggu sampai preview muncul.';
+      setContinueButtonReady(false, 'Memuat Foto...');
+      return;
+    }
+
+    isProcessingResult = true;
     const btn = document.getElementById('btnLanjutFilter');
     if (btn) {
       btn.disabled = true;
@@ -1079,7 +1190,9 @@
     }
 
     try {
-      simpanFotoSilent();
+      if (!simpanFotoSilent()) {
+        throw new Error('Foto belum siap diproses');
+      }
       const storeMode = await saveLargePhotoArray('filteredPhotos', filteredPhotos);
       console.log('[LUX] filteredPhotos saved via', storeMode);
 
@@ -1121,13 +1234,9 @@
       window.location.assign('/result');
     } catch(e) {
       console.error('lanjut filter error:', e);
+      isProcessingResult = false;
       alert('Gagal lanjut ke hasil: ' + (e.message || e));
-      const btn = document.getElementById('btnLanjutFilter');
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = isPhotoboxMode ? 'Lihat Hasil →' : 'Lihat Hasil →';
-        btn.style.pointerEvents = '';
-      }
+      setContinueButtonReady(photoReady);
     }
   }
 
@@ -1162,7 +1271,23 @@
   }
 
   // ── Init ─────────────────────────────────────────────────────────────────────
-  switchPhoto(0);
+  if (photos.length > 0) {
+    switchPhoto(0);
+  } else {
+    photoReady = false;
+    setContinueButtonReady(false, 'Foto Tidak Ditemukan');
+    statusBar.textContent = 'Foto tidak ditemukan di penyimpanan browser. Kembali dan ambil ulang foto.';
+  }
+})().catch(error => {
+  console.error('filter init error:', error);
+  const status = document.getElementById('statusBar');
+  if (status) status.textContent = 'Filter gagal dibuka: ' + (error.message || error);
+  const btn = document.getElementById('btnLanjutFilter');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Filter Gagal Dimuat';
+  }
+});
 </script>
 
 <!-- CONFIRM QUIT MODAL -->

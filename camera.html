@@ -501,6 +501,60 @@
   let recordedChunks = [];
   let captureMode    = null;
   let countdownSec   = 5;
+  let isSavingPhotos = false;
+
+  const PHOTO_STORE_DB = 'lux-photo-temp-db';
+  const PHOTO_STORE_NAME = 'items';
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(PHOTO_STORE_DB, 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(PHOTO_STORE_NAME)) {
+          req.result.createObjectStore(PHOTO_STORE_NAME);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB gagal dibuka'));
+    });
+  }
+
+  async function idbSet(key, value) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+      tx.objectStore(PHOTO_STORE_NAME).put(value, key);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB gagal menyimpan')); };
+    });
+  }
+
+  async function idbDelete(key) {
+    try {
+      const db = await idbOpen();
+      return new Promise(resolve => {
+        const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+        tx.objectStore(PHOTO_STORE_NAME).delete(key);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch(e) {}
+  }
+
+  async function saveLargePhotoArray(key, value) {
+    const json = JSON.stringify(value);
+    try {
+      localStorage.setItem(key, json);
+      localStorage.removeItem(key + 'Store');
+      await idbDelete(key);
+      return 'localStorage';
+    } catch(e) {
+      await idbSet(key, value);
+      localStorage.removeItem(key);
+      localStorage.setItem(key + 'Store', 'indexedDB');
+      return 'indexedDB';
+    }
+  }
 
   // Pan/Zoom
   const zoom = 1.0, panX = 0, panY = 0;
@@ -976,33 +1030,60 @@
     if (!stream || !stream.active) startCamera();
   }
 
-  function lanjutFilter() {
+  async function lanjutFilter() {
+    if (isSavingPhotos) return;
+
+    const validPhotos = photos.filter(Boolean);
+    if (validPhotos.length !== slotCount) {
+      alert('Masih ada foto yang belum diambil.');
+      return;
+    }
+
+    isSavingPhotos = true;
+    const continueButtons = document.querySelectorAll('#btnLanjut, .prev-btn-go');
+    continueButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.dataset.originalText = btn.textContent;
+      btn.textContent = 'Menyimpan foto...';
+    });
+
     try {
-      localStorage.removeItem('photos');
       localStorage.removeItem('filteredPhotos');
+      localStorage.removeItem('filteredPhotosStore');
       localStorage.removeItem('livePhotos');
-      localStorage.setItem('photos', JSON.stringify(photos));
-      setTimeout(() => {
-        const validLive = liveVideos.filter(Boolean);
-        if (validLive.length > 0) {
-          try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) {}
-        }
-        if (isGanciMode) {
-          const initialState = {
-            mode: 'ganci',
-            originalPhoto: photos[0] || null,
-            frame: ganciConfig.frame || 'polos',
-            frameLabel: (window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos',
-            bentuk: ganciConfig.bentuk || 'persegi',
-            config: ganciConfig,
-            updatedAt: new Date().toISOString()
-          };
-          try { localStorage.setItem('ganciState', JSON.stringify(initialState)); } catch(e) {}
-        }
-        window.location.href = '/filter';
-      }, 500);
+
+      const storeMode = await saveLargePhotoArray('photos', photos);
+      console.log('[LUX] photos saved via', storeMode);
+
+      const validLive = liveVideos.filter(Boolean);
+      if (validLive.length > 0) {
+        try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) {}
+      }
+
+      if (isGanciMode) {
+        const initialState = {
+          mode: 'ganci',
+          originalPhoto: photos[0] || null,
+          frame: ganciConfig.frame || 'polos',
+          frameLabel: (window.GanciFrames?.labels?.[ganciConfig.frame]) || ganciConfig.frame || 'Polos',
+          bentuk: ganciConfig.bentuk || 'persegi',
+          config: ganciConfig,
+          updatedAt: new Date().toISOString()
+        };
+        try { localStorage.setItem('ganciState', JSON.stringify(initialState)); } catch(e) {}
+      }
+
+      window.location.assign('/filter');
     } catch(e) {
-      alert('Storage penuh. Hapus template lama di Admin lalu coba lagi.');
+      console.error('simpan foto sebelum filter error:', e);
+      isSavingPhotos = false;
+      continueButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.pointerEvents = '';
+        btn.textContent = btn.dataset.originalText || 'Lanjut ke Filter →';
+      });
+      alert('Foto gagal disimpan ke browser: ' + (e.message || e));
     }
   }
 

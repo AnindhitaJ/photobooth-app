@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-redeploy-v1.1-photo-layer';
+const CACHE_NAME = 'lux-photobooth-v1.2-photo-handoff-fix';
 const CORE_ASSETS = [
   '/',
   '/index.html',

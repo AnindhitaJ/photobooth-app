@@ -449,6 +449,21 @@
   let resultConsentDone = sessionStorage.getItem('lux_result_consent_done') === '1';
   let pendingResultAction = null;
 
+  function eventStorageGet(key) {
+    try {
+      const v = sessionStorage.getItem(key);
+      if (v !== null) return v;
+    } catch (e) {}
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function activeEventId() {
+    const directId = eventStorageGet('activeEventId');
+    if (directId) return directId;
+    try { return JSON.parse(eventStorageGet('activeEvent') || '{}').id || ''; }
+    catch (e) { return ''; }
+  }
+
   async function uploadToSupabase(blob, filename, options = {}) {
     const token  = Auth.getToken();
     const userId = Auth.getUserId() || 'anon';
@@ -487,7 +502,7 @@
           body: JSON.stringify({
             user_id:    userId,
             file_path:  path,
-            event_id:   localStorage.getItem('eventMode') === '1' ? (JSON.parse(localStorage.getItem('activeEvent') || '{}').id || '') : '',
+            event_id:   eventStorageGet('eventMode') === '1' ? activeEventId() : '',
             template_id: localStorage.getItem('templateId') || '',
             product_type: isPhotoboxMode ? 'photobox' : 'photostrip',
             photo_count: filteredPhotos.length || 1,
@@ -541,8 +556,8 @@
 
   function eventIdForConsent() {
     try {
-      return localStorage.getItem('eventMode') === '1'
-        ? (JSON.parse(localStorage.getItem('activeEvent') || '{}').id || '')
+      return eventStorageGet('eventMode') === '1'
+        ? activeEventId()
         : '';
     } catch(e) { return ''; }
   }
@@ -627,7 +642,7 @@
       version: 1,
       type: isPhotoboxMode ? 'photobox' : 'photostrip',
       ownerId: Auth.getUserId() || '',
-      eventId: localStorage.getItem('eventMode') === '1' ? (JSON.parse(localStorage.getItem('activeEvent') || '{}').id || '') : '',
+      eventId: eventStorageGet('eventMode') === '1' ? activeEventId() : '',
       photo,
       photos: photos.filter(Boolean),
       gif: gif || '',
@@ -705,7 +720,7 @@
   let filteredPhotosReady = false;
   const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
   const captureFlow    = localStorage.getItem('captureFlow') || '';
-  const isEventMode = localStorage.getItem('eventMode') === '1';
+  const isEventMode = eventStorageGet('eventMode') === '1';
   const isPhotoboxMode = captureFlow === 'photobox';
   const templateSrc    = localStorage.getItem('templateSrc');
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]').map(s => ({

@@ -76,21 +76,96 @@
 
 <script>
   if (!Auth.getSession()) location.href = '/login';
+
   const canAccess = Auth.isSuperAdmin?.() || Auth.getPlanStatus?.() === 'pro';
-  if (!canAccess) {
-    document.getElementById('lock').style.display = 'flex';
+  if (!canAccess) document.getElementById('lock').style.display = 'flex';
+
+  function storageGet(key) {
+    try {
+      const sessionValue = sessionStorage.getItem(key);
+      if (sessionValue !== null) return sessionValue;
+    } catch (e) { console.warn('sessionStorage read gagal:', e); }
+    try { return localStorage.getItem(key); }
+    catch (e) { console.warn('localStorage read gagal:', e); return null; }
   }
 
-  const ev = JSON.parse(localStorage.getItem('activeEvent') || '{}');
-  const name = localStorage.getItem('activeEventName') || ev.name || 'Event Photobooth';
-  const welcomeURL = localStorage.getItem('activeEventWelcomeURL') || ev.welcome_screen_url || '';
-  const overlayEnabled = (localStorage.getItem('activeEventWelcomeOverlay') || '1') !== '0';
+  function storageSet(key, value) {
+    let ok = false;
+    try { sessionStorage.setItem(key, value); ok = true; } catch (e) { console.warn('sessionStorage write gagal:', e); }
+    try { localStorage.setItem(key, value); ok = true; } catch (e) { console.warn('localStorage write gagal:', e); }
+    return ok;
+  }
 
-  document.getElementById('eventTitle').textContent = name;
+  function safeJSON(value, fallback = {}) {
+    try { return JSON.parse(value || '') || fallback; }
+    catch (e) { return fallback; }
+  }
 
-  if (welcomeURL && overlayEnabled) {
-    document.getElementById('fallbackText').style.display = 'none';
-    document.getElementById('welcomeLayer').innerHTML = `<img src="${welcomeURL}" alt="Welcome Screen">`;
+  const params = new URLSearchParams(location.search);
+  let ev = safeJSON(storageGet('activeEvent'), {});
+  const eventId = params.get('id') || storageGet('activeEventId') || ev.id || '';
+
+  function applyEvent(nextEvent) {
+    if (!nextEvent || typeof nextEvent !== 'object') return;
+    ev = { ...ev, ...nextEvent };
+
+    const name = ev.name || storageGet('activeEventName') || 'Event Photobooth';
+    const overlayEnabled = ev.welcome_overlay_enabled !== false && storageGet('activeEventWelcomeOverlay') !== '0';
+    const welcomeURL = ev.welcome_screen_url || '';
+
+    document.getElementById('eventTitle').textContent = name;
+    const fallback = document.getElementById('fallbackText');
+    const layer = document.getElementById('welcomeLayer');
+    layer.replaceChildren();
+
+    if (welcomeURL && overlayEnabled) {
+      fallback.style.display = 'none';
+      const img = document.createElement('img');
+      img.src = welcomeURL;
+      img.alt = 'Welcome Screen';
+      img.onerror = () => {
+        layer.replaceChildren();
+        fallback.style.display = 'flex';
+      };
+      layer.appendChild(img);
+    } else {
+      fallback.style.display = 'flex';
+    }
+
+    const templateIds = Array.isArray(ev.template_ids) ? ev.template_ids.map(String) : [];
+    const compact = {
+      id: String(ev.id || eventId),
+      name,
+      template_ids: templateIds,
+      welcome_overlay_enabled: overlayEnabled
+    };
+    storageSet('activeEventId', compact.id);
+    storageSet('activeEvent', JSON.stringify(compact));
+    storageSet('activeEventName', name);
+    storageSet('activeEventTemplateIds', JSON.stringify(templateIds));
+    storageSet('activeEventWelcomeOverlay', overlayEnabled ? '1' : '0');
+  }
+
+  async function loadEvent() {
+    applyEvent(ev);
+    if (!eventId || !canAccess) return;
+
+    try {
+      const url = `${SUPABASE_URL}/rest/v1/lux_events?id=eq.${encodeURIComponent(eventId)}&select=id,name,welcome_screen_url,welcome_overlay_enabled,template_ids&limit=1`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${Auth.getToken()}`
+        },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const rows = await res.json();
+      if (rows?.[0]) applyEvent(rows[0]);
+    } catch (e) {
+      console.warn('Gagal mengambil detail event:', e);
+      // Metadata kecil dari halaman sebelumnya tetap cukup untuk meneruskan flow.
+    }
   }
 
   async function startCamera() {
@@ -101,7 +176,7 @@
         audio: false
       });
       document.getElementById('video').srcObject = stream;
-    } catch(e) {
+    } catch (e) {
       console.warn(e);
     }
   }
@@ -111,14 +186,19 @@
       document.getElementById('lock').style.display = 'flex';
       return;
     }
+
     const type = productType === 'photobox' ? 'photobox' : 'photostrip';
-    localStorage.setItem('eventMode', '1');
-    localStorage.setItem('activeEventProductType', type);
-    if (type === 'photobox') localStorage.setItem('captureFlow', 'photobox');
-    else localStorage.removeItem('captureFlow');
-    location.href = '/template?event=' + encodeURIComponent(ev.id || '') + '&product=' + type;
+    storageSet('eventMode', '1');
+    storageSet('activeEventProductType', type);
+    try {
+      if (type === 'photobox') localStorage.setItem('captureFlow', 'photobox');
+      else localStorage.removeItem('captureFlow');
+    } catch (e) { console.warn('captureFlow storage gagal:', e); }
+
+    window.location.assign('/template?event=' + encodeURIComponent(eventId || ev.id || '') + '&product=' + type);
   }
 
+  loadEvent();
   startCamera();
 </script>
 </body>

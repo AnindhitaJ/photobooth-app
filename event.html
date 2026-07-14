@@ -241,7 +241,7 @@
           <div class="event-meta">${count} template · ${ev.welcome_screen_url ? 'welcome screen aktif' : 'tanpa welcome screen'}</div>
         </div>
         <div class="event-actions">
-          <button class="btn" onclick="startEvent('${ev.id}')">Mulai</button>
+          <button class="btn" type="button" onclick="startEvent('${ev.id}', this)">Mulai</button>
           <button class="btn secondary" onclick="editEvent('${ev.id}')">Edit</button>
           <button class="btn danger" onclick="deleteEvent('${ev.id}')">Hapus</button>
         </div>
@@ -433,16 +433,77 @@
     } catch(e) { toast('Gagal hapus: ' + e.message, true); }
   }
 
-  function startEvent(id) {
+  function storageSet(storage, key, value) {
+    try {
+      storage.setItem(key, value);
+      return true;
+    } catch (e) {
+      console.warn(`Gagal menyimpan ${key}:`, e);
+      return false;
+    }
+  }
+
+  function storageRemove(storage, key) {
+    try { storage.removeItem(key); } catch (e) { console.warn(`Gagal menghapus ${key}:`, e); }
+  }
+
+  function clearLargeLegacyPayloads() {
+    // Sesi baru tidak membutuhkan foto/result lama. Menghapus payload besar memberi ruang
+    // untuk metadata event kecil pada Safari/iPad yang kuota localStorage-nya ketat.
+    const keys = [
+      'photos', 'filteredPhotos', 'livePhotos', 'productPhoto',
+      'activeEvent', 'activeEventWelcomeURL'
+    ];
+    keys.forEach(key => {
+      storageRemove(localStorage, key);
+      storageRemove(sessionStorage, key);
+    });
+  }
+
+  function startEvent(id, button) {
     const ev = events.find(e => String(e.id) === String(id));
-    if (!ev) return;
-    localStorage.setItem('activeEvent', JSON.stringify(ev));
-    localStorage.setItem('activeEventTemplateIds', JSON.stringify((ev.template_ids || []).map(String)));
-    localStorage.setItem('activeEventName', ev.name || 'Event');
-    if (ev.welcome_screen_url) localStorage.setItem('activeEventWelcomeURL', ev.welcome_screen_url);
-    else localStorage.removeItem('activeEventWelcomeURL');
-    localStorage.setItem('activeEventWelcomeOverlay', ev.welcome_overlay_enabled !== false ? '1' : '0');
-    location.href = '/event-run?id=' + encodeURIComponent(id);
+    if (!ev) {
+      toast('Data event tidak ditemukan. Muat ulang halaman.', true);
+      return;
+    }
+    if (button?.disabled) return;
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Membuka...';
+    }
+
+    clearLargeLegacyPayloads();
+
+    // Jangan simpan welcome_screen_url/data URL ke Web Storage.
+    // Saat fallback upload dipakai, nilainya bisa beberapa MB dan menyebabkan
+    // QuotaExceededError di Safari/iPad sebelum navigasi dijalankan.
+    const templateIds = Array.isArray(ev.template_ids) ? ev.template_ids.map(String) : [];
+    const compactEvent = {
+      id: String(ev.id || id),
+      name: ev.name || 'Event',
+      template_ids: templateIds,
+      welcome_overlay_enabled: ev.welcome_overlay_enabled !== false
+    };
+    const values = {
+      activeEventId: compactEvent.id,
+      activeEvent: JSON.stringify(compactEvent),
+      activeEventTemplateIds: JSON.stringify(templateIds),
+      activeEventName: compactEvent.name,
+      activeEventWelcomeOverlay: compactEvent.welcome_overlay_enabled ? '1' : '0'
+    };
+
+    let saved = false;
+    for (const [key, value] of Object.entries(values)) {
+      saved = storageSet(sessionStorage, key, value) || saved;
+      storageSet(localStorage, key, value); // best effort untuk halaman lama
+    }
+    storageRemove(localStorage, 'activeEventWelcomeURL');
+    storageRemove(sessionStorage, 'activeEventWelcomeURL');
+
+    if (!saved) console.warn('Metadata event tidak tersimpan; event-run akan mengambilnya dari database menggunakan ID URL.');
+
+    window.location.assign('/event-run?id=' + encodeURIComponent(compactEvent.id));
   }
 
   (async function init() {

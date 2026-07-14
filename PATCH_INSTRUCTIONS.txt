@@ -1,39 +1,36 @@
-LUX PHOTOBOOTH — STORAGE HANDOFF FIX V2
-======================================
+LUX PHOTOBOOTH — IPAD MULAI EVENT FIX V3
+========================================
 
-MASALAH YANG DIPERBAIKI
-- Filter menampilkan “Foto tidak ditemukan di penyimpanan browser”.
-- Foto tersimpan di IndexedDB tetapi tidak terbaca karena marker localStorage hilang.
-- Safari/iPad kehabisan kuota localStorage saat membawa beberapa foto base64.
-- camera.html, filter.html, dan result.html dapat berasal dari cache versi berbeda.
-- Instalasi service worker baru dapat gagal apabila satu asset gagal di-cache.
+GEJALA
+- Tombol “Mulai” di halaman Event terlihat bisa ditekan, tetapi iPad tidak berpindah halaman.
+- Biasanya terjadi pada event yang memakai welcome screen atau setelah beberapa sesi foto.
 
-FILE YANG WAJIB DITIMPA
-1. camera.html
-2. filter.html
-3. result.html
-4. sw.js
+AKAR MASALAH
+- event.html menyimpan seluruh objek event ke localStorage.
+- welcome_screen_url dapat berupa data URL PNG berukuran beberapa MB ketika upload Storage fallback.
+- Nilai welcome itu disimpan lagi pada key terpisah, sehingga data besar diduplikasi.
+- Safari/iPad melempar QuotaExceededError secara sinkron. Karena error tidak ditangkap, baris navigasi tidak pernah dijalankan.
+
+FILE YANG DITIMPA
+1. event.html
+2. event-run.html
+3. template.html
+4. result.html
+5. sw.js
 
 CARA PASANG
-1. Timpa keempat file tersebut di root repository.
+1. Timpa kelima file di root repository.
 2. Commit dan deploy ulang ke Vercel.
-3. Tunggu deployment benar-benar selesai.
-4. Pada iPad:
-   - Tutup semua tab aplikasi.
-   - Hapus aplikasi PWA dari Home Screen bila dipasang sebagai PWA.
-   - Safari > Settings > Advanced > Website Data.
-   - Cari domain aplikasi dan hapus datanya.
-   - Buka ulang domain dan ambil foto baru.
-5. Jangan melanjutkan sesi foto lama setelah deploy. Ambil ulang foto agar token sesi baru dibuat.
+3. Hapus PWA lama dari Home Screen iPad bila terpasang.
+4. Hapus Website Data untuk domain aplikasi di Settings > Safari > Advanced > Website Data.
+5. Buka ulang aplikasi dan buat/mulai event kembali.
 
-PERUBAHAN TEKNIS
-- Kamera menyimpan foto ke IndexedDB sebagai storage utama.
-- Kamera membuat photoSession ID dan meneruskannya melalui URL.
-- Filter selalu memeriksa IndexedDB secara langsung, tanpa bergantung pada marker localStorage.
-- Filter melakukan tiga kali retry pembacaan untuk lifecycle Safari.
-- Result membaca filteredPhotos/photos langsung dari IndexedDB sebagai fallback.
-- Service worker memakai cache versi baru dan instalasinya tidak gagal hanya karena satu asset bermasalah.
-
-CATATAN
-- Keempat file harus berasal dari paket ini. Mengganti hanya filter.html dapat tetap menghasilkan mismatch cache.
-- JavaScript inline dan standalone sudah melewati pemeriksaan sintaks Node.js.
+PERUBAHAN
+- Welcome screen besar tidak lagi disalin ke localStorage.
+- Metadata event yang disimpan hanya ID, nama, template IDs, dan status overlay.
+- sessionStorage dipakai sebagai jalur utama dan localStorage sebagai kompatibilitas/fallback.
+- event-run mengambil welcome screen langsung dari Supabase berdasarkan event ID URL.
+- Semua operasi Web Storage dibungkus try/catch sehingga kegagalan storage tidak membatalkan navigasi.
+- Payload foto lama dibersihkan ketika memulai sesi event baru untuk membebaskan kuota Safari.
+- template dan result dapat membaca metadata event dari sessionStorage atau localStorage.
+- Cache service worker dinaikkan agar iPad tidak memakai file event lama.

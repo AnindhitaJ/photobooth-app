@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.3-storage-handoff';
+const CACHE_NAME = 'lux-photobooth-v1.4-ipad-event-start';
 const CORE_ASSETS = [
   '/',
   '/index.html',

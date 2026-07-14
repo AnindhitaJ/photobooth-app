@@ -265,19 +265,47 @@
   const PHOTOBOX_H = 1772;
   const templateParams = new URLSearchParams(window.location.search);
   const isEventMode = templateParams.has('event');
+
+  function eventStorageGet(key) {
+    try {
+      const v = sessionStorage.getItem(key);
+      if (v !== null) return v;
+    } catch (e) { console.warn('sessionStorage event read gagal:', e); }
+    try { return localStorage.getItem(key); }
+    catch (e) { console.warn('localStorage event read gagal:', e); return null; }
+  }
+
+  function eventStorageSet(key, value) {
+    try { sessionStorage.setItem(key, value); } catch (e) { console.warn('sessionStorage event write gagal:', e); }
+    try { localStorage.setItem(key, value); } catch (e) { console.warn('localStorage event write gagal:', e); }
+  }
+
+  function eventStorageRemove(key) {
+    try { sessionStorage.removeItem(key); } catch (e) {}
+    try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  function parseEventTemplateIds() {
+    try {
+      const value = JSON.parse(eventStorageGet('activeEventTemplateIds') || '[]');
+      return Array.isArray(value) ? value.map(String) : [];
+    } catch (e) { return []; }
+  }
+
   if (!isEventMode) {
     [
       'eventMode',
       'activeEvent',
+      'activeEventId',
       'activeEventTemplateIds',
       'activeEventName',
       'activeEventWelcomeURL',
       'activeEventWelcomeOverlay',
       'activeEventProductType'
-    ].forEach(k => localStorage.removeItem(k));
+    ].forEach(eventStorageRemove);
   }
-  const eventTemplateIds = new Set(JSON.parse(localStorage.getItem('activeEventTemplateIds') || '[]').map(String));
-  const eventProductType = (templateParams.get('product') || localStorage.getItem('activeEventProductType') || '').toLowerCase();
+  const eventTemplateIds = new Set(parseEventTemplateIds());
+  const eventProductType = (templateParams.get('product') || eventStorageGet('activeEventProductType') || '').toLowerCase();
   const isPhotoboxMode = !isEventMode && localStorage.getItem('captureFlow') === 'photobox';
 
   function isPhotoboxCategory(cat) {
@@ -2114,7 +2142,7 @@
 
     if (isEventMode) {
       const selectedType = isPhotoboxTemplate(selectedTemplate) ? 'photobox' : 'photostrip';
-      localStorage.setItem('activeEventProductType', selectedType);
+      eventStorageSet('activeEventProductType', selectedType);
       if (selectedType === 'photobox') localStorage.setItem('captureFlow', 'photobox');
       else localStorage.removeItem('captureFlow');
     } else if (isPhotoboxMode) localStorage.setItem('captureFlow', 'photobox');
@@ -2144,7 +2172,7 @@
     document.title = 'Pilih Template Event - LUX Photobooth';
     const h2 = document.querySelector('h2');
     const sub = document.querySelector('.sub');
-    const eventName = localStorage.getItem('activeEventName') || 'Event';
+    const eventName = eventStorageGet('activeEventName') || 'Event';
     if (h2) h2.textContent = 'Pilih Template Event';
     if (sub) sub.textContent = eventName + ' · ' + (eventProductType === 'photobox' ? 'Photobox 4R' : 'Photostrip') + ' · hanya template yang dipilih di event yang tampil';
     const btn = document.getElementById('btnLanjut');

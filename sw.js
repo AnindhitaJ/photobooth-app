@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.5-event-template-filter';
+const CACHE_NAME = 'lux-photobooth-v1.6-user-owned-templates';
 const CORE_ASSETS = [
   '/',
   '/index.html',

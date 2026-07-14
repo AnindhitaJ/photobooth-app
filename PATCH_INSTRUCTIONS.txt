@@ -1,35 +1,32 @@
-LUX PHOTOBOOTH — EVENT TEMPLATE FILTER V4
-========================================
+LUX PHOTOBOOTH — USER-OWNED TEMPLATE FILTER V5
+=============================================
 
 TUJUAN
-Pada halaman Pilih Template Event:
-- Template yang tampil hanya template yang dipilih pada event.
-- Kategori yang tampil hanya kategori dari template yang dipilih.
-- Template tetap difilter sesuai tombol Photostrip atau Photobox 4R.
-- Jika session/localStorage Safari hilang, template_ids event diambil ulang langsung dari Supabase.
+Pada halaman /template biasa, hanya template yang memiliki:
+  templates.user_id = ID user yang sedang login
+yang ditampilkan, termasuk ketika user tersebut adalah super-admin.
 
-FILE MINIMAL YANG WAJIB DITIMPA
+PERUBAHAN
+- Query Supabase ditambah filter user_id=eq.<JWT sub>.
+- ID pemilik diambil dari JWT sesi, bukan sb_user_id yang mudah diubah.
+- Hasil query difilter ulang di browser berdasarkan user_id.
+- Template Built-in/Basic tidak lagi ditampilkan karena bukan milik user.
+- Kategori hanya berasal dari template milik user.
+- Kategori lama dari localStorage tidak ikut ditampilkan.
+- Cache service worker dinaikkan agar template.html baru diterima perangkat.
+
+FILE YANG WAJIB DITIMPA
 1. template.html
 2. sw.js
 
-FILE LAIN DALAM PAKET
-- event.html
-- event-run.html
-- result.html
-
-Ketiga file tersebut adalah salinan kumulatif dari patch iPad Event V3. Timpa juga bila patch V3 belum pernah dipasang.
-
 CARA PASANG
-1. Timpa template.html dan sw.js di root repository.
-2. Bila V3 belum dipasang, timpa seluruh file HTML dalam paket.
-3. Commit dan deploy ulang ke Vercel.
-4. Di iPad, tutup tab/PWA lama.
-5. Hapus website data domain aplikasi atau hapus lalu pasang ulang PWA.
-6. Buka Event, edit event, pastikan template yang dibutuhkan tercentang, simpan, lalu tekan Mulai.
+1. Timpa kedua file di root repository.
+2. Commit dan deploy ulang ke Vercel.
+3. Tutup semua tab/PWA lama.
+4. Hapus website data domain aplikasi atau uninstall lalu install ulang PWA.
+5. Login ulang dan buka /template.
 
-HASIL YANG DIHARAPKAN
-Contoh: event hanya memilih template kategori “baru1” dan “Photostrip”.
-Halaman event hanya menampilkan tab:
-- Semua
-- baru1
-dan hanya kartu template terpilih dalam kategori tersebut.
+CATATAN DATA
+- Template lama yang user_id-nya NULL tidak akan tampil.
+- Pastikan setiap template yang memang dimiliki user memiliki user_id yang benar.
+- Patch ini membatasi tampilan aplikasi. RLS database tetap harus benar untuk keamanan server-side.

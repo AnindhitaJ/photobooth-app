@@ -727,6 +727,21 @@
     ...s,
     r: Math.round((((Number(s?.r ?? s?.rotate ?? s?.rotation ?? 0) || 0) % 360) + 360) % 360)
   }));
+  const templateTextElements = JSON.parse(localStorage.getItem('templateTextElements') || '[]')
+    .filter(item => item && (item.type === 'text' || item.kind === 'text'))
+    .map(item => ({
+      type: 'text',
+      text: String(item.text || item.value || 'PHOTOBOOTH').slice(0, 80),
+      x: Number(item.x) || 0,
+      y: Number(item.y) || 0,
+      w: Math.max(40, Number(item.w) || 240),
+      h: Math.max(24, Number(item.h) || 60),
+      r: Math.round((((Number(item.r ?? item.rotate ?? item.rotation ?? 0) || 0) % 360) + 360) % 360),
+      font: String(item.font || 'Segoe UI'),
+      color: /^#[0-9a-f]{6}$/i.test(item.color || '') ? item.color.toUpperCase() : '#1D3557',
+      font_size: Math.max(10, Number(item.font_size || item.fontSize) || Math.round((Number(item.h) || 60) * 0.58)),
+      weight: 900
+    }));
   const tmplW          = parseInt(localStorage.getItem('templateW') || '591');
   const tmplH          = parseInt(localStorage.getItem('templateH') || '1772');
   const isBasicTemplate = localStorage.getItem('templateIsBasic') === '1';
@@ -832,6 +847,42 @@
     fill.style.width = pct + '%';
   }
 
+  function templateTextFontStack(font) {
+    const allowed = ['Segoe UI', 'Arial', 'Georgia', 'Trebuchet MS', 'Courier New', 'Impact'];
+    const safe = allowed.includes(font) ? font : 'Segoe UI';
+    if (safe === 'Segoe UI') return "'Segoe UI', Arial, sans-serif";
+    if (safe === 'Trebuchet MS') return "'Trebuchet MS', Arial, sans-serif";
+    if (safe === 'Courier New') return "'Courier New', monospace";
+    if (safe === 'Georgia') return "Georgia, 'Times New Roman', serif";
+    if (safe === 'Impact') return "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif";
+    return "Arial, sans-serif";
+  }
+
+  function drawTemplateTextElements() {
+    templateTextElements.forEach(element => {
+      const text = String(element.text || '').trim();
+      if (!text) return;
+      const maxW = Math.max(30, element.w * 0.92);
+      const maxH = Math.max(12, element.h * 0.75);
+      let fontSize = Math.min(Math.max(10, element.font_size || element.h * 0.58), maxH);
+      const family = templateTextFontStack(element.font);
+
+      ctx.save();
+      ctx.translate(element.x + element.w / 2, element.y + element.h / 2);
+      ctx.rotate((element.r || 0) * Math.PI / 180);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = element.color;
+      ctx.font = `900 ${fontSize}px ${family}`;
+      while (fontSize > 9 && ctx.measureText(text).width > maxW) {
+        fontSize -= 1;
+        ctx.font = `900 ${fontSize}px ${family}`;
+      }
+      ctx.fillText(text, 0, 0, maxW);
+      ctx.restore();
+    });
+  }
+
   // ─── Generate composite image ───
   async function generateResult() {
     try {
@@ -875,8 +926,11 @@
         ctx.drawImage(templateImage, 0, 0, tmplW, tmplH);
       }
 
-      // ── Teks "LUX PHOTOBOOTH" di area bawah (hanya template custom) ──
-      if (slots.length > 0 && Auth.showWatermark()) {
+      // Teks yang ditambahkan dari Template Manager selalu berada di atas komposit final.
+      drawTemplateTextElements();
+
+      // Fallback lama: nama booth otomatis di footer hanya dipakai bila template belum punya teks custom.
+      if (templateTextElements.length === 0 && slots.length > 0 && Auth.showWatermark()) {
         try {
           const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
           const gapH = tmplH - bottomOfLastSlot;

@@ -171,6 +171,13 @@
     return t?.product_type || (cat.includes('photobox') || cat === '4r' || cat.includes('4r') ? 'photobox' : 'photostrip');
   }
 
+  function photoSlotCount(t) {
+    let items = [];
+    try { items = Array.isArray(t?.slots) ? t.slots : JSON.parse(t?.slots || '[]'); }
+    catch(e) { items = []; }
+    return items.filter(item => !(item && (item.type === 'text' || item.kind === 'text'))).length;
+  }
+
   async function fetchTemplates() {
     const token = Auth.getToken();
     const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?select=*&order=created_at.desc`, {
@@ -197,7 +204,7 @@
         <img src="${t.src}" alt="${t.name}" crossorigin="anonymous">
         <span class="tpl-info">
           <span class="tpl-name">${escapeHTML(t.name || 'Template')}</span>
-          <span class="tpl-meta">${type} · ${escapeHTML(t.category || '-')} · ${(t.slots || []).length} foto</span>
+          <span class="tpl-meta">${type} · ${escapeHTML(t.category || '-')} · ${photoSlotCount(t)} foto</span>
         </span>
       </label>`;
     }).join('');

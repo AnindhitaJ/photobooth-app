@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.7-global-builtins';
+const CACHE_NAME = 'lux-photobooth-v1.8-template-text';
 const CORE_ASSETS = [
   '/',
   '/index.html',

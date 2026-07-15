@@ -231,6 +231,53 @@
       margin-bottom: 12px; display: none; font-weight: 500;
     }
     .slot-info span { color: var(--orange); font-weight: 800; }
+
+    /* TEXT ELEMENT EDITOR */
+    .text-box {
+      position: absolute; border: 2.5px solid #1D3557;
+      background: rgba(29,53,87,0.12);
+      pointer-events: all; cursor: move; border-radius: 6px;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+    }
+    .text-box.selected { box-shadow: 0 0 0 4px rgba(29,53,87,0.18); }
+    .text-box.dragging { background: rgba(29,53,87,0.20); }
+    .text-element-label {
+      position: absolute; top: 4px; left: 6px; z-index: 2;
+      font-size: 10px; font-weight: 900; color: #1D3557;
+      background: rgba(255,255,255,0.90); padding: 2px 7px; border-radius: 50px;
+      pointer-events: none;
+    }
+    .text-preview {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      padding: 4px 10px; overflow: hidden; white-space: nowrap;
+      line-height: 1; text-align: center; pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,.16);
+    }
+    .text-box .resize-handle, .text-box .slot-delete, .text-box .slot-duplicate { background: #1D3557; }
+    .text-box .slot-duplicate { color: #1D3557; border-color: #1D3557; background:#fff; }
+    .text-box .slot-duplicate:hover { background:#1D3557; color:#fff; }
+    .text-controls-panel {
+      display:none; background:#fff; border:2px solid var(--border); border-radius:14px;
+      padding:14px; margin-bottom:12px; box-shadow:0 3px 14px rgba(29,53,87,.08);
+    }
+    .text-controls-panel.show { display:block; }
+    .text-controls-title { font-size:12px; font-weight:900; margin-bottom:10px; color:var(--text); }
+    .text-controls-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .text-control-label { display:block; font-size:11px; font-weight:800; color:var(--text2); margin-bottom:5px; }
+    .text-control-input, .text-control-select {
+      width:100%; border:2px solid var(--border); border-radius:10px; padding:9px 10px;
+      font:700 12px 'Segoe UI',system-ui,sans-serif; color:var(--text); background:#fff;
+    }
+    .text-control-input:focus, .text-control-select:focus { outline:none; border-color:#1D3557; }
+    .text-color-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .text-color-swatch {
+      width:30px; height:30px; border-radius:50%; border:3px solid #fff; cursor:pointer;
+      box-shadow:0 0 0 1.5px var(--border), 0 2px 7px rgba(0,0,0,.13);
+    }
+    .text-color-swatch.active { box-shadow:0 0 0 3px #1D3557, 0 2px 8px rgba(0,0,0,.16); }
+    .text-control-note { margin-top:9px; font-size:10px; line-height:1.45; color:var(--text2); }
+    @media (max-width:520px) { .text-controls-grid { grid-template-columns:1fr; } }
+
     .editor-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .product-type-box {
       background: white; border: 2px solid var(--border); border-radius: 14px;
@@ -865,7 +912,7 @@
     </div>
 
     <div class="slot-info" id="slotInfo">
-      <span id="slotCount">0</span> slot terdeteksi. Geser & resize untuk menyesuaikan.
+      <span id="slotCount">0</span> slot foto · <span id="textCount">0</span> teks. Geser, resize, dan putar untuk menyesuaikan.
     </div>
 
     <div class="product-type-box">
@@ -887,9 +934,37 @@
     </div>
 
     <div class="editor-controls" id="editorControls" style="display:none">
-      <button class="btn btn-secondary btn-sm" onclick="addSlotManual()">➕ Tambah Slot</button>
+      <button class="btn btn-secondary btn-sm" onclick="addSlotManual()">➕ Tambah Slot Foto</button>
+      <button class="btn btn-secondary btn-sm" onclick="addTextElement()">✍️ Tambah Nama/Teks</button>
       <button class="btn btn-secondary btn-sm" onclick="autoDetect()">🔍 Auto Detect</button>
-      <button class="btn btn-danger btn-sm" onclick="clearSlots()">🗑 Hapus Semua Slot</button>
+      <button class="btn btn-danger btn-sm" onclick="clearSlots()">🗑 Hapus Foto</button>
+      <button class="btn btn-danger btn-sm" onclick="clearTextElements()">🗑 Hapus Teks</button>
+    </div>
+
+    <div class="text-controls-panel" id="textControlsPanel">
+      <div class="text-controls-title">Pengaturan Teks <span id="activeTextNumber"></span></div>
+      <div class="text-controls-grid">
+        <div>
+          <label class="text-control-label" for="textContentInput">Isi teks</label>
+          <input class="text-control-input" id="textContentInput" maxlength="80" placeholder="Nama photobooth atau teks lain">
+        </div>
+        <div>
+          <label class="text-control-label" for="textFontSelect">Font</label>
+          <select class="text-control-select" id="textFontSelect">
+            <option value="Segoe UI">Segoe UI</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Trebuchet MS">Trebuchet</option>
+            <option value="Courier New">Courier</option>
+            <option value="Impact">Impact</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:11px">
+        <span class="text-control-label">Warna</span>
+        <div class="text-color-row" id="textColorRow"></div>
+      </div>
+      <div class="text-control-note">Warna awal dipilih otomatis agar kontras dengan area template. Ukuran teks mengikuti resize kotak.</div>
     </div>
 
     <button class="btn btn-success" id="btnSave" onclick="saveTemplate()" style="display:none;width:100%;margin-top:8px">
@@ -971,7 +1046,9 @@
   const DISPLAY_MAX_W = 420;
   const DISPLAY_MAX_H = 620;
   let templateImg = null, templateDataURL = null;
-  let slots = [], scale = 1;
+  let slots = [], textElements = [], selectedTextIndex = -1, scale = 1;
+  const TEXT_COLORS = ['#FFFFFF', '#111111', '#1D3557', '#D84B7E', '#E5B842', '#E63946'];
+  const TEXT_FONTS = ['Segoe UI', 'Arial', 'Georgia', 'Trebuchet MS', 'Courier New', 'Impact'];
   let selectedCategory = '';
   let selectedProductType = 'photostrip';
   let selectedPhotoLayer = 'behind';
@@ -999,18 +1076,41 @@
     }
   }
 
+  function isTextElement(item) {
+    return !!item && (item.type === 'text' || item.kind === 'text');
+  }
+
+  function normalizeTextElement(item) {
+    return {
+      type: 'text',
+      text: String(item?.text || item?.value || 'PHOTOBOOTH').slice(0, 80),
+      x: Number(item?.x) || 0,
+      y: Number(item?.y) || 0,
+      w: Math.max(40, Number(item?.w) || 240),
+      h: Math.max(24, Number(item?.h) || 60),
+      r: normalizeAngle(item?.r || item?.rotate || item?.rotation || 0),
+      font: TEXT_FONTS.includes(item?.font) ? item.font : 'Segoe UI',
+      color: /^#[0-9a-f]{6}$/i.test(item?.color || '') ? item.color.toUpperCase() : '#1D3557',
+      font_size: Math.max(10, Number(item?.font_size || item?.fontSize) || Math.round((Number(item?.h) || 60) * 0.58)),
+      weight: 900
+    };
+  }
+
   function normalizeTemplateRecord(t) {
     let parsedSlots = [];
     try { parsedSlots = Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]'); }
     catch(e) { parsedSlots = []; }
+    const photoSlots = parsedSlots.filter(item => !isTextElement(item)).map(s => ({
+      ...s,
+      r: normalizeAngle(s.r || s.rotate || s.rotation || 0)
+    }));
+    const templateTexts = parsedSlots.filter(isTextElement).map(normalizeTextElement);
     return {
       ...t,
       product_type: t.product_type || (isPhotoboxCategory(t.category) ? 'photobox' : 'photostrip'),
       photo_layer: t.photo_layer === 'front' ? 'front' : 'behind',
-      slots: parsedSlots.map(s => ({
-        ...s,
-        r: normalizeAngle(s.r || s.rotate || s.rotation || 0)
-      }))
+      slots: photoSlots,
+      text_elements: templateTexts
     };
   }
 
@@ -1237,6 +1337,10 @@
         document.getElementById('btnSave').style.display = 'block';
         document.getElementById('slotInfo').style.display = 'block';
         slots = [];
+        textElements = [];
+        selectedTextIndex = -1;
+        syncEditorCounts();
+        hideTextControls();
         autoDetect();
       };
       templateImg.src = templateDataURL;
@@ -1291,14 +1395,54 @@
       slots.push({ x: x1, y: y1, w: x2-x1, h: y2-y1, r: 0 });
     }
 
-    document.getElementById('slotCount').textContent = slots.length;
+    syncEditorCounts();
     renderSlots();
-    showToast(`${slots.length} slot terdeteksi`);
+    showToast(`${slots.length} slot foto terdeteksi`);
   }
 
   function normalizeAngle(deg) {
     const n = Number(deg) || 0;
     return Math.round(((n % 360) + 360) % 360);
+  }
+
+  function syncEditorCounts() {
+    const photoCount = document.getElementById('slotCount');
+    const textCount = document.getElementById('textCount');
+    if (photoCount) photoCount.textContent = slots.length;
+    if (textCount) textCount.textContent = textElements.length;
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[ch]);
+  }
+
+  function fontStack(font) {
+    const safe = TEXT_FONTS.includes(font) ? font : 'Segoe UI';
+    if (safe === 'Segoe UI') return "'Segoe UI', Arial, sans-serif";
+    if (safe === 'Trebuchet MS') return "'Trebuchet MS', Arial, sans-serif";
+    if (safe === 'Courier New') return "'Courier New', monospace";
+    if (safe === 'Georgia') return "Georgia, 'Times New Roman', serif";
+    if (safe === 'Impact') return "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif";
+    return "Arial, sans-serif";
+  }
+
+  function fittedTextSize(element, multiplier = 1) {
+    const text = String(element.text || 'PHOTOBOOTH');
+    const maxW = Math.max(30, Number(element.w) * 0.9 * multiplier);
+    const maxH = Math.max(12, Number(element.h) * 0.72 * multiplier);
+    let size = Math.min(
+      Math.max(10, Number(element.font_size) || Number(element.h) * 0.58),
+      maxH
+    );
+    const measure = document.createElement('canvas').getContext('2d');
+    while (size > 9) {
+      measure.font = `900 ${size}px ${fontStack(element.font)}`;
+      if (measure.measureText(text).width <= maxW) break;
+      size -= 1;
+    }
+    return Math.max(9, size);
   }
 
   function applySlotBoxStyle(box, idx) {
@@ -1314,6 +1458,29 @@
     if (angle) angle.textContent = `${slot.r}°`;
   }
 
+  function applyTextBoxStyle(box, idx) {
+    const element = textElements[idx];
+    if (!element) return;
+    element.r = normalizeAngle(element.r || 0);
+    box.style.left = element.x + 'px';
+    box.style.top = element.y + 'px';
+    box.style.width = element.w + 'px';
+    box.style.height = element.h + 'px';
+    box.style.transform = `rotate(${element.r}deg)`;
+    box.style.transformOrigin = 'center center';
+    box.classList.toggle('selected', idx === selectedTextIndex);
+    const preview = box.querySelector('.text-preview');
+    if (preview) {
+      preview.textContent = element.text || 'PHOTOBOOTH';
+      preview.style.fontFamily = fontStack(element.font);
+      preview.style.fontWeight = '900';
+      preview.style.fontSize = fittedTextSize(element) + 'px';
+      preview.style.color = element.color;
+    }
+    const angle = box.querySelector('.slot-angle');
+    if (angle) angle.textContent = `${element.r}°`;
+  }
+
   function renderSlots() {
     overlay.innerHTML = '';
     slots.forEach((slot, idx) => {
@@ -1322,7 +1489,7 @@
       box.className = 'slot-box';
       box.innerHTML = `
         <div class="slot-label">Foto ${idx+1}</div>
-        <button class="slot-duplicate" onclick="duplicateSlot(${idx}); event.stopPropagation();" title="Duplicate slot">⧉</button>
+        <button class="slot-duplicate" onclick="duplicateSlot(${idx}); event.stopPropagation();" title="Duplikat slot">⧉</button>
         <button class="slot-delete" onclick="deleteSlot(${idx}); event.stopPropagation();" title="Hapus slot">×</button>
         <div class="rotate-handle" data-idx="${idx}" title="Putar slot">↻</div>
         <div class="slot-angle">${slot.r}°</div>
@@ -1338,7 +1505,85 @@
       makeRotatable(box.querySelector('.rotate-handle'), box, idx);
       overlay.appendChild(box);
     });
+
+    textElements.forEach((element, idx) => {
+      const box = document.createElement('div');
+      box.className = 'text-box';
+      box.innerHTML = `
+        <div class="text-element-label">Teks ${idx + 1}</div>
+        <div class="text-preview"></div>
+        <button class="slot-duplicate" onclick="duplicateTextElement(${idx}); event.stopPropagation();" title="Duplikat teks">⧉</button>
+        <button class="slot-delete" onclick="deleteTextElement(${idx}); event.stopPropagation();" title="Hapus teks">×</button>
+        <div class="rotate-handle" title="Putar teks">↻</div>
+        <div class="slot-angle">${normalizeAngle(element.r || 0)}°</div>
+        <div class="slot-rotate-tools">
+          <button class="slot-rotate-btn" onclick="rotateTextElement(${idx}, -15); event.stopPropagation();" title="Putar kiri">−</button>
+          <button class="slot-rotate-btn" onclick="rotateTextElement(${idx}, 15); event.stopPropagation();" title="Putar kanan">+</button>
+        </div>
+        <div class="resize-handle"></div>
+      `;
+      applyTextBoxStyle(box, idx);
+      makeTextDraggable(box, idx);
+      makeTextResizable(box.querySelector('.resize-handle'), box, idx);
+      makeTextRotatable(box.querySelector('.rotate-handle'), box, idx);
+      box.addEventListener('click', e => {
+        if (!e.target.closest('button, .resize-handle, .rotate-handle')) selectTextElement(idx);
+      });
+      overlay.appendChild(box);
+    });
+    syncEditorCounts();
   }
+
+  function hideTextControls() {
+    document.getElementById('textControlsPanel')?.classList.remove('show');
+  }
+
+  function renderTextColorOptions() {
+    const row = document.getElementById('textColorRow');
+    if (!row || selectedTextIndex < 0 || !textElements[selectedTextIndex]) return;
+    const current = textElements[selectedTextIndex].color.toUpperCase();
+    row.innerHTML = TEXT_COLORS.map(color => `
+      <button type="button" class="text-color-swatch ${current === color ? 'active' : ''}"
+        style="background:${color}" title="${color}" aria-label="Pilih warna ${color}"
+        onclick="setTextColor('${color}')"></button>
+    `).join('');
+  }
+
+  function selectTextElement(idx, rerender = true) {
+    if (!textElements[idx]) return;
+    selectedTextIndex = idx;
+    const element = textElements[idx];
+    document.getElementById('activeTextNumber').textContent = `#${idx + 1}`;
+    document.getElementById('textContentInput').value = element.text || '';
+    document.getElementById('textFontSelect').value = TEXT_FONTS.includes(element.font) ? element.font : 'Segoe UI';
+    document.getElementById('textControlsPanel').classList.add('show');
+    renderTextColorOptions();
+    if (rerender) {
+      renderSlots();
+    } else {
+      overlay.querySelectorAll('.text-box').forEach((node, nodeIdx) => node.classList.toggle('selected', nodeIdx === idx));
+    }
+  }
+
+  function setTextColor(color) {
+    if (selectedTextIndex < 0 || !textElements[selectedTextIndex] || !TEXT_COLORS.includes(color)) return;
+    textElements[selectedTextIndex].color = color;
+    renderTextColorOptions();
+    renderSlots();
+  }
+
+  document.getElementById('textContentInput')?.addEventListener('input', event => {
+    if (selectedTextIndex < 0 || !textElements[selectedTextIndex]) return;
+    textElements[selectedTextIndex].text = String(event.target.value || '').slice(0, 80);
+    renderSlots();
+  });
+
+  document.getElementById('textFontSelect')?.addEventListener('change', event => {
+    if (selectedTextIndex < 0 || !textElements[selectedTextIndex]) return;
+    const font = TEXT_FONTS.includes(event.target.value) ? event.target.value : 'Segoe UI';
+    textElements[selectedTextIndex].font = font;
+    renderSlots();
+  });
 
   function getPointerXY(e) {
     if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -1434,18 +1679,137 @@
     handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   }
 
+  function makeTextDraggable(box, idx) {
+    const start = e => {
+      if (e.button != null && e.button !== 0) return;
+      if (e.target.closest('.resize-handle, .slot-delete, .slot-duplicate, .rotate-handle, .slot-rotate-btn, .slot-rotate-tools')) return;
+      e.preventDefault();
+      selectTextElement(idx, false);
+      const p = getPointerXY(e);
+      const element = textElements[idx];
+      const sx = p.x, sy = p.y, startX = element.x, startY = element.y;
+      box.classList.add('dragging');
+      bindDragMove(box, e, moveEvent => {
+        const q = getPointerXY(moveEvent);
+        element.x = Math.max(0, Math.min(canvas.width - element.w, startX + q.x - sx));
+        element.y = Math.max(0, Math.min(canvas.height - element.h, startY + q.y - sy));
+        applyTextBoxStyle(box, idx);
+      }, () => box.classList.remove('dragging'));
+    };
+    box.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
+  }
+
+  function makeTextResizable(handle, box, idx) {
+    const start = e => {
+      if (e.button != null && e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      selectTextElement(idx, false);
+      const p = getPointerXY(e);
+      const element = textElements[idx];
+      const sx = p.x, sy = p.y, sw = element.w, sh = element.h;
+      box.classList.add('dragging');
+      bindDragMove(handle, e, moveEvent => {
+        const q = getPointerXY(moveEvent);
+        element.w = Math.max(70, Math.min(canvas.width - element.x, sw + q.x - sx));
+        element.h = Math.max(28, Math.min(canvas.height - element.y, sh + q.y - sy));
+        element.font_size = Math.max(10, Math.round(element.h * 0.58));
+        applyTextBoxStyle(box, idx);
+      }, () => box.classList.remove('dragging'));
+    };
+    handle.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
+    handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  }
+
+  function makeTextRotatable(handle, box, idx) {
+    if (!handle) return;
+    const start = e => {
+      if (e.button != null && e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      selectTextElement(idx);
+      const overlayRect = overlay.getBoundingClientRect();
+      const element = textElements[idx];
+      const cx = overlayRect.left + element.x + element.w / 2;
+      const cy = overlayRect.top + element.y + element.h / 2;
+      const p = getPointerXY(e);
+      const startAngle = Math.atan2(p.y - cy, p.x - cx) * 180 / Math.PI;
+      const startRot = normalizeAngle(element.r || 0);
+      box.classList.add('dragging');
+      bindDragMove(handle, e, moveEvent => {
+        const q = getPointerXY(moveEvent);
+        const nowAngle = Math.atan2(q.y - cy, q.x - cx) * 180 / Math.PI;
+        element.r = normalizeAngle(startRot + (nowAngle - startAngle));
+        applyTextBoxStyle(box, idx);
+      }, () => box.classList.remove('dragging'));
+    };
+    handle.addEventListener(window.PointerEvent ? 'pointerdown' : 'mousedown', start, { passive: false });
+    handle.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  }
+
   function rotateSlot(idx, delta) {
     if (!slots[idx]) return;
     slots[idx].r = normalizeAngle((slots[idx].r || 0) + delta);
     renderSlots();
   }
 
+  function rotateTextElement(idx, delta) {
+    if (!textElements[idx]) return;
+    textElements[idx].r = normalizeAngle((textElements[idx].r || 0) + delta);
+    selectTextElement(idx);
+  }
+
+  function sampleContrastingColor(x, y, w, h) {
+    try {
+      const points = [
+        [x + w / 2, y + h / 2],
+        [x + w * .25, y + h / 2],
+        [x + w * .75, y + h / 2],
+        [x + w / 2, y + h * .25],
+        [x + w / 2, y + h * .75]
+      ];
+      let lumTotal = 0;
+      points.forEach(([px, py]) => {
+        const data = ctx.getImageData(
+          Math.max(0, Math.min(canvas.width - 1, Math.round(px))),
+          Math.max(0, Math.min(canvas.height - 1, Math.round(py))), 1, 1
+        ).data;
+        const alpha = data[3] / 255;
+        const r = data[0] * alpha + 255 * (1 - alpha);
+        const g = data[1] * alpha + 255 * (1 - alpha);
+        const b = data[2] * alpha + 255 * (1 - alpha);
+        lumTotal += 0.299 * r + 0.587 * g + 0.114 * b;
+      });
+      return lumTotal / points.length < 145 ? '#FFFFFF' : '#1D3557';
+    } catch(e) {
+      return '#1D3557';
+    }
+  }
 
   function addSlotManual() {
     const W = canvas.width, H = canvas.height;
     slots.push({ x: Math.round(W*0.1), y: Math.round(H*0.05), w: Math.round(W*0.8), h: Math.round(H*0.18), r: 0 });
-    document.getElementById('slotCount').textContent = slots.length;
     renderSlots();
+  }
+
+  function addTextElement() {
+    if (!templateImg) { showToast('Upload PNG dulu!', true); return; }
+    const W = canvas.width, H = canvas.height;
+    const w = Math.max(120, Math.round(W * 0.72));
+    const h = Math.max(34, Math.round(Math.min(H * 0.075, 72)));
+    const cascade = textElements.length * Math.max(8, Math.round(h * 0.18));
+    const x = Math.max(0, Math.round((W - w) / 2));
+    const y = Math.max(0, Math.min(H - h, Math.round(H * 0.86) - cascade));
+    const boothName = String(Auth.getBoothName?.() || 'NAMA PHOTOBOOTH').trim() || 'NAMA PHOTOBOOTH';
+    textElements.push({
+      type: 'text',
+      text: boothName.toUpperCase().slice(0, 80),
+      x, y, w, h, r: 0,
+      font: 'Segoe UI',
+      color: sampleContrastingColor(x, y, w, h),
+      font_size: Math.max(10, Math.round(h * 0.58)),
+      weight: 900
+    });
+    selectTextElement(textElements.length - 1);
+    showToast('Teks ditambahkan. Geser dan resize pada template.');
   }
 
   function duplicateSlot(idx) {
@@ -1462,20 +1826,50 @@
     };
 
     slots.splice(idx + 1, 0, clone);
-    document.getElementById('slotCount').textContent = slots.length;
     renderSlots();
     showToast(`Slot Foto ${idx + 1} diduplicate`);
   }
 
   function deleteSlot(idx) {
     slots.splice(idx, 1);
-    document.getElementById('slotCount').textContent = slots.length;
     renderSlots();
   }
 
   function clearSlots() {
     slots = [];
-    document.getElementById('slotCount').textContent = 0;
+    renderSlots();
+  }
+
+  function duplicateTextElement(idx) {
+    const source = textElements[idx];
+    if (!source) return;
+    const offset = Math.max(10, Math.round(Math.min(source.w, source.h) * 0.16));
+    const clone = {
+      ...source,
+      x: Math.min(Math.max(0, canvas.width - source.w), Math.max(0, source.x + offset)),
+      y: Math.min(Math.max(0, canvas.height - source.h), Math.max(0, source.y + offset))
+    };
+    textElements.splice(idx + 1, 0, clone);
+    selectTextElement(idx + 1);
+    showToast(`Teks ${idx + 1} diduplikat`);
+  }
+
+  function deleteTextElement(idx) {
+    textElements.splice(idx, 1);
+    if (!textElements.length) {
+      selectedTextIndex = -1;
+      hideTextControls();
+    } else {
+      selectedTextIndex = Math.min(idx, textElements.length - 1);
+    }
+    renderSlots();
+    if (selectedTextIndex >= 0) selectTextElement(selectedTextIndex);
+  }
+
+  function clearTextElements() {
+    textElements = [];
+    selectedTextIndex = -1;
+    hideTextControls();
     renderSlots();
   }
 
@@ -1500,6 +1894,17 @@
         w: Math.round(s.w / scale), h: Math.round(s.h / scale),
         r: normalizeAngle(s.r || 0),
       }));
+      const realTextElements = textElements.map(element => ({
+        type: 'text',
+        text: String(element.text || 'PHOTOBOOTH').slice(0, 80),
+        x: Math.round(element.x / scale), y: Math.round(element.y / scale),
+        w: Math.round(element.w / scale), h: Math.round(element.h / scale),
+        r: normalizeAngle(element.r || 0),
+        font: TEXT_FONTS.includes(element.font) ? element.font : 'Segoe UI',
+        color: TEXT_COLORS.includes(String(element.color || '').toUpperCase()) ? String(element.color).toUpperCase() : '#1D3557',
+        font_size: Math.max(10, Math.round((element.font_size || element.h * 0.58) / scale)),
+        weight: 900
+      }));
 
       const tmpl = {
         name,
@@ -1507,7 +1912,9 @@
         product_type: selectedProductType,
         photo_layer: selectedPhotoLayer,
         src: imageURL,
-        slots: realSlots,
+        // Text elements disimpan di kolom JSON slots dengan type='text'.
+        // Strategi ini kompatibel dengan schema Supabase lama dan tidak memerlukan migration.
+        slots: [...realSlots, ...realTextElements],
         w: templateImg.width, h: templateImg.height,
       };
 
@@ -1527,7 +1934,7 @@
       });
       if (!res.ok) throw new Error('DB insert gagal: ' + await res.text());
       const [inserted] = await res.json();
-      _allTemplates.unshift(inserted);
+      _allTemplates.unshift(normalizeTemplateRecord(inserted));
       showToast('Template tersimpan di cloud! ✓');
       renderTemplateList();
       renderProductListTabs();
@@ -1540,7 +1947,9 @@
       document.getElementById('editorControls').style.display = 'none';
       document.getElementById('slotInfo').style.display = 'none';
       btn.style.display = 'none';
-      templateDataURL = null; templateImg = null; slots = [];
+      templateDataURL = null; templateImg = null; slots = []; textElements = []; selectedTextIndex = -1;
+      hideTextControls();
+      syncEditorCounts();
       selectedPhotoLayer = 'behind';
       selectPhotoLayer('behind');
       document.getElementById('fileInput').value = '';
@@ -1583,7 +1992,7 @@
         <img class="template-thumb" src="${t.src}" alt="${t.name}" crossorigin="anonymous">
         <div class="template-info">
           <h4>${t.name}</h4>
-          <p>${(t.slots||[]).length} slot foto · ${t.w||591}×${t.h||1772}px</p>
+          <p>${(t.slots||[]).length} slot foto · ${(t.text_elements||[]).length} teks · ${t.w||591}×${t.h||1772}px</p>
           <span class="cat-badge">${productTypeOfTemplate(t) === 'photobox' ? 'Photobox 4R' : 'Photostrip'} · ${t.category}</span>
           <span class="cat-badge">Foto ${t.photo_layer === 'front' ? 'di depan' : 'di belakang'}</span>
           <select class="template-layer-select" aria-label="Posisi foto ${t.name}" onchange="ubahPhotoLayer('${t.id}', this.value, this)">

@@ -1931,6 +1931,27 @@
     return { ...slot, r: Math.round(((raw % 360) + 360) % 360) };
   }
 
+  function isTemplateTextElement(item) {
+    return !!item && (item.type === 'text' || item.kind === 'text');
+  }
+
+  function normalizeTemplateTextElement(item) {
+    const allowedFonts = ['Segoe UI', 'Arial', 'Georgia', 'Trebuchet MS', 'Courier New', 'Impact'];
+    return {
+      type: 'text',
+      text: String(item?.text || item?.value || 'PHOTOBOOTH').slice(0, 80),
+      x: Number(item?.x) || 0,
+      y: Number(item?.y) || 0,
+      w: Math.max(40, Number(item?.w) || 240),
+      h: Math.max(24, Number(item?.h) || 60),
+      r: normalizeTemplateSlotAngle(item).r,
+      font: allowedFonts.includes(item?.font) ? item.font : 'Segoe UI',
+      color: /^#[0-9a-f]{6}$/i.test(item?.color || '') ? item.color.toUpperCase() : '#1D3557',
+      font_size: Math.max(10, Number(item?.font_size || item?.fontSize) || Math.round((Number(item?.h) || 60) * 0.58)),
+      weight: 900
+    };
+  }
+
   function getDeletedTemplateIds() {
     try { return JSON.parse(localStorage.getItem('pb_deleted_template_ids') || '[]').map(String); }
     catch(e) { return []; }
@@ -2000,7 +2021,8 @@
             ...t,
             product_type: t.product_type || (isPhotoboxCategory(t.category) ? 'photobox' : 'photostrip'),
             photo_layer: t.photo_layer === 'front' ? 'front' : 'behind',
-            slots: parsedSlots.map(normalizeTemplateSlotAngle)
+            slots: parsedSlots.filter(item => !isTemplateTextElement(item)).map(normalizeTemplateSlotAngle),
+            text_elements: parsedSlots.filter(isTemplateTextElement).map(normalizeTemplateTextElement)
           };
         });
       console.log('[template] loaded', _dbTemplates.length, 'templates from Supabase');
@@ -2158,6 +2180,7 @@
       selectedTemplate = newBasic;
       localStorage.setItem('templateSrc', newBasic.src);
       localStorage.setItem('templateSlots', JSON.stringify(newBasic.slots));
+      localStorage.setItem('templateTextElements', '[]');
       localStorage.setItem('templateW', newBasic.w);
       localStorage.setItem('templateH', newBasic.h);
       localStorage.setItem('templatePhotoLayer', 'behind');
@@ -2210,6 +2233,7 @@
       const card = document.createElement('div');
       card.className = 'template-card';
       const slotLen = Array.isArray(tmpl.slots) && tmpl.slots.length ? tmpl.slots.length : (tmpl.category === 'Social Media' ? 3 : 0);
+      const textLen = Array.isArray(tmpl.text_elements) ? tmpl.text_elements.length : 0;
       const basicBadge = (tmpl.isBasic || tmpl.isBuiltIn) ? '<span class="basic-badge">Built-in</span>' : '';
       card.innerHTML = `
         ${basicBadge}
@@ -2217,7 +2241,7 @@
         <img src="${tmpl.src}" alt="${tmpl.name}" style="aspect-ratio:${tmpl.w || 591} / ${tmpl.h || 1772};object-fit:cover;">
         <div class="template-name">
           ${tmpl.name}<br>
-          <span style="color:#555;font-size:10px">${slotLen} foto</span>
+          <span style="color:#555;font-size:10px">${slotLen} foto${textLen ? ` · ${textLen} teks` : ''}</span>
         </div>
       `;
       card.onclick = () => selectTemplate(tmpl, card);
@@ -2244,6 +2268,7 @@
 
     localStorage.setItem('templateSrc', t.src);
     localStorage.setItem('templateSlots', JSON.stringify(t.slots || []));
+    localStorage.setItem('templateTextElements', JSON.stringify(t.text_elements || []));
     localStorage.setItem('templateName', t.name || 'Template');
     localStorage.setItem('templateId', t.id || '');
     localStorage.setItem('templateCategory', t.category || '');

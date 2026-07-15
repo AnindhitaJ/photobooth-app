@@ -693,6 +693,18 @@
     } catch(e) {}
   }
 
+  async function idbClearAll() {
+    try {
+      const db = await idbOpen();
+      return new Promise(resolve => {
+        const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+        tx.objectStore(PHOTO_STORE_NAME).clear();
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch(e) {}
+  }
+
   function normalizePhotoArray(value) {
     const candidate = Array.isArray(value)
       ? value
@@ -718,7 +730,8 @@
 
   let filteredPhotos = [];
   let filteredPhotosReady = false;
-  const livePhotos     = JSON.parse(localStorage.getItem('livePhotos') || '[]');
+  let livePhotos = [];
+  let livePhotosReady = false;
   const captureFlow    = localStorage.getItem('captureFlow') || '';
   const isEventMode = eventStorageGet('eventMode') === '1';
   const isPhotoboxMode = captureFlow === 'photobox';
@@ -892,6 +905,10 @@
       }
       if (!filteredPhotos.length) {
         filteredPhotos = await loadLargePhotoArray('photos');
+      }
+      if (!livePhotosReady) {
+        livePhotos = await loadLargePhotoArray('livePhotos');
+        livePhotosReady = true;
       }
 
       ctx.fillStyle = '#ffffff';
@@ -2441,10 +2458,10 @@
   }
 
   async function fotoLagi() {
-    ['photos','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
+    ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('lux_result_consent_done');
-    await idbDelete('filteredPhotos');
-    await idbDelete('photos');
+    sessionStorage.removeItem('luxPhotoSessionId');
+    await idbClearAll();
     window.location.href = isEventMode ? '/event-run' : '/';
   }
 

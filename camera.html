@@ -502,6 +502,7 @@
   let captureMode    = null;
   let countdownSec   = 5;
   let isSavingPhotos = false;
+  let tempCleanupReady = Promise.resolve();
 
   const PHOTO_STORE_DB = 'lux-photo-temp-db';
   const PHOTO_STORE_NAME = 'items';
@@ -552,58 +553,59 @@
     } catch(e) {}
   }
 
+  async function idbClearAll() {
+    try {
+      const db = await idbOpen();
+      return new Promise(resolve => {
+        const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+        tx.objectStore(PHOTO_STORE_NAME).clear();
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch(e) {}
+  }
+
   function createPhotoSessionId() {
     if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
     return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   }
 
   async function saveLargePhotoArray(key, value, sessionId = '') {
-    const json = JSON.stringify(value);
-    let idbSaved = false;
-    let localSaved = false;
+    const idbKey = sessionId ? `${key}:${sessionId}` : key;
     let idbError = null;
     let localError = null;
 
-    // IndexedDB menjadi penyimpanan utama karena localStorage Safari cepat penuh.
+    // Simpan hanya satu salinan besar di IndexedDB. Jangan stringify sebelum diperlukan.
     try {
-      await idbSet(key, value);
-      idbSaved = true;
-
-      if (sessionId) {
-        await idbSet(`${key}:${sessionId}`, value);
-        const verified = await idbGet(`${key}:${sessionId}`);
-        if (!Array.isArray(verified) || verified.filter(Boolean).length !== value.filter(Boolean).length) {
-          throw new Error('Verifikasi data foto IndexedDB gagal');
-        }
+      await idbSet(idbKey, value);
+      const verified = await idbGet(idbKey);
+      if (!Array.isArray(verified) || verified.filter(Boolean).length !== value.filter(Boolean).length) {
+        throw new Error('Verifikasi data IndexedDB gagal');
       }
+
+      try {
+        localStorage.removeItem(key);
+        localStorage.setItem(key + 'Store', 'indexedDB');
+      } catch (_) {}
+      return 'IndexedDB';
     } catch (e) {
       idbError = e;
       console.warn('[LUX] IndexedDB save failed:', e);
     }
 
-    // localStorage hanya salinan kompatibilitas untuk browser/perangkat yang masih mampu.
+    // Fallback saja untuk browser yang IndexedDB-nya tidak tersedia.
     try {
-      localStorage.setItem(key, json);
-      localSaved = true;
+      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key + 'Store', 'localStorage');
+      return 'localStorage';
     } catch (e) {
       localError = e;
       try { localStorage.removeItem(key); } catch (_) {}
       console.warn('[LUX] localStorage save failed:', e);
     }
 
-    try {
-      if (idbSaved) localStorage.setItem(key + 'Store', 'indexedDB');
-      else if (localSaved) localStorage.setItem(key + 'Store', 'localStorage');
-    } catch (_) {}
-
-    if (!idbSaved && !localSaved) {
-      const reason = idbError?.message || localError?.message || 'penyimpanan browser tidak tersedia';
-      throw new Error(`Foto gagal disimpan: ${reason}`);
-    }
-
-    return idbSaved && localSaved
-      ? 'IndexedDB + localStorage'
-      : (idbSaved ? 'IndexedDB' : 'localStorage');
+    const reason = idbError?.message || localError?.message || 'penyimpanan browser tidak tersedia';
+    throw new Error(`Data gagal disimpan: ${reason}`);
   }
 
   // Pan/Zoom
@@ -880,8 +882,18 @@
       if (stream) stream.getTracks().forEach(t => t.stop());
 
       const videoConstraint = selectedCameraId
-        ? { deviceId: { exact: selectedCameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-        : { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } };
+        ? {
+            deviceId: { exact: selectedCameraId },
+            width: { ideal: 1920 },
+            height: { ideal: 1440 },
+            aspectRatio: { ideal: 4 / 3 }
+          }
+        : {
+            facingMode: { ideal: 'user' },
+            width: { ideal: 1920 },
+            height: { ideal: 1440 },
+            aspectRatio: { ideal: 4 / 3 }
+          };
 
       stream = await navigator.mediaDevices.getUserMedia({
         video: videoConstraint,
@@ -901,7 +913,12 @@
         localStorage.removeItem('selectedCameraId');
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
+            video: {
+              facingMode: { ideal: 'user' },
+              width: { ideal: 1920 },
+              height: { ideal: 1440 },
+              aspectRatio: { ideal: 4 / 3 }
+            },
             audio: false
           });
           video.srcObject = stream;
@@ -932,7 +949,7 @@
       .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e) { return false; } }) || '';
     if (!mime) return;
     try {
-      mediaRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1500000 });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 900000 });
       mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: mime });
@@ -963,8 +980,8 @@
   function setMode(mode) {
     captureMode = mode;
     document.getElementById('modeModal').style.display = 'none';
-    // Start camera now that modal is closed
-    startCamera().then(() => {
+    // Pastikan data sesi lama selesai dibersihkan sebelum sesi kamera baru dimulai.
+    tempCleanupReady.finally(() => startCamera().then(() => {
       setTimeout(updateFrameGuide, 600);
       if (mode === 'auto') {
         btnAmbil.style.display = 'none';
@@ -973,7 +990,7 @@
         btnAmbil.style.display = '';
         btnAmbil.disabled = false;
       }
-    });
+    }));
   }
 
   // ── Countdown & Capture ──
@@ -1007,19 +1024,49 @@
     flashEl.classList.add('show');
     setTimeout(() => flashEl.classList.remove('show'), 180);
 
-    const W = 1280, H = 960;
-    canvas.width = W; canvas.height = H;
+    const vW = video.videoWidth;
+    const vH = video.videoHeight;
+    if (!vW || !vH) {
+      statusMsg.textContent = 'Kamera belum siap. Coba ulangi.';
+      isCountingDown = false;
+      btnAmbil.disabled = false;
+      return;
+    }
+
+    // Pertahankan detail native sampai batas aman, tanpa pernah memperbesar pixel kamera.
+    const MAX_W = 1920;
+    const MAX_H = 1440;
+    const TARGET_ASPECT = 4 / 3;
+
+    let sx = 0;
+    let sy = 0;
+    let sw = vW;
+    let sh = vH;
+
+    if (vW / vH > TARGET_ASPECT) {
+      sw = Math.round(vH * TARGET_ASPECT);
+      sx = Math.round((vW - sw) / 2);
+    } else if (vW / vH < TARGET_ASPECT) {
+      sh = Math.round(vW / TARGET_ASPECT);
+      sy = Math.round((vH - sh) / 2);
+    }
+
+    const outputScale = Math.min(1, MAX_W / sw, MAX_H / sh);
+    const W = Math.max(1, Math.round(sw * outputScale));
+    const H = Math.max(1, Math.round(sh * outputScale));
+
+    canvas.width = W;
+    canvas.height = H;
     const ctx = canvas.getContext('2d');
-    const vW = video.videoWidth || W, vH = video.videoHeight || H;
-    const scale = Math.max(W/vW, H/vH);
-    const drawW = vW * scale, drawH = vH * scale;
-    const drawX = (W - drawW) / 2;
-    const drawY = (H - drawH) / 2;
-    ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, vW, vH, drawX, drawY, drawW, drawH);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.save();
+    ctx.translate(W, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
     ctx.restore();
 
-    photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.85);
+    photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.90);
     setTimeout(() => stopLiveRecording(), 800);
     isCountingDown = false;
 
@@ -1102,6 +1149,9 @@
       localStorage.removeItem('filteredPhotos');
       localStorage.removeItem('filteredPhotosStore');
       localStorage.removeItem('livePhotos');
+      localStorage.removeItem('livePhotosStore');
+      await idbDelete('filteredPhotos');
+      await idbDelete('livePhotos');
 
       const photoSessionId = createPhotoSessionId();
       const storeMode = await saveLargePhotoArray('photos', photos, photoSessionId);
@@ -1113,7 +1163,13 @@
 
       const validLive = liveVideos.filter(Boolean);
       if (validLive.length > 0) {
-        try { localStorage.setItem('livePhotos', JSON.stringify(liveVideos)); } catch(e) {}
+        try {
+          const liveStoreMode = await saveLargePhotoArray('livePhotos', liveVideos);
+          console.log('[LUX] livePhotos saved via', liveStoreMode);
+        } catch (e) {
+          // Live photo bersifat opsional; foto utama tetap boleh lanjut ke filter.
+          console.warn('[LUX] livePhotos tidak tersimpan:', e);
+        }
       }
 
       if (isGanciMode) {
@@ -1152,9 +1208,11 @@
       window.location.href = isGanciMode ? '/ganci' : '/template';
     }
   }
-  function konfirmasiKeluar() {
+  async function konfirmasiKeluar() {
     if (stream) stream.getTracks().forEach(t => t.stop());
-    ['photos','filteredPhotos','finalPhoto','finalPhotoThumb','livePhotos'].forEach(k => localStorage.removeItem(k));
+    await idbClearAll();
+    ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => localStorage.removeItem(k));
+    try { sessionStorage.removeItem('luxPhotoSessionId'); } catch (_) {}
     if (isGanciMode) localStorage.removeItem('captureFlow');
     const _flow = localStorage.getItem('captureFlow') || '';
     const _ret  = localStorage.getItem('captureReturnUrl') || '/template';
@@ -1173,7 +1231,18 @@
   // ── Pan/Zoom wiring ──
 
 
+  async function prepareNewPhotoSession() {
+    await idbClearAll();
+    ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+    try { sessionStorage.removeItem('luxPhotoSessionId'); } catch (_) {}
+  }
+
   // Init
+  tempCleanupReady = prepareNewPhotoSession().catch(e => {
+    console.warn('[LUX] cleanup sesi lama gagal:', e);
+  });
   renderIndicators(); renderStrip(); updateTitle(); updateVideoTransform();
   refreshCameraDevices();
   window.addEventListener('resize', updateFrameGuide);
@@ -1181,7 +1250,7 @@
     document.getElementById('modeModal').style.display = 'none';
     captureMode = 'manual';
     countdownSec = 3;
-    startCamera().then(() => setTimeout(updateFrameGuide, 600));
+    tempCleanupReady.finally(() => startCamera().then(() => setTimeout(updateFrameGuide, 600)));
   }
 </script>
 

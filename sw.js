@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.8-template-text';
+const CACHE_NAME = 'lux-photobooth-v1.9-camera-storage-fix';
 const CORE_ASSETS = [
   '/',
   '/index.html',

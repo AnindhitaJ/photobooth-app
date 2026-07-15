@@ -1,0 +1,23 @@
+LUX PHOTOBOOTH — EGRESS OPTIMIZATION
+
+File yang berubah:
+- download.html
+- gallery.html
+- result.html
+- template.html
+- admin.html
+- sw.js
+
+Perubahan:
+1. Foto individual di halaman QR tidak lagi dimuat otomatis.
+2. Share hanya mengambil strip utama; foto satuan/GIF diunduh melalui tombol terpisah.
+3. Foto satuan versi cloud dibatasi maksimal 1280x960 JPEG 0.86.
+4. Strip utama tetap kualitas penuh, tetapi dibuat thumbnail 360px untuk galeri.
+5. Galeri merender 24 sesi per batch dan memakai thumbnail bila tersedia.
+6. Template custom baru mendapat thumbnail JPEG untuk daftar template/admin.
+7. File satu sesi menggunakan timestamp yang sama agar thumbnail bisa diturunkan dari path strip.
+8. Cache service worker dinaikkan ke v1.11.
+
+Tidak memerlukan perubahan schema Supabase.
+Template/sesi lama yang belum punya thumbnail otomatis fallback ke file asli.
+Setelah deploy, tutup semua tab aplikasi dan buka kembali.

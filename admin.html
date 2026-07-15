@@ -1281,23 +1281,61 @@
     if (e.target.files[0]) loadTemplate(e.target.files[0]);
   });
 
-  async function uploadTemplateImage(dataURL, name) {
-    const blob = dataURLtoBlob(dataURL);
-    const userId = Auth.getUserId();
-    if (!userId) throw new Error('Session user tidak ditemukan. Login ulang.');
-    const safeName = name.replace(/[^a-zA-Z0-9._-]+/g, '_');
-    const filename = `templates/${userId}/${Date.now()}_${safeName}.png`;
+  async function makeTemplateThumbnailBlob(dataURL) {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = dataURL;
+    });
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const scale = Math.min(1, 320 / iw, 960 / ih);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(iw * scale));
+    c.height = Math.max(1, Math.round(ih * scale));
+    const cc = c.getContext('2d');
+    cc.fillStyle = '#ffffff';
+    cc.fillRect(0, 0, c.width, c.height);
+    cc.imageSmoothingEnabled = true;
+    cc.imageSmoothingQuality = 'high';
+    cc.drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise((resolve, reject) => {
+      c.toBlob(blob => blob ? resolve(blob) : reject(new Error('Thumbnail gagal dibuat')), 'image/jpeg', 0.72);
+    });
+  }
+
+  async function uploadStorageObject(blob, filename) {
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filename}`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON,
         'Authorization': `Bearer ${Auth.getToken()}`,
-        'Content-Type': 'image/png',
+        'Content-Type': blob.type || 'application/octet-stream',
         'x-upsert': 'false',
       },
       body: blob,
     });
     if (!res.ok) throw new Error('Upload gagal: ' + await res.text());
+  }
+
+  async function uploadTemplateImage(dataURL, name) {
+    const blob = dataURLtoBlob(dataURL);
+    const userId = Auth.getUserId();
+    if (!userId) throw new Error('Session user tidak ditemukan. Login ulang.');
+    const safeName = name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+    const base = `templates/${userId}/${Date.now()}_${safeName}`;
+    const filename = `${base}.png`;
+    await uploadStorageObject(blob, filename);
+
+    // Thumbnail hanya untuk daftar template; kegagalannya tidak membatalkan template utama.
+    try {
+      const thumbBlob = await makeTemplateThumbnailBlob(dataURL);
+      await uploadStorageObject(thumbBlob, `${base}_thumb.jpg`);
+    } catch (e) {
+      console.warn('Thumbnail template gagal dibuat/upload:', e);
+    }
+
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${filename}`;
   }
 
@@ -1966,6 +2004,20 @@
     btn.textContent = '💾 Simpan Template';
   }
 
+  function customTemplateThumbURL(src) {
+    const value = String(src || '');
+    return /\.png(?:\?.*)?$/i.test(value)
+      ? value.replace(/\.png(?=\?|$)/i, '_thumb.jpg')
+      : value;
+  }
+
+  function useOriginalTemplateImage(img) {
+    if (!img || img.dataset.fallbackUsed === '1') return;
+    img.dataset.fallbackUsed = '1';
+    const original = decodeURIComponent(img.dataset.original || '');
+    if (original) img.src = original;
+  }
+
   // ─── Template List ───
   function renderTemplateList() {
     const list = document.getElementById('templateList');
@@ -1989,7 +2041,11 @@
 
     list.innerHTML = filtered.map(t => `
       <div class="template-item">
-        <img class="template-thumb" src="${t.src}" alt="${t.name}" crossorigin="anonymous">
+        <img class="template-thumb" src="${customTemplateThumbURL(t.src)}"
+             data-original="${encodeURIComponent(t.src)}"
+             onerror="useOriginalTemplateImage(this)"
+             loading="lazy" decoding="async" fetchpriority="low"
+             alt="${t.name}" crossorigin="anonymous">
         <div class="template-info">
           <h4>${t.name}</h4>
           <p>${(t.slots||[]).length} slot foto · ${(t.text_elements||[]).length} teks · ${t.w||591}×${t.h||1772}px</p>
@@ -2065,10 +2121,13 @@
         if (target?.src && target.src.includes(`/storage/v1/object/public/${BUCKET}/`)) {
           const objectPath = decodeURIComponent(target.src.split(`/storage/v1/object/public/${BUCKET}/`)[1] || '');
           if (objectPath) {
-            await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${objectPath}`, {
-              method: 'DELETE',
-              headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
-            });
+            const thumbPath = objectPath.replace(/\.png$/i, '_thumb.jpg');
+            await Promise.allSettled([objectPath, thumbPath].map(path =>
+              fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
+              })
+            ));
           }
         }
       } catch(storageErr) {

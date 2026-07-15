@@ -140,6 +140,13 @@
     .sessions-grid {
       display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px;
     }
+    .load-more-wrap { display:none; justify-content:center; padding:22px 0 4px; }
+    .load-more-btn {
+      border:2px solid var(--border); background:white; color:var(--text);
+      border-radius:999px; padding:11px 22px; font:inherit; font-weight:800;
+      cursor:pointer; box-shadow:0 3px 12px rgba(0,0,0,0.06);
+    }
+    .load-more-btn:hover { border-color:var(--orange); color:var(--orange); }
 
     /* ── LOADING / EMPTY ── */
     .loading-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 24px; gap:16px; text-align:center; }
@@ -435,6 +442,9 @@
       <div class="empty-sub" id="emptySub">Belum ada sesi foto tersimpan untuk filter ini</div>
     </div>
     <div class="sessions-grid" id="sessionsGrid"></div>
+    <div class="load-more-wrap" id="loadMoreWrap">
+      <button class="load-more-btn" type="button" onclick="loadMoreSessions()">Muat sesi berikutnya</button>
+    </div>
   </div>
 </div>
 
@@ -521,6 +531,8 @@
   let selected    = []; // ts yang dipilih untuk hapus
   let mode        = 'view';
   let activeSess  = null; // session yang sedang dibuka di modal
+  const SESSION_RENDER_BATCH = 24;
+  let visibleSessionCount = SESSION_RENDER_BATCH;
 
   // ── PASSWORD ────────────────────────────────────────────────────────
   function checkPass() {
@@ -578,7 +590,7 @@
 
       // Baca dari tabel photo_sessions (per user, RLS otomatis filter)
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/photo_sessions?select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/photo_sessions?select=file_path,product_type,template_name,template_category,created_at,session_id&order=created_at.desc`,
         {
           headers: {
             'apikey': SUPABASE_ANON,
@@ -698,6 +710,7 @@
       return dateOk && productOk;
     });
     selected = [];
+    visibleSessionCount = SESSION_RENDER_BATCH;
     updateActionBar();
     renderGrid();
   }
@@ -717,6 +730,25 @@
     renderGrid();
   }
 
+  function getGalleryThumbnailURL(session) {
+    const path = String(session?.strip?.path || '');
+    const thumbPath = path.replace(/_(?:strip|foto)\.(?:jpe?g|png)$/i, '_thumb.jpg');
+    if (!thumbPath || thumbPath === path) return session?.strip?.url || '';
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${thumbPath}`;
+  }
+
+  function useOriginalGalleryImage(img) {
+    if (!img || img.dataset.fallbackUsed === '1') return;
+    img.dataset.fallbackUsed = '1';
+    const fallback = decodeURIComponent(img.dataset.fallback || '');
+    if (fallback) img.src = fallback;
+  }
+
+  function loadMoreSessions() {
+    visibleSessionCount += SESSION_RENDER_BATCH;
+    renderGrid();
+  }
+
   // ── RENDER ───────────────────────────────────────────────────────────
   function renderGrid() {
     const grid  = document.getElementById('sessionsGrid');
@@ -725,6 +757,7 @@
 
     if (!filtered.length) {
       grid.innerHTML = '';
+      document.getElementById('loadMoreWrap').style.display = 'none';
       empty.style.display = 'block';
       const emptySub = document.getElementById('emptySub');
       if (emptySub) emptySub.textContent = allSessions.length
@@ -734,7 +767,11 @@
     }
     empty.style.display = 'none';
 
-    grid.innerHTML = filtered.map(s => {
+    const visibleSessions = filtered.slice(0, visibleSessionCount);
+    document.getElementById('loadMoreWrap').style.display =
+      visibleSessionCount < filtered.length ? 'flex' : 'none';
+
+    grid.innerHTML = visibleSessions.map(s => {
       const isMarked = selected.includes(s.ts);
       const dateLabel = s.date.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
       const timeLabel = s.date.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
@@ -745,7 +782,10 @@
 
       return `
         <div class="${cls}" onclick="cardClick(${s.ts})" data-ts="${s.ts}">
-          <img class="strip-thumb" src="${s.strip.url}" alt="strip" loading="lazy" crossorigin="anonymous">
+          <img class="strip-thumb" src="${getGalleryThumbnailURL(s)}"
+               data-fallback="${encodeURIComponent(s.strip.url)}"
+               onerror="useOriginalGalleryImage(this)"
+               alt="strip" loading="lazy" decoding="async" fetchpriority="low" crossorigin="anonymous">
           <div class="del-badge">🗑</div>
           <div class="print-num-badge" id="pnb-${s.ts}">${selected.includes(s.ts) && mode==='print' ? selected.indexOf(s.ts)+1 : ''}</div>
           <div class="session-footer">

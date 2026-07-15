@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.10-builtin-template-sharpness-fix';
+const CACHE_NAME = 'lux-photobooth-v1.11-egress-optimization';
 const CORE_ASSETS = [
   '/',
   '/index.html',

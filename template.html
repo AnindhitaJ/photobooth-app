@@ -2217,6 +2217,21 @@
     renderTemplates();
   }
 
+  function customTemplateThumbURL(tmpl) {
+    const src = String(tmpl?.src || '');
+    if (tmpl?.isBasic || tmpl?.isBuiltIn || src.startsWith('data:')) return src;
+    return /\.png(?:\?.*)?$/i.test(src)
+      ? src.replace(/\.png(?=\?|$)/i, '_thumb.jpg')
+      : src;
+  }
+
+  function useOriginalTemplateImage(img) {
+    if (!img || img.dataset.fallbackUsed === '1') return;
+    img.dataset.fallbackUsed = '1';
+    const original = decodeURIComponent(img.dataset.original || '');
+    if (original) img.src = original;
+  }
+
   // ─── Render templates ───
   function renderTemplates() {
     const grid = document.getElementById('templateGrid');
@@ -2267,7 +2282,12 @@
       card.innerHTML = `
         ${basicBadge}
         <span class="selected-badge">✓ Dipilih</span>
-        <img src="${tmpl.src}" alt="${tmpl.name}" style="aspect-ratio:${tmpl.w || 591} / ${tmpl.h || 1772};object-fit:cover;">
+        <img src="${customTemplateThumbURL(tmpl)}"
+             data-original="${encodeURIComponent(tmpl.src)}"
+             onerror="useOriginalTemplateImage(this)"
+             loading="lazy" decoding="async" fetchpriority="low"
+             alt="${tmpl.name}"
+             style="aspect-ratio:${tmpl.w || 591} / ${tmpl.h || 1772};object-fit:cover;">
         <div class="template-name">
           ${tmpl.name}<br>
           <span style="color:#555;font-size:10px">${slotLen} foto${textLen ? ` · ${textLen} teks` : ''}</span>

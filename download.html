@@ -104,6 +104,18 @@
       width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
       background: #f7e8f0;
     }
+    .individual-placeholder {
+      width: 100%; aspect-ratio: 4 / 3; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 5px; padding: 12px;
+      text-align: center; color: var(--text2); background: #fff5f9;
+      font-size: 12px; font-weight: 800;
+    }
+    .individual-placeholder span { font-size: 24px; }
+    .individual-preview-btn {
+      border-top: 0 !important; background: #fff5f9 !important;
+      color: var(--orange) !important; padding-top: 8px !important;
+      padding-bottom: 8px !important;
+    }
     .individual-card button {
       width: 100%; border: 0; background: white; color: var(--text);
       padding: 10px 8px; font-weight: 900; font-family: inherit;
@@ -524,12 +536,40 @@
     btn.style.display = 'flex';
     badge.textContent = individualURLs.length;
 
+    // Jangan pasang URL Supabase ke atribut src secara otomatis.
+    // Preview resolusi penuh hanya dimuat bila pengguna meminta.
     grid.innerHTML = individualURLs.map((url, i) => `
-      <div class="individual-card">
-        <img src="${url}" alt="Foto ${i + 1}" crossorigin="anonymous">
+      <div class="individual-card" id="individualCard${i}">
+        <div class="individual-placeholder"><span>📷</span>Foto ${i + 1}<small>Preview belum dimuat</small></div>
+        <button class="individual-preview-btn" type="button" onclick="loadIndividualPreview(${i})">Lihat Preview</button>
         <button type="button" onclick="dlIndividual(${i})">Download Foto ${i + 1}</button>
       </div>
     `).join('');
+  }
+
+  function loadIndividualPreview(idx) {
+    const url = individualURLs[idx];
+    const card = document.getElementById(`individualCard${idx}`);
+    if (!url || !card || card.dataset.loaded === '1') return;
+    card.dataset.loaded = '1';
+    const placeholder = card.querySelector('.individual-placeholder');
+    const previewBtn = card.querySelector('.individual-preview-btn');
+    const img = document.createElement('img');
+    img.alt = `Foto ${idx + 1}`;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (placeholder) placeholder.replaceWith(img);
+      if (previewBtn) previewBtn.remove();
+    };
+    img.onerror = () => {
+      card.dataset.loaded = '0';
+      if (previewBtn) previewBtn.textContent = 'Coba Lagi';
+      showToast('Preview tidak bisa dimuat', 'error');
+    };
+    if (previewBtn) previewBtn.textContent = 'Memuat...';
+    img.src = url;
   }
 
   async function dlIndividual(idx, skipConsent = false) {
@@ -556,7 +596,7 @@
     btn.querySelector('.btn-info-title').textContent = 'Mengunduh foto...';
     try {
       for (let i = 0; i < individualURLs.length; i++) {
-        await dlIndividual(i);
+        await dlIndividual(i, true);
         await new Promise(resolve => setTimeout(resolve, 250));
       }
     } finally {
@@ -591,26 +631,9 @@
       const res  = await fetch(photoURL);
       const blob = await res.blob();
       const file = new File([blob], 'lux-photobooth.jpg', { type: 'image/jpeg' });
+      // Share hanya file strip utama. Foto satuan dan GIF tetap tersedia
+      // melalui tombol download masing-masing agar tidak semuanya ditarik dari CDN.
       const files = [file];
-
-      // Sertakan foto satuan jika ada
-      for (let i = 0; i < individualURLs.length; i++) {
-        try {
-          const ir = await fetch(individualURLs[i]);
-          const ib = await ir.blob();
-          files.push(new File([ib], `lux-foto-${i + 1}.jpg`, { type: 'image/jpeg' }));
-        } catch(e) {}
-      }
-
-      // Sertakan GIF jika ada
-      if (gifURL) {
-        try {
-          const gr   = await fetch(gifURL);
-          const gb   = await gr.blob();
-          const gf   = new File([gb], 'lux-animated.gif', { type: 'image/gif' });
-          files.push(gf);
-        } catch(e) {}
-      }
 
       if (navigator.canShare && navigator.canShare({ files })) {
         await navigator.share({ files, title: 'Foto LUX Photobooth' });

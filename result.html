@@ -762,6 +762,8 @@
 
   const canvas = document.getElementById('resultCanvas');
   const ctx    = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const displayW = 240;
   const displayH = Math.round(tmplH * displayW / tmplW);
@@ -826,6 +828,8 @@
     c.width = img.naturalWidth || img.width;
     c.height = img.naturalHeight || img.height;
     const cc = c.getContext('2d');
+    cc.imageSmoothingEnabled = true;
+    cc.imageSmoothingQuality = 'high';
     cc.drawImage(img, 0, 0, c.width, c.height);
     Auth.drawProWatermark(cc, c.width, c.height);
     return c.toDataURL(mime, quality);

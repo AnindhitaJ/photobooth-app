@@ -1,0 +1,23 @@
+LUX PHOTOBOOTH - BUILT-IN TEMPLATE SHARPNESS FIX
+=================================================
+
+File utama yang berubah:
+- template.html
+- result.html
+- sw.js
+
+Perubahan:
+1. Menghapus tint putih/hitam semi-transparan yang sebelumnya menutupi seluruh
+   area foto pada template built-in.
+2. Menghapus tint tambahan pada beberapa variasi template Film.
+3. Mempertahankan bingkai Polaroid sebagai ring, tetapi bagian foto tetap transparan.
+4. Mengaktifkan canvas imageSmoothingQuality = 'high' pada komposit hasil dan
+   proses watermark.
+5. Menaikkan versi cache service worker agar perangkat mengambil file terbaru.
+
+Tidak ada perubahan database atau schema Supabase yang diperlukan.
+
+Setelah deploy:
+- Tutup seluruh tab aplikasi.
+- Buka kembali aplikasi.
+- Bila perangkat masih menampilkan versi lama, hapus site data/cache satu kali.

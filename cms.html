@@ -65,6 +65,16 @@
       transition:border 0.2s; width:220px;
     }
     .search-input:focus { border-color:var(--orange); }
+    .section-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .btn-create-account {
+      padding:9px 15px; border-radius:50px; border:none; cursor:pointer;
+      background:linear-gradient(135deg,var(--navy),#284b73); color:white;
+      font-size:13px; font-weight:800; font-family:inherit; white-space:nowrap;
+    }
+    .btn-create-account:hover { filter:brightness(1.08); }
+    .modal-field-label {
+      display:block; font-size:12px; font-weight:800; color:var(--text2); margin:0 0 6px 2px;
+    }
 
     table { width:100%; border-collapse:collapse; }
     th {
@@ -302,13 +312,41 @@
   <div class="section-card">
     <div class="section-header">
       <div class="section-title">👥 Semua Akun</div>
-      <input type="text" class="search-input" id="searchInput" placeholder="🔍 Cari email / nama..." oninput="filterTable()">
+      <div class="section-tools">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Cari email / nama..." oninput="filterTable()">
+        <button type="button" class="btn-create-account" onclick="openCreateAccountModal()">➕ Tambah Akun</button>
+      </div>
     </div>
     <div id="tableWrap">
       <div class="loading"><div class="spinner"></div>Memuat data...</div>
     </div>
   </div>
 
+</div>
+
+<!-- CREATE ACCOUNT MODAL -->
+<div class="modal-wrap" id="createAccountModal">
+  <div class="modal-box">
+    <div class="modal-title">➕ Tambah Akun</div>
+    <div class="modal-sub">Hanya super admin yang dapat membuat akun baru.</div>
+
+    <label class="modal-field-label" for="createBoothName">Nama Photobooth</label>
+    <input type="text" class="modal-input" id="createBoothName" placeholder="Contoh: LUX Photobooth" autocomplete="organization">
+
+    <label class="modal-field-label" for="createEmail">Email Login</label>
+    <input type="email" class="modal-input" id="createEmail" placeholder="email@pemilik.com" autocomplete="off">
+
+    <label class="modal-field-label" for="createWhatsapp">Nomor WhatsApp</label>
+    <input type="tel" class="modal-input" id="createWhatsapp" placeholder="Contoh: 081234567890" autocomplete="off">
+
+    <label class="modal-field-label" for="createPassword">Password Awal</label>
+    <input type="password" class="modal-input" id="createPassword" placeholder="Minimal 6 karakter" autocomplete="new-password" onkeydown="if(event.key==='Enter') confirmCreateAccount()">
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeCreateAccountModal()">Batal</button>
+      <button class="btn-modal-confirm" id="btnConfirmCreateAccount" onclick="confirmCreateAccount()">Buat Akun</button>
+    </div>
+  </div>
 </div>
 
 <!-- PRO ACTIVATION MODAL -->
@@ -425,6 +463,70 @@
     }
     loadUsers();
   });
+
+  // ── CREATE ACCOUNT (SUPER ADMIN ONLY) ────────────────────────────────
+  function normalizeCreateWhatsapp(value) {
+    return String(value || '').replace(/[\s\-().]/g, '');
+  }
+
+  function openCreateAccountModal() {
+    document.getElementById('createAccountModal').classList.add('open');
+    setTimeout(() => document.getElementById('createBoothName').focus(), 50);
+  }
+
+  function closeCreateAccountModal() {
+    document.getElementById('createAccountModal').classList.remove('open');
+  }
+
+  async function confirmCreateAccount() {
+    const boothName = document.getElementById('createBoothName').value.trim();
+    const email = document.getElementById('createEmail').value.trim().toLowerCase();
+    const whatsapp = normalizeCreateWhatsapp(document.getElementById('createWhatsapp').value);
+    const password = document.getElementById('createPassword').value;
+    const btn = document.getElementById('btnConfirmCreateAccount');
+    const session = Auth.getSession();
+
+    if (!boothName) return showToast('Nama photobooth harus diisi', 'error');
+    if (!/^\S+@\S+\.\S+$/.test(email)) return showToast('Email tidak valid', 'error');
+    if (!/^\+?[0-9]{8,20}$/.test(whatsapp)) return showToast('Nomor WhatsApp tidak valid', 'error');
+    if (password.length < 6) return showToast('Password minimal 6 karakter', 'error');
+    if (!session?.access_token) return showToast('Session admin habis. Login ulang.', 'error');
+
+    btn.disabled = true;
+    btn.textContent = 'Membuat...';
+    try {
+      const response = await fetch('/api/admin-create-user', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          booth_name: boothName,
+          email,
+          whatsapp_number: whatsapp,
+          password
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `Gagal membuat akun (HTTP ${response.status})`);
+      }
+
+      ['createBoothName','createEmail','createWhatsapp','createPassword'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      closeCreateAccountModal();
+      showToast(`Akun ${email} berhasil dibuat`, 'success');
+      await loadUsers();
+    } catch (error) {
+      showToast(error.message || 'Gagal membuat akun', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Buat Akun';
+    }
+  }
 
   // ── LOAD USERS ───────────────────────────────────────────────────────
   async function loadUsers() {

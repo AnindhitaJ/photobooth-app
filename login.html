@@ -121,12 +121,6 @@
     <div class="logo-title" id="cardTitle">Selamat Datang</div>
     <div class="logo-sub" id="cardSub">Login ke dashboard photobooth kamu</div>
   </div>
-
-  <div class="tabs">
-    <button class="tab active" id="tabLogin" onclick="switchTab('login')">Login</button>
-    <button class="tab" id="tabRegister" onclick="switchTab('register')">Daftar</button>
-</div>
-
   <div class="error-msg" id="errorMsg"></div>
   <div class="success-msg" id="successMsg"></div>
 
@@ -143,28 +137,7 @@
     </div>
     <button class="btn" id="btnLogin" onclick="doLogin()">🔓 Login</button>
   </div>
-
-  <!-- REGISTER FORM -->
-  <div id="formRegister" style="display:none">
-    <div class="form-group">
-      <label>Nama Photobooth</label>
-      <input type="text" id="regName" placeholder="Contoh: LUX Photobooth">
-    </div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="regEmail" placeholder="email@kamu.com" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label>Nomor WhatsApp Aktif</label>
-      <input type="tel" id="regWhatsapp" placeholder="Contoh: 081234567890" autocomplete="tel">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="regPassword" placeholder="Min. 6 karakter" autocomplete="new-password"
-        onkeydown="if(event.key==='Enter') doRegister()">
-    </div>
-    <button class="btn" id="btnRegister" onclick="doRegister()">✨ Daftar Sekarang</button>
-  </div>
+  <div style="margin-top:14px;text-align:center;font-size:12px;color:#64748b;line-height:1.5;">Pendaftaran akun dikelola oleh administrator.</div>
 </div>
 
 <script src="/config.js"></script>
@@ -190,26 +163,6 @@
         window.location.href = '/';
       }
     } catch(e) { localStorage.removeItem('sb_session'); }
-  }
-
-  function switchTab(tab) {
-    if (tab === 'forgot') tab = 'login';
-
-    ['tabLogin','tabRegister'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
-    });
-
-    document.getElementById('formLogin').style.display = tab === 'login' ? 'block' : 'none';
-    document.getElementById('formRegister').style.display = tab === 'register' ? 'block' : 'none';
-
-    const titles = {
-      login: ['Selamat Datang', 'Login ke dashboard photobooth kamu'],
-      register: ['Buat Akun Baru', 'Daftar dan mulai kelola photobooth kamu']
-    };
-    document.getElementById('cardTitle').textContent = titles[tab][0];
-    document.getElementById('cardSub').textContent = titles[tab][1];
-    hideMessages();
   }
 
   function showError(msg) {
@@ -252,120 +205,6 @@
       showError(e.message);
     } finally {
       btn.disabled = false; btn.textContent = '🔓 Login';
-    }
-  }
-
-  async function doRegister() {
-    const name     = document.getElementById('regName').value.trim();
-    const email    = document.getElementById('regEmail').value.trim();
-    const whatsapp = normalizeWhatsapp(document.getElementById('regWhatsapp').value.trim());
-    const password = document.getElementById('regPassword').value;
-    if (!name) return showError('Nama photobooth harus diisi');
-    if (!email) return showError('Email harus diisi');
-    if (!whatsapp) return showError('Nomor WhatsApp aktif harus diisi');
-    if (!isValidWhatsapp(whatsapp)) return showError('Nomor WhatsApp tidak valid. Gunakan format 08..., 628..., atau +628...');
-    if (password.length < 6) return showError('Password minimal 6 karakter');
-    const btn = document.getElementById('btnRegister');
-    btn.disabled = true; btn.textContent = '⏳ Mendaftar...';
-    try {
-      // 1. Register user
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, data: { booth_name: name, whatsapp_number: whatsapp } })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error_description || data.msg || 'Registrasi gagal');
-
-      if (data.session) {
-        // Auto-login (email confirmation disabled)
-        localStorage.setItem('sb_session', JSON.stringify(data.session));
-        localStorage.setItem('sb_user_id', data.user.id);
-        localStorage.setItem('sb_user_email', data.user.email);
-        // Update booth name di profile
-        await updateProfileOnRegister(data.session.access_token, data.user.id, name, whatsapp, email);
-        await loadProfile(data.session.access_token, data.user.id);
-        window.location.href = '/';
-      } else {
-        // Supabase minta konfirmasi email — tapi harusnya sudah dimatikan
-        // Coba login langsung
-        try {
-          const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-            method: 'POST',
-            headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-          });
-          const loginData = await loginRes.json();
-          if (loginRes.ok) {
-            localStorage.setItem('sb_session', JSON.stringify(loginData));
-            localStorage.setItem('sb_user_id', loginData.user.id);
-            localStorage.setItem('sb_user_email', loginData.user.email);
-            await updateProfileOnRegister(loginData.access_token, loginData.user.id, name, whatsapp, email);
-            await loadProfile(loginData.access_token, loginData.user.id);
-            window.location.href = '/';
-          } else {
-            showSuccess('Akun berhasil dibuat! Silakan login.');
-            switchTab('login');
-            document.getElementById('loginEmail').value = email;
-          }
-        } catch(e2) {
-          showSuccess('Akun berhasil dibuat! Silakan login.');
-          switchTab('login');
-        }
-      }
-    } catch(e) {
-      showError(e.message);
-    } finally {
-      btn.disabled = false; btn.textContent = '✨ Daftar Sekarang';
-    }
-  }
-
-  function normalizeWhatsapp(value) {
-    return String(value || '').replace(/[\s\-().]/g, '');
-  }
-
-  function isValidWhatsapp(value) {
-    return /^\+?[0-9]{8,20}$/.test(value);
-  }
-
-  async function updateProfileOnRegister(token, userId, name, whatsapp, email) {
-    const payload = {
-      id: userId,
-      booth_name: name,
-      email: email,
-      whatsapp_number: whatsapp
-    };
-
-    // Upsert lebih aman daripada PATCH:
-    // kalau trigger profiles belum sempat bikin row, row tetap dibuat.
-    // kalau row sudah ada, whatsapp_number tetap ke-update.
-    const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!upsertRes.ok) {
-      // fallback PATCH untuk DB yang belum punya constraint upsert sesuai id
-      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          booth_name: name,
-          email: email,
-          whatsapp_number: whatsapp
-        })
-      });
     }
   }
 

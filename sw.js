@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.11-egress-optimization';
+const CACHE_NAME = 'lux-photobooth-v1.12-admin-only-registration';
 const CORE_ASSETS = [
   '/',
   '/index.html',

@@ -421,9 +421,13 @@
     try {
       if (manifestURL) {
         document.getElementById('statusSub').textContent = 'Memuat daftar file...';
-        const res = await fetch(manifestURL, { cache: 'no-store' });
-        if (!res.ok) throw new Error('Manifest tidak bisa dimuat');
+        const res = await fetch(manifestURL, { 
+          cache: 'no-store',
+          mode: 'cors'
+        });
+        if (!res.ok) throw new Error('Manifest tidak bisa dimuat: ' + res.status);
         const manifest = await res.json();
+        console.log('[LUX] Manifest loaded:', manifest);
         photoURL = manifest.photo || photoURL;
         gifURL = manifest.gif || gifURL;
         ownerId = manifest.ownerId || ownerId;

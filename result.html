@@ -592,20 +592,22 @@
 
   function buildDownloadPageURL(extra = {}) {
     const ownerId = Auth.getUserId() || '';
+    const downloadBaseURL = 'https://www.lux-photo.web.id/download.html';
+
     if (extra.manifest || finalManifestURL) {
-      return window.location.origin + '/download.html?' + new URLSearchParams({
+      return downloadBaseURL + '?' + new URLSearchParams({
         m: extra.manifest || finalManifestURL,
         owner: ownerId
       }).toString();
     }
 
     // Fallback lama kalau upload manifest gagal.
-    const params = new URLSearchParams({ photo: finalPublicURL, owner: ownerId });
+    const params = new URLSearchParams({ photo: finalPublicURL || '', owner: ownerId });
     const photos = (finalIndividualURLs || []).filter(Boolean);
     photos.forEach(url => params.append('p', url));
     if (finalGifURL) params.set('gif', finalGifURL);
     if (extra.gif) params.set('gif', extra.gif);
-    return window.location.origin + '/download.html?' + params.toString();
+    return downloadBaseURL + '?' + params.toString();
   }
 
   async function uploadDownloadManifest({ photo, photos = [], gif = '' }) {

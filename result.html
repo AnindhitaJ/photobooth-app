@@ -471,7 +471,13 @@
     const path = `results/${userId}_${ts}_${filename}`;
 
     const buffer = await blob.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    const base64 = btoa(binary);
     const res = await fetch('/api/upload', {
       method:'POST',
       headers:{'Content-Type':'application/json'},

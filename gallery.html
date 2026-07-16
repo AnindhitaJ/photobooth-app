@@ -523,6 +523,7 @@
 
 <script>
   const BUCKET   = 'photobooth';
+  const R2_PUBLIC_URL = 'https://media.lux-photo.web.id';
   const PASSWORD = '123456';
 
   // sessions = [ { ts, date, dateStr, strip:{url,path}, individuals:[{url,path}], gif:{url,path}|null } ]
@@ -640,14 +641,16 @@
         if (row.template_name) sessMap[key].templateName = row.template_name;
         if (row.template_category) sessMap[key].templateCategory = row.template_category;
 
-        const url = `${SUPABASE_URL}/storage/v1/object/public/photobooth/${path}`;
+        const r2Url = `${R2_PUBLIC_URL}/${path}`;
+        const supabaseUrl = `${SUPABASE_URL}/storage/v1/object/public/photobooth/${path}`;
+        const url = r2Url;
 
         if (rest.startsWith('strip') || rest.startsWith('foto.')) {
-          if (!sessMap[key].strip) sessMap[key].strip = { url, path };
+          if (!sessMap[key].strip) sessMap[key].strip = { url, fallbackUrl: supabaseUrl, path };
         } else if (rest.startsWith('foto-')) {
-          sessMap[key].individuals.push({ url, path, name: rest });
+          sessMap[key].individuals.push({ url, fallbackUrl: supabaseUrl, path, name: rest });
         } else if (rest.startsWith('animated')) {
-          sessMap[key].gif = { url, path };
+          sessMap[key].gif = { url, fallbackUrl: supabaseUrl, path };
         }
       });
 
@@ -734,7 +737,7 @@
     const path = String(session?.strip?.path || '');
     const thumbPath = path.replace(/_(?:strip|foto)\.(?:jpe?g|png)$/i, '_thumb.jpg');
     if (!thumbPath || thumbPath === path) return session?.strip?.url || '';
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${thumbPath}`;
+    return `${R2_PUBLIC_URL}/${thumbPath}`;
   }
 
   function useOriginalGalleryImage(img) {
@@ -783,7 +786,7 @@
       return `
         <div class="${cls}" onclick="cardClick(${s.ts})" data-ts="${s.ts}">
           <img class="strip-thumb" src="${getGalleryThumbnailURL(s)}"
-               data-fallback="${encodeURIComponent(s.strip.url)}"
+               data-fallback="${encodeURIComponent(s.strip.fallbackUrl || s.strip.url)}"
                onerror="useOriginalGalleryImage(this)"
                alt="strip" loading="lazy" decoding="async" fetchpriority="low" crossorigin="anonymous">
           <div class="del-badge">🗑</div>

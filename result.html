@@ -465,59 +465,21 @@
   }
 
   async function uploadToSupabase(blob, filename, options = {}) {
-    const token  = Auth.getToken();
     const userId = Auth.getUserId() || 'anon';
-
     const requestedSessionId = Number(options.sessionId);
-    const ts = Number.isFinite(requestedSessionId) && requestedSessionId > 0
-      ? Math.trunc(requestedSessionId)
-      : Date.now();
+    const ts = Number.isFinite(requestedSessionId) && requestedSessionId > 0 ? Math.trunc(requestedSessionId) : Date.now();
     const path = `results/${userId}_${ts}_${filename}`;
-    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': blob.type || 'image/jpeg',
-        'x-upsert': 'true',
-      },
-      body: blob,
+
+    const buffer = await blob.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    const res = await fetch('/api/upload', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({fileName:path, contentType:blob.type || 'image/jpeg', data:base64})
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error('Supabase upload error:', res.status, errText);
-      throw new Error(`Upload gagal (${res.status}): ${errText}`);
-    }
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
-
-    // Insert metadata ke photo_sessions hanya untuk final result.
-    // File pendukung seperti foto satuan, GIF, live, dan manifest jangan dihitung sebagai session analytics.
-    if (userId !== 'anon' && options.trackSession) {
-      try {
-        await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_ANON,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            user_id:    userId,
-            file_path:  path,
-            event_id:   eventStorageGet('eventMode') === '1' ? activeEventId() : '',
-            template_id: localStorage.getItem('templateId') || '',
-            product_type: isPhotoboxMode ? 'photobox' : 'photostrip',
-            photo_count: filteredPhotos.length || 1,
-            session_id: String(options.sessionId || ts),
-            template_name: localStorage.getItem('templateName') || '',
-            template_category: localStorage.getItem('templateCategory') || ''
-          })
-        });
-      } catch(e) { console.warn('Insert photo_sessions gagal:', e); }
-    }
-
-    return publicUrl;
+    if (!res.ok) throw new Error('R2 upload gagal');
+    const json = await res.json();
+    return json.url;
   }
 
   async function loadResultConsentSettings() {

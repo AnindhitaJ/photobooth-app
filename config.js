@@ -9,5 +9,6 @@ window.LUX_CONFIG = Object.freeze({
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndWl1YnBzaWp3and4YXh2a2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTM4NTcsImV4cCI6MjA5NDg4OTg1N30.jwFtqnsbWlhSEtEeF-ZTEBq63CUQpN4jHPRmFpY827o',
   SUPER_ADMIN_EMAIL: 'luxphotobooth.id@gmail.com',
   STORAGE_BUCKET: 'photobooth',
+  R2_PUBLIC_URL: 'https://media.lux-photo.web.id',
   APP_VERSION: 'redeploy-ready-v1.2-template-text'
 });

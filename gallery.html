@@ -522,19 +522,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const BUCKET = 'photobooth';
+  const BUCKET   = 'photobooth';
   const R2_PUBLIC_URL = 'https://media.lux-photo.web.id';
   const PASSWORD = '123456';
-  // Hybrid storage: foto baru dari R2, foto lama tetap dari Supabase Storage
-  function getFileURL(path) {
-    if (!path) return '';
-    if (path.startsWith('results/')) {
-      return `${R2_PUBLIC_URL}/${path}`;
-    }
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
-  }
-
-
 
   // sessions = [ { ts, date, dateStr, strip:{url,path}, individuals:[{url,path}], gif:{url,path}|null } ]
   let allSessions = [];
@@ -651,7 +641,7 @@
         if (row.template_name) sessMap[key].templateName = row.template_name;
         if (row.template_category) sessMap[key].templateCategory = row.template_category;
 
-        const url = getFileURL(path);
+        const url = `${R2_PUBLIC_URL}/${path}`;
 
         if (rest.startsWith('strip') || rest.startsWith('foto.')) {
           if (!sessMap[key].strip) sessMap[key].strip = { url, path };
@@ -743,18 +733,9 @@
 
   function getGalleryThumbnailURL(session) {
     const path = String(session?.strip?.path || '');
-    if (!path) return '';
-
-    const thumbPath = path.replace(
-      /_(strip|foto-\d+)\.(jpg|jpeg|png)$/i,
-      '_thumb.jpg'
-    );
-
-    if (thumbPath && thumbPath !== path) {
-      return getFileURL(thumbPath);
-    }
-
-    return getFileURL(path);
+    const thumbPath = path.replace(/_(?:strip|foto)\.(?:jpe?g|png)$/i, '_thumb.jpg');
+    if (!thumbPath || thumbPath === path) return session?.strip?.url || '';
+    return `${R2_PUBLIC_URL}/${thumbPath}`;
   }
 
   function useOriginalGalleryImage(img) {

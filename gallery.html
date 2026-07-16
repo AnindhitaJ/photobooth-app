@@ -522,7 +522,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const BUCKET   = 'photobooth';
+  const BUCKET = 'photobooth';
+  const R2_PUBLIC_URL = 'https://media.lux-photo.web.id';
   const PASSWORD = '123456';
 
   // sessions = [ { ts, date, dateStr, strip:{url,path}, individuals:[{url,path}], gif:{url,path}|null } ]
@@ -640,7 +641,7 @@
         if (row.template_name) sessMap[key].templateName = row.template_name;
         if (row.template_category) sessMap[key].templateCategory = row.template_category;
 
-        const url = `${SUPABASE_URL}/storage/v1/object/public/photobooth/${path}`;
+        const url = `${R2_PUBLIC_URL}/${path}`;
 
         if (rest.startsWith('strip') || rest.startsWith('foto.')) {
           if (!sessMap[key].strip) sessMap[key].strip = { url, path };
@@ -734,7 +735,7 @@
     const path = String(session?.strip?.path || '');
     const thumbPath = path.replace(/_(?:strip|foto)\.(?:jpe?g|png)$/i, '_thumb.jpg');
     if (!thumbPath || thumbPath === path) return session?.strip?.url || '';
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${thumbPath}`;
+    return `${R2_PUBLIC_URL}/${thumbPath}`;
   }
 
   function useOriginalGalleryImage(img) {

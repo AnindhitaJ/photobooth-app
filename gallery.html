@@ -472,7 +472,7 @@
 
     <!-- Strip + aksi -->
     <div class="sm-strip-wrap">
-      <img class="sm-strip-img" id="smStripImg" src="" alt="strip" crossorigin="anonymous">
+      <img class="sm-strip-img" id="smStripImg" src="" alt="strip">
       <div class="sm-strip-actions">
         <div class="sm-strip-label">📷 Foto Strip</div>
         <button class="btn-sm btn-sm-primary" onclick="downloadStrip()">⬇️ Download Strip</button>
@@ -936,7 +936,7 @@
     if (parsed.origin !== window.location.origin) {
       // R2 custom-domain may have an older cached response without CORS headers.
       // A stable query key forces a separate cache entry that is fetched with Origin.
-      parsed.searchParams.set('__lux_cors', '1');
+      parsed.searchParams.set('__lux_cors', String(Date.now()));
     }
     return parsed.toString();
   }
@@ -946,7 +946,8 @@
     const res = await fetch(requestUrl, {
       method: 'GET',
       mode: 'cors',
-      credentials: 'omit'
+      credentials: 'omit',
+      cache: 'no-store'
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.blob();
@@ -966,9 +967,12 @@
           title: 'Foto Strip LUX Photobooth',
           url: activeSess.strip.url
         });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(activeSess.strip.url);
+        showToast('Link foto disalin karena browser ini tidak mendukung menu share', 'success');
       } else {
         await triggerDownload(activeSess.strip.url, `lux-strip-${activeSess.ts}.${ext}`);
-        showToast('Download strip berhasil', 'success');
+        showToast('Browser tidak mendukung share; strip didownload', 'success');
       }
     } catch(e) {
       if (e.name === 'AbortError') return;

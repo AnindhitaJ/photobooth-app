@@ -427,7 +427,7 @@
 
     <button class="mode-btn" id="modeAuto"   onclick="setMode('auto')"   disabled>
       <div class="mode-icon">⚡</div>
-      <div class="mode-text"><h3>Otomatis</h3><p>Foto jalan sendiri satu per satu</p></div>
+      <div class="mode-text"><h3>Otomatis</h3><p>Klik foto pertama, foto berikutnya otomatis</p></div>
     </button>
     <button class="mode-btn" id="modeManual" onclick="setMode('manual')" disabled>
       <div class="mode-icon">🖐️</div>
@@ -1011,16 +1011,21 @@
   function setMode(mode) {
     captureMode = mode;
     document.getElementById('modeModal').style.display = 'none';
+
+    // Baik mode manual maupun otomatis dimulai dengan klik tombol Ambil.
+    // Khusus mode otomatis, foto kedua dan seterusnya tetap berjalan otomatis
+    // melalui blok lanjutan di ambilFoto().
+    btnAmbil.style.display = '';
+    btnAmbil.disabled = true;
+    btnAmbil.textContent = mode === 'auto' ? '📷 Mulai Foto' : '📷 Ambil';
+    statusMsg.textContent = mode === 'auto'
+      ? 'Klik Mulai Foto untuk foto pertama. Foto berikutnya akan otomatis.'
+      : 'Klik Ambil saat sudah siap.';
+
     // Pastikan data sesi lama selesai dibersihkan sebelum sesi kamera baru dimulai.
     tempCleanupReady.finally(() => startCamera().then(() => {
       setTimeout(updateFrameGuide, 600);
-      if (mode === 'auto') {
-        btnAmbil.style.display = 'none';
-        setTimeout(() => mulaiCountdown(), 800);
-      } else {
-        btnAmbil.style.display = '';
-        btnAmbil.disabled = false;
-      }
+      btnAmbil.disabled = false;
     }));
   }
 

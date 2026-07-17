@@ -528,8 +528,8 @@
 
   function getStorageUrls(path) {
     return {
-      r2: `${R2_PUBLIC_URL}/${path}`,
-      supabase: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
+      supabase: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
+      r2: `${R2_PUBLIC_URL}/${path}`
     };
   }
 
@@ -651,11 +651,11 @@
         const urls = getStorageUrls(path);
 
         if (rest.startsWith('strip') || rest.startsWith('foto.')) {
-          if (!sessMap[key].strip) sessMap[key].strip = { url: urls.r2, fallbackUrl: urls.supabase, path };
+          if (!sessMap[key].strip) sessMap[key].strip = { url: urls.supabase, fallbackUrl: urls.r2, path };
         } else if (rest.startsWith('foto-')) {
-          sessMap[key].individuals.push({ url: urls.r2, fallbackUrl: urls.supabase, path, name: rest });
+          sessMap[key].individuals.push({ url: urls.supabase, fallbackUrl: urls.r2, path, name: rest });
         } else if (rest.startsWith('animated')) {
-          sessMap[key].gif = { url: urls.r2, fallbackUrl: urls.supabase, path };
+          sessMap[key].gif = { url: urls.supabase, fallbackUrl: urls.r2, path };
         }
       });
 

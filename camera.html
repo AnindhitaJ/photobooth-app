@@ -984,11 +984,15 @@
     tempCleanupReady.finally(() => startCamera().then(() => {
       setTimeout(updateFrameGuide, 600);
       if (mode === 'auto') {
-        btnAmbil.style.display = 'none';
-        setTimeout(() => mulaiCountdown(), 800);
+        // Mode otomatis tetap membutuhkan tombol mulai pertama kali.
+        // Setelah ditekan, sesi berikutnya berjalan otomatis.
+        btnAmbil.style.display = '';
+        btnAmbil.disabled = false;
+        btnAmbil.textContent = '▶️ Mulai Foto';
       } else {
         btnAmbil.style.display = '';
         btnAmbil.disabled = false;
+        btnAmbil.textContent = '📷 Ambil';
       }
     }));
   }
@@ -997,6 +1001,9 @@
   function mulaiCountdown() {
     if (isCountingDown) return;
     isCountingDown = true;
+    if (captureMode === 'auto') {
+      btnAmbil.style.display = 'none';
+    }
     btnAmbil.disabled = true;
     currentSlot = photos.findIndex(p => p === null);
     if (currentSlot === -1) { isCountingDown = false; return; }

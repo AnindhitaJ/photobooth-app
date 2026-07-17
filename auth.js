@@ -1,8 +1,6 @@
 /**
- * auth.js — Shared Supabase authentication and account-integrity guard.
- *
- * Semua halaman yang memuat file ini otomatis dilindungi, kecuali halaman
- * login dan reset-password. Identitas akun dikunci dari login sampai logout.
+ * auth.js — Shared Supabase Auth helper
+ * Include di semua halaman yang butuh session
  */
 
 const LUX_CONFIG = window.LUX_CONFIG || {};
@@ -10,491 +8,210 @@ const SUPABASE_URL  = LUX_CONFIG.SUPABASE_URL || '';
 const SUPABASE_ANON = LUX_CONFIG.SUPABASE_ANON_KEY || '';
 const LUX_SUPER_ADMIN_EMAIL = LUX_CONFIG.SUPER_ADMIN_EMAIL || 'luxphotobooth.id@gmail.com';
 
-const AUTH_KEYS = Object.freeze({
-  session: 'sb_session',
-  userId: 'sb_user_id',
-  email: 'sb_user_email',
-  profile: 'sb_profile',
-  accountLock: 'sb_account_lock',
-  flowOwner: 'lux_flow_owner_id'
-});
-
-const AUTH_PUBLIC_PATHS = new Set([
-  '/login', '/login.html',
-  '/reset-password', '/reset-password.html'
-]);
-
-const nativeFetch = window.fetch.bind(window);
-let authRedirecting = false;
-
 if (!SUPABASE_URL || !SUPABASE_ANON) {
   console.error('Konfigurasi Supabase belum lengkap. Periksa /config.js.');
 }
 
-function decodeJwtPayload(token) {
-  if (!token || typeof token !== 'string') return null;
-  try {
-    const part = token.split('.')[1];
-    if (!part) return null;
-    const base64 = part.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
-    return JSON.parse(decodeURIComponent(Array.from(atob(padded))
-      .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
-  } catch (_) {
-    return null;
-  }
-}
-
-function currentPath() {
-  let path = window.location.pathname || '/';
-  if (path.length > 1) path = path.replace(/\/+$/, '');
-  return path || '/';
-}
-
-function isPublicAuthPage() {
-  return AUTH_PUBLIC_PATHS.has(currentPath());
-}
-
-function addAuthGateStyle() {
-  if (isPublicAuthPage()) return;
-  document.documentElement.classList.add('lux-auth-pending');
-  const style = document.createElement('style');
-  style.id = 'lux-auth-gate-style';
-  style.textContent = `
-    html.lux-auth-pending body { visibility: hidden !important; }
-    #lux-auth-status {
-      position: fixed; inset: 0; z-index: 2147483647; display: flex;
-      align-items: center; justify-content: center; background: #0b1220;
-      color: #fff; font: 600 14px/1.5 system-ui, sans-serif;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-addAuthGateStyle();
-
 const Auth = {
-  _readyState: 'pending',
-  _verifiedUser: null,
-  _refreshPromise: null,
-  ready: null,
-
-  getStoredSession() {
-    try {
-      const raw = localStorage.getItem(AUTH_KEYS.session);
-      if (!raw) return null;
-      const session = JSON.parse(raw);
-      return session && typeof session === 'object' ? session : null;
-    } catch (_) {
-      return null;
-    }
-  },
-
+  // Ambil session dari localStorage
   getSession() {
-    const session = this.getStoredSession();
-    if (!session?.access_token) return null;
-    return session;
+    try {
+      const s = JSON.parse(localStorage.getItem('sb_session') || 'null');
+      if (!s || !s.access_token) return null;
+      if (s.expires_at && s.expires_at < Date.now() / 1000) {
+        this.logout();
+        return null;
+      }
+      return s;
+    } catch(e) { return null; }
   },
 
+  // Ambil token
   getToken() {
-    return this.getSession()?.access_token || '';
-  },
-
-  getTokenUserId(token = this.getToken()) {
-    return decodeJwtPayload(token)?.sub || null;
-  },
-
-  getSessionUserId(session = this.getSession()) {
-    return session?.user?.id || session?.user?.sub || session?.session?.user?.id || null;
+    const s = this.getSession();
+    // Support berbagai format response Supabase
+    return s?.access_token || s?.session?.access_token || SUPABASE_ANON;
   },
 
   getUserId() {
-    const session = this.getSession();
-    if (!session) return null;
-    const fromSession = this.getSessionUserId(session);
-    const fromToken = this.getTokenUserId(session.access_token);
-    const stored = localStorage.getItem(AUTH_KEYS.userId);
-    if (!fromSession || !fromToken || !stored) return null;
-    if (fromSession !== fromToken || fromSession !== stored) return null;
-    return fromSession;
+    // Prioritas 1: sb_user_id yang disimpan saat login
+    const stored = localStorage.getItem("sb_user_id");
+    if (stored) return stored;
+    // Prioritas 2: decode dari JWT token
+    const token = this.getToken();
+    if (token && token !== SUPABASE_ANON) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.sub) return payload.sub;
+      } catch(e) {}
+    }
+    // Prioritas 3: dari session object
+    const s = this.getSession();
+    return s?.user?.id || s?.user?.sub || s?.session?.user?.id || null;
   },
 
+  // Ambil profile dari localStorage
   getProfile() {
-    try { return JSON.parse(localStorage.getItem(AUTH_KEYS.profile) || 'null'); }
-    catch (_) { return null; }
+    try {
+      return JSON.parse(localStorage.getItem('sb_profile') || 'null');
+    } catch(e) { return null; }
   },
 
+  // Ambil nama booth
   getBoothName() {
     return this.getProfile()?.booth_name || 'Photobooth';
   },
 
+  // Ambil logo URL
   getLogoUrl() {
     return this.getProfile()?.logo_url || '/logo.png';
   },
 
+  // Apakah watermark aktif
   showWatermark() {
     const p = this.getProfile();
     return p ? p.show_watermark !== false : true;
   },
 
-  isExpired(session = this.getSession(), skewSeconds = 0) {
-    if (!session?.expires_at) return false;
-    return Number(session.expires_at) <= (Date.now() / 1000) + skewSeconds;
-  },
-
-  validateIdentity(session = this.getSession(), { setLocks = true } = {}) {
-    if (!session?.access_token) return { ok: false, reason: 'missing_session' };
-
-    const sessionId = this.getSessionUserId(session);
-    const tokenId = this.getTokenUserId(session.access_token);
-    const storedId = localStorage.getItem(AUTH_KEYS.userId);
-
-    if (!sessionId || !tokenId || !storedId) {
-      return { ok: false, reason: 'missing_identity' };
-    }
-    if (sessionId !== tokenId || sessionId !== storedId) {
-      return { ok: false, reason: 'identity_mismatch' };
-    }
-
-    const accountLock = localStorage.getItem(AUTH_KEYS.accountLock);
-    const flowOwner = sessionStorage.getItem(AUTH_KEYS.flowOwner);
-
-    if (accountLock && accountLock !== sessionId) {
-      return { ok: false, reason: 'account_lock_mismatch' };
-    }
-    if (flowOwner && flowOwner !== sessionId) {
-      return { ok: false, reason: 'flow_owner_mismatch' };
-    }
-
-    if (setLocks) {
-      if (!accountLock) localStorage.setItem(AUTH_KEYS.accountLock, sessionId);
-      if (!flowOwner) sessionStorage.setItem(AUTH_KEYS.flowOwner, sessionId);
-    }
-
-    return { ok: true, userId: sessionId };
-  },
-
-  setSession(session, { requireSameUser = true } = {}) {
-    if (!session?.access_token || !session?.user?.id) {
-      throw new Error('Session Supabase tidak lengkap.');
-    }
-
-    const tokenUserId = this.getTokenUserId(session.access_token);
-    if (!tokenUserId || tokenUserId !== session.user.id) {
-      throw new Error('Identitas session dan token tidak cocok.');
-    }
-
-    const lockedId = localStorage.getItem(AUTH_KEYS.accountLock);
-    const flowOwner = sessionStorage.getItem(AUTH_KEYS.flowOwner);
-    if (requireSameUser && lockedId && lockedId !== session.user.id) {
-      throw new Error('Akun berbeda terdeteksi. Logout terlebih dahulu.');
-    }
-    if (requireSameUser && flowOwner && flowOwner !== session.user.id) {
-      throw new Error('Akun berbeda terdeteksi pada alur aktif.');
-    }
-
-    localStorage.setItem(AUTH_KEYS.session, JSON.stringify(session));
-    localStorage.setItem(AUTH_KEYS.userId, session.user.id);
-    localStorage.setItem(AUTH_KEYS.email, session.user.email || '');
-    localStorage.setItem(AUTH_KEYS.accountLock, session.user.id);
-    sessionStorage.setItem(AUTH_KEYS.flowOwner, session.user.id);
-    this._verifiedUser = session.user;
-    return session;
-  },
-
-  clearSession() {
-    [AUTH_KEYS.session, AUTH_KEYS.userId, AUTH_KEYS.email, AUTH_KEYS.profile, AUTH_KEYS.accountLock]
-      .forEach(k => localStorage.removeItem(k));
-    sessionStorage.removeItem(AUTH_KEYS.flowOwner);
-    this._verifiedUser = null;
-  },
-
-  redirectToLogin(reason = 'auth_required') {
-    if (authRedirecting || isPublicAuthPage()) return false;
-    authRedirecting = true;
-    const next = `${window.location.pathname}${window.location.search || ''}`;
-    const url = `/login?reason=${encodeURIComponent(reason)}&next=${encodeURIComponent(next)}`;
-    window.location.replace(url);
-    return false;
-  },
-
-  securityLogout(reason = 'session_invalid') {
-    this.clearSession();
-    try { this._channel?.postMessage({ type: 'logout', reason }); } catch (_) {}
-    return this.redirectToLogin(reason);
-  },
-
-  logout() {
-    this.clearSession();
-    try { this._channel?.postMessage({ type: 'logout', reason: 'manual_logout' }); } catch (_) {}
-    window.location.replace('/login');
-  },
-
+  // Cek login, kalau tidak redirect ke login
   requireAuth() {
-    const session = this.getSession();
-    const identity = this.validateIdentity(session);
-    if (!identity.ok) return this.securityLogout(identity.reason);
-    if (this.isExpired(session) && !session.refresh_token) {
-      return this.securityLogout('session_expired');
-    }
+    const s = this.getSession();
+    if (!s) { window.location.href = '/login'; return false; }
     return true;
   },
 
-  async refreshSession() {
-    if (this._refreshPromise) return this._refreshPromise;
-    const current = this.getSession();
-    if (!current?.refresh_token) throw new Error('Refresh token tidak tersedia.');
-
-    this._refreshPromise = (async () => {
-      const res = await nativeFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-        method: 'POST',
-        headers: { apikey: SUPABASE_ANON, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: current.refresh_token })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.access_token || !data?.user?.id) {
-        throw new Error(data?.error_description || data?.msg || 'Gagal memperbarui session.');
-      }
-      return this.setSession(data, { requireSameUser: true });
-    })();
-
-    try { return await this._refreshPromise; }
-    finally { this._refreshPromise = null; }
+  // Logout
+  logout() {
+    ['sb_session','sb_user_id','sb_user_email','sb_profile'].forEach(k => localStorage.removeItem(k));
+    window.location.href = '/login';
   },
 
-  async verifyWithSupabase(session = this.getSession()) {
-    if (!session?.access_token) throw new Error('Session tidak tersedia.');
-    const res = await nativeFetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        apikey: SUPABASE_ANON,
-        Authorization: `Bearer ${session.access_token}`
-      }
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.id) {
-      const err = new Error(data?.msg || data?.error_description || 'Session tidak valid.');
-      err.status = res.status;
-      throw err;
-    }
-    return data;
-  },
-
-  async ensureValidSession({ forceServerCheck = true } = {}) {
-    if (isPublicAuthPage()) return true;
-
-    let session = this.getSession();
-    let identity = this.validateIdentity(session);
-    if (!identity.ok) return this.securityLogout(identity.reason);
-
-    try {
-      if (this.isExpired(session, 120)) {
-        session = await this.refreshSession();
-        identity = this.validateIdentity(session);
-        if (!identity.ok) return this.securityLogout(identity.reason);
-      }
-
-      if (forceServerCheck) {
-        const user = await this.verifyWithSupabase(session);
-        if (user.id !== identity.userId) {
-          return this.securityLogout('server_identity_mismatch');
-        }
-        this._verifiedUser = user;
-        localStorage.setItem(AUTH_KEYS.userId, user.id);
-        localStorage.setItem(AUTH_KEYS.email, user.email || localStorage.getItem(AUTH_KEYS.email) || '');
-      }
-
-      this._readyState = 'ready';
-      return true;
-    } catch (err) {
-      if (err?.status === 401 || err?.status === 403 || this.isExpired(session)) {
-        return this.securityLogout('session_rejected');
-      }
-      // Gangguan jaringan tidak boleh mencampur akun. Session lokal hanya diterima
-      // bila identitas konsisten dan token belum kedaluwarsa.
-      const localCheck = this.validateIdentity(session, { setLocks: false });
-      if (!localCheck.ok || this.isExpired(session)) {
-        return this.securityLogout('session_unverifiable');
-      }
-      console.warn('Verifikasi server tertunda karena jaringan:', err?.message || err);
-      this._readyState = 'offline-valid';
-      return true;
-    }
-  },
-
-  async authFetch(input, init = {}) {
-    await this.ready;
-    if (!this.requireAuth()) throw new Error('Authentication required');
-    const headers = new Headers(init.headers || {});
-    headers.set('Authorization', `Bearer ${this.getToken()}`);
-    return nativeFetch(input, { ...init, headers });
-  },
-
+  // Refresh profile dari Supabase
   async refreshProfile() {
-    await Promise.resolve(this.ready).catch(() => false);
     const session = this.getSession();
-    const userId = this.getUserId();
-    if (!session || !userId) return null;
+    if (!session) return null;
     try {
-      const res = await nativeFetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`, {
-        headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${session.access_token}` }
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=*`, {
+        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${session.access_token}` }
       });
-      if (!res.ok) return null;
       const data = await res.json();
-      if (data?.[0]) {
-        localStorage.setItem(AUTH_KEYS.profile, JSON.stringify(data[0]));
+      if (data && data[0]) {
+        localStorage.setItem('sb_profile', JSON.stringify(data[0]));
         return data[0];
       }
-    } catch (_) {}
+    } catch(e) {}
     return null;
   },
 
+  // Update profile
   async updateProfile(updates) {
-    await this.ready;
     const session = this.getSession();
-    const userId = this.getUserId();
-    if (!session || !userId) return false;
+    if (!session) { console.error('updateProfile: no session'); return false; }
     try {
-      const res = await nativeFetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}`, {
         method: 'PATCH',
         headers: {
-          apikey: SUPABASE_ANON,
-          Authorization: `Bearer ${session.access_token}`,
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
-          Prefer: 'return=representation'
+          'Prefer': 'return=representation'
         },
         body: JSON.stringify({ ...updates, updated_at: new Date().toISOString() })
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('updateProfile error:', res.status, errText);
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
       const data = await res.json();
-      if (data?.[0]) {
-        localStorage.setItem(AUTH_KEYS.profile, JSON.stringify(data[0]));
+      if (data && data[0]) {
+        localStorage.setItem('sb_profile', JSON.stringify(data[0]));
         return data[0];
       }
+      // Kalau return kosong tapi status ok, fetch ulang
       return await this.refreshProfile();
-    } catch (e) {
+    } catch(e) { 
       console.error('updateProfile exception:', e);
-      return false;
+      return false; 
     }
   },
 
+  // Upload logo ke Supabase Storage
   async uploadLogo(file) {
-    await this.ready;
     const session = this.getSession();
-    const userId = this.getUserId();
-    if (!session || !userId) return null;
-    const ext = (file.name.split('.').pop() || 'png').replace(/[^a-zA-Z0-9]/g, '');
-    const path = `logos/${userId}/logo.${ext}`;
+    if (!session) return null;
+    const ext  = file.name.split('.').pop();
+    const path = `logos/${session.user.id}/logo.${ext}`;
     try {
-      const res = await nativeFetch(`${SUPABASE_URL}/storage/v1/object/photobooth/${path}`, {
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/photobooth/${path}`, {
         method: 'POST',
         headers: {
-          apikey: SUPABASE_ANON,
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': file.type || 'image/png',
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': file.type,
           'x-upsert': 'true'
         },
         body: file
       });
       if (!res.ok) throw new Error('Upload gagal');
       return `${SUPABASE_URL}/storage/v1/object/public/photobooth/${path}`;
-    } catch (_) { return null; }
+    } catch(e) { return null; }
   }
 };
 
-window.Auth = Auth;
+// Auto-fix sb_user_id kalau belum ada
+(function() {
+  try {
+    if (!localStorage.getItem('sb_user_id')) {
+      const s = JSON.parse(localStorage.getItem('sb_session') || 'null');
+      const token = s?.access_token;
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.sub) {
+          localStorage.setItem('sb_user_id', payload.sub);
+        }
+      }
+    }
+  } catch(e) {}
+})();
 
-// Semua request data pada halaman terlindungi menunggu validasi session selesai.
-// Request internal Auth menggunakan nativeFetch sehingga tidak terjadi rekursi.
-window.fetch = async function guardedFetch(input, init = {}) {
-  const rawUrl = typeof input === 'string' ? input : (input?.url || '');
-  let parsedUrl = null;
-  try { parsedUrl = new URL(rawUrl, window.location.origin); } catch (_) {}
-
-  const isSupabase = !!parsedUrl && !!SUPABASE_URL && parsedUrl.href.startsWith(SUPABASE_URL);
-  const isSupabaseTokenEndpoint = isSupabase && parsedUrl.pathname.includes('/auth/v1/token');
-  const isLocalApi = !!parsedUrl && parsedUrl.origin === window.location.origin && parsedUrl.pathname.startsWith('/api/');
-  const mustGuard = !isPublicAuthPage() && ((isSupabase && !isSupabaseTokenEndpoint) || isLocalApi);
-
-  if (!mustGuard) return nativeFetch(input, init);
-
-  await Auth.ready;
-  if (!Auth.requireAuth()) throw new Error('Authentication required');
-
-  const headers = new Headers(init.headers || (typeof input !== 'string' ? input?.headers : undefined) || {});
-  const currentAuthorization = headers.get('Authorization') || '';
-  if (!currentAuthorization || currentAuthorization === `Bearer ${SUPABASE_ANON}`) {
-    headers.set('Authorization', `Bearer ${Auth.getToken()}`);
-  }
-  if (isSupabase && !headers.has('apikey')) headers.set('apikey', SUPABASE_ANON);
-
-  return nativeFetch(input, { ...init, headers });
-};
-
-Auth.ready = Auth.ensureValidSession({ forceServerCheck: true });
-window.LUX_AUTH_READY = Auth.ready;
-
-Auth.ready.then(async ok => {
-  if (!ok || isPublicAuthPage()) return;
-  document.documentElement.classList.remove('lux-auth-pending');
+// Auto-inject logo dan booth name di semua elemen
+document.addEventListener('DOMContentLoaded', async () => {
+  // Refresh profile dulu biar data terbaru
   await Auth.refreshProfile();
 
-  const logoUrl = Auth.getLogoUrl();
+  const logoUrl   = Auth.getLogoUrl();
   const boothName = Auth.getBoothName();
+
+  // Update semua img logo
   document.querySelectorAll('[data-auth-logo]').forEach(el => {
     if (el.tagName === 'IMG') el.src = logoUrl;
   });
-  document.querySelectorAll('[data-auth-boothname]').forEach(el => { el.textContent = boothName; });
+
+  // Update semua teks booth name
+  document.querySelectorAll('[data-auth-boothname]').forEach(el => {
+    el.textContent = boothName;
+  });
+
+  // Update semua teks yang contain "LUX PHOTOBOOTH" atau "My Photobooth" jadi booth name
   document.querySelectorAll('.logo-text span, .header-title span:not([style]), .hud-logo').forEach(el => {
     if (el.textContent.includes('LUX PHOTOBOOTH') || el.textContent.includes('My Photobooth')) {
       el.textContent = boothName;
     }
   });
+
+  // Update footer
   document.querySelectorAll('.footer').forEach(el => {
     if (el.textContent.includes('LUX PHOTOBOOTH')) {
       el.innerHTML = el.innerHTML.replace('LUX PHOTOBOOTH', boothName);
     }
   });
+
+  // Update page title
   if (document.title.includes('LUX')) {
     document.title = document.title.replace('LUX Photobooth', boothName);
   }
-}).catch(err => {
-  console.error('Auth initialization failed:', err);
-  Auth.securityLogout('auth_initialization_failed');
 });
-
-// Sinkronisasi lintas tab. Pergantian akun di tab lain langsung membatalkan alur aktif.
-window.addEventListener('storage', event => {
-  if (![AUTH_KEYS.session, AUTH_KEYS.userId, AUTH_KEYS.accountLock].includes(event.key)) return;
-  if (isPublicAuthPage() || authRedirecting) return;
-  const result = Auth.validateIdentity(Auth.getSession(), { setLocks: false });
-  if (!result.ok) Auth.securityLogout('cross_tab_identity_change');
-});
-
-try {
-  Auth._channel = new BroadcastChannel('lux-auth');
-  Auth._channel.onmessage = event => {
-    if (event.data?.type === 'logout' && !isPublicAuthPage()) {
-      Auth.clearSession();
-      Auth.redirectToLogin(event.data.reason || 'logged_out_elsewhere');
-    }
-  };
-} catch (_) {}
-
-window.addEventListener('pageshow', event => {
-  if (!isPublicAuthPage() && event.persisted) Auth.ensureValidSession({ forceServerCheck: true });
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (!isPublicAuthPage() && document.visibilityState === 'visible') {
-    Auth.ensureValidSession({ forceServerCheck: true });
-  }
-});
-
-setInterval(() => {
-  if (!isPublicAuthPage() && document.visibilityState === 'visible') {
-    Auth.ensureValidSession({ forceServerCheck: true });
-  }
-}, 120000);
 
 // ── PLAN HELPERS ────────────────────────────────────────────────────────
 Object.assign(Auth, {

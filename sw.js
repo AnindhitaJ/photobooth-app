@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.13-auth-validation-hotfix-v1';
+const CACHE_NAME = 'lux-photobooth-v1.12-admin-only-registration-v13';
 const CORE_ASSETS = [
   '/',
   '/index.html',

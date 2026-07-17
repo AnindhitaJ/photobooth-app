@@ -984,15 +984,11 @@
     tempCleanupReady.finally(() => startCamera().then(() => {
       setTimeout(updateFrameGuide, 600);
       if (mode === 'auto') {
-        // Mode otomatis tetap membutuhkan tombol mulai pertama kali.
-        // Setelah ditekan, sesi berikutnya berjalan otomatis.
-        btnAmbil.style.display = '';
-        btnAmbil.disabled = false;
-        btnAmbil.textContent = '▶️ Mulai Foto';
+        btnAmbil.style.display = 'none';
+        setTimeout(() => mulaiCountdown(), 800);
       } else {
         btnAmbil.style.display = '';
         btnAmbil.disabled = false;
-        btnAmbil.textContent = '📷 Ambil';
       }
     }));
   }
@@ -1001,9 +997,6 @@
   function mulaiCountdown() {
     if (isCountingDown) return;
     isCountingDown = true;
-    if (captureMode === 'auto') {
-      btnAmbil.style.display = 'none';
-    }
     btnAmbil.disabled = true;
     currentSlot = photos.findIndex(p => p === null);
     if (currentSlot === -1) { isCountingDown = false; return; }
@@ -1040,27 +1033,15 @@
       return;
     }
 
-    // Pertahankan detail native sampai batas aman, tanpa pernah memperbesar pixel kamera.
+    // Capture mengikuti frame kamera asli.
+    // Crop/cover-fit dilakukan saat render template di result.html,
+    // sehingga preview kamera, filter, dan result memakai framing yang sama.
     const MAX_W = 1920;
     const MAX_H = 1440;
-    const TARGET_ASPECT = 4 / 3;
 
-    let sx = 0;
-    let sy = 0;
-    let sw = vW;
-    let sh = vH;
-
-    if (vW / vH > TARGET_ASPECT) {
-      sw = Math.round(vH * TARGET_ASPECT);
-      sx = Math.round((vW - sw) / 2);
-    } else if (vW / vH < TARGET_ASPECT) {
-      sh = Math.round(vW / TARGET_ASPECT);
-      sy = Math.round((vH - sh) / 2);
-    }
-
-    const outputScale = Math.min(1, MAX_W / sw, MAX_H / sh);
-    const W = Math.max(1, Math.round(sw * outputScale));
-    const H = Math.max(1, Math.round(sh * outputScale));
+    const outputScale = Math.min(1, MAX_W / vW, MAX_H / vH);
+    const W = Math.max(1, Math.round(vW * outputScale));
+    const H = Math.max(1, Math.round(vH * outputScale));
 
     canvas.width = W;
     canvas.height = H;
@@ -1070,7 +1051,7 @@
     ctx.save();
     ctx.translate(W, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+    ctx.drawImage(video, 0, 0, vW, vH, 0, 0, W, H);
     ctx.restore();
 
     photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.90);

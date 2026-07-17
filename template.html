@@ -1957,36 +1957,40 @@
     const match = String(layout || '').match(/(4|5|6)/);
     const slotCount = match ? Number(match[1]) : 4;
 
-    // Semua layout mempertahankan area aman untuk header dan footer.
+    /*
+      Komposisi Photobox 4R dibuat memenuhi tinggi kertas secara seimbang.
+      Area slot dimulai setelah header dan berakhir tepat sebelum footer,
+      sehingga desain tidak lagi berat di bagian atas dan kosong di bawah.
+    */
     if (slotCount === 5) {
-      // 1 hero landscape + 4 foto pendamping.
+      // 1 hero landscape + 2 baris pendamping; menyebar sampai area bawah.
       return [
-        { x: 92,  y: 248,  w: 997, h: 350, r: 0 },
-        { x: 92,  y: 660,  w: 478, h: 320, r: 0 },
-        { x: 611, y: 660,  w: 478, h: 320, r: 0 },
-        { x: 92,  y: 1042, w: 478, h: 320, r: 0 },
-        { x: 611, y: 1042, w: 478, h: 320, r: 0 }
+        { x: 92,  y: 270,  w: 997, h: 360, r: 0 },
+        { x: 92,  y: 720,  w: 478, h: 335, r: 0 },
+        { x: 611, y: 720,  w: 478, h: 335, r: 0 },
+        { x: 92,  y: 1145, w: 478, h: 335, r: 0 },
+        { x: 611, y: 1145, w: 478, h: 335, r: 0 }
       ];
     }
 
     if (slotCount === 6) {
-      // Grid 2 × 3, cocok untuk rangkaian ekspresi berurutan.
+      // Grid 2 × 3 full-height dengan jarak vertikal yang konsisten.
       return [
-        { x: 92,  y: 248,  w: 478, h: 320, r: 0 },
-        { x: 611, y: 248,  w: 478, h: 320, r: 0 },
-        { x: 92,  y: 630,  w: 478, h: 320, r: 0 },
-        { x: 611, y: 630,  w: 478, h: 320, r: 0 },
-        { x: 92,  y: 1012, w: 478, h: 320, r: 0 },
-        { x: 611, y: 1012, w: 478, h: 320, r: 0 }
+        { x: 92,  y: 270,  w: 478, h: 330, r: 0 },
+        { x: 611, y: 270,  w: 478, h: 330, r: 0 },
+        { x: 92,  y: 690,  w: 478, h: 330, r: 0 },
+        { x: 611, y: 690,  w: 478, h: 330, r: 0 },
+        { x: 92,  y: 1110, w: 478, h: 330, r: 0 },
+        { x: 611, y: 1110, w: 478, h: 330, r: 0 }
       ];
     }
 
-    // 4 slot: grid 2 × 2 dengan foto lebih besar.
+    // 4 slot: dua baris besar yang memenuhi bidang tengah sampai bawah.
     return [
-      { x: 92,  y: 270, w: 478, h: 430, r: 0 },
-      { x: 611, y: 270, w: 478, h: 430, r: 0 },
-      { x: 92,  y: 780, w: 478, h: 430, r: 0 },
-      { x: 611, y: 780, w: 478, h: 430, r: 0 }
+      { x: 92,  y: 285, w: 478, h: 550, r: 0 },
+      { x: 611, y: 285, w: 478, h: 550, r: 0 },
+      { x: 92,  y: 925, w: 478, h: 550, r: 0 },
+      { x: 611, y: 925, w: 478, h: 550, r: 0 }
     ];
   }
 
@@ -2325,7 +2329,7 @@
 
   function generatePhotoboxFrameSrc(def, previewOnly = false) {
     const previewScale = previewOnly ? 0.28 : 1;
-    const cacheKey = `photobox_v3_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
+    const cacheKey = `photobox_v4_balanced_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
     if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
 
     const W = PHOTOBOX_W;

@@ -732,10 +732,9 @@
   }
 
   function getGalleryThumbnailURL(session) {
-    const path = String(session?.strip?.path || '');
-    const thumbPath = path.replace(/_(?:strip|foto)\.(?:jpe?g|png)$/i, '_thumb.jpg');
-    if (!thumbPath || thumbPath === path) return session?.strip?.url || '';
-    return `${R2_PUBLIC_URL}/${thumbPath}`;
+    // R2 tidak memiliki file _thumb.jpg.
+    // Gunakan strip original dari Cloudflare R2.
+    return session?.strip?.url || '';
   }
 
   function useOriginalGalleryImage(img) {

@@ -472,7 +472,7 @@
 
     <!-- Strip + aksi -->
     <div class="sm-strip-wrap">
-      <img class="sm-strip-img" id="smStripImg" src="" alt="strip" crossorigin="anonymous">
+      <img class="sm-strip-img" id="smStripImg" src="" alt="strip">
       <div class="sm-strip-actions">
         <div class="sm-strip-label">📷 Foto Strip</div>
         <button class="btn-sm btn-sm-primary" onclick="downloadStrip()">⬇️ Download Strip</button>
@@ -524,18 +524,69 @@
 <script>
   const BUCKET   = 'photobooth';
   const PASSWORD = '123456';
-  const R2_PUBLIC_URL = 'https://pub-463a9d696599486b9544e7ab8f16be00.r2.dev';
 
-  // Mulai 17 Juli 2026 00:00 WIB gunakan Cloudflare R2.
-  // Sebelum itu gunakan Supabase Storage lama.
-  const R2_MIGRATION_DATE = new Date('2026-07-16T17:00:00.000Z');
+  // Domain publik R2 wajib diambil dari config.js agar tidak kembali ke r2.dev.
+  const R2_PUBLIC_URL = String(
+    window.LUX_CONFIG?.R2_PUBLIC_URL || 'https://media.lux-photo.web.id'
+  ).replace(/\/+$/, '');
+
+  const SUPABASE_STORAGE_PUBLIC_URL =
+    `${String(SUPABASE_URL).replace(/\/+$/, '')}/storage/v1/object/public/${BUCKET}`;
+
+  // Tepat 17 Juli 2026 pukul 00:00:00 WIB = 16 Juli 2026 pukul 17:00:00 UTC.
+  const R2_MIGRATION_DATE_MS = Date.parse('2026-07-16T17:00:00.000Z');
+
+  function normalizeObjectPath(path) {
+    return String(path || '').trim().replace(/^\/+/, '');
+  }
+
+  // Mendukung tiga format nama file:
+  // 1. UUID_timestamp_nama-file
+  // 2. anon_timestamp_nama-file
+  // 3. timestamp_nama-file (format lama)
+  function parsePhotoFilePath(path) {
+    const cleanPath = normalizeObjectPath(path);
+    const fname = cleanPath.split('/').pop() || '';
+
+    const accountFmt = fname.match(
+      /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|anon)_(\d{13})_(.+)$/i
+    );
+    const oldFmt = fname.match(/^(\d{13})_(.+)$/);
+    const match = accountFmt || oldFmt;
+
+    if (!match) return null;
+
+    const ts = Number(match[1]);
+    if (!Number.isFinite(ts)) return null;
+
+    return {
+      cleanPath,
+      ts,
+      rest: match[2]
+    };
+  }
+
+  function getStorageTimestamp(path, createdAt) {
+    // Timestamp pada nama file menjadi sumber utama agar batas migrasi konsisten
+    // dengan waktu sesi foto. created_at hanya dipakai sebagai fallback.
+    const parsedPath = parsePhotoFilePath(path);
+    if (parsedPath) return parsedPath.ts;
+
+    const createdMs = Date.parse(createdAt || '');
+    return Number.isFinite(createdMs) ? createdMs : 0;
+  }
 
   function getStorageUrlByDate(path, createdAt) {
-    const created = new Date(createdAt || 0);
-    if (created >= R2_MIGRATION_DATE) {
-      return `${R2_PUBLIC_URL}/${path}`;
-    }
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+    const rawPath = String(path || '').trim();
+    if (/^https?:\/\//i.test(rawPath)) return rawPath;
+
+    const cleanPath = normalizeObjectPath(rawPath);
+    const storageTimestamp = getStorageTimestamp(cleanPath, createdAt);
+    const baseUrl = storageTimestamp >= R2_MIGRATION_DATE_MS
+      ? R2_PUBLIC_URL
+      : SUPABASE_STORAGE_PUBLIC_URL;
+
+    return `${baseUrl}/${cleanPath}`;
   }
 
   // sessions = [ { ts, date, dateStr, strip:{url,path}, individuals:[{url,path}], gif:{url,path}|null } ]
@@ -568,13 +619,8 @@
       });
       const data = await res.json();
       if (res.ok && data.user) {
-        // Simpan session baru
-        localStorage.setItem('sb_session', JSON.stringify(data));
-        localStorage.setItem('sb_user_id', data.user.id);
-        localStorage.setItem('sb_user_email', data.user.email);
-        // Simpan session baru lalu ambil userId dari JWT
-        localStorage.setItem('sb_session', JSON.stringify(data));
-        localStorage.setItem('sb_user_id', data.user?.id || '');
+        // Terima session baru hanya bila tetap milik akun yang sama.
+        Auth.setSession(data, { requireSameUser: true });
         currentUserId = Auth.getUserId();
         await Auth.refreshProfile();
         document.getElementById('lockScreen').style.display = 'none';
@@ -595,7 +641,7 @@
   async function loadPhotos() {
     try {
       const session = Auth.getSession();
-      const token   = session?.access_token || SUPABASE_ANON;
+      const token   = Auth.getToken();
       // Pastikan currentUserId ter-set dari berbagai sumber
       if (!currentUserId) {
         currentUserId = Auth.getUserId();
@@ -621,23 +667,10 @@
         const path = row.file_path; // contoh: results/1780108564751_strip.jpg
         if (!path) return;
 
-        const fname = path.split('/').pop();
+        const parsedFile = parsePhotoFilePath(path);
+        if (!parsedFile) return; // skip file tidak dikenal
 
-        let ts, rest;
-        // Format baru: {userId}_{ts}_{rest} (UUID 36 char)
-        const newFmt = fname.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_(\d{13})_(.+)$/);
-        // Format lama: {ts}_{rest}
-        const oldFmt = fname.match(/^(\d{13})_(.+)$/);
-
-        if (newFmt) {
-          ts   = parseInt(newFmt[1]);
-          rest = newFmt[2];
-        } else if (oldFmt) {
-          ts   = parseInt(oldFmt[1]);
-          rest = oldFmt[2];
-        } else {
-          return; // skip file tidak dikenal
-        }
+        const { ts, rest } = parsedFile;
 
         const key = ts;
         if (!sessMap[key]) sessMap[key] = {
@@ -797,7 +830,7 @@
           <img class="strip-thumb" src="${getGalleryThumbnailURL(s)}"
                data-fallback="${encodeURIComponent(s.strip.url)}"
                onerror="useOriginalGalleryImage(this)"
-               alt="strip" loading="lazy" decoding="async" fetchpriority="low" crossorigin="anonymous">
+               alt="strip" loading="lazy" decoding="async" fetchpriority="low">
           <div class="del-badge">🗑</div>
           <div class="print-num-badge" id="pnb-${s.ts}">${selected.includes(s.ts) && mode==='print' ? selected.indexOf(s.ts)+1 : ''}</div>
           <div class="session-footer">
@@ -869,7 +902,7 @@
       label.textContent = `📸 Foto Individual (${sess.individuals.length})`;
       grid.innerHTML = sess.individuals.map((p, i) => `
         <div class="sm-photo-item" onclick="downloadIndividual('${p.url}', ${i+1})">
-          <img src="${p.url}" alt="foto ${i+1}" loading="lazy" crossorigin="anonymous">
+          <img src="${p.url}" alt="foto ${i+1}" loading="lazy">
           <div class="sm-photo-dl">⬇️</div>
         </div>
       `).join('');
@@ -967,13 +1000,13 @@
       document.getElementById('printModalTitle').textContent = '🖨️ Print Photobox 4R';
       document.getElementById('printModalSub').textContent = 'Photobox sudah ukuran 10×15 / 4R, jadi langsung print 1 file tanpa gabung 2 strip.';
       document.getElementById('printPreview').innerHTML =
-        `<img src="${sessions[0].strip.url}" alt="photobox" crossorigin="anonymous" style="width:52%;max-height:360px;border-radius:12px;border:2px solid var(--border);object-fit:contain;">`;
+        `<img src="${sessions[0].strip.url}" alt="photobox" style="width:52%;max-height:360px;border-radius:12px;border:2px solid var(--border);object-fit:contain;">`;
     } else {
       if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
       document.getElementById('printModalTitle').textContent = '🖨️ Print 2 Strip';
       document.getElementById('printModalSub').textContent = '2 strip akan digabung dalam ukuran 10×15 cm siap cetak.';
       document.getElementById('printPreview').innerHTML = sessions.map(s =>
-        `<img src="${s.strip.url}" alt="strip" crossorigin="anonymous" style="width:calc(50% - 6px);border-radius:12px;border:2px solid var(--border);object-fit:cover;aspect-ratio:9/16;">`
+        `<img src="${s.strip.url}" alt="strip" style="width:calc(50% - 6px);border-radius:12px;border:2px solid var(--border);object-fit:cover;aspect-ratio:9/16;">`
       ).join('');
     }
 
@@ -1060,7 +1093,7 @@
       `${sessions.length} sesi (${totalFiles} file) akan dihapus permanen dari server.`;
 
     document.getElementById('deleteThumbs').innerHTML = sessions.map(s =>
-      `<img class="del-thumb" src="${s.strip.url}" crossorigin="anonymous">`
+      `<img class="del-thumb" src="${s.strip.url}">`
     ).join('');
 
     document.getElementById('btnConfirmDelete').textContent = `🗑️ Ya, Hapus ${sessions.length} Sesi`;

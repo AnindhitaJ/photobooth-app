@@ -595,6 +595,7 @@
   let selected    = []; // ts yang dipilih untuk hapus
   let mode        = 'view';
   let activeSess  = null; // session yang sedang dibuka di modal
+  let currentProductFilter = 'all';
   const SESSION_RENDER_BATCH = 24;
   let visibleSessionCount = SESSION_RENDER_BATCH;
 
@@ -607,33 +608,91 @@
   let currentUserId = null; // simpan user_id aktif setelah reAuth
 
   async function reAuthGallery(password) {
-    const session = Auth.getSession();
-    if (!session) { window.location.href = '/login'; return; }
-    const email = localStorage.getItem('sb_user_email');
+    const currentSession = Auth.getSession();
+    if (!currentSession?.user?.id) {
+      window.location.replace('/login');
+      return;
+    }
+
     const err = document.getElementById('pwError');
+    const input = document.getElementById('pwInput');
+    const currentUserIdBeforeVerify = currentSession.user.id;
+    const email =
+      currentSession.user.email ||
+      localStorage.getItem('sb_user_email') ||
+      '';
+
+    err.style.display = 'none';
+
+    if (!email) {
+      err.textContent = '❌ Email akun tidak ditemukan. Silakan login ulang.';
+      err.style.display = 'block';
+      return;
+    }
+
+    if (!password) {
+      err.textContent = '❌ Masukkan password login.';
+      err.style.display = 'block';
+      input.focus();
+      return;
+    }
+
     try {
       const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
-      if (res.ok && data.user) {
-        // Terima session baru hanya bila tetap milik akun yang sama.
-        Auth.setSession(data, { requireSameUser: true });
-        currentUserId = Auth.getUserId();
-        await Auth.refreshProfile();
-        document.getElementById('lockScreen').style.display = 'none';
-        document.getElementById('galleryScreen').style.display = 'block';
-        loadPhotos();
-      } else {
-        err.style.display = 'block';
-        document.getElementById('pwInput').value = '';
-        setTimeout(() => { err.style.display = 'none'; }, 3000);
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data?.access_token || !data?.user?.id) {
+        throw new Error(
+          data?.error_description ||
+          data?.msg ||
+          data?.error ||
+          'Password salah atau akun tidak dapat diverifikasi.'
+        );
       }
-    } catch(e) {
-      err.textContent = '❌ Gagal verifikasi';
+
+      // Password boleh membuka galeri hanya untuk akun yang sedang aktif.
+      if (data.user.id !== currentUserIdBeforeVerify) {
+        throw new Error('Akun hasil verifikasi berbeda dari akun yang sedang aktif.');
+      }
+
+      // Normalisasi lock yang tertinggal, tetapi hanya setelah UUID akun
+      // hasil verifikasi dipastikan sama dengan UUID session sebelumnya.
+      localStorage.setItem('sb_account_lock', currentUserIdBeforeVerify);
+      sessionStorage.setItem('lux_flow_owner_id', currentUserIdBeforeVerify);
+
+      if (typeof Auth.setSession === 'function') {
+        Auth.setSession(data, { requireSameUser: true });
+      } else {
+        // Kompatibilitas jika browser masih sempat memuat auth.js versi lama.
+        localStorage.setItem('sb_session', JSON.stringify(data));
+        localStorage.setItem('sb_user_id', data.user.id);
+        localStorage.setItem('sb_user_email', data.user.email || email);
+      }
+
+      currentUserId = data.user.id;
+
+      if (typeof Auth.refreshProfile === 'function') {
+        await Auth.refreshProfile();
+      }
+
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('galleryScreen').style.display = 'block';
+      await loadPhotos();
+
+    } catch (e) {
+      console.error('Gallery re-auth failed:', e);
+      err.textContent = `❌ ${e?.message || 'Gagal verifikasi'}`;
       err.style.display = 'block';
+      input.value = '';
+      input.focus();
     }
   }
 

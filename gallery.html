@@ -745,10 +745,20 @@
   }
 
   function useOriginalGalleryImage(img) {
-    if (!img || img.dataset.fallbackUsed === '1') return;
+    if (!img) return;
+
+    // fallback satu kali: Supabase <-> Cloudflare R2
+    if (img.dataset.fallbackUsed === '1') {
+      img.onerror = null;
+      return;
+    }
+
     img.dataset.fallbackUsed = '1';
+
     const fallback = decodeURIComponent(img.dataset.fallback || '');
-    if (fallback) img.src = fallback;
+    if (fallback) {
+      img.src = fallback;
+    }
   }
 
   function loadMoreSessions() {

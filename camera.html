@@ -24,6 +24,8 @@
       object-fit: contain;
       background: #000;
       transform: scaleX(-1);
+      transform-origin: center center;
+      transition: transform 0.22s ease;
       z-index: 1;
     }
     #canvas { display: none; }
@@ -627,7 +629,11 @@
   const zoomFactor = 1.20;
 
   function updateVideoTransform() {
-    video.style.transform = 'scaleX(-1)';
+    // Preview kamera mengikuti mode hasil capture.
+    // Normal = 100%, Zoom = center crop 120%.
+    const previewScale = cameraZoomEnabled ? zoomFactor : 1;
+    video.style.transform = `scaleX(-1) scale(${previewScale})`;
+    video.style.transformOrigin = 'center center';
     updateFrameGuide();
   }
 
@@ -986,9 +992,12 @@
   // ── Timer & Mode selection ──
   function setZoomMode(enabled) {
     cameraZoomEnabled = !!enabled;
-    localStorage.setItem('cameraZoomEnabled', enabled ? '1' : '0');
-    document.getElementById('zoomNormal')?.classList.toggle('sel', !enabled);
-    document.getElementById('zoom120')?.classList.toggle('sel', enabled);
+    localStorage.setItem('cameraZoomEnabled', cameraZoomEnabled ? '1' : '0');
+    document.getElementById('zoomNormal')?.classList.toggle('sel', !cameraZoomEnabled);
+    document.getElementById('zoom120')?.classList.toggle('sel', cameraZoomEnabled);
+
+    // Terapkan zoom langsung pada live preview kamera.
+    updateVideoTransform();
   }
 
   function setTimer(sec) {
@@ -1263,7 +1272,9 @@
   tempCleanupReady = prepareNewPhotoSession().catch(e => {
     console.warn('[LUX] cleanup sesi lama gagal:', e);
   });
-  renderIndicators(); renderStrip(); updateTitle(); updateVideoTransform();
+  renderIndicators(); renderStrip(); updateTitle();
+  // Sinkronkan tombol dan preview dengan pilihan zoom terakhir.
+  setZoomMode(cameraZoomEnabled);
   refreshCameraDevices();
   window.addEventListener('resize', updateFrameGuide);
   if (isGanciMode) {

@@ -485,6 +485,30 @@
     });
     if (!res.ok) throw new Error('R2 upload gagal');
     const json = await res.json();
+
+    // Simpan metadata ke Supabase agar Galeri dapat membaca foto R2.
+    // Hanya simpan file media, bukan manifest JSON.
+    try {
+      if ((blob.type || '').startsWith('image/') || (blob.type || '').startsWith('video/')) {
+        await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON,
+            Authorization: `Bearer ${Auth.getToken()}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal'
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            file_path: path,
+            created_at: new Date().toISOString()
+          })
+        });
+      }
+    } catch (dbErr) {
+      console.warn('Gagal simpan photo_sessions:', dbErr);
+    }
+
     return json.url;
   }
 

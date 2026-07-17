@@ -1,0 +1,67 @@
+PATCH VALIDASI AKUN MENYELURUH
+================================
+
+Tujuan
+------
+1. Semua halaman aplikasi, kecuali /login dan /reset-password, otomatis wajib
+   memiliki session Supabase yang valid.
+2. User ID pada session object, JWT, localStorage, account lock, dan flow tab
+   harus sama.
+3. Session diperbarui otomatis memakai refresh_token sebelum kedaluwarsa.
+4. Session diverifikasi ke Supabase /auth/v1/user pada setiap halaman,
+   saat tab kembali aktif, dari BFCache, dan setiap 2 menit.
+5. Perubahan akun/logout dari tab lain langsung membatalkan alur aktif.
+6. Semua request Supabase dan /api pada halaman terlindungi menunggu validasi
+   session dan memakai access token user aktif.
+7. /api/upload menolak request tanpa token, token tidak valid, path milik user
+   lain, prefix anon, MIME tidak diizinkan, dan file terlalu besar.
+
+File utama yang diubah
+----------------------
+- auth.js
+- login.html
+- result.html
+- event.html
+- gallery.html
+- admin.html
+- api/upload.js
+- config.js
+
+Environment Variables wajib di Vercel
+--------------------------------------
+SUPABASE_URL
+SUPABASE_ANON_KEY
+R2_ENDPOINT
+R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY
+R2_BUCKET
+R2_PUBLIC_URL
+
+Opsional:
+MAX_UPLOAD_BYTES=12582912
+
+Setelah menambah/mengubah environment variables, lakukan Redeploy di Vercel.
+
+Supabase
+--------
+Jalankan file berikut satu kali di Supabase SQL Editor:
+  supabase_photo_sessions_auth_hardening.sql
+
+Pengujian setelah deploy
+------------------------
+1. Login akun A, buka Camera -> Result -> Gallery. Semua metadata/path harus
+   memakai UUID akun A.
+2. Buka aplikasi di tab kedua lalu logout. Tab pertama harus kembali ke login.
+3. Login akun A lalu ubah sb_user_id secara manual di DevTools. Halaman harus
+   membatalkan session.
+4. Panggil /api/upload tanpa Authorization. Harus HTTP 401.
+5. Panggil /api/upload dengan token akun A tetapi fileName memakai UUID akun B.
+   Harus HTTP 403.
+6. Pastikan tidak ada object baru dengan prefix results/anon_ di R2.
+
+Catatan arsitektur
+------------------
+Aplikasi masih berupa static HTML dan menyimpan session di localStorage. Guard
+ini menjaga konsistensi akun pada UI dan seluruh request aplikasi. Batas
+keamanan data tetap harus ditegakkan oleh Supabase RLS dan validasi server-side
+pada Vercel API, yang sudah diterapkan untuk photo_sessions dan /api/upload.

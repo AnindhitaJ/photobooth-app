@@ -145,6 +145,16 @@
   const SUPABASE_URL = window.LUX_CONFIG?.SUPABASE_URL || '';
   const SUPABASE_ANON = window.LUX_CONFIG?.SUPABASE_ANON_KEY || '';
 
+
+  function decodeJwtPayload(token) {
+    try {
+      const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = part + '='.repeat((4 - part.length % 4) % 4);
+      return JSON.parse(decodeURIComponent(Array.from(atob(padded))
+        .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
+    } catch (_) { return null; }
+  }
+
   // Cek kalau ini redirect dari email reset password
   const _hash = new URLSearchParams(window.location.hash.substring(1));
   const _query = new URLSearchParams(window.location.search);
@@ -159,10 +169,17 @@
   if (session) {
     try {
       const s = JSON.parse(session);
-      if (s.access_token && s.expires_at > Date.now()/1000) {
-        window.location.href = '/';
+      const uid = s?.user?.id;
+      const tokenUid = decodeJwtPayload(s?.access_token || '')?.sub;
+      const storedUid = localStorage.getItem('sb_user_id');
+      const lockedUid = localStorage.getItem('sb_account_lock');
+      if (s.access_token && s.expires_at > Date.now()/1000 && uid && uid === tokenUid && uid === storedUid && (!lockedUid || lockedUid === uid)) {
+        window.location.replace('/');
       }
-    } catch(e) { localStorage.removeItem('sb_session'); }
+    } catch(e) {
+      ['sb_session','sb_user_id','sb_user_email','sb_profile','sb_account_lock'].forEach(k => localStorage.removeItem(k));
+      sessionStorage.removeItem('lux_flow_owner_id');
+    }
   }
 
   function showError(msg) {
@@ -194,13 +211,26 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error_description || data.msg || 'Login gagal');
-      // Simpan session
+      // Kunci identitas akun sejak login sampai logout.
+      const tokenPayload = decodeJwtPayload(data.access_token);
+      if (!data?.user?.id || tokenPayload?.sub !== data.user.id) {
+        throw new Error('Identitas akun pada token tidak valid.');
+      }
+      const existingLock = localStorage.getItem('sb_account_lock');
+      if (existingLock && existingLock !== data.user.id) {
+        throw new Error('Browser masih dikunci oleh akun lain. Logout atau bersihkan sesi terlebih dahulu.');
+      }
+
       localStorage.setItem('sb_session', JSON.stringify(data));
       localStorage.setItem('sb_user_id', data.user.id);
-      localStorage.setItem('sb_user_email', data.user.email);
-      // Load profile
+      localStorage.setItem('sb_user_email', data.user.email || '');
+      localStorage.setItem('sb_account_lock', data.user.id);
+      sessionStorage.setItem('lux_flow_owner_id', data.user.id);
+
+      // Load profile untuk user yang sama.
       await loadProfile(data.access_token, data.user.id);
-      window.location.href = '/';
+      const next = new URLSearchParams(location.search).get('next');
+      window.location.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/');
     } catch(e) {
       showError(e.message);
     } finally {

@@ -375,6 +375,111 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <style id="luxPageAuthStyle">
+    html.lux-auth-pending body { visibility: hidden !important; }
+  </style>
+  <script id="luxPageAuthGuard">
+  (() => {
+    'use strict';
+
+    document.documentElement.classList.add('lux-auth-pending');
+
+    const loginUrl = (reason = 'auth_required') => {
+      const next = `${location.pathname}${location.search || ''}`;
+      return `/login?reason=${encodeURIComponent(reason)}&next=${encodeURIComponent(next)}`;
+    };
+
+    const redirectLogin = (reason) => {
+      try {
+        if (window.Auth && typeof Auth.securityLogout === 'function') {
+          Auth.securityLogout(reason || 'auth_required');
+          return false;
+        }
+      } catch (_) {}
+      try {
+        if (window.Auth && typeof Auth.clearSession === 'function') Auth.clearSession();
+      } catch (_) {}
+      location.replace(loginUrl(reason));
+      return false;
+    };
+
+    const localIdentity = () => {
+      if (!window.Auth || typeof Auth.getSession !== 'function') return null;
+      const session = Auth.getSession();
+      const sessionUserId = String(session?.user?.id || '').trim();
+      const authUserId = String(
+        typeof Auth.getUserId === 'function' ? (Auth.getUserId() || '') : sessionUserId
+      ).trim();
+      if (!session?.access_token || !sessionUserId || !authUserId) return null;
+      if (sessionUserId !== authUserId) return null;
+      return { session, userId: sessionUserId };
+    };
+
+    const firstIdentity = localIdentity();
+    if (!firstIdentity) {
+      redirectLogin('login_required');
+      return;
+    }
+
+    const lockedUserId = firstIdentity.userId;
+    let validating = null;
+
+    async function validatePageSession(forceServerCheck = true) {
+      if (validating) return validating;
+      validating = (async () => {
+        try {
+          if (Auth.ready && typeof Auth.ready.then === 'function') {
+            const readyOk = await Auth.ready;
+            if (readyOk === false) return redirectLogin('session_invalid');
+          }
+
+          if (typeof Auth.ensureValidSession === 'function') {
+            const ok = await Auth.ensureValidSession({ forceServerCheck });
+            if (!ok) return false;
+          } else if (typeof Auth.requireAuth === 'function' && !Auth.requireAuth()) {
+            return false;
+          }
+
+          const current = localIdentity();
+          if (!current) return redirectLogin('session_missing');
+          if (current.userId !== lockedUserId) return redirectLogin('account_changed');
+
+          document.documentElement.classList.remove('lux-auth-pending');
+          return true;
+        } catch (error) {
+          console.error('[LUX AUTH] Validasi halaman gagal:', error);
+          return redirectLogin('verification_failed');
+        } finally {
+          validating = null;
+        }
+      })();
+      return validating;
+    }
+
+    window.LUX_REQUIRE_AUTH = async function(reason = 'auth_required') {
+      const ok = await validatePageSession(true);
+      const current = localIdentity();
+      if (!ok || !current || current.userId !== lockedUserId) {
+        redirectLogin(reason);
+        throw new Error('Sesi login tidak valid atau akun berubah.');
+      }
+      return current;
+    };
+
+    window.LUX_PAGE_AUTH_USER_ID = lockedUserId;
+    window.LUX_PAGE_AUTH_READY = validatePageSession(true);
+
+    window.addEventListener('pageshow', () => validatePageSession(true));
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') validatePageSession(true);
+    });
+    window.addEventListener('storage', (event) => {
+      if (!event.key || /^(sb_|lux_flow_owner_id|lux_auth)/.test(event.key)) {
+        validatePageSession(true);
+      }
+    });
+  })();
+  </script>
   <script src="/ganci-utils.js"></script>
 </head>
 <body>
@@ -1164,6 +1269,13 @@
   async function lanjutFilter() {
     if (isSavingPhotos) return;
 
+    try {
+      await window.LUX_REQUIRE_AUTH('camera_save_requires_login');
+    } catch (error) {
+      console.error('[LUX AUTH] Penyimpanan foto diblokir:', error);
+      return;
+    }
+
     const validPhotos = photos.filter(Boolean);
     if (validPhotos.length !== slotCount) {
       alert('Masih ada foto yang belum diambil.');
@@ -1273,21 +1385,29 @@
     try { sessionStorage.removeItem('luxPhotoSessionId'); } catch (_) {}
   }
 
-  // Init
-  tempCleanupReady = prepareNewPhotoSession().catch(e => {
-    console.warn('[LUX] cleanup sesi lama gagal:', e);
-  });
-  renderIndicators(); renderStrip(); updateTitle();
-  // Sinkronkan tombol dan preview dengan pilihan zoom terakhir.
-  setZoomMode(cameraZoomEnabled);
-  refreshCameraDevices();
-  window.addEventListener('resize', updateFrameGuide);
-  if (isGanciMode) {
-    document.getElementById('modeModal').style.display = 'none';
-    captureMode = 'manual';
-    countdownSec = 3;
-    tempCleanupReady.finally(() => startCamera().then(() => setTimeout(updateFrameGuide, 600)));
+  // Init hanya dijalankan setelah session Supabase benar-benar valid.
+  async function initCameraPage() {
+    await window.LUX_REQUIRE_AUTH('camera_login_required');
+
+    tempCleanupReady = prepareNewPhotoSession().catch(e => {
+      console.warn('[LUX] cleanup sesi lama gagal:', e);
+    });
+    renderIndicators(); renderStrip(); updateTitle();
+    // Sinkronkan tombol dan preview dengan pilihan zoom terakhir.
+    setZoomMode(cameraZoomEnabled);
+    refreshCameraDevices();
+    window.addEventListener('resize', updateFrameGuide);
+    if (isGanciMode) {
+      document.getElementById('modeModal').style.display = 'none';
+      captureMode = 'manual';
+      countdownSec = 3;
+      tempCleanupReady.finally(() => startCamera().then(() => setTimeout(updateFrameGuide, 600)));
+    }
   }
+
+  initCameraPage().catch(error => {
+    console.error('[LUX AUTH] Kamera tidak dijalankan:', error);
+  });
 </script>
 
 <script>

@@ -447,14 +447,9 @@
     return (t?.product_type || (isPhotoboxCategory(t?.category) ? 'photobox' : 'photostrip')) === 'photobox';
   }
 
-  const PHOTOBOX_DEFS = [
-    { id:'photobox_soft_pink', name:'Soft Pink 4R', bg:'#fff1f7', accent:'#D84B7E', accent2:'#f9a8d4', ink:'#1D3557', layout:'four' },
-    { id:'photobox_clean_white', name:'Clean White 4R', bg:'#ffffff', accent:'#1D3557', accent2:'#E5B842', ink:'#1D3557', layout:'two' },
-    { id:'photobox_korean_cute', name:'Korean Cute 4R', bg:'#f5efff', accent:'#a78bfa', accent2:'#f9a8d4', ink:'#6d5b8d', layout:'three' },
-    { id:'photobox_gold_frame', name:'Gold Frame 4R', bg:'#fff8e1', accent:'#E5B842', accent2:'#D84B7E', ink:'#1D3557', layout:'big' },
-    { id:'photobox_navy_classic', name:'Navy Classic 4R', bg:'#1D3557', accent:'#E5B842', accent2:'#ffffff', ink:'#ffffff', layout:'four' },
-    { id:'photobox_party_pop', name:'Party Pop 4R', bg:'#fff7ed', accent:'#fb7185', accent2:'#60a5fa', ink:'#1D3557', layout:'three' }
-  ];
+  // Photobox built-in memakai katalog visual yang sama dengan Photostrip.
+  // Nilainya diisi setelah BUILTIN_FRAME_DEFS tersedia.
+  let PHOTOBOX_DEFS = [];
 
   const BUILTIN_FRAME_DEFS = [
     // Korean
@@ -553,6 +548,19 @@
     { id:'social_profile', category:'Social Media', name:'Social Profile', bg:'#f8fafc', accent:'#8b5cf6', accent2:'#f9a8d4', ink:'#312e81', motif:'profile' },
     { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
   ];
+
+  // Samakan katalog built-in Photobox 4R dengan Photostrip:
+  // nama, kategori, warna, dan motif berasal dari sumber yang sama.
+  // Social Media tetap memakai 3 slot seperti Photostrip; kategori lain memakai 4 slot.
+  PHOTOBOX_DEFS = BUILTIN_FRAME_DEFS
+    .filter(def => !HIDDEN_CATEGORIES.includes(def.category))
+    .map(def => ({
+      ...def,
+      sourceId: def.id,
+      id: `photobox_${def.id}`,
+      name: `${def.name} 4R`,
+      layout: def.category === 'Social Media' ? 'three' : 'four'
+    }));
 
   const builtInCache = new Map();
 
@@ -1938,81 +1946,306 @@
 
 
   function generatePhotoboxSlots(layout) {
-    const slots = [];
-    if (layout === 'two') {
-      slots.push({ x: 86, y: 240, w: 1009, h: 560, r: 0 });
-      slots.push({ x: 86, y: 860, w: 1009, h: 560, r: 0 });
-    } else if (layout === 'three') {
-      slots.push({ x: 88, y: 205, w: 1005, h: 570, r: 0 });
-      slots.push({ x: 88, y: 840, w: 485, h: 500, r: 0 });
-      slots.push({ x: 608, y: 840, w: 485, h: 500, r: 0 });
-    } else if (layout === 'big') {
-      slots.push({ x: 96, y: 220, w: 989, h: 820, r: 0 });
-      slots.push({ x: 96, y: 1105, w: 989, h: 360, r: 0 });
-    } else {
-      slots.push({ x: 82, y: 210, w: 488, h: 475, r: 0 });
-      slots.push({ x: 611, y: 210, w: 488, h: 475, r: 0 });
-      slots.push({ x: 82, y: 745, w: 488, h: 475, r: 0 });
-      slots.push({ x: 611, y: 745, w: 488, h: 475, r: 0 });
+    // Komposisi 4R dibuat lebih rapi: foto tetap dominan, tetapi area header,
+    // sela, dan footer cukup luas untuk ornamen yang sama kaya dengan Photostrip.
+    if (layout === 'three') {
+      return [
+        { x: 92,  y: 276, w: 997, h: 500, r: 0 },
+        { x: 92,  y: 846, w: 478, h: 430, r: 0 },
+        { x: 611, y: 846, w: 478, h: 430, r: 0 }
+      ];
     }
-    return slots;
+
+    return [
+      { x: 88,  y: 260, w: 482, h: 430, r: 0 },
+      { x: 611, y: 260, w: 482, h: 430, r: 0 },
+      { x: 88,  y: 760, w: 482, h: 430, r: 0 },
+      { x: 611, y: 760, w: 482, h: 430, r: 0 }
+    ];
   }
 
-  function generatePhotoboxFrameSrc(def) {
-    const cacheKey = `photobox_${def.id}`;
+  function drawPhotoboxPatternBg(ctx, def, W, H) {
+    const motif = def.motif || '';
+
+    if (motif === 'stripe' || motif === 'rainbow') {
+      const colors = motif === 'rainbow'
+        ? ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#c084fc']
+        : [def.accent, def.accent2];
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(-0.22);
+      ctx.translate(-W / 2, -H / 2);
+      for (let y = -H; y < H * 2; y += 78) {
+        ctx.fillStyle = withAlpha(colors[Math.abs(Math.floor(y / 78)) % colors.length], .34);
+        ctx.fillRect(-300, y, W + 600, 34);
+      }
+      ctx.restore();
+    }
+
+    if (motif === 'polkadot') {
+      for (let y = 55; y < H; y += 120) {
+        for (let x = 48; x < W; x += 120) {
+          circle(ctx, x + ((Math.floor(y / 120) % 2) * 48), y, 18, withAlpha(def.accent, .24));
+          circle(ctx, x + 28, y + 38, 8, withAlpha(def.accent2, .38));
+        }
+      }
+    }
+
+    if (motif === 'checker' || motif === 'gingham') {
+      const size = motif === 'checker' ? 94 : 72;
+      for (let y = 0; y < H; y += size) {
+        for (let x = 0; x < W; x += size) {
+          const odd = ((x / size) + (y / size)) % 2;
+          ctx.fillStyle = withAlpha(odd ? def.accent : def.accent2, motif === 'checker' ? .11 : .09);
+          ctx.fillRect(x, y, size, size);
+        }
+      }
+    }
+
+    if (motif === 'grid') {
+      ctx.strokeStyle = withAlpha(def.accent, .16);
+      ctx.lineWidth = 1.5;
+      for (let x = 0; x < W; x += 52) line(ctx, x, 0, x, H, withAlpha(def.accent, .13), 1.2);
+      for (let y = 0; y < H; y += 52) line(ctx, 0, y, W, y, withAlpha(def.accent, .13), 1.2);
+      line(ctx, 118, 0, 118, H, withAlpha(def.accent2, .42), 2.2);
+    }
+
+    if (motif === 'stars' || motif === 'space' || motif === 'newyear') {
+      for (let i = 0; i < 94; i++) {
+        const x = 34 + (i * 149) % (W - 68);
+        const y = 36 + (i * 233) % (H - 72);
+        drawStar(ctx, x, y, 5 + (i % 3) * 2, withAlpha(i % 2 ? def.accent : def.accent2, .42), 4);
+      }
+    }
+
+    if (motif === 'heart' || motif === 'valentine') {
+      for (let i = 0; i < 72; i++) {
+        const x = 40 + (i * 131) % (W - 80);
+        const y = 54 + (i * 197) % (H - 108);
+        text(ctx, i % 2 ? '♡' : '♥', x, y, 19 + (i % 3) * 3, withAlpha(i % 2 ? def.accent : def.accent2, .28));
+      }
+    }
+
+    // Grain/dot halus untuk kategori lain agar latar tidak terasa kosong.
+    if (!['stripe','rainbow','polkadot','checker','gingham','grid','stars','space','newyear','heart','valentine'].includes(motif)) {
+      for (let i = 0; i < 120; i++) {
+        const x = 24 + (i * 173) % (W - 48);
+        const y = 30 + (i * 229) % (H - 60);
+        circle(ctx, x, y, 2 + (i % 3), withAlpha(i % 2 ? def.accent : def.accent2, .12));
+      }
+    }
+  }
+
+  function drawPhotoboxFlower(ctx, x, y, def, scale = 1) {
+    for (let i = 0; i < 7; i++) {
+      const a = i * Math.PI * 2 / 7;
+      circle(
+        ctx,
+        x + Math.cos(a) * 17 * scale,
+        y + Math.sin(a) * 17 * scale,
+        10 * scale,
+        withAlpha(i % 2 ? def.accent : def.accent2, .78)
+      );
+    }
+    circle(ctx, x, y, 8 * scale, withAlpha('#ffffff', .88), withAlpha(def.ink, .18));
+  }
+
+  function drawPhotoboxDecor(ctx, def, W, H, slots) {
+    const category = def.category || '';
+    const motif = def.motif || '';
+    const headerY = 126;
+
+    // Judul mengikuti built-in Photostrip, bukan label generik PHOTOBOX.
+    roundRect(ctx, W / 2 - 300, 62, 600, 126, 42, withAlpha('#ffffff', .18), withAlpha(def.accent, .30), 2);
+    text(ctx, def.name.replace(/\s+4R$/i, ''), W / 2, headerY - 12, 42, def.ink, 950);
+    text(ctx, `${category.toUpperCase()} · LUX PHOTOBOOTH`, W / 2, headerY + 35, 18, withAlpha(def.ink, .64), 850);
+
+    if (category === 'Korean') {
+      for (let y = 250; y < H - 220; y += 150) {
+        circle(ctx, 42, y, 15, withAlpha(def.accent, .32));
+        circle(ctx, W - 42, y + 55, 15, withAlpha(def.accent2, .36));
+      }
+
+      if (motif === 'cloud') {
+        for (const [x, y] of [[108, 205], [W - 112, 205], [108, H - 160], [W - 112, H - 160]]) {
+          circle(ctx, x - 23, y, 19, withAlpha('#ffffff', .78));
+          circle(ctx, x, y - 12, 28, withAlpha('#ffffff', .84));
+          circle(ctx, x + 27, y, 20, withAlpha('#ffffff', .78));
+        }
+      } else if (motif === 'ribbon') {
+        drawBow(ctx, 105, 202, withAlpha(def.accent, .78), def.ink);
+        drawBow(ctx, W - 105, 202, withAlpha(def.accent2, .82), def.ink);
+        drawBow(ctx, 110, H - 158, withAlpha(def.accent2, .75), def.ink);
+        drawBow(ctx, W - 110, H - 158, withAlpha(def.accent, .72), def.ink);
+      } else {
+        text(ctx, '♡', 102, 210, 42, def.accent);
+        text(ctx, '✦', W - 102, 210, 42, def.accent2);
+        text(ctx, '✿', 102, H - 158, 38, def.accent2);
+        text(ctx, '♡', W - 102, H - 158, 42, def.accent);
+      }
+    }
+
+    if (category === 'Film') {
+      // Sprocket holes dan film metadata, mengikuti bahasa visual template Film Photostrip.
+      for (let y = 40; y < H - 40; y += 72) {
+        roundRect(ctx, 22, y, 28, 42, 7, withAlpha(def.accent2, .64), null);
+        roundRect(ctx, W - 50, y, 28, 42, 7, withAlpha(def.accent2, .64), null);
+      }
+      text(ctx, '35 mm', 86, 218, 18, def.ink, 900, 'left');
+      text(ctx, 'FRAME 01 · 02 · 03 · 04', W - 86, 218, 18, def.ink, 900, 'right');
+      line(ctx, 110, H - 168, W - 110, H - 168, withAlpha(def.accent, .42), 2);
+      text(ctx, 'LUX FILM LAB  •  COLOR NEGATIVE', W / 2, H - 138, 18, def.ink, 900);
+    }
+
+    if (category === 'Floral') {
+      const flowers = [
+        [76, 78, 1.05], [W - 76, 78, .92],
+        [76, H - 82, .92], [W - 76, H - 82, 1.05]
+      ];
+      flowers.forEach(([x, y, s]) => drawPhotoboxFlower(ctx, x, y, def, s));
+      for (let y = 260; y < H - 230; y += 170) {
+        ctx.save();
+        ctx.fillStyle = withAlpha(def.ink, .20);
+        ctx.beginPath(); ctx.ellipse(44, y, 10, 22, .55, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(W - 44, y + 70, 10, 22, -.55, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    if (category === 'Seasonal') {
+      const iconMap = {
+        birthday:'🎂', graduation:'★', christmas:'✦', valentine:'♡',
+        halloween:'☾', eid:'✦', newyear:'★', summer:'☀', autumn:'❖', winter:'❄'
+      };
+      const icon = iconMap[motif] || '✦';
+      text(ctx, icon, 92, 205, 44, def.accent);
+      text(ctx, icon, W - 92, 205, 44, def.accent2);
+      text(ctx, icon, 92, H - 150, 40, def.accent2);
+      text(ctx, icon, W - 92, H - 150, 40, def.accent);
+      for (let i = 0; i < 54; i++) {
+        const x = 50 + (i * 173) % (W - 100);
+        const y = 220 + (i * 251) % (H - 460);
+        if (slots.some(s => x > s.x - 24 && x < s.x + s.w + 24 && y > s.y - 24 && y < s.y + s.h + 24)) continue;
+        if (i % 3 === 0) drawStar(ctx, x, y, 7 + (i % 3), withAlpha(def.accent, .66), 4);
+        else circle(ctx, x, y, 5 + (i % 4), withAlpha(def.accent2, .58));
+      }
+    }
+
+    if (category === 'Gaming') {
+      ctx.save();
+      ctx.strokeStyle = withAlpha(def.accent, .13);
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 56) line(ctx, x, 0, x, H, withAlpha(def.accent, .10), 1);
+      for (let y = 0; y < H; y += 56) line(ctx, 0, y, W, y, withAlpha(def.accent2, .08), 1);
+      ctx.restore();
+      for (const [x, y, sx, sy] of [[54,54,1,1],[W-54,54,-1,1],[54,H-54,1,-1],[W-54,H-54,-1,-1]]) {
+        line(ctx, x, y, x + sx * 62, y, def.accent, 5);
+        line(ctx, x, y, x, y + sy * 62, def.accent2, 5);
+      }
+      roundRect(ctx, W / 2 - 185, H - 190, 370, 62, 18, withAlpha(def.accent, .18), withAlpha(def.accent2, .48), 2);
+      text(ctx, 'PLAYER 1  •  READY', W / 2, H - 157, 22, def.ink, 950);
+    }
+
+    if (category === 'Social Media') {
+      // Headline ala feed/profile yang sama dengan kategori Social Media Photostrip.
+      circle(ctx, 110, 132, 35, withAlpha(def.accent, .78), withAlpha('#ffffff', .72));
+      text(ctx, 'L', 110, 133, 24, '#ffffff', 950);
+      text(ctx, '@lux.photobooth', 162, 118, 22, def.ink, 900, 'left');
+      text(ctx, 'best memories only ✦', 162, 148, 16, withAlpha(def.ink, .60), 800, 'left');
+      roundRect(ctx, W - 220, 104, 128, 46, 23, withAlpha(def.accent, .14), withAlpha(def.accent, .48), 1.5);
+      text(ctx, 'FOLLOW', W - 156, 128, 15, def.ink, 900);
+
+      roundRect(ctx, 92, H - 215, W - 184, 92, 28, withAlpha('#ffffff', .13), withAlpha(def.accent2, .32), 1.5);
+      text(ctx, '♡     ◇     ✈', 150, H - 169, 30, def.ink, 900, 'left');
+      text(ctx, 'saved to camera roll', W - 126, H - 169, 17, withAlpha(def.ink, .64), 850, 'right');
+    }
+
+    if (category === 'Pattern') {
+      roundRect(ctx, 66, 66, W - 132, H - 132, 42, null, withAlpha(def.accent, .34), 3);
+      roundRect(ctx, 86, 86, W - 172, H - 172, 34, null, withAlpha(def.accent2, .24), 1.5);
+    }
+
+    // Ornamen sela mengikuti separator Photostrip.
+    if (slots.length === 4) {
+      const centerX = W / 2;
+      const centerY = (slots[0].y + slots[0].h + slots[2].y) / 2;
+      text(ctx, '✦  ♡  ✦', centerX, centerY, 25, withAlpha(def.accent2, .88), 900);
+      line(ctx, 180, centerY, centerX - 90, centerY, withAlpha(def.accent, .25), 2);
+      line(ctx, centerX + 90, centerY, W - 180, centerY, withAlpha(def.accent, .25), 2);
+    }
+
+    // Footer elegan dan konsisten.
+    text(ctx, 'memories in a box', W / 2, H - 103, 24, def.ink, 900);
+    text(ctx, '10 × 15 cm  •  print ready  •  LUX', W / 2, H - 68, 17, withAlpha(def.ink, .62), 800);
+  }
+
+  function drawPhotoboxSlotBorders(ctx, slots, def) {
+    slots.forEach((s, idx) => {
+      // Ring solid di luar aperture; bagian foto tetap benar-benar transparan.
+      roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 30, null, withAlpha(def.accent, .76), 5);
+      roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 22, null, withAlpha('#ffffff', .90), 3);
+
+      // Label kecil ditempatkan di luar area foto agar tidak menutup hasil capture.
+      const labelY = s.y - 32;
+      roundRect(ctx, s.x + 12, labelY - 13, 96, 27, 13, withAlpha(def.bg, .92), withAlpha(def.accent2, .40), 1.2);
+      text(ctx, String(idx + 1).padStart(2, '0'), s.x + 60, labelY + 1, 13, def.ink, 900);
+    });
+  }
+
+  function generatePhotoboxFrameSrc(def, previewOnly = false) {
+    const previewScale = previewOnly ? 0.28 : 1;
+    const cacheKey = `photobox_v2_${previewOnly ? 'preview' : 'full'}_${def.id}`;
     if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
-    const W = PHOTOBOX_W, H = PHOTOBOX_H;
+
+    const W = PHOTOBOX_W;
+    const H = PHOTOBOX_H;
     const slots = generatePhotoboxSlots(def.layout);
     const c = document.createElement('canvas');
-    c.width = W; c.height = H;
+    c.width = Math.max(1, Math.round(W * previewScale));
+    c.height = Math.max(1, Math.round(H * previewScale));
+
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+    ctx.scale(previewScale, previewScale);
 
     ctx.fillStyle = def.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Soft patterned background
-    for (let i = 0; i < 80; i++) {
-      const x = (i * 173) % W;
-      const y = (i * 229) % H;
-      const r = 7 + (i % 4) * 4;
-      ctx.fillStyle = withAlpha(i % 2 ? def.accent : def.accent2, i % 3 ? .13 : .2);
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    drawPhotoboxPatternBg(ctx, def, W, H);
+    drawPhotoboxDecor(ctx, def, W, H, slots);
 
-    roundRect(ctx, 34, 34, W - 68, H - 68, 42, withAlpha('#ffffff', .08), withAlpha(def.accent, .42), 4);
-    roundRect(ctx, 58, 58, W - 116, H - 116, 34, null, withAlpha(def.accent2, .30), 2);
+    // Area foto harus transparan, seperti built-in Photostrip.
+    slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
 
-    text(ctx, 'PHOTOBOX 4R', W / 2, 110, 34, def.ink, 950);
-    text(ctx, 'lux photobooth', W / 2, 150, 18, withAlpha(def.ink, .62), 800);
-    text(ctx, 'print size 10×15', W / 2, H - 114, 20, withAlpha(def.ink, .68), 800);
-    text(ctx, '♡  ✦  memories in a box  ✦  ♡', W / 2, H - 72, 22, def.accent, 900);
+    // Bingkai foreground tetap berada di atas foto.
+    drawPhotoboxSlotBorders(ctx, slots, def);
+    roundRect(ctx, 18, 18, W - 36, H - 36, 46, null, withAlpha(def.accent, .52), 4);
+    roundRect(ctx, 38, 38, W - 76, H - 76, 38, null, withAlpha('#ffffff', .25), 1.5);
 
-    slots.forEach((s, idx) => {
-      ctx.clearRect(s.x, s.y, s.w, s.h);
-      roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 30, null, withAlpha(def.accent, .72), 5);
-      roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 22, null, withAlpha('#ffffff', .92), 3);
-      roundRect(ctx, s.x + 18, s.y + 18, 110, 34, 17, withAlpha(def.bg, .88), withAlpha(def.accent2, .35), 1.5);
-      text(ctx, `Foto ${idx + 1}`, s.x + 73, s.y + 40, 15, def.ink, 900);
-    });
-
-    const data = { src: c.toDataURL('image/png'), slots, w: W, h: H };
+    const data = {
+      src: c.toDataURL('image/png'),
+      slots,
+      w: W,
+      h: H
+    };
     builtInCache.set(cacheKey, data);
     return data;
   }
 
   function getAllPhotoboxTemplates() {
     return PHOTOBOX_DEFS.map(def => {
-      const data = generatePhotoboxFrameSrc(def);
+      // Grid hanya memakai preview ringan. PNG 1181×1772 baru dibuat ketika template dipilih.
+      const data = generatePhotoboxFrameSrc(def, true);
       return {
-        id: `__photobox_${def.id}__`,
+        id: `__photobox_${def.sourceId || def.id}__`,
         name: def.name,
-        category: PHOTOBOX_CATEGORY,
+        category: def.category || PHOTOBOX_CATEGORY,
+        product_type: 'photobox',
         isBuiltIn: true,
+        isBuiltInPhotobox: true,
         isPhotobox: true,
+        photoboxDef: def,
         src: data.src,
         slots: data.slots,
         w: data.w,
@@ -2020,7 +2253,6 @@
       };
     });
   }
-
 
   // Generate semua basic template (1 per warna)
   function getAllBasicTemplates() {
@@ -2444,7 +2676,13 @@
     const t = tmpl;
     selectedTemplate = t;
 
-    localStorage.setItem('templateSrc', t.src);
+    // Preview Photobox dibuat kecil agar katalog desain tetap ringan.
+    // Saat dipilih, simpan frame full-resolution 1181×1772 untuk result/print.
+    const templateSrcForCapture = t.isBuiltInPhotobox && t.photoboxDef
+      ? generatePhotoboxFrameSrc(t.photoboxDef, false).src
+      : t.src;
+
+    localStorage.setItem('templateSrc', templateSrcForCapture);
     localStorage.setItem('templateSlots', JSON.stringify(t.slots || []));
     localStorage.setItem('templateTextElements', JSON.stringify(t.text_elements || []));
     localStorage.setItem('templateName', t.name || 'Template');
@@ -2518,7 +2756,7 @@
     const h2 = document.querySelector('h2');
     const sub = document.querySelector('.sub');
     if (h2) h2.textContent = 'Pilih Template Photobox 4R';
-    if (sub) sub.textContent = 'Pilih template 10×15 / 4R, nanti hasilnya langsung cetak 4R';
+    if (sub) sub.textContent = 'Desain built-in Photostrip kini tersedia dalam layout 10×15 / 4R';
     const btn = document.getElementById('btnLanjut');
     if (btn) btn.textContent = 'Mulai Photobox →';
   } else {

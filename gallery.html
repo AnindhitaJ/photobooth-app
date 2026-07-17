@@ -526,6 +526,13 @@
   const PASSWORD = '123456';
   const R2_PUBLIC_URL = 'https://pub-463a9d696599486b9544e7ab8f16be00.r2.dev';
 
+  function getStorageUrls(path) {
+    return {
+      r2: `${R2_PUBLIC_URL}/${path}`,
+      supabase: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
+    };
+  }
+
   // sessions = [ { ts, date, dateStr, strip:{url,path}, individuals:[{url,path}], gif:{url,path}|null } ]
   let allSessions = [];
   let filtered    = [];
@@ -641,14 +648,14 @@
         if (row.template_name) sessMap[key].templateName = row.template_name;
         if (row.template_category) sessMap[key].templateCategory = row.template_category;
 
-        const url = `${R2_PUBLIC_URL}/${path}`;
+        const urls = getStorageUrls(path);
 
         if (rest.startsWith('strip') || rest.startsWith('foto.')) {
-          if (!sessMap[key].strip) sessMap[key].strip = { url, path };
+          if (!sessMap[key].strip) sessMap[key].strip = { url: urls.r2, fallbackUrl: urls.supabase, path };
         } else if (rest.startsWith('foto-')) {
-          sessMap[key].individuals.push({ url, path, name: rest });
+          sessMap[key].individuals.push({ url: urls.r2, fallbackUrl: urls.supabase, path, name: rest });
         } else if (rest.startsWith('animated')) {
-          sessMap[key].gif = { url, path };
+          sessMap[key].gif = { url: urls.r2, fallbackUrl: urls.supabase, path };
         }
       });
 
@@ -848,7 +855,10 @@
 
     document.getElementById('smTitle').textContent = 'Sesi ' + timeLabel;
     document.getElementById('smDate').textContent  = dateLabel;
-    document.getElementById('smStripImg').src      = sess.strip.url;
+    const smStripImg = document.getElementById('smStripImg');
+    smStripImg.src = sess.strip.url;
+    smStripImg.dataset.fallback = encodeURIComponent(sess.strip.fallbackUrl || '');
+    smStripImg.onerror = function(){ useOriginalGalleryImage(this); };
 
     // Individual photos
     const grid = document.getElementById('smIndGrid');
@@ -857,7 +867,7 @@
       label.textContent = `📸 Foto Individual (${sess.individuals.length})`;
       grid.innerHTML = sess.individuals.map((p, i) => `
         <div class="sm-photo-item" onclick="downloadIndividual('${p.url}', ${i+1})">
-          <img src="${p.url}" alt="foto ${i+1}" loading="lazy" crossorigin="anonymous">
+          <img src="${p.url}" data-fallback="${encodeURIComponent(p.fallbackUrl || '')}" onerror="useOriginalGalleryImage(this)" alt="foto ${i+1}" loading="lazy" crossorigin="anonymous">
           <div class="sm-photo-dl">⬇️</div>
         </div>
       `).join('');

@@ -549,18 +549,26 @@
     { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
   ];
 
-  // Samakan katalog built-in Photobox 4R dengan Photostrip:
-  // nama, kategori, warna, dan motif berasal dari sumber yang sama.
-  // Social Media tetap memakai 3 slot seperti Photostrip; kategori lain memakai 4 slot.
+  // Katalog built-in Photobox 4R memakai tema dan wording yang sama dengan Photostrip.
+  // Di setiap kategori, jumlah slot diputar 4 → 5 → 6 agar pilihannya beragam.
+  const photoboxCategoryIndex = new Map();
   PHOTOBOX_DEFS = BUILTIN_FRAME_DEFS
     .filter(def => !HIDDEN_CATEGORIES.includes(def.category))
-    .map(def => ({
-      ...def,
-      sourceId: def.id,
-      id: `photobox_${def.id}`,
-      name: `${def.name} 4R`,
-      layout: def.category === 'Social Media' ? 'three' : 'four'
-    }));
+    .map(def => {
+      const indexInCategory = photoboxCategoryIndex.get(def.category) || 0;
+      const slotCount = 4 + (indexInCategory % 3);
+      photoboxCategoryIndex.set(def.category, indexInCategory + 1);
+
+      return {
+        ...def,
+        sourceId: def.id,
+        id: `photobox_${def.id}`,
+        // Nama dibuat identik dengan Photostrip; label produk sudah ditangani UI.
+        name: def.name,
+        slotCount,
+        layout: `slots-${slotCount}`
+      };
+    });
 
   const builtInCache = new Map();
 
@@ -1946,21 +1954,39 @@
 
 
   function generatePhotoboxSlots(layout) {
-    // Komposisi 4R dibuat lebih rapi: foto tetap dominan, tetapi area header,
-    // sela, dan footer cukup luas untuk ornamen yang sama kaya dengan Photostrip.
-    if (layout === 'three') {
+    const match = String(layout || '').match(/(4|5|6)/);
+    const slotCount = match ? Number(match[1]) : 4;
+
+    // Semua layout mempertahankan area aman untuk header dan footer.
+    if (slotCount === 5) {
+      // 1 hero landscape + 4 foto pendamping.
       return [
-        { x: 92,  y: 276, w: 997, h: 500, r: 0 },
-        { x: 92,  y: 846, w: 478, h: 430, r: 0 },
-        { x: 611, y: 846, w: 478, h: 430, r: 0 }
+        { x: 92,  y: 248,  w: 997, h: 350, r: 0 },
+        { x: 92,  y: 660,  w: 478, h: 320, r: 0 },
+        { x: 611, y: 660,  w: 478, h: 320, r: 0 },
+        { x: 92,  y: 1042, w: 478, h: 320, r: 0 },
+        { x: 611, y: 1042, w: 478, h: 320, r: 0 }
       ];
     }
 
+    if (slotCount === 6) {
+      // Grid 2 × 3, cocok untuk rangkaian ekspresi berurutan.
+      return [
+        { x: 92,  y: 248,  w: 478, h: 320, r: 0 },
+        { x: 611, y: 248,  w: 478, h: 320, r: 0 },
+        { x: 92,  y: 630,  w: 478, h: 320, r: 0 },
+        { x: 611, y: 630,  w: 478, h: 320, r: 0 },
+        { x: 92,  y: 1012, w: 478, h: 320, r: 0 },
+        { x: 611, y: 1012, w: 478, h: 320, r: 0 }
+      ];
+    }
+
+    // 4 slot: grid 2 × 2 dengan foto lebih besar.
     return [
-      { x: 88,  y: 260, w: 482, h: 430, r: 0 },
-      { x: 611, y: 260, w: 482, h: 430, r: 0 },
-      { x: 88,  y: 760, w: 482, h: 430, r: 0 },
-      { x: 611, y: 760, w: 482, h: 430, r: 0 }
+      { x: 92,  y: 270, w: 478, h: 430, r: 0 },
+      { x: 611, y: 270, w: 478, h: 430, r: 0 },
+      { x: 92,  y: 780, w: 478, h: 430, r: 0 },
+      { x: 611, y: 780, w: 478, h: 430, r: 0 }
     ];
   }
 
@@ -2050,15 +2076,132 @@
     circle(ctx, x, y, 8 * scale, withAlpha('#ffffff', .88), withAlpha(def.ink, .18));
   }
 
+  function photoboxSourceId(def) {
+    return String(def?.sourceId || def?.id || '').replace(/^photobox_/, '');
+  }
+
+  function getPhotostripWording(def) {
+    const id = photoboxSourceId(def);
+    const motif = String(def?.motif || '');
+    const category = String(def?.category || '');
+    const fallbackTitle = String(def?.name || '').replace(/\s+4R$/i, '');
+
+    const korean = {
+      cloud: ['soft cloud', '', 'k-style'],
+      diary: ['dear diary', '', 'k-style'],
+      sakura: ['cherry day', '', 'k-style'],
+      ribbon: ['ribbon club', '', 'k-style'],
+      latte: ['latte mood', '', 'k-style'],
+      campus: ['campus day', '', 'k-style'],
+      stamp: ['heart stamp', '', 'k-style'],
+      clean: ['k-style', '', 'k-style']
+    };
+
+    const film = {
+      film_retro_film: ['RETRO FILM', '35 mm', 'FRAME 04'],
+      film_kodak_yellow: ['KODAK FEEL', '35 mm', 'FRAME 04'],
+      film_analog_brown: ['analog brown', '35 mm', 'memory archive'],
+      film_vintage_camera: ['camera', '35 mm', 'memory archive'],
+      film_roll_black: ['night memory', '35 mm', 'FRAME 04'],
+      film_polaroid_cream: ['instant memory', '35 mm', 'memory archive'],
+      film_dust_grain: ['dust & grain', '35 mm', 'memory archive'],
+      film_cinema_frame: ['cinema frame', '35 mm', 'memory archive'],
+      film_disposable_camera: ['flash ready', '35 mm', 'summer cam'],
+      film_old_memory: ['memory archive', '35 mm', 'memory archive']
+    };
+
+    const seasonal = {
+      birthday: ['birthday party', '', 'make a wish'],
+      graduation: ['graduation day', '', 'you did it'],
+      christmas: ['christmas', '', 'merry & bright'],
+      valentine: ['valentine', '', 'with love'],
+      halloween: ['halloween', '', 'spooky season'],
+      eid: ['eid mubarak', '', 'warm wishes'],
+      newyear: ['new year', '', 'cheers to us'],
+      summer: ['summer trip', '', 'sunny memories'],
+      autumn: ['autumn leaves', '', 'golden days'],
+      winter: ['winter snow', '', 'snowy memories']
+    };
+
+    const gaming = {
+      pixel: ['HP 80/80 · QUEST ON', '', 'PRESS START'],
+      arcade: ['ARCADE MODE', '1UP 9999', 'INSERT COIN'],
+      rpg: ['CLASS MAGE · RANK S', '', 'party ready'],
+      cyber: ['SCAN READY · MODE NEO', '', 'SYSTEM ONLINE'],
+      fantasy: ['FANTASY WORLD', '', 'portal'],
+      magic: ['SPELLBOOK', '', 'mana +10'],
+      space: ['space map', '', 'mission log'],
+      monster: ['MONSTER MODE', '', 'danger zone'],
+      dungeon: ['DUNGEON RUN', 'TORCH · KEY', 'quest complete'],
+      console: ['RETRO CONSOLE', '', 'A · B']
+    };
+
+    const social = {
+      igfeed: ['sabrina.frame', 'pop muse', 'liked by @luna.velvet and 8.1k others'],
+      igstory: ['@aria.afterglow', '2m ago', '1.4k hearts • 88 replies • 21 shares'],
+      tiktok: ['For You', '@nova.loop', 'pretty privilege detected ✨'],
+      youtube: ['MIRA VLOG', '1.2M views • 2 days ago', 'SUBSCRIBE'],
+      iphone: ['Photos', 'June 2026', 'Select'],
+      cameraRoll: ['Recents', '247 items', 'fav   share   keep   more'],
+      music: ['Now Playing', '12.2k listeners', 'prev   play   next'],
+      chat: ['mila popstar', 'online', 'send me the pics pls 😭'],
+      profile: ['@selena.snap', 'daily glam archive', 'highlights • fitcheck • dumps'],
+      viral: ['viral post', 'saved by 8.2k people', 'too pretty to scroll past']
+    };
+
+    let copy = null;
+    if (category === 'Korean') copy = korean[motif];
+    else if (category === 'Film') copy = film[id];
+    else if (category === 'Floral') copy = [fallbackTitle, '', 'bloom'];
+    else if (category === 'Seasonal') copy = seasonal[motif];
+    else if (category === 'Gaming') copy = gaming[motif];
+    else if (category === 'Pattern') copy = [fallbackTitle, '', ''];
+    else if (category === 'Social Media') copy = social[motif];
+
+    const [title, subtitle, footer] = copy || [fallbackTitle, '', ''];
+    return { title, subtitle, footer };
+  }
+
+  function getPhotostripSlotLabels(def, count) {
+    const motif = String(def?.motif || '');
+    const category = String(def?.category || '');
+    const n = Array.from({ length: count }, (_, i) => i + 1);
+
+    if (category === 'Film') return n.map(i => `FRAME ${String(i).padStart(2, '0')}`);
+    if (category === 'Seasonal') return n.map(i => `snap ${i}`);
+    if (category === 'Gaming') {
+      if (motif === 'pixel' || motif === 'arcade') return n.map(i => `${i}UP`);
+      if (motif === 'rpg' || motif === 'fantasy' || motif === 'magic') return n.map(i => `quest ${i}`);
+      if (motif === 'cyber' || motif === 'space') return ['SCAN', 'SYNC', 'LOCK', 'DATA', 'LINK', 'LIVE'].slice(0, count);
+      if (motif === 'monster' || motif === 'dungeon') return n.map(i => `boss ${i}`);
+      if (motif === 'console') return n.map(i => `P${i}`);
+      return n.map(i => `LV.${i}`);
+    }
+    if (category === 'Social Media') {
+      const prefix = motif === 'igstory' ? 'STORY'
+        : motif === 'tiktok' ? 'CLIP'
+        : motif === 'youtube' ? 'TAKE'
+        : motif === 'iphone' ? 'IMG'
+        : motif === 'cameraRoll' ? 'RECENT'
+        : motif === 'music' ? 'TRACK'
+        : motif === 'chat' ? 'CHAT'
+        : motif === 'viral' ? 'VIRAL'
+        : 'POST';
+      return n.map(i => `${prefix} ${String(i).padStart(2, '0')}`);
+    }
+    return n.map(i => String(i).padStart(2, '0'));
+  }
+
   function drawPhotoboxDecor(ctx, def, W, H, slots) {
     const category = def.category || '';
     const motif = def.motif || '';
+    const copy = getPhotostripWording(def);
     const headerY = 126;
 
-    // Judul mengikuti built-in Photostrip, bukan label generik PHOTOBOX.
-    roundRect(ctx, W / 2 - 300, 62, 600, 126, 42, withAlpha('#ffffff', .18), withAlpha(def.accent, .30), 2);
-    text(ctx, def.name.replace(/\s+4R$/i, ''), W / 2, headerY - 12, 42, def.ink, 950);
-    text(ctx, `${category.toUpperCase()} · LUX PHOTOBOOTH`, W / 2, headerY + 35, 18, withAlpha(def.ink, .64), 850);
+    // Wording mengambil copy yang dipakai pada built-in Photostrip.
+    roundRect(ctx, W / 2 - 330, 54, 660, 136, 44, withAlpha('#ffffff', .18), withAlpha(def.accent, .30), 2);
+    text(ctx, copy.title, W / 2, copy.subtitle ? headerY - 14 : headerY + 2, 42, def.ink, 950);
+    if (copy.subtitle) text(ctx, copy.subtitle, W / 2, headerY + 34, 18, withAlpha(def.ink, .64), 850);
 
     if (category === 'Korean') {
       for (let y = 250; y < H - 220; y += 150) {
@@ -2086,15 +2229,14 @@
     }
 
     if (category === 'Film') {
-      // Sprocket holes dan film metadata, mengikuti bahasa visual template Film Photostrip.
       for (let y = 40; y < H - 40; y += 72) {
         roundRect(ctx, 22, y, 28, 42, 7, withAlpha(def.accent2, .64), null);
         roundRect(ctx, W - 50, y, 28, 42, 7, withAlpha(def.accent2, .64), null);
       }
+      const frameSequence = Array.from({ length: slots.length }, (_, i) => String(i + 1).padStart(2, '0')).join(' · ');
       text(ctx, '35 mm', 86, 218, 18, def.ink, 900, 'left');
-      text(ctx, 'FRAME 01 · 02 · 03 · 04', W - 86, 218, 18, def.ink, 900, 'right');
+      text(ctx, `FRAME ${frameSequence}`, W - 86, 218, 18, def.ink, 900, 'right');
       line(ctx, 110, H - 168, W - 110, H - 168, withAlpha(def.accent, .42), 2);
-      text(ctx, 'LUX FILM LAB  •  COLOR NEGATIVE', W / 2, H - 138, 18, def.ink, 900);
     }
 
     if (category === 'Floral') {
@@ -2102,7 +2244,7 @@
         [76, 78, 1.05], [W - 76, 78, .92],
         [76, H - 82, .92], [W - 76, H - 82, 1.05]
       ];
-      flowers.forEach(([x, y, s]) => drawPhotoboxFlower(ctx, x, y, def, s));
+      flowers.forEach(([x, y, scale]) => drawPhotoboxFlower(ctx, x, y, def, scale));
       for (let y = 260; y < H - 230; y += 170) {
         ctx.save();
         ctx.fillStyle = withAlpha(def.ink, .20);
@@ -2125,7 +2267,7 @@
       for (let i = 0; i < 54; i++) {
         const x = 50 + (i * 173) % (W - 100);
         const y = 220 + (i * 251) % (H - 460);
-        if (slots.some(s => x > s.x - 24 && x < s.x + s.w + 24 && y > s.y - 24 && y < s.y + s.h + 24)) continue;
+        if (slots.some(slot => x > slot.x - 24 && x < slot.x + slot.w + 24 && y > slot.y - 24 && y < slot.y + slot.h + 24)) continue;
         if (i % 3 === 0) drawStar(ctx, x, y, 7 + (i % 3), withAlpha(def.accent, .66), 4);
         else circle(ctx, x, y, 5 + (i % 4), withAlpha(def.accent2, .58));
       }
@@ -2142,22 +2284,17 @@
         line(ctx, x, y, x + sx * 62, y, def.accent, 5);
         line(ctx, x, y, x, y + sy * 62, def.accent2, 5);
       }
-      roundRect(ctx, W / 2 - 185, H - 190, 370, 62, 18, withAlpha(def.accent, .18), withAlpha(def.accent2, .48), 2);
-      text(ctx, 'PLAYER 1  •  READY', W / 2, H - 157, 22, def.ink, 950);
     }
 
     if (category === 'Social Media') {
-      // Headline ala feed/profile yang sama dengan kategori Social Media Photostrip.
       circle(ctx, 110, 132, 35, withAlpha(def.accent, .78), withAlpha('#ffffff', .72));
       text(ctx, 'L', 110, 133, 24, '#ffffff', 950);
-      text(ctx, '@lux.photobooth', 162, 118, 22, def.ink, 900, 'left');
-      text(ctx, 'best memories only ✦', 162, 148, 16, withAlpha(def.ink, .60), 800, 'left');
       roundRect(ctx, W - 220, 104, 128, 46, 23, withAlpha(def.accent, .14), withAlpha(def.accent, .48), 1.5);
-      text(ctx, 'FOLLOW', W - 156, 128, 15, def.ink, 900);
+      text(ctx, motif === 'youtube' ? 'SUBSCRIBE' : 'FOLLOW', W - 156, 128, 15, def.ink, 900);
 
       roundRect(ctx, 92, H - 215, W - 184, 92, 28, withAlpha('#ffffff', .13), withAlpha(def.accent2, .32), 1.5);
       text(ctx, '♡     ◇     ✈', 150, H - 169, 30, def.ink, 900, 'left');
-      text(ctx, 'saved to camera roll', W - 126, H - 169, 17, withAlpha(def.ink, .64), 850, 'right');
+      text(ctx, motif === 'music' ? 'now playing' : 'saved to camera roll', W - 126, H - 169, 17, withAlpha(def.ink, .64), 850, 'right');
     }
 
     if (category === 'Pattern') {
@@ -2165,36 +2302,30 @@
       roundRect(ctx, 86, 86, W - 172, H - 172, 34, null, withAlpha(def.accent2, .24), 1.5);
     }
 
-    // Ornamen sela mengikuti separator Photostrip.
-    if (slots.length === 4) {
-      const centerX = W / 2;
-      const centerY = (slots[0].y + slots[0].h + slots[2].y) / 2;
-      text(ctx, '✦  ♡  ✦', centerX, centerY, 25, withAlpha(def.accent2, .88), 900);
-      line(ctx, 180, centerY, centerX - 90, centerY, withAlpha(def.accent, .25), 2);
-      line(ctx, centerX + 90, centerY, W - 180, centerY, withAlpha(def.accent, .25), 2);
-    }
-
-    // Footer elegan dan konsisten.
-    text(ctx, 'memories in a box', W / 2, H - 103, 24, def.ink, 900);
-    text(ctx, '10 × 15 cm  •  print ready  •  LUX', W / 2, H - 68, 17, withAlpha(def.ink, .62), 800);
+    // Copy footer juga mengikuti wording Photostrip; tidak lagi memakai "memories in a box".
+    if (copy.footer) text(ctx, copy.footer, W / 2, H - 102, 23, def.ink, 900);
   }
 
   function drawPhotoboxSlotBorders(ctx, slots, def) {
-    slots.forEach((s, idx) => {
-      // Ring solid di luar aperture; bagian foto tetap benar-benar transparan.
-      roundRect(ctx, s.x - 12, s.y - 12, s.w + 24, s.h + 24, 30, null, withAlpha(def.accent, .76), 5);
-      roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 22, null, withAlpha('#ffffff', .90), 3);
+    const labels = getPhotostripSlotLabels(def, slots.length);
 
-      // Label kecil ditempatkan di luar area foto agar tidak menutup hasil capture.
-      const labelY = s.y - 32;
-      roundRect(ctx, s.x + 12, labelY - 13, 96, 27, 13, withAlpha(def.bg, .92), withAlpha(def.accent2, .40), 1.2);
-      text(ctx, String(idx + 1).padStart(2, '0'), s.x + 60, labelY + 1, 13, def.ink, 900);
+    slots.forEach((slot, idx) => {
+      // Ring solid di luar aperture; bagian foto tetap benar-benar transparan.
+      roundRect(ctx, slot.x - 12, slot.y - 12, slot.w + 24, slot.h + 24, 30, null, withAlpha(def.accent, .76), 5);
+      roundRect(ctx, slot.x - 3, slot.y - 3, slot.w + 6, slot.h + 6, 22, null, withAlpha('#ffffff', .90), 3);
+
+      // Label slot memakai gaya istilah yang sama seperti Photostrip per kategori.
+      const label = labels[idx] || String(idx + 1).padStart(2, '0');
+      const labelWidth = Math.max(96, Math.min(176, 38 + label.length * 10));
+      const labelY = slot.y - 32;
+      roundRect(ctx, slot.x + 12, labelY - 13, labelWidth, 27, 13, withAlpha(def.bg, .94), withAlpha(def.accent2, .40), 1.2);
+      text(ctx, label, slot.x + 12 + labelWidth / 2, labelY + 1, 13, def.ink, 900);
     });
   }
 
   function generatePhotoboxFrameSrc(def, previewOnly = false) {
     const previewScale = previewOnly ? 0.28 : 1;
-    const cacheKey = `photobox_v2_${previewOnly ? 'preview' : 'full'}_${def.id}`;
+    const cacheKey = `photobox_v3_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
     if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
 
     const W = PHOTOBOX_W;
@@ -2246,6 +2377,7 @@
         isBuiltInPhotobox: true,
         isPhotobox: true,
         photoboxDef: def,
+        slotCount: data.slots.length,
         src: data.src,
         slots: data.slots,
         w: data.w,

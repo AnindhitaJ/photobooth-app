@@ -1,11 +1,20 @@
-FIX PHOTOSTRIP KEMBALI KE INDEX
+ROOT FIX — PHOTOSTRIP KEMBALI KE INDEX
 
-Ganti hanya:
-1. template.html
+Ganti 4 file berikut di root proyek:
+1. auth.js
 2. login.html
+3. sw.js
+4. vercel.json
 
-Penyebab:
-- template.html memverifikasi session dua kali sehingga bisa memicu redirect berantai.
-- login.html mengarahkan session valid selalu ke /, tanpa menghormati parameter next=/template.
+Penyebab yang diperbaiki:
+- auth.js lama menolak session lama hanya karena sb_user_id/account-lock belum ada,
+  lalu mengirim ke login.
+- login lama/cache lama mengembalikan user ke index.
+- service worker memakai cacheFirst untuk auth.js.
+- fallback navigasi /template salah: cache hanya menyimpan /template.html sehingga
+  saat network gagal, service worker mengembalikan /index.html.
 
-Sesudah deploy, lakukan hard refresh atau hapus cache service worker.
+Setelah deploy:
+- buka DevTools > Application > Service Workers > Unregister
+- Application > Storage > Clear site data
+- tutup semua tab situs lalu login ulang satu kali

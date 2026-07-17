@@ -526,11 +526,16 @@
   const PASSWORD = '123456';
   const R2_PUBLIC_URL = 'https://pub-463a9d696599486b9544e7ab8f16be00.r2.dev';
 
-  function getStorageUrls(path) {
-    return {
-      supabase: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
-      r2: `${R2_PUBLIC_URL}/${path}`
-    };
+  // Mulai 17 Juli 2026 00:00 WIB gunakan Cloudflare R2.
+  // Sebelum itu gunakan Supabase Storage lama.
+  const R2_MIGRATION_DATE = new Date('2026-07-16T17:00:00.000Z');
+
+  function getStorageUrlByDate(path, createdAt) {
+    const created = new Date(createdAt || 0);
+    if (created >= R2_MIGRATION_DATE) {
+      return `${R2_PUBLIC_URL}/${path}`;
+    }
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
   }
 
   // sessions = [ { ts, date, dateStr, strip:{url,path}, individuals:[{url,path}], gif:{url,path}|null } ]
@@ -648,14 +653,14 @@
         if (row.template_name) sessMap[key].templateName = row.template_name;
         if (row.template_category) sessMap[key].templateCategory = row.template_category;
 
-        const urls = getStorageUrls(path);
+        const url = getStorageUrlByDate(path, row.created_at);
 
         if (rest.startsWith('strip') || rest.startsWith('foto.')) {
-          if (!sessMap[key].strip) sessMap[key].strip = { url: urls.supabase, fallbackUrl: urls.r2, path };
+          if (!sessMap[key].strip) sessMap[key].strip = { url, path };
         } else if (rest.startsWith('foto-')) {
-          sessMap[key].individuals.push({ url: urls.supabase, fallbackUrl: urls.r2, path, name: rest });
+          sessMap[key].individuals.push({ url, path, name: rest });
         } else if (rest.startsWith('animated')) {
-          sessMap[key].gif = { url: urls.supabase, fallbackUrl: urls.r2, path };
+          sessMap[key].gif = { url, path };
         }
       });
 
@@ -745,20 +750,10 @@
   }
 
   function useOriginalGalleryImage(img) {
-    if (!img) return;
-
-    // fallback satu kali: Supabase <-> Cloudflare R2
-    if (img.dataset.fallbackUsed === '1') {
-      img.onerror = null;
-      return;
-    }
-
+    if (!img || img.dataset.fallbackUsed === '1') return;
     img.dataset.fallbackUsed = '1';
-
     const fallback = decodeURIComponent(img.dataset.fallback || '');
-    if (fallback) {
-      img.src = fallback;
-    }
+    if (fallback) img.src = fallback;
   }
 
   function loadMoreSessions() {
@@ -865,10 +860,7 @@
 
     document.getElementById('smTitle').textContent = 'Sesi ' + timeLabel;
     document.getElementById('smDate').textContent  = dateLabel;
-    const smStripImg = document.getElementById('smStripImg');
-    smStripImg.src = sess.strip.url;
-    smStripImg.dataset.fallback = encodeURIComponent(sess.strip.fallbackUrl || '');
-    smStripImg.onerror = function(){ useOriginalGalleryImage(this); };
+    document.getElementById('smStripImg').src      = sess.strip.url;
 
     // Individual photos
     const grid = document.getElementById('smIndGrid');
@@ -877,7 +869,7 @@
       label.textContent = `📸 Foto Individual (${sess.individuals.length})`;
       grid.innerHTML = sess.individuals.map((p, i) => `
         <div class="sm-photo-item" onclick="downloadIndividual('${p.url}', ${i+1})">
-          <img src="${p.url}" data-fallback="${encodeURIComponent(p.fallbackUrl || '')}" onerror="useOriginalGalleryImage(this)" alt="foto ${i+1}" loading="lazy" crossorigin="anonymous">
+          <img src="${p.url}" alt="foto ${i+1}" loading="lazy" crossorigin="anonymous">
           <div class="sm-photo-dl">⬇️</div>
         </div>
       `).join('');

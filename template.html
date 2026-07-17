@@ -2296,9 +2296,37 @@
       roundRect(ctx, W - 220, 104, 128, 46, 23, withAlpha(def.accent, .14), withAlpha(def.accent, .48), 1.5);
       text(ctx, motif === 'youtube' ? 'SUBSCRIBE' : 'FOLLOW', W - 156, 128, 15, def.ink, 900);
 
-      roundRect(ctx, 92, H - 215, W - 184, 92, 28, withAlpha('#ffffff', .13), withAlpha(def.accent2, .32), 1.5);
-      text(ctx, '♡     ◇     ✈', 150, H - 169, 30, def.ink, 900, 'left');
-      text(ctx, motif === 'music' ? 'now playing' : 'saved to camera roll', W - 126, H - 169, 17, withAlpha(def.ink, .64), 850, 'right');
+      // Social Media memakai satu action card dua baris.
+      // Footer/caption Photostrip ditempatkan di dalam card, bukan menggantung di bawahnya.
+      const socialCardX = 92;
+      const socialCardY = H - 235;
+      const socialCardW = W - 184;
+      const socialCardH = 112;
+      const socialTopY = socialCardY + 34;
+
+      // Caption dipusatkan secara presisi di area bawah action card.
+      // Area atas tetap dipakai untuk ikon dan teks status.
+      const socialDividerOffset = 57;
+      const socialDividerY = socialCardY + socialDividerOffset;
+      const socialCaptionAreaTop = socialDividerY;
+      const socialCaptionAreaH = socialCardH - socialDividerOffset;
+      const socialFootY = socialCaptionAreaTop + (socialCaptionAreaH / 2);
+
+      roundRect(ctx, socialCardX, socialCardY, socialCardW, socialCardH, 28,
+        withAlpha('#ffffff', .13), withAlpha(def.accent2, .32), 1.5);
+
+      text(ctx, '♡     ◇     ✈', socialCardX + 58, socialTopY, 28, def.ink, 900, 'left');
+      text(ctx, motif === 'music' ? 'now playing' : 'saved to camera roll',
+        socialCardX + socialCardW - 34, socialTopY, 17, withAlpha(def.ink, .64), 850, 'right');
+
+      line(ctx,
+        socialCardX + 30, socialDividerY,
+        socialCardX + socialCardW - 30, socialDividerY,
+        withAlpha(def.accent2, .20), 1.2);
+
+      if (copy.footer) {
+        text(ctx, copy.footer, W / 2, socialFootY, 22, def.ink, 900);
+      }
     }
 
     if (category === 'Pattern') {
@@ -2306,8 +2334,11 @@
       roundRect(ctx, 86, 86, W - 172, H - 172, 34, null, withAlpha(def.accent2, .24), 1.5);
     }
 
-    // Copy footer juga mengikuti wording Photostrip; tidak lagi memakai "memories in a box".
-    if (copy.footer) text(ctx, copy.footer, W / 2, H - 102, 23, def.ink, 900);
+    // Social Media sudah menaruh footer di dalam action card.
+    // Kategori lain tetap memakai footer bawah seperti sebelumnya.
+    if (copy.footer && category !== 'Social Media') {
+      text(ctx, copy.footer, W / 2, H - 102, 23, def.ink, 900);
+    }
   }
 
   function drawPhotoboxSlotBorders(ctx, slots, def) {
@@ -2329,7 +2360,7 @@
 
   function generatePhotoboxFrameSrc(def, previewOnly = false) {
     const previewScale = previewOnly ? 0.28 : 1;
-    const cacheKey = `photobox_v4_balanced_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
+    const cacheKey = `photobox_v5_social_footer_inside_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
     if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
 
     const W = PHOTOBOX_W;

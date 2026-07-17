@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.17-photobox-balanced-layout';
+const CACHE_NAME = 'lux-photobooth-v1.19-social-caption-centered';
 
 const CORE_ASSETS = [
   '/', '/index.html', '/login.html', '/reset-password.html',

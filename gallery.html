@@ -472,7 +472,7 @@
 
     <!-- Strip + aksi -->
     <div class="sm-strip-wrap">
-      <img class="sm-strip-img" id="smStripImg" src="" alt="strip">
+      <img class="sm-strip-img" id="smStripImg" src="" alt="strip" crossorigin="anonymous">
       <div class="sm-strip-actions">
         <div class="sm-strip-label">📷 Foto Strip</div>
         <button class="btn-sm btn-sm-primary" onclick="downloadStrip()">⬇️ Download Strip</button>
@@ -931,20 +931,59 @@
     showToast('✅ Strip didownload!', 'success');
   }
 
+  function buildFreshCorsUrl(url) {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.origin !== window.location.origin) {
+      // R2 custom-domain may have an older cached response without CORS headers.
+      // A stable query key forces a separate cache entry that is fetched with Origin.
+      parsed.searchParams.set('__lux_cors', '1');
+    }
+    return parsed.toString();
+  }
+
+  async function fetchMediaBlob(url) {
+    const requestUrl = buildFreshCorsUrl(url);
+    const res = await fetch(requestUrl, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.blob();
+  }
+
   async function shareStrip() {
     if (!activeSess) return;
     try {
-      const res  = await fetch(activeSess.strip.url);
-      const blob = await res.blob();
-      const file = new File([blob], `lux-strip-${activeSess.ts}.jpg`, { type: 'image/jpeg' });
+      const blob = await fetchMediaBlob(activeSess.strip.url);
+      const type = blob.type || 'image/jpeg';
+      const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+      const file = new File([blob], `lux-strip-${activeSess.ts}.${ext}`, { type });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Foto Strip LUX Photobooth' });
+      } else if (navigator.share) {
+        await navigator.share({
+          title: 'Foto Strip LUX Photobooth',
+          url: activeSess.strip.url
+        });
       } else {
-        await triggerDownload(activeSess.strip.url, `lux-strip-${activeSess.ts}.jpg`);
+        await triggerDownload(activeSess.strip.url, `lux-strip-${activeSess.ts}.${ext}`);
         showToast('Download strip berhasil', 'success');
       }
     } catch(e) {
-      if (e.name !== 'AbortError') showToast('Gagal share: ' + e.message);
+      if (e.name === 'AbortError') return;
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: 'Foto Strip LUX Photobooth',
+            url: activeSess.strip.url
+          });
+          return;
+        }
+      } catch (shareError) {
+        if (shareError.name === 'AbortError') return;
+      }
+      showToast('Gagal share: ' + e.message);
     }
   }
 
@@ -955,8 +994,7 @@
 
   async function triggerDownload(url, filename) {
     try {
-      const res  = await fetch(url);
-      const blob = await res.blob();
+      const blob = await fetchMediaBlob(url);
       const a    = document.createElement('a');
       a.href     = URL.createObjectURL(blob);
       a.download = filename;

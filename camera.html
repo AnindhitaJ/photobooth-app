@@ -415,6 +415,14 @@
     </div>
     <p class="timer-hint" id="timerHint">← Pilih timer dulu</p>
 
+    <div style="margin:12px 0 10px;font-size:13px;font-weight:800;">
+      🔍 Mode Zoom Kamera
+    </div>
+    <div class="timer-row">
+      <button class="timer-opt sel" id="zoomNormal" onclick="setZoomMode(false)">Normal</button>
+      <button class="timer-opt" id="zoom120" onclick="setZoomMode(true)">Zoom 120%</button>
+    </div>
+
     <button class="mode-btn" id="modeAuto"   onclick="setMode('auto')"   disabled>
       <div class="mode-icon">⚡</div>
       <div class="mode-text"><h3>Otomatis</h3><p>Foto jalan sendiri satu per satu</p></div>
@@ -615,7 +623,8 @@
   }
 
   // Pan/Zoom
-  const zoom = 1.0, panX = 0, panY = 0;
+  let cameraZoomEnabled = localStorage.getItem('cameraZoomEnabled') === '1';
+  const zoomFactor = 1.20;
 
   function updateVideoTransform() {
     video.style.transform = 'scaleX(-1)';
@@ -975,6 +984,13 @@
   }
 
   // ── Timer & Mode selection ──
+  function setZoomMode(enabled) {
+    cameraZoomEnabled = !!enabled;
+    localStorage.setItem('cameraZoomEnabled', enabled ? '1' : '0');
+    document.getElementById('zoomNormal')?.classList.toggle('sel', !enabled);
+    document.getElementById('zoom120')?.classList.toggle('sel', enabled);
+  }
+
   function setTimer(sec) {
     countdownSec = sec;
     [3,5,10].forEach(s => document.getElementById('t'+s).classList.toggle('sel', s === sec));
@@ -1057,7 +1073,17 @@
     ctx.save();
     ctx.translate(W, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, vW, vH, 0, 0, W, H);
+
+    if (cameraZoomEnabled) {
+      const cropW = vW / zoomFactor;
+      const cropH = vH / zoomFactor;
+      const cropX = (vW - cropW) / 2;
+      const cropY = (vH - cropH) / 2;
+      ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, W, H);
+    } else {
+      ctx.drawImage(video, 0, 0, vW, vH, 0, 0, W, H);
+    }
+
     ctx.restore();
 
     photos[currentSlot] = canvas.toDataURL('image/jpeg', 0.90);

@@ -1015,7 +1015,52 @@
     catch (e) { return ''; }
   }
 
-  async function uploadToSupabase(blob, filename, options = {}) {
+  
+  // Kompresi khusus upload R2 agar tidak terkena batas payload Vercel.
+  // File download/cetak tetap memakai resolusi asli.
+  async function optimizeImageForR2(blob, maxWidth = 1200, maxHeight = 1800, quality = 0.88) {
+    if (!blob || !(blob.type || '').startsWith('image/')) return blob;
+
+    try {
+      const img = await createImageBitmap(blob);
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+      const w = Math.round(img.width * ratio);
+      const h = Math.round(img.height * ratio);
+
+      // Jika file sudah kecil, tetap dipakai
+      if (blob.size < 2 * 1024 * 1024 && ratio === 1) {
+        img.close();
+        return blob;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      img.close();
+
+      return await new Promise(resolve => {
+        canvas.toBlob(
+          result => resolve(result || blob),
+          'image/jpeg',
+          quality
+        );
+      });
+    } catch (e) {
+      console.warn('Optimasi upload gagal, gunakan file asli:', e);
+      return blob;
+    }
+  }
+
+async function uploadToSupabase(blob, filename, options = {}) {
+    // Jangan mengubah file master download/cetak.
+    // Hanya mengecilkan copy yang dikirim ke R2.
+    blob = await optimizeImageForR2(blob);
+
     const userId = Auth.getUserId() || 'anon';
     const requestedSessionId = Number(options.sessionId);
     const ts = Number.isFinite(requestedSessionId) && requestedSessionId > 0 ? Math.trunc(requestedSessionId) : Date.now();

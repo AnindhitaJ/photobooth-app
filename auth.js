@@ -21,7 +21,9 @@ const AUTH_KEYS = Object.freeze({
 
 const AUTH_PUBLIC_PATHS = new Set([
   '/login', '/login.html',
-  '/reset-password', '/reset-password.html'
+  '/reset-password', '/reset-password.html',
+  // Halaman tujuan QR harus dapat dibuka dari perangkat tamu tanpa sesi akun.
+  '/download', '/download.html'
 ]);
 
 const nativeFetch = window.fetch.bind(window);

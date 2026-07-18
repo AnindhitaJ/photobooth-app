@@ -2,7 +2,8 @@
  * auth.js — Shared Supabase authentication and account-integrity guard.
  *
  * Semua halaman yang memuat file ini otomatis dilindungi, kecuali halaman
- * login dan reset-password. Identitas akun dikunci dari login sampai logout.
+ * login, reset-password, dan download publik tujuan QR. Identitas akun dikunci
+ * dari login sampai logout.
  */
 
 const LUX_CONFIG = window.LUX_CONFIG || {};

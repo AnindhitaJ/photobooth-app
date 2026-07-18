@@ -461,16 +461,18 @@ SUPABASE_ANON_KEY
 
 ### 10.1 Halaman publik
 
-`auth.js` mengecualikan:
+`auth.js` mengecualikan rute berikut dari kewajiban login:
 
 ```text
 /login
 /login.html
 /reset-password
 /reset-password.html
+/download
+/download.html
 ```
 
-Halaman lain yang memuat `auth.js` otomatis dianggap protected.
+`download.html` sengaja dibuat publik karena menjadi halaman tujuan QR dan harus dapat dibuka dari perangkat tamu yang tidak memiliki sesi akun. Halaman lain yang memuat `auth.js` otomatis dianggap protected.
 
 ### 10.2 Key autentikasi
 
@@ -1415,7 +1417,7 @@ Lihat bagian Technical Debt Prioritas Tinggi.
 
 ## 23. Download page
 
-`download.html` adalah landing publik QR.
+`download.html` adalah landing publik QR. Halaman ini dapat dibuka tanpa login melalui `/download` maupun `/download.html`; kedua rute tersebut sudah dimasukkan ke `AUTH_PUBLIC_PATHS` pada `auth.js`.
 
 Sumber data:
 

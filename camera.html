@@ -526,8 +526,10 @@
       🔍 Mode Zoom Kamera
     </div>
     <div class="timer-row">
-      <button class="timer-opt sel" id="zoomNormal" onclick="setZoomMode(false)">Normal</button>
-      <button class="timer-opt" id="zoom120" onclick="setZoomMode(true)">Zoom 120%</button>
+      <button class="timer-opt sel" id="zoom100" onclick="setZoomMode(1)">Normal</button>
+      <button class="timer-opt" id="zoom120" onclick="setZoomMode(1.2)">120%</button>
+      <button class="timer-opt" id="zoom150" onclick="setZoomMode(1.5)">150%</button>
+      <button class="timer-opt" id="zoom200" onclick="setZoomMode(2)">200%</button>
     </div>
 
     <button class="mode-btn" id="modeAuto"   onclick="setMode('auto')"   disabled>
@@ -730,14 +732,21 @@
   }
 
   // Pan/Zoom
-  let cameraZoomEnabled = localStorage.getItem('cameraZoomEnabled') === '1';
-  const zoomFactor = 1.20;
+  const ALLOWED_ZOOM_FACTORS = [1, 1.2, 1.5, 2];
+
+  function readSavedZoomFactor() {
+    const savedFactor = Number(localStorage.getItem('cameraZoomFactor'));
+    if (ALLOWED_ZOOM_FACTORS.includes(savedFactor)) return savedFactor;
+
+    // Kompatibilitas dengan versi lama yang hanya menyimpan mode 120%.
+    return localStorage.getItem('cameraZoomEnabled') === '1' ? 1.2 : 1;
+  }
+
+  let cameraZoomFactor = readSavedZoomFactor();
 
   function updateVideoTransform() {
-    // Preview kamera mengikuti mode hasil capture.
-    // Normal = 100%, Zoom = center crop 120%.
-    const previewScale = cameraZoomEnabled ? zoomFactor : 1;
-    video.style.transform = `scaleX(-1) scale(${previewScale})`;
+    // Live preview menggunakan faktor yang sama dengan hasil capture.
+    video.style.transform = `scaleX(-1) scale(${cameraZoomFactor})`;
     video.style.transformOrigin = 'center center';
     updateFrameGuide();
   }
@@ -1095,13 +1104,33 @@
   }
 
   // ── Timer & Mode selection ──
-  function setZoomMode(enabled) {
-    cameraZoomEnabled = !!enabled;
-    localStorage.setItem('cameraZoomEnabled', cameraZoomEnabled ? '1' : '0');
-    document.getElementById('zoomNormal')?.classList.toggle('sel', !cameraZoomEnabled);
-    document.getElementById('zoom120')?.classList.toggle('sel', cameraZoomEnabled);
+  function setZoomMode(factor) {
+    const requestedFactor = Number(factor);
+    cameraZoomFactor = ALLOWED_ZOOM_FACTORS.includes(requestedFactor)
+      ? requestedFactor
+      : 1;
 
-    // Terapkan zoom langsung pada live preview kamera.
+    localStorage.setItem('cameraZoomFactor', String(cameraZoomFactor));
+
+    // Dipertahankan untuk kompatibilitas dengan versi lama.
+    localStorage.setItem(
+      'cameraZoomEnabled',
+      cameraZoomFactor > 1 ? '1' : '0'
+    );
+
+    const buttonFactors = {
+      zoom100: 1,
+      zoom120: 1.2,
+      zoom150: 1.5,
+      zoom200: 2
+    };
+
+    Object.entries(buttonFactors).forEach(([id, value]) => {
+      document
+        .getElementById(id)
+        ?.classList.toggle('sel', cameraZoomFactor === value);
+    });
+
     updateVideoTransform();
   }
 
@@ -1193,9 +1222,9 @@
     ctx.translate(W, 0);
     ctx.scale(-1, 1);
 
-    if (cameraZoomEnabled) {
-      const cropW = vW / zoomFactor;
-      const cropH = vH / zoomFactor;
+    if (cameraZoomFactor > 1) {
+      const cropW = vW / cameraZoomFactor;
+      const cropH = vH / cameraZoomFactor;
       const cropX = (vW - cropW) / 2;
       const cropY = (vH - cropH) / 2;
       ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, W, H);
@@ -1393,8 +1422,9 @@
       console.warn('[LUX] cleanup sesi lama gagal:', e);
     });
     renderIndicators(); renderStrip(); updateTitle();
-    // Sinkronkan tombol dan preview dengan pilihan zoom terakhir.
-    setZoomMode(cameraZoomEnabled);
+    // Sinkronkan tombol, live preview, dan hasil capture
+    // dengan pilihan zoom terakhir.
+    setZoomMode(cameraZoomFactor);
     refreshCameraDevices();
     window.addEventListener('resize', updateFrameGuide);
     if (isGanciMode) {

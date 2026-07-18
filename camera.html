@@ -272,8 +272,20 @@
     }
     .prev-btn-back { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); border: 1.5px solid rgba(255,255,255,0.2); }
     .prev-btn-back:hover { background: rgba(255,255,255,0.2); color: white; }
-    .prev-btn-go { background: linear-gradient(135deg, #E5B842, #c9972a); color: white; box-shadow: 0 6px 20px rgba(229,184,66,0.4); }
+    .prev-btn-go {
+      background: linear-gradient(135deg, #E5B842, #c9972a);
+      color: white;
+      box-shadow: 0 6px 20px rgba(229,184,66,0.4);
+    }
     .prev-btn-go:hover { transform: scale(1.03); }
+
+    .prev-btn-result {
+      background: linear-gradient(135deg, #D84B7E, #1D3557);
+      color: white;
+      box-shadow: 0 6px 20px rgba(216,75,126,0.42);
+    }
+    .prev-btn-result:hover { transform: scale(1.03); }
+    .prev-btn:disabled { opacity: 0.48; cursor: not-allowed; transform: none; }
 
     /* Landscape tweaks */
     @media (orientation: landscape) {
@@ -489,8 +501,9 @@
   <img id="previewBig" src="" alt="Preview">
   <div id="previewThumbs"></div>
   <div id="previewActions">
-    <button class="prev-btn prev-btn-back" onclick="closePreview()">← Edit Ulang</button>
-    <button class="prev-btn prev-btn-go"   onclick="lanjutFilter()">Lanjut ke Filter →</button>
+    <button class="prev-btn prev-btn-back" onclick="closePreview()">↺ Retake Foto</button>
+    <button class="prev-btn prev-btn-go" id="btnEditFilter" onclick="lanjutFilter()">✨ Edit Filter</button>
+    <button class="prev-btn prev-btn-result" id="btnDirectResult" onclick="langsungKeHasil()">⚡ Langsung ke Hasil</button>
   </div>
 </div>
 
@@ -1259,11 +1272,19 @@
   // ── Preview Panel ──
   function showPreview() {
     const panel = document.getElementById('previewPanel');
-    if (isGanciMode) {
-      const backBtn = panel.querySelector('.prev-btn-back');
-      const goBtn = panel.querySelector('.prev-btn-go');
-      if (backBtn) backBtn.textContent = '↺ Retake';
-      if (goBtn) goBtn.textContent = 'Lanjut ke Filter →';
+    const backBtn = panel.querySelector('.prev-btn-back');
+    const filterBtn = document.getElementById('btnEditFilter');
+    const directBtn = document.getElementById('btnDirectResult');
+
+    if (backBtn) backBtn.textContent = isGanciMode ? '↺ Retake' : '↺ Retake Foto';
+    if (filterBtn) {
+      filterBtn.textContent = isGanciMode ? 'Lanjut ke Filter →' : '✨ Edit Filter';
+    }
+
+    // Jalur langsung ke result hanya untuk Photostrip/Photobox.
+    // Ganci dan product tetap harus melewati flow khususnya masing-masing.
+    if (directBtn) {
+      directBtn.style.display = (!isGanciMode && !isProductMode) ? '' : 'none';
     }
     const big   = document.getElementById('previewBig');
     const thumbs = document.getElementById('previewThumbs');
@@ -1293,6 +1314,127 @@
     }
     btnAmbil.style.display = captureMode === 'manual' ? '' : 'none';
     if (!stream || !stream.active) startCamera();
+  }
+
+  async function langsungKeHasil() {
+    if (isSavingPhotos) return;
+
+    try {
+      await window.LUX_REQUIRE_AUTH('camera_direct_result_requires_login');
+    } catch (error) {
+      console.error('[LUX AUTH] Jalur langsung ke hasil diblokir:', error);
+      return;
+    }
+
+    if (isGanciMode || isProductMode) {
+      alert('Mode ini tetap harus melewati halaman filter.');
+      return;
+    }
+
+    const validPhotos = photos.filter(Boolean);
+    if (validPhotos.length !== slotCount) {
+      alert('Masih ada foto yang belum diambil.');
+      return;
+    }
+
+    isSavingPhotos = true;
+
+    const actionButtons = document.querySelectorAll(
+      '#previewActions button, #btnLanjut'
+    );
+
+    actionButtons.forEach(button => {
+      button.disabled = true;
+      button.style.pointerEvents = 'none';
+      button.dataset.originalText = button.textContent;
+    });
+
+    const directButton = document.getElementById('btnDirectResult');
+    if (directButton) directButton.textContent = 'Menyiapkan hasil...';
+
+    try {
+      const oldSessionId = (() => {
+        try {
+          return sessionStorage.getItem('luxPhotoSessionId')
+            || localStorage.getItem('photosSessionId')
+            || '';
+        } catch (_) {
+          return '';
+        }
+      })();
+
+      // Hapus handoff lama agar result tidak membaca foto dari sesi sebelumnya.
+      localStorage.removeItem('filteredPhotos');
+      localStorage.removeItem('filteredPhotosStore');
+      localStorage.removeItem('photos');
+      localStorage.removeItem('photosStore');
+      localStorage.removeItem('photosSessionId');
+      localStorage.removeItem('livePhotos');
+      localStorage.removeItem('livePhotosStore');
+
+      await idbDelete('filteredPhotos');
+      await idbDelete('photos');
+      await idbDelete('livePhotos');
+      if (oldSessionId) await idbDelete(`photos:${oldSessionId}`);
+
+      // Result memprioritaskan key filteredPhotos. Foto mentah diperlakukan
+      // sebagai hasil filter "Normal", sehingga filter.html bisa dilewati.
+      const photoStoreMode = await saveLargePhotoArray(
+        'filteredPhotos',
+        validPhotos
+      );
+      console.log(
+        '[LUX] direct result photos saved via',
+        photoStoreMode
+      );
+
+      const validLive = liveVideos.filter(Boolean);
+      if (validLive.length > 0) {
+        try {
+          const liveStoreMode = await saveLargePhotoArray(
+            'livePhotos',
+            liveVideos
+          );
+          console.log(
+            '[LUX] direct result livePhotos saved via',
+            liveStoreMode
+          );
+        } catch (liveError) {
+          // Live photo opsional; foto JPG tetap boleh lanjut.
+          console.warn(
+            '[LUX] livePhotos direct result tidak tersimpan:',
+            liveError
+          );
+        }
+      }
+
+      try {
+        sessionStorage.removeItem('luxPhotoSessionId');
+      } catch (_) {}
+
+      if (isPhotoboxMode) {
+        localStorage.setItem('captureFlow', 'photobox');
+        localStorage.setItem('templateProduct', 'photobox');
+      }
+
+      localStorage.setItem('filterSkipped', '1');
+      window.location.assign('/result?source=camera&filter=skipped');
+    } catch (error) {
+      console.error('langsung ke hasil error:', error);
+      isSavingPhotos = false;
+
+      actionButtons.forEach(button => {
+        button.disabled = false;
+        button.style.pointerEvents = '';
+        button.textContent =
+          button.dataset.originalText || button.textContent;
+      });
+
+      alert(
+        'Gagal menyiapkan hasil: ' +
+        (error?.message || error)
+      );
+    }
   }
 
   async function lanjutFilter() {

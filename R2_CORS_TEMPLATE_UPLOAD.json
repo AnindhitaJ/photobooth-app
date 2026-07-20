@@ -1,0 +1,22 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://lux-photo.web.id",
+      "https://www.lux-photo.web.id",
+      "http://localhost:4173"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "HEAD",
+      "PUT"
+    ],
+    "AllowedHeaders": [
+      "Content-Type",
+      "Cache-Control"
+    ],
+    "ExposeHeaders": [
+      "ETag"
+    ],
+    "MaxAgeSeconds": 3600
+  }
+]

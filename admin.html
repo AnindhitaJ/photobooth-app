@@ -1307,38 +1307,67 @@
     });
   }
 
-  async function uploadStorageObject(blob, filename) {
-    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filename}`, {
-      method: 'POST',
+  const MAX_TEMPLATE_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+  async function readJsonResponse(response) {
+    const text = await response.text();
+    if (!text) return {};
+    try { return JSON.parse(text); }
+    catch (_) { return { error: text }; }
+  }
+
+  async function putBlobToR2(uploadUrl, blob, cacheControl) {
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
       headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${Auth.getToken()}`,
         'Content-Type': blob.type || 'application/octet-stream',
-        'x-upsert': 'false',
+        'Cache-Control': cacheControl,
       },
       body: blob,
     });
-    if (!res.ok) throw new Error('Upload gagal: ' + await res.text());
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(`Upload langsung ke R2 gagal (HTTP ${response.status})${detail ? `: ${detail}` : ''}`);
+    }
   }
 
   async function uploadTemplateImage(dataURL, name) {
-    const blob = dataURLtoBlob(dataURL);
+    const token = Auth.getToken();
     const userId = Auth.getUserId();
-    if (!userId) throw new Error('Session user tidak ditemukan. Login ulang.');
-    const safeName = name.replace(/[^a-zA-Z0-9._-]+/g, '_');
-    const base = `templates/${userId}/${Date.now()}_${safeName}`;
-    const filename = `${base}.png`;
-    await uploadStorageObject(blob, filename);
+    if (!token || !userId) throw new Error('Session user tidak ditemukan. Login ulang.');
 
-    // Thumbnail hanya untuk daftar template; kegagalannya tidak membatalkan template utama.
-    try {
-      const thumbBlob = await makeTemplateThumbnailBlob(dataURL);
-      await uploadStorageObject(thumbBlob, `${base}_thumb.jpg`);
-    } catch (e) {
-      console.warn('Thumbnail template gagal dibuat/upload:', e);
+    const masterBlob = dataURLtoBlob(dataURL);
+    if (masterBlob.type !== 'image/png') throw new Error('Template harus berupa file PNG.');
+    if (masterBlob.size > MAX_TEMPLATE_UPLOAD_BYTES) {
+      throw new Error('Ukuran template maksimal 20 MB. Kecilkan resolusi atau kompres PNG terlebih dahulu.');
     }
 
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${filename}`;
+    const thumbnailBlob = await makeTemplateThumbnailBlob(dataURL);
+
+    const presignResponse = await fetch('/api/template-upload-url', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        masterSize: masterBlob.size,
+        thumbnailSize: thumbnailBlob.size,
+      }),
+    });
+    const upload = await readJsonResponse(presignResponse);
+
+    if (!presignResponse.ok || !upload?.masterUploadUrl || !upload?.thumbnailUploadUrl) {
+      throw new Error(upload?.error || 'Gagal menyiapkan upload template ke R2.');
+    }
+
+    // Thumbnail diunggah dahulu. Jika gagal, file utama belum terlanjur tersimpan.
+    await putBlobToR2(upload.thumbnailUploadUrl, thumbnailBlob, upload.cacheControl);
+    await putBlobToR2(upload.masterUploadUrl, masterBlob, upload.cacheControl);
+
+    return upload.masterPublicUrl;
   }
 
   function dataURLtoBlob(dataURL) {
@@ -1358,6 +1387,16 @@
   });
 
   function loadTemplate(file) {
+    if (!file) return;
+    if (file.type !== 'image/png' && !String(file.name || '').toLowerCase().endsWith('.png')) {
+      showToast('Template harus berupa file PNG.', true);
+      return;
+    }
+    if (file.size > MAX_TEMPLATE_UPLOAD_BYTES) {
+      showToast('Ukuran template maksimal 20 MB.', true);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = e => {
       templateDataURL = e.target.result;
@@ -1923,10 +1962,10 @@
 
     const btn = document.getElementById('btnSave');
     btn.disabled = true;
-    btn.textContent = '⏫ Mengupload ke cloud...';
+    btn.textContent = '⏫ Mengupload ke R2...';
 
     try {
-      // Upload image ke Supabase, simpan URL bukan base64
+      // Upload langsung dari browser ke R2, lalu simpan URL publiknya
       const imageURL = await uploadTemplateImage(templateDataURL, name);
 
       const realSlots = slots.map(s => ({
@@ -2098,48 +2137,30 @@
   }
 
   async function hapusTemplate(id) {
-    if (!confirm('Hapus template ini?')) return;
+    if (!confirm('Hapus template ini beserta file R2-nya?')) return;
     try {
       const token = Auth.getToken();
       if (!token) throw new Error('Session admin tidak ditemukan. Login ulang dulu.');
-      const target = _allTemplates.find(t => String(t.id) === String(id));
 
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?id=eq.${encodeURIComponent(id)}`, {
-        method: 'DELETE',
+      const response = await fetch('/api/delete-template', {
+        method: 'POST',
         headers: {
-          'apikey': SUPABASE_ANON,
           'Authorization': `Bearer ${token}`,
-          'Prefer': 'return=minimal'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ templateId: id }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      const result = await readJsonResponse(response);
+      if (!response.ok) throw new Error(result?.error || 'Gagal menghapus template.');
 
-      // Simpan tombstone lokal supaya kalau ada cache / response lama, template tetap tidak muncul lagi.
+      // Simpan tombstone lokal supaya cache / response lama tidak memunculkan template kembali.
       rememberDeletedTemplate(id);
       _allTemplates = _allTemplates.filter(t => String(t.id) !== String(id));
-
-      // Best-effort hapus file storage juga kalau path-nya masih bisa ditebak dari public URL.
-      try {
-        if (target?.src && target.src.includes(`/storage/v1/object/public/${BUCKET}/`)) {
-          const objectPath = decodeURIComponent(target.src.split(`/storage/v1/object/public/${BUCKET}/`)[1] || '');
-          if (objectPath) {
-            const thumbPath = objectPath.replace(/\.png$/i, '_thumb.jpg');
-            await Promise.allSettled([objectPath, thumbPath].map(path =>
-              fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-                method: 'DELETE',
-                headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
-              })
-            ));
-          }
-        }
-      } catch(storageErr) {
-        console.warn('Storage delete skipped:', storageErr);
-      }
 
       renderTemplateList();
       renderCatTabs();
       renderCategoryTags();
-      showToast('Template dihapus');
+      showToast('Template dan file R2 dihapus');
     } catch(e) {
       showToast('Gagal hapus: ' + e.message, true);
     }

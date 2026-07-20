@@ -145,6 +145,10 @@
   ],
   "rewrites": [
     {
+      "source": "/about",
+      "destination": "/about.html"
+    },
+    {
       "source": "/tutorial",
       "destination": "/tutorial.html"
     },
@@ -213,10 +217,6 @@
       "destination": "/app.html"
     },
     {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
       "source": "/template",
       "destination": "/template.html"
     },
@@ -259,13 +259,23 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "destination": "/login",
+      "permanent": false
+    },
+    {
       "source": "/index.html",
-      "destination": "/",
-      "permanent": true
+      "destination": "/login",
+      "permanent": false
     },
     {
       "source": "/app.html",
       "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/about.html",
+      "destination": "/about",
       "permanent": true
     }
   ]

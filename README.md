@@ -143,7 +143,7 @@ Karena itu, perubahan nama key harus dianggap sebagai breaking change.
 `sw.js` melakukan precache file utama dan menggunakan:
 
 - `networkFirst` untuk navigation.
-- `networkFirst` untuk `auth.js`, `config.js`, `index.html`, `login.html`, dan `template.html`.
+- `networkFirst` untuk `auth.js`, `config.js`, `index.html`, `about.html`, `app.html`, `login.html`, dan `template.html`.
 - `cacheFirst` untuk aset same-origin lain.
 - fallback clean route ke file HTML yang sesuai.
 
@@ -265,7 +265,9 @@ Node.js dipakai untuk fungsi serverless dan package `@aws-sdk/client-s3`.
 
 | File | Peran |
 |---|---|
-| `index.html` | Dashboard utama dan pemilih produk. |
+| `index.html` | Fallback redirect menuju halaman login. |
+| `about.html` | Halaman publik Tentang Aplikasi, fitur, alur penggunaan, dan informasi umum. |
+| `app.html` | Dashboard utama dan pemilih produk setelah login. |
 | `login.html` | Login email/password Supabase. |
 | `reset-password.html` | Recovery dan perubahan password dari email recovery. |
 | `config.js` | Konfigurasi publik browser. |
@@ -327,7 +329,9 @@ Clean route dipetakan ke file HTML melalui `vercel.json`.
 
 | URL | File |
 |---|---|
-| `/` | `index.html` |
+| `/` | Redirect sementara ke `/login` |
+| `/about` | `about.html` |
+| `/app` | `app.html` |
 | `/login` | `login.html` |
 | `/reset-password` | `reset-password.html` |
 | `/template` | `template.html` |
@@ -357,7 +361,7 @@ Clean route dipetakan ke file HTML melalui `vercel.json`.
 
 Catatan:
 
-- `index.html` memiliki fungsi `bukaIconPortrait()` yang saat ini hanya `return`, sehingga halaman Icon Portrait tidak terbuka dari shortcut index.
+- `app.html` memiliki fungsi `bukaIconPortrait()` yang saat ini hanya `return`, sehingga halaman Icon Portrait tidak terbuka dari shortcut dashboard.
 - Route tetap tersedia langsung.
 - Jika menambah halaman baru, update minimal:
   1. `vercel.json`.

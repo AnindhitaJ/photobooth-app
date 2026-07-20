@@ -1,7 +1,7 @@
-const CACHE_NAME = 'lux-photobooth-v1.20-seo-public-landing';
+const CACHE_NAME = 'lux-photobooth-v1.21-login-root-about-page';
 
 const CORE_ASSETS = [
-  '/', '/index.html', '/app.html', '/login.html', '/reset-password.html',
+  '/', '/index.html', '/about.html', '/app.html', '/login.html', '/reset-password.html',
   '/template.html', '/camera.html', '/filter.html', '/preview.html',
   '/result.html', '/download.html', '/gallery.html', '/admin.html',
   '/cms.html', '/tutorial.html', '/analytics.html', '/content-sharing.html',
@@ -16,7 +16,8 @@ const CORE_ASSETS = [
 ];
 
 const CLEAN_ROUTE_FALLBACKS = Object.freeze({
-  '/': '/index.html',
+  '/': '/login.html',
+  '/about': '/about.html',
   '/app': '/app.html',
   '/login': '/login.html',
   '/reset-password': '/reset-password.html',
@@ -47,7 +48,7 @@ const CLEAN_ROUTE_FALLBACKS = Object.freeze({
 });
 
 const NETWORK_FIRST_ASSETS = new Set([
-  '/auth.js', '/config.js', '/index.html', '/app.html', '/login.html', '/template.html'
+  '/auth.js', '/config.js', '/index.html', '/about.html', '/app.html', '/login.html', '/template.html'
 ]);
 
 self.addEventListener('install', event => {
@@ -81,7 +82,7 @@ async function routeAwareCacheFallback(request) {
     if (mappedResponse) return mappedResponse;
   }
 
-  return cache.match('/index.html');
+  return cache.match('/login.html');
 }
 
 async function networkFirst(request) {

@@ -295,10 +295,5 @@
       "destination": "/about",
       "permanent": true
     }
-  ],
-  "functions": {
-    "api/migrate-templates.js": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }

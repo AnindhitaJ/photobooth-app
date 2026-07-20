@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Migrasi Template ke R2</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb}
+    *{box-sizing:border-box}body{margin:0;padding:28px}.card{max-width:760px;margin:auto;background:white;border:1px solid #dfe5ef;border-radius:18px;padding:24px;box-shadow:0 14px 40px rgba(22,32,51,.08)}
+    h1{margin:0 0 8px;font-size:26px}p{line-height:1.55;color:#596579}.warning{background:#fff7df;border:1px solid #f0cc69;padding:13px 15px;border-radius:12px;color:#755500}
+    label{display:block;margin-top:18px;font-weight:700}input{width:100%;margin-top:7px;padding:12px 14px;border:1px solid #cbd4e1;border-radius:10px;font-size:15px}
+    button{margin-top:16px;border:0;border-radius:10px;padding:12px 16px;background:#1769e0;color:white;font-weight:800;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+    progress{width:100%;height:18px;margin-top:18px}.status{margin-top:10px;font-weight:700}.log{margin-top:16px;background:#101726;color:#d8e2f1;border-radius:12px;padding:14px;height:280px;overflow:auto;white-space:pre-wrap;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .ok{color:#16794b}.error{color:#b42318}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Migrasi template Supabase → R2</h1>
+    <p>Halaman ini menyalin file di <code>photobooth/templates/</code> ke R2 dengan path yang sama, lalu mengganti URL pada tabel <code>templates</code>. Folder <code>event-welcome</code> tidak disentuh.</p>
+    <div class="warning">Jangan hapus template lama dari Supabase setelah proses selesai. Uji aplikasi selama 2–3 hari terlebih dahulu.</div>
+
+    <label for="secret">MIGRATION_SECRET</label>
+    <input id="secret" type="password" autocomplete="off" placeholder="Masukkan secret dari Environment Variables Vercel">
+    <button id="start">Mulai migrasi</button>
+    <progress id="progress" value="0" max="100"></progress>
+    <div id="status" class="status">Belum dimulai.</div>
+    <div id="log" class="log"></div>
+  </main>
+
+<script>
+  const startButton = document.getElementById('start');
+  const secretInput = document.getElementById('secret');
+  const progress = document.getElementById('progress');
+  const status = document.getElementById('status');
+  const log = document.getElementById('log');
+
+  function write(message) {
+    log.textContent += `[${new Date().toLocaleTimeString('id-ID')}] ${message}\n`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function formatBytes(bytes) {
+    const value = Number(bytes || 0);
+    if (value < 1024) return `${value} B`;
+    if (value < 1048576) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / 1048576).toFixed(2)} MB`;
+  }
+
+  async function api(secret, action, extra = {}) {
+    const response = await fetch('/api/migrate-templates', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${secret}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ action, ...extra })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok && response.status !== 207) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
+  }
+
+  startButton.addEventListener('click', async () => {
+    const secret = secretInput.value.trim();
+    if (!secret) return alert('Isi MIGRATION_SECRET terlebih dahulu.');
+    if (!confirm('Mulai menyalin template ke R2? File Supabase tidak akan dihapus.')) return;
+
+    startButton.disabled = true;
+    secretInput.disabled = true;
+    log.textContent = '';
+    progress.value = 0;
+
+    try {
+      status.textContent = 'Membaca daftar template...';
+      write('Membaca inventory Supabase Storage.');
+      const inventory = await api(secret, 'inventory');
+      const objects = inventory.objects || [];
+      write(`Ditemukan ${objects.length} file, total ${formatBytes(inventory.totalBytes)}.`);
+      if (!objects.length) throw new Error('Tidak ada object template yang ditemukan.');
+
+      const batchSize = 8;
+      let completed = 0;
+      let failed = [];
+
+      for (let i = 0; i < objects.length; i += batchSize) {
+        const batch = objects.slice(i, i + batchSize);
+        status.textContent = `Menyalin ${completed}/${objects.length} file...`;
+        const result = await api(secret, 'copy', { paths: batch });
+        for (const item of result.copied || []) write(`OK  ${item.path} (${formatBytes(item.bytes)})`);
+        for (const item of result.failed || []) {
+          write(`GAGAL ${item.path}: ${item.error}`);
+          failed.push(item);
+        }
+        completed += batch.length;
+        progress.value = Math.round((completed / objects.length) * 90);
+      }
+
+      if (failed.length) {
+        throw new Error(`${failed.length} file gagal disalin. Jalankan ulang; file yang berhasil aman ditimpa.`);
+      }
+
+      status.textContent = 'Mengganti URL template di database...';
+      write('Semua file berhasil disalin. Memperbarui tabel templates.');
+      const db = await api(secret, 'update-database');
+      const info = db.database || {};
+      write(`Database: ${info.updated || 0}/${info.found || 0} URL diperbarui.`);
+      if ((info.failures || []).length) throw new Error(`${info.failures.length} row database gagal diperbarui.`);
+
+      progress.value = 100;
+      status.textContent = 'Migrasi selesai. Jangan hapus file Supabase dulu.';
+      status.className = 'status ok';
+      write('SELESAI. Buka halaman template dan pastikan gambar berasal dari media.lux-photo.web.id.');
+    } catch (error) {
+      status.textContent = `Gagal: ${error.message}`;
+      status.className = 'status error';
+      write(`ERROR: ${error.message}`);
+    } finally {
+      startButton.disabled = false;
+      secretInput.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

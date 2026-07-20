@@ -1,6 +1,19 @@
 {
   "headers": [
     {
+      "source": "/migrate-templates.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
       "source": "/login",
       "headers": [
         {
@@ -255,6 +268,10 @@
     {
       "source": "/kalender",
       "destination": "/kalender.html"
+    },
+    {
+      "source": "/migrate-templates",
+      "destination": "/migrate-templates.html"
     }
   ],
   "redirects": [
@@ -278,5 +295,10 @@
       "destination": "/about",
       "permanent": true
     }
-  ]
+  ],
+  "functions": {
+    "api/migrate-templates.js": {
+      "maxDuration": 60
+    }
+  }
 }

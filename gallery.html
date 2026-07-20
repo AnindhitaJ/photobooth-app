@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <meta name="theme-color" content="#1D3557">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -449,14 +451,14 @@
     <div class="lock-error" id="pwError">❌ Password salah. Coba lagi.</div>
     <button class="btn-unlock" onclick="checkPass()">🔓 Buka Galeri</button>
   </div>
-  <button class="btn-back-lock" onclick="location.href='/'">← Kembali ke Beranda</button>
+  <button class="btn-back-lock" onclick="location.href='/app'">← Kembali ke Beranda</button>
 </div>
 
 <!-- GALLERY -->
 <div id="galleryScreen">
   <div class="header">
     <div class="header-left">
-      <button class="btn-back" onclick="location.href='/'">← Beranda</button>
+      <button class="btn-back" onclick="location.href='/app'">← Beranda</button>
       <div class="header-title">
         <img src="/logo.png" alt="LUX">
         <span>Galeri <span style="color:var(--orange)">LUX</span></span>

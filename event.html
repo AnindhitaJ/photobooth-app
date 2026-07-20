@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1D3557">
   <title>Event - LUX Photobooth</title>
   <script src="/config.js"></script>
@@ -71,7 +73,7 @@
       <div class="sub">Buat event, pilih template yang boleh tampil, lalu jalankan mode event.</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn secondary" onclick="location.href='/'">← Home</button>
+      <button class="btn secondary" onclick="location.href='/app'">← Home</button>
       <button class="btn secondary" onclick="location.href='/admin'">⚙️ Template</button>
     </div>
   </div>
@@ -80,7 +82,7 @@
     <div class="icon">🔒</div>
     <h2>Anda tidak memiliki akses ke Event ini</h2>
     <p class="sub" style="margin:8px 0 16px">Ganti jadi PRO dengan hubungi admin.</p>
-    <button class="btn" onclick="location.href='/'">Kembali</button>
+    <button class="btn" onclick="location.href='/app'">Kembali</button>
   </div>
 
   <div id="eventApp" class="grid" style="display:none">

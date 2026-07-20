@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /supabase/
+
+Sitemap: https://www.lux-photo.web.id/sitemap.xml

@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1D3557">
   <title>Login - Photobooth App</title>
   <style>
@@ -175,7 +177,7 @@
       const lockedUid = localStorage.getItem('sb_account_lock');
       if (s.access_token && s.expires_at > Date.now()/1000 && uid && uid === tokenUid && uid === storedUid && (!lockedUid || lockedUid === uid)) {
         const next = _query.get('next');
-        const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+        const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/app';
         window.location.replace(safeNext);
       }
     } catch(e) {
@@ -232,7 +234,7 @@
       // Load profile untuk user yang sama.
       await loadProfile(data.access_token, data.user.id);
       const next = new URLSearchParams(location.search).get('next');
-      window.location.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/');
+      window.location.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/app');
     } catch(e) {
       showError(e.message);
     } finally {

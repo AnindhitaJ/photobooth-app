@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1D3557">
+  
+  <meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#1D3557">
   <title>CMS - Photobooth Admin</title>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
@@ -458,7 +460,7 @@
     const email = localStorage.getItem('sb_user_email');
     if (email !== SUPER_ADMIN_EMAIL) {
       alert('Akses ditolak. Halaman ini hanya untuk super admin.');
-      window.location.href = '/';
+      window.location.href = '/app';
       return;
     }
     loadUsers();

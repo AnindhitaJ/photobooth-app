@@ -1,8 +1,8 @@
 {
   "name": "LUX Photobooth",
   "short_name": "LUX Photo",
-  "description": "Photobooth app - pilih template, ambil foto, download & share",
-  "start_url": "/index.html",
+  "description": "Aplikasi photobooth digital untuk photostrip, photobox 4R, kartu, kalender, download, dan hasil siap cetak.",
+  "start_url": "/app",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#fff8f0",
@@ -21,6 +21,10 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["photo", "entertainment"],
-  "screenshots": []
+  "categories": [
+    "photo",
+    "entertainment"
+  ],
+  "screenshots": [],
+  "id": "/app"
 }

@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Tutorial - Lux Photobooth</title>
+  
+  <meta name="robots" content="noindex, nofollow, noarchive">
+<title>Tutorial - Lux Photobooth</title>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
   <style>
@@ -50,7 +52,7 @@
 <style>
   html.embedded-mode body { padding: 16px !important; }
   html.embedded-mode .top a[href="/admin"],
-  html.embedded-mode .top a[href="/"],
+  html.embedded-mode .top a[href="/app"],
   html.embedded-mode .top a[href="/analytics"],
   html.embedded-mode .top a[href="/content-sharing"],
   html.embedded-mode .top .btn.secondary { display: none !important; }
@@ -65,7 +67,7 @@
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <a class="btn secondary" href="/admin">← Admin</a>
-      <a class="btn secondary" href="/">Beranda</a>
+      <a class="btn secondary" href="/app">Beranda</a>
     </div>
   </div>
 
@@ -121,13 +123,13 @@ if (!Auth.getSession()) location.href = '/login';
 const tutorials = {
   all: {
     icon:'🚀', title:'Tutorial Semua / End-to-End', desc:'Dari daftar/login, admin, upload template, ambil foto, filter, hasil, galeri, sampai print.',
-    target:'/',
+    target:'/app',
     steps:[
       ['Masuk akun', 'Login atau daftar akun photobooth. Untuk owner baru, isi nama photobooth, email, password, dan nomor WhatsApp aktif.', 'Kalau masih Free, fitur tetap bisa dicoba tapi hasil foto memakai watermark properti Lux.', '/login'],
       ['Kenali Free vs Pro', '<b>Free</b>: bisa pakai app, tapi hasil foto diberi watermark dan beberapa fitur bisnis bisa dibatasi. <b>Pro</b>: watermark hilang, akses event, template manager, analytics, consent, dan fitur owner lebih lengkap.', 'Kalau butuh upgrade, hubungi admin Lux untuk aktivasi PRO.', '/admin'],
       ['Buka Admin', 'Dari beranda klik tombol <b>⚙️ Admin</b>. Di sidebar ada Profil Photobooth, Ganti Password, Template Manager, Business Analytics, Content Sharing, dan Tutorial.', 'Admin adalah pusat pengaturan owner.', '/admin'],
       ['Upload template', 'Masuk <b>Template Manager</b>, pilih jenis template Photostrip atau Photobox 4R, upload PNG/JPG template, lalu atur slot foto.', 'Gunakan tombol duplicate slot kalau bentuk slot sama.', '/admin#template-manager'],
-      ['Mulai foto', 'Kembali ke Beranda, pilih Photostrip atau Photobox 4R, pilih template, lalu masuk kamera.', 'Photostrip biasanya 5×15; Photobox 4R langsung 10×15.', '/'],
+      ['Mulai foto', 'Kembali ke Beranda, pilih Photostrip atau Photobox 4R, pilih template, lalu masuk kamera.', 'Photostrip biasanya 5×15; Photobox 4R langsung 10×15.', '/app'],
       ['Filter dan hasil', 'Setelah foto selesai, user bisa edit filter per foto, apply ke semua, lalu lihat hasil.', 'Tombol action di filter sudah sticky agar tidak hilang saat scroll.', '/filter'],
       ['Download / QR / Print', 'Di halaman hasil, user bisa download, scan QR, atau print. Untuk Photobox 4R, print cukup satu file; untuk Photostrip bisa cetak 1 atau 2 strip.', 'Kalau consent aktif, popup izin repost muncul sebelum download/QR.', '/result'],
       ['Galeri', 'Semua hasil final masuk Galeri. Galeri bisa difilter Photostrip dan Photobox 4R.', 'Photobox 4R tidak perlu pilih 2 strip saat print dari galeri.', '/gallery']
@@ -146,9 +148,9 @@ const tutorials = {
   },
   photo: {
     icon:'📸', title:'Tutorial Ambil Foto', desc:'Panduan buat user akhir dari pilih produk sampai download hasil.',
-    target:'/',
+    target:'/app',
     steps:[
-      ['Pilih produk', 'Di beranda pilih <b>Photostrip</b> atau <b>Photobox 4R</b>.', 'Photostrip bisa cetak 1/2 strip. Photobox langsung 4R.', '/'],
+      ['Pilih produk', 'Di beranda pilih <b>Photostrip</b> atau <b>Photobox 4R</b>.', 'Photostrip bisa cetak 1/2 strip. Photobox langsung 4R.', '/app'],
       ['Pilih template', 'Pilih template yang disukai. Kalau sedang Event, hanya template yang dipilih owner yang muncul.', 'Klik Mulai Foto setelah template dipilih.', '/template'],
       ['Izinkan kamera', 'Browser akan minta izin kamera. Klik Allow/Izinkan.', 'Kalau kamera tidak muncul, cek permission browser dan device.', '/camera'],
       ['Pose sesuai countdown', 'Ambil foto sesuai jumlah slot. Setiap foto akan otomatis masuk ke layout.', 'Gunakan tombol ulang kalau hasil kurang pas.', '/camera'],
@@ -195,14 +197,14 @@ const tutorials = {
       ['Cek watermark nama', 'Aktifkan atau matikan opsi tampilkan nama di hasil foto sesuai kebutuhan brand.', 'Akun Free tetap punya watermark properti Lux di hasil.', '/admin'],
       ['Pahami Free vs Pro', 'Free cocok untuk coba-coba. Pro cocok untuk dipakai jualan karena akses event, analytics, consent, template manager, dan hasil lebih profesional.', 'Upgrade lewat admin Lux/CMS.', '/admin'],
       ['Buat template pertama', 'Masuk Template Manager, upload minimal 1 template Photostrip atau Photobox.', 'Tanpa template, user akan bingung saat mulai foto.', '/admin#template-manager'],
-      ['Tes alur penuh', 'Ambil 1 sesi foto dari Beranda sampai Download dan Galeri.', 'Tes sebelum dipakai event beneran.', '/']
+      ['Tes alur penuh', 'Ambil 1 sesi foto dari Beranda sampai Download dan Galeri.', 'Tes sebelum dipakai event beneran.', '/app']
     ]
   },
   photostrip: {
     icon:'🎞️', title:'Tutorial Photostrip', desc:'Fokus alur photostrip 5×15, cetak 1 strip, cetak 2 strip, dan galeri.',
-    target:'/',
+    target:'/app',
     steps:[
-      ['Pilih Photostrip', 'Dari Beranda klik Photostrip.', 'Photostrip cocok untuk booth klasik 5×15.', '/'],
+      ['Pilih Photostrip', 'Dari Beranda klik Photostrip.', 'Photostrip cocok untuk booth klasik 5×15.', '/app'],
       ['Pilih template strip', 'Pilih template dengan jumlah foto sesuai kebutuhan, misalnya 3 foto, 4 foto, atau 6 foto.', 'Pastikan template bukan Photobox 4R.', '/template'],
       ['Ambil foto', 'Ikuti countdown sampai semua slot terisi.', 'Gunakan kamera eksternal kalau tersedia.', '/camera'],
       ['Filter per foto', 'Edit foto satu per satu atau apply ke semua.', 'Filter per foto bisa beda.', '/filter'],
@@ -212,9 +214,9 @@ const tutorials = {
   },
   photobox: {
     icon:'🖼️', title:'Tutorial Photobox 4R', desc:'Fokus alur Photobox ukuran 10×15 / 4R dan cara print tanpa pilih 2 strip.',
-    target:'/',
+    target:'/app',
     steps:[
-      ['Pilih Photobox 4R', 'Dari Beranda klik Photobox 4R.', 'Photobox langsung hasil 10×15, bukan strip 5×15.', '/'],
+      ['Pilih Photobox 4R', 'Dari Beranda klik Photobox 4R.', 'Photobox langsung hasil 10×15, bukan strip 5×15.', '/app'],
       ['Pilih template 4R', 'Pilih template kategori Photobox 4R atau product type Photobox.', 'Kalau template 4R masuk photostrip, cek product_type di Template Manager.', '/template'],
       ['Ambil foto', 'Ambil foto sesuai slot template.', 'Biasanya layout 4R punya posisi yang lebih bebas.', '/camera'],
       ['Lihat hasil', 'Hasil akhir sudah full 10×15.', 'Tidak perlu digandakan seperti cetak 2 strip.', '/result'],
@@ -358,7 +360,7 @@ function closeCoach(){ coachOverlay.style.display='none'; }
 function goTarget(){
   const t = tutorials[currentKey];
   const s = t.steps[currentIdx];
-  window.location.href = s[3] || t.target || '/';
+  window.location.href = s[3] || t.target || '/app';
 }
 coachOverlay.addEventListener('click', e => { if(e.target === coachOverlay) closeCoach(); });
 

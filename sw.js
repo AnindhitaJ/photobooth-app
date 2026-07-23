@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.21-login-root-about-page';
+const CACHE_NAME = 'lux-photobooth-v1.22-media-proxy-fix';
 
 const CORE_ASSETS = [
   '/', '/index.html', '/about.html', '/app.html', '/login.html', '/reset-password.html',
@@ -115,6 +115,13 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // API harus selalu langsung ke jaringan. Jangan cache atau gunakan fallback HTML,
+  // karena respons HTML/login akan membuat pemuatan gambar Canvas gagal.
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
     return;

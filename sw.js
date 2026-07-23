@@ -1,4 +1,5 @@
-const CACHE_NAME = 'lux-photobooth-v1.23-feature-permissions';
+const CACHE_NAME = 'lux-photobooth-v1.24-pwa-recovery';
+const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
   '/', '/index.html', '/about.html', '/app.html', '/login.html', '/reset-password.html',
@@ -47,17 +48,25 @@ const CLEAN_ROUTE_FALLBACKS = Object.freeze({
   '/magazine': '/magazine.html'
 });
 
-const NETWORK_FIRST_ASSETS = new Set([
-  '/auth.js', '/config.js', '/index.html', '/about.html', '/app.html', '/login.html', '/template.html'
-]);
+function fetchWithTimeout(request, timeoutMs = NAVIGATION_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(request, { cache: 'no-store', signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.allSettled(CORE_ASSETS.map(async asset => {
+
+    // Instalasi harus atomik. Jika aset inti gagal, service worker lama tetap aktif
+    // daripada mengaktifkan cache baru yang hanya terisi sebagian.
+    await Promise.all(CORE_ASSETS.map(async asset => {
       const response = await fetch(asset, { cache: 'reload' });
-      if (response.ok) await cache.put(asset, response);
+      if (!response.ok) throw new Error(`Precache gagal: ${asset} (${response.status})`);
+      await cache.put(asset, response);
     }));
+
     await self.skipWaiting();
   })());
 });
@@ -70,7 +79,7 @@ self.addEventListener('activate', event => {
   })());
 });
 
-async function routeAwareCacheFallback(request) {
+async function navigationFallback(request) {
   const cache = await caches.open(CACHE_NAME);
   const direct = await cache.match(request, { ignoreSearch: true });
   if (direct) return direct;
@@ -78,35 +87,53 @@ async function routeAwareCacheFallback(request) {
   const url = new URL(request.url);
   const mapped = CLEAN_ROUTE_FALLBACKS[url.pathname];
   if (mapped) {
-    const mappedResponse = await cache.match(mapped, { ignoreSearch: true });
+    const mappedResponse = await cache.match(mapped);
     if (mappedResponse) return mappedResponse;
   }
 
-  return cache.match('/login.html');
+  const login = await cache.match('/login.html');
+  return login || new Response('Aplikasi sedang offline dan halaman belum tersimpan.', {
+    status: 503,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  });
 }
 
-async function networkFirst(request) {
+async function navigationNetworkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetchWithTimeout(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch (_) {
+    return navigationFallback(request);
+  }
+}
+
+async function assetNetworkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const response = await fetch(request, { cache: 'no-store' });
-    if (response.ok && request.method === 'GET') {
-      await cache.put(request, response.clone());
-    }
+    if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch (error) {
-    return routeAwareCacheFallback(request);
+    const cached = await cache.match(request, { ignoreSearch: false })
+      || await cache.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+
+    // Jangan pernah mengembalikan HTML login untuk request JavaScript/CSS/JSON.
+    // Browser harus menerima kegagalan jaringan yang benar agar error dapat didiagnosis.
+    throw error;
   }
 }
 
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request, { ignoreSearch: true });
+  const cached = await cache.match(request, { ignoreSearch: false })
+    || await cache.match(request, { ignoreSearch: true });
   if (cached) return cached;
 
   const response = await fetch(request);
-  if (response.ok && request.method === 'GET' && new URL(request.url).origin === self.location.origin) {
-    await cache.put(request, response.clone());
-  }
+  if (response.ok) await cache.put(request, response.clone());
   return response;
 }
 
@@ -115,24 +142,25 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
-  // API harus selalu langsung ke jaringan. Jangan cache atau gunakan fallback HTML,
-  // karena respons HTML/login akan membuat pemuatan gambar Canvas gagal.
-  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
-    return;
-  }
+  // API dan data dinamis tidak boleh diintersepsi/cache oleh service worker.
+  if (url.pathname.startsWith('/api/')) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request));
+    event.respondWith(navigationNetworkFirst(request));
     return;
   }
 
-  if (url.origin === self.location.origin && NETWORK_FIRST_ASSETS.has(url.pathname)) {
-    event.respondWith(networkFirst(request));
+  const destination = request.destination;
+  const dynamicAsset = ['script', 'style', 'document'].includes(destination)
+    || /\.(?:js|css|html|json)$/i.test(url.pathname)
+    || url.pathname === '/manifest.json';
+
+  if (dynamicAsset) {
+    event.respondWith(assetNetworkFirst(request));
     return;
   }
 
-  if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(request));
-  }
+  event.respondWith(cacheFirst(request));
 });

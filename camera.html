@@ -481,11 +481,11 @@
     };
 
     window.LUX_PAGE_AUTH_USER_ID = lockedUserId;
-    window.LUX_PAGE_AUTH_READY = validatePageSession(true);
+    window.LUX_PAGE_AUTH_READY = validatePageSession(false);
 
-    window.addEventListener('pageshow', () => validatePageSession(true));
+    window.addEventListener('pageshow', () => validatePageSession(false));
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') validatePageSession(true);
+      if (document.visibilityState === 'visible') validatePageSession(false);
     });
     window.addEventListener('storage', (event) => {
       if (!event.key || /^(sb_|lux_flow_owner_id|lux_auth)/.test(event.key)) {
@@ -639,8 +639,12 @@
   let recordedChunks = [];
   let captureMode    = null;
   let countdownSec   = 5;
+  let countdownTimer = null;
   let isSavingPhotos = false;
   let tempCleanupReady = Promise.resolve();
+  let cameraStartSequence = 0;
+  let cameraReady = false;
+  let cameraResumeNeeded = false;
 
   const PHOTO_STORE_DB = 'lux-photo-temp-db';
   const PHOTO_STORE_NAME = 'items';
@@ -1026,10 +1030,150 @@
     setTimeout(updateFrameGuide, 500);
   }
 
-  async function startCamera() {
+  function stopCameraStream({ clearVideo = true } = {}) {
+    const currentStream = stream;
+    stream = null;
+    cameraReady = false;
+
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => {
+        try { track.onended = null; } catch (_) {}
+        try { track.stop(); } catch (_) {}
+      });
+    }
+
+    if (clearVideo && video) {
+      try { video.pause(); } catch (_) {}
+      video.srcObject = null;
+    }
+  }
+
+  function getLiveVideoTrack(targetStream = stream) {
+    return targetStream?.getVideoTracks?.().find(track => track.readyState === 'live') || null;
+  }
+
+  function isCameraOperational() {
+    return !!(
+      cameraReady
+      && stream?.active
+      && getLiveVideoTrack()
+      && video?.srcObject === stream
+      && !video.paused
+      && video.videoWidth > 0
+      && video.videoHeight > 0
+    );
+  }
+
+  function waitForVideoReady(timeoutMs = 7000) {
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise((resolve, reject) => {
+      let finished = false;
+      const cleanup = () => {
+        clearTimeout(timer);
+        video.removeEventListener('loadedmetadata', onReady);
+        video.removeEventListener('canplay', onReady);
+        video.removeEventListener('error', onError);
+      };
+      const finish = (callback) => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        callback();
+      };
+      const onReady = () => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) finish(() => resolve(true));
+      };
+      const onError = () => finish(() => reject(new Error('Video kamera gagal diputar.')));
+      const timer = setTimeout(() => finish(() => reject(new Error('Kamera terlalu lama menyiapkan preview.'))), timeoutMs);
+      video.addEventListener('loadedmetadata', onReady);
+      video.addEventListener('canplay', onReady);
+      video.addEventListener('error', onError, { once: true });
+    });
+  }
+
+  function describeCameraError(error) {
+    const name = error?.name || '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return 'Izin kamera ditolak. Buka pengaturan aplikasi/browser lalu izinkan kamera.';
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return 'Kamera tidak ditemukan. Pastikan webcam terhubung dan terbaca perangkat.';
+    }
+    if (name === 'NotReadableError' || name === 'TrackStartError') {
+      return 'Kamera sedang dipakai aplikasi lain atau gagal dibuka. Tutup aplikasi kamera lain lalu coba lagi.';
+    }
+    if (name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError') {
+      return 'Kamera pilihan tidak mendukung pengaturan yang diminta. Coba kamera default.';
+    }
+    if (name === 'AbortError') {
+      return 'Pembukaan kamera terhenti. Ketuk Ambil untuk mencoba kembali.';
+    }
+    return 'Kamera tidak bisa diakses. Cek permission atau pilih kamera lain.';
+  }
+
+  async function requestCameraStream(videoConstraint) {
+    return navigator.mediaDevices.getUserMedia({
+      video: videoConstraint,
+      audio: false
+    });
+  }
+
+  async function attachCameraStream(candidateStream, sequence) {
+    if (sequence !== cameraStartSequence) {
+      candidateStream.getTracks().forEach(track => track.stop());
+      return false;
+    }
+
+    stream = candidateStream;
+    const track = getLiveVideoTrack(candidateStream);
+    if (!track) throw new Error('Track video kamera tidak aktif.');
+
+    track.onended = () => {
+      if (stream !== candidateStream) return;
+      cameraReady = false;
+      btnAmbil.disabled = true;
+      statusMsg.textContent = document.visibilityState === 'visible'
+        ? 'Kamera terputus. Ketuk Ambil untuk menyambungkan kembali.'
+        : 'Kamera dijeda saat aplikasi di-background.';
+      cameraResumeNeeded = true;
+    };
+
+    video.srcObject = candidateStream;
+    await video.play();
+    await waitForVideoReady();
+
+    if (sequence !== cameraStartSequence || stream !== candidateStream) {
+      candidateStream.getTracks().forEach(trackItem => trackItem.stop());
+      return false;
+    }
+
+    cameraReady = true;
+    cameraResumeNeeded = false;
+    btnAmbil.disabled = false;
+    statusMsg.textContent = '';
+    setTimeout(refreshCameraDevices, 250);
+    return true;
+  }
+
+  async function startCamera({ reason = 'manual' } = {}) {
+    const sequence = ++cameraStartSequence;
+    cameraReady = false;
+    btnAmbil.disabled = true;
+
     try {
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia not supported');
-      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Browser tidak mendukung akses kamera.');
+      }
+      if (document.visibilityState === 'hidden') {
+        cameraResumeNeeded = true;
+        statusMsg.textContent = 'Kamera dijeda saat aplikasi di-background.';
+        return false;
+      }
+
+      stopCameraStream();
 
       const videoConstraint = selectedCameraId
         ? {
@@ -1045,47 +1189,45 @@
             aspectRatio: { ideal: 4 / 3 }
           };
 
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraint,
-        audio: false
-      });
+      const candidate = await requestCameraStream(videoConstraint);
+      return await attachCameraStream(candidate, sequence);
+    } catch (error) {
+      console.warn('Kamera gagal:', reason, error);
+      if (sequence === cameraStartSequence && stream) stopCameraStream();
 
-      video.srcObject = stream;
-      await video.play().catch(() => {});
-      btnAmbil.disabled = false;
-      statusMsg.textContent = '';
-      setTimeout(refreshCameraDevices, 250);
-    } catch(e) {
-      console.warn('Kamera gagal:', e);
-
-      if (selectedCameraId) {
+      // Device ID dapat berubah setelah browser/PWA ditutup, permission di-reset,
+      // atau webcam dicabut-pasang. Coba kembali dengan kamera default.
+      if (selectedCameraId && sequence === cameraStartSequence) {
         selectedCameraId = '';
         localStorage.removeItem('selectedCameraId');
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: 'user' },
-              width: { ideal: 1920 },
-              height: { ideal: 1440 },
-              aspectRatio: { ideal: 4 / 3 }
-            },
-            audio: false
+          const fallback = await requestCameraStream({
+            facingMode: { ideal: 'user' },
+            width: { ideal: 1920 },
+            height: { ideal: 1440 },
+            aspectRatio: { ideal: 4 / 3 }
           });
-          video.srcObject = stream;
-          await video.play().catch(() => {});
-          btnAmbil.disabled = false;
-          statusMsg.textContent = 'Kamera pilihan tidak tersedia, pakai kamera default.';
-          setTimeout(refreshCameraDevices, 250);
-          return;
-        } catch(fallbackErr) {
-          console.warn('Fallback camera gagal:', fallbackErr);
+          const ok = await attachCameraStream(fallback, sequence);
+          if (ok) {
+            statusMsg.textContent = 'Kamera pilihan tidak tersedia, memakai kamera default.';
+            return true;
+          }
+        } catch (fallbackError) {
+          console.warn('Fallback camera gagal:', fallbackError);
+          error = fallbackError;
         }
       }
 
-      statusMsg.textContent = 'Kamera tidak bisa diakses. Cek permission / pilih kamera lain.';
-      btnAmbil.disabled = true;
+      if (sequence === cameraStartSequence) {
+        stopCameraStream();
+        cameraResumeNeeded = true;
+        statusMsg.textContent = describeCameraError(error);
+        btnAmbil.disabled = false; // tombol menjadi tindakan retry berbasis user gesture
+      }
+      return false;
     }
   }
+
 
   if (navigator.mediaDevices?.addEventListener) {
     navigator.mediaDevices.addEventListener('devicechange', refreshCameraDevices);
@@ -1172,15 +1314,21 @@
       : 'Klik Ambil saat sudah siap.';
 
     // Pastikan data sesi lama selesai dibersihkan sebelum sesi kamera baru dimulai.
-    tempCleanupReady.finally(() => startCamera().then(() => {
-      setTimeout(updateFrameGuide, 600);
-      btnAmbil.disabled = false;
-    }));
+    tempCleanupReady.finally(async () => {
+      const ok = await startCamera({ reason: 'mode_selected' });
+      if (ok) setTimeout(updateFrameGuide, 600);
+    });
   }
 
   // ── Countdown & Capture ──
-  function mulaiCountdown() {
+  async function mulaiCountdown() {
     if (isCountingDown) return;
+
+    if (!isCameraOperational()) {
+      statusMsg.textContent = 'Mengaktifkan kamera...';
+      const ok = await startCamera({ reason: 'capture_retry' });
+      if (!ok) return;
+    }
     isCountingDown = true;
     btnAmbil.disabled = true;
     currentSlot = photos.findIndex(p => p === null);
@@ -1192,13 +1340,15 @@
     countdownEl.textContent = angka;
     countdownEl.classList.add('show');
 
-    const iv = setInterval(() => {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
       angka--;
       if (angka === 2 && !liveStarted) { liveStarted = true; startLiveRecording(currentSlot); }
       if (angka > 0) {
         countdownEl.textContent = angka;
       } else {
-        clearInterval(iv);
+        clearInterval(countdownTimer);
+        countdownTimer = null;
         countdownEl.classList.remove('show');
         ambilFoto();
       }
@@ -1266,7 +1416,7 @@
       }
     } else {
       statusMsg.textContent = 'Semua foto selesai! ✓';
-      if (stream) stream.getTracks().forEach(t => t.stop());
+      stopCameraStream();
       setTimeout(() => showPreview(), 700);
     }
   }
@@ -1523,12 +1673,12 @@
     if (sudahAda) {
       document.getElementById('confirmQuitModal').style.display = 'flex';
     } else {
-      if (stream) stream.getTracks().forEach(t => t.stop());
+      stopCameraStream();
       window.location.href = isGanciMode ? '/ganci' : '/template';
     }
   }
   async function konfirmasiKeluar() {
-    if (stream) stream.getTracks().forEach(t => t.stop());
+    stopCameraStream();
     await idbClearAll();
     ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => localStorage.removeItem(k));
     try { sessionStorage.removeItem('luxPhotoSessionId'); } catch (_) {}
@@ -1550,6 +1700,51 @@
   // ── Pan/Zoom wiring ──
 
 
+  function cancelCountdownForSuspend() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    if (isCountingDown) {
+      isCountingDown = false;
+      countdownEl.classList.remove('show');
+      stopLiveRecording();
+    }
+  }
+
+  function suspendCameraForBackground() {
+    const stillNeedsCamera = !!captureMode && photos.some(photo => !photo);
+    cameraResumeNeeded = stillNeedsCamera;
+    cancelCountdownForSuspend();
+    stopCameraStream();
+    if (stillNeedsCamera) {
+      statusMsg.textContent = 'Kamera dijeda saat aplikasi di-background. Buka kembali lalu ketuk Ambil.';
+      btnAmbil.disabled = false;
+    }
+  }
+
+  async function recoverCameraAfterResume() {
+    if (document.visibilityState !== 'visible') return;
+    if (!captureMode || !photos.some(photo => !photo)) return;
+    if (isCameraOperational()) return;
+
+    // Auto-recovery dicoba lebih dulu. Bila browser mensyaratkan user gesture,
+    // tombol Ambil tetap dapat dipakai sebagai retry langsung.
+    const ok = await startCamera({ reason: 'pwa_resume' });
+    if (!ok) {
+      statusMsg.textContent = 'Kamera perlu diaktifkan ulang. Ketuk Ambil untuk mencoba kembali.';
+      btnAmbil.disabled = false;
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') suspendCameraForBackground();
+    else setTimeout(recoverCameraAfterResume, 150);
+  });
+  window.addEventListener('pagehide', suspendCameraForBackground);
+  window.addEventListener('pageshow', () => setTimeout(recoverCameraAfterResume, 150));
+  window.addEventListener('online', () => setTimeout(recoverCameraAfterResume, 150));
+
   async function prepareNewPhotoSession() {
     await idbClearAll();
     ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => {
@@ -1560,7 +1755,10 @@
 
   // Init hanya dijalankan setelah session Supabase benar-benar valid.
   async function initCameraPage() {
-    await window.LUX_REQUIRE_AUTH('camera_login_required');
+    const authOk = await window.LUX_PAGE_AUTH_READY;
+    if (!authOk || !window.Auth?.requireAuth?.()) {
+      throw new Error('Session kamera tidak valid.');
+    }
 
     tempCleanupReady = prepareNewPhotoSession().catch(e => {
       console.warn('[LUX] cleanup sesi lama gagal:', e);
@@ -1575,7 +1773,10 @@
       document.getElementById('modeModal').style.display = 'none';
       captureMode = 'manual';
       countdownSec = 3;
-      tempCleanupReady.finally(() => startCamera().then(() => setTimeout(updateFrameGuide, 600)));
+      tempCleanupReady.finally(async () => {
+        const ok = await startCamera({ reason: 'ganci_init' });
+        if (ok) setTimeout(updateFrameGuide, 600);
+      });
     }
   }
 

@@ -64,7 +64,30 @@ const AUTH_PUBLIC_PATHS = new Set([
 ]);
 
 const nativeFetch = window.fetch.bind(window);
+const AUTH_FETCH_TIMEOUT_MS = 10000;
 let authRedirecting = false;
+
+async function fetchWithTimeout(input, init = {}, timeoutMs = AUTH_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const externalSignal = init.signal;
+  let onExternalAbort = null;
+
+  if (externalSignal) {
+    onExternalAbort = () => controller.abort(externalSignal.reason);
+    if (externalSignal.aborted) onExternalAbort();
+    else externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+  }
+
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await nativeFetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+    if (externalSignal && onExternalAbort) {
+      externalSignal.removeEventListener('abort', onExternalAbort);
+    }
+  }
+}
 
 if (!SUPABASE_URL || !SUPABASE_ANON) {
   console.error('Konfigurasi Supabase belum lengkap. Periksa /config.js.');
@@ -117,6 +140,7 @@ const Auth = {
   _readyState: 'pending',
   _verifiedUser: null,
   _refreshPromise: null,
+  _validationPromise: null,
   ready: null,
 
   getStoredSession() {
@@ -381,11 +405,11 @@ const Auth = {
     if (!current?.refresh_token) throw new Error('Refresh token tidak tersedia.');
 
     this._refreshPromise = (async () => {
-      const res = await nativeFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      const res = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
         method: 'POST',
         headers: { apikey: SUPABASE_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: current.refresh_token })
-      });
+      }, 12000);
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.access_token || !data?.user?.id) {
         throw new Error(data?.error_description || data?.msg || 'Gagal memperbarui session.');
@@ -399,7 +423,7 @@ const Auth = {
 
   async verifyWithSupabase(session = this.getSession()) {
     if (!session?.access_token) throw new Error('Session tidak tersedia.');
-    const res = await nativeFetch(`${SUPABASE_URL}/auth/v1/user`, {
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/user`, {
       headers: {
         apikey: SUPABASE_ANON,
         Authorization: `Bearer ${session.access_token}`
@@ -416,43 +440,52 @@ const Auth = {
 
   async ensureValidSession({ forceServerCheck = true } = {}) {
     if (isPublicAuthPage()) return true;
+    if (this._validationPromise) return this._validationPromise;
 
-    let session = this.getSession();
-    let identity = this.validateIdentity(session);
-    if (!identity.ok) return this.securityLogout(identity.reason);
+    this._validationPromise = (async () => {
+      let session = this.getSession();
+      let identity = this.validateIdentity(session);
+      if (!identity.ok) return this.securityLogout(identity.reason);
+
+      try {
+        if (this.isExpired(session, 120)) {
+          session = await this.refreshSession();
+          identity = this.validateIdentity(session);
+          if (!identity.ok) return this.securityLogout(identity.reason);
+        }
+
+        if (forceServerCheck) {
+          const user = await this.verifyWithSupabase(session);
+          if (user.id !== identity.userId) {
+            return this.securityLogout('server_identity_mismatch');
+          }
+          this._verifiedUser = user;
+          localStorage.setItem(AUTH_KEYS.userId, user.id);
+          localStorage.setItem(AUTH_KEYS.email, user.email || localStorage.getItem(AUTH_KEYS.email) || '');
+        }
+
+        this._readyState = 'ready';
+        return true;
+      } catch (err) {
+        if (err?.status === 401 || err?.status === 403 || this.isExpired(session)) {
+          return this.securityLogout('session_rejected');
+        }
+        // Timeout atau gangguan jaringan tidak boleh membuat layar PWA tersembunyi
+        // selamanya. Session lokal diterima selama identitas konsisten dan token aktif.
+        const localCheck = this.validateIdentity(session, { setLocks: false });
+        if (!localCheck.ok || this.isExpired(session)) {
+          return this.securityLogout('session_unverifiable');
+        }
+        console.warn('Verifikasi server tertunda karena jaringan:', err?.message || err);
+        this._readyState = 'offline-valid';
+        return true;
+      }
+    })();
 
     try {
-      if (this.isExpired(session, 120)) {
-        session = await this.refreshSession();
-        identity = this.validateIdentity(session);
-        if (!identity.ok) return this.securityLogout(identity.reason);
-      }
-
-      if (forceServerCheck) {
-        const user = await this.verifyWithSupabase(session);
-        if (user.id !== identity.userId) {
-          return this.securityLogout('server_identity_mismatch');
-        }
-        this._verifiedUser = user;
-        localStorage.setItem(AUTH_KEYS.userId, user.id);
-        localStorage.setItem(AUTH_KEYS.email, user.email || localStorage.getItem(AUTH_KEYS.email) || '');
-      }
-
-      this._readyState = 'ready';
-      return true;
-    } catch (err) {
-      if (err?.status === 401 || err?.status === 403 || this.isExpired(session)) {
-        return this.securityLogout('session_rejected');
-      }
-      // Gangguan jaringan tidak boleh mencampur akun. Session lokal hanya diterima
-      // bila identitas konsisten dan token belum kedaluwarsa.
-      const localCheck = this.validateIdentity(session, { setLocks: false });
-      if (!localCheck.ok || this.isExpired(session)) {
-        return this.securityLogout('session_unverifiable');
-      }
-      console.warn('Verifikasi server tertunda karena jaringan:', err?.message || err);
-      this._readyState = 'offline-valid';
-      return true;
+      return await this._validationPromise;
+    } finally {
+      this._validationPromise = null;
     }
   },
 
@@ -470,9 +503,9 @@ const Auth = {
     const userId = this.getUserId();
     if (!session || !userId) return null;
     try {
-      const res = await nativeFetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`, {
+      const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`, {
         headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${session.access_token}` }
-      });
+      }, 8000);
       if (!res.ok) return null;
       const data = await res.json();
       if (data?.[0]) {
@@ -568,13 +601,7 @@ window.fetch = async function guardedFetch(input, init = {}) {
 Auth.ready = Auth.ensureValidSession({ forceServerCheck: true });
 window.LUX_AUTH_READY = Auth.ready;
 
-Auth.ready.then(async ok => {
-  if (!ok || isPublicAuthPage()) return;
-  await Auth.refreshProfile();
-  if (!Auth.guardCurrentFeatureAccess()) return;
-  if (document.readyState === 'loading') {
-    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
-  }
+function applyAuthenticatedUi() {
   Auth.applyPermissionVisibility(document);
   document.documentElement.classList.remove('lux-auth-pending');
 
@@ -597,6 +624,26 @@ Auth.ready.then(async ok => {
   if (document.title.includes('LUX')) {
     document.title = document.title.replace('LUX Photobooth', boothName);
   }
+}
+
+Auth.ready.then(async ok => {
+  if (!ok || isPublicAuthPage()) return;
+  if (!Auth.guardCurrentFeatureAccess()) return;
+  if (document.readyState === 'loading') {
+    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+  }
+
+  // Tampilkan UI memakai profil cache lebih dahulu. Refresh profil tidak lagi
+  // menahan seluruh layar ketika koneksi PWA sedang lambat atau baru bangun.
+  applyAuthenticatedUi();
+
+  Auth.refreshProfile().then(profile => {
+    if (!profile || authRedirecting) return;
+    if (!Auth.guardCurrentFeatureAccess()) return;
+    applyAuthenticatedUi();
+  }).catch(err => {
+    console.warn('Refresh profil tertunda:', err?.message || err);
+  });
 }).catch(err => {
   console.error('Auth initialization failed:', err);
   Auth.securityLogout('auth_initialization_failed');

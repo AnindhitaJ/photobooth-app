@@ -2,6 +2,8 @@
   let stream = null;
   let countdownTimer = null;
   let captureOptions = {};
+  let openingSequence = 0;
+  let suspendedByBackground = false;
 
   function ensureModal() {
     if (document.getElementById('localCameraModal')) return;
@@ -108,15 +110,23 @@
     if (label) label.textContent = `Foto otomatis dalam ${n} detik`;
   }
 
+  function isStreamReady() {
+    const video = document.getElementById('localCameraVideo');
+    const track = stream?.getVideoTracks?.().find(item => item.readyState === 'live');
+    return !!(track && video?.srcObject === stream && !video.paused && video.videoWidth > 0);
+  }
+
   async function open(options = {}) {
     ensureModal();
-    captureOptions = options || {};
+    captureOptions = options || captureOptions || {};
     const modal = document.getElementById('localCameraModal');
     const video = document.getElementById('localCameraVideo');
+    const sequence = ++openingSequence;
     modal.classList.add('show');
 
     try {
       stopStream();
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia tidak didukung.');
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: captureOptions.facingMode || 'user',
@@ -125,15 +135,38 @@
         },
         audio: false
       });
+      if (sequence !== openingSequence) {
+        stream.getTracks().forEach(track => track.stop());
+        return false;
+      }
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        track.onended = () => {
+          suspendedByBackground = true;
+          const label = document.getElementById('localCameraLabel');
+          if (label) label.textContent = 'Kamera berhenti. Tekan Ulang timer untuk mengaktifkan lagi.';
+        };
+      }
       video.srcObject = stream;
       await video.play();
+      if (!video.videoWidth) {
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Preview kamera timeout.')), 7000);
+          video.addEventListener('loadedmetadata', () => { clearTimeout(timer); resolve(); }, { once: true });
+        });
+      }
+      suspendedByBackground = false;
       startCountdown(captureOptions.seconds || 5);
+      return true;
     } catch (e) {
       console.error('Local camera error:', e);
-      alert('Kamera tidak bisa diakses. Coba cek permission browser atau pakai upload foto dulu ya.');
-      close();
+      stopStream();
+      const label = document.getElementById('localCameraLabel');
+      if (label) label.textContent = 'Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.';
+      return false;
     }
   }
+
 
   function startCountdown(seconds = 5) {
     if (countdownTimer) clearInterval(countdownTimer);
@@ -151,13 +184,21 @@
     }, 1000);
   }
 
-  function restart() {
+  async function restart() {
+    if (!isStreamReady()) {
+      await open(captureOptions);
+      return;
+    }
     startCountdown(captureOptions.seconds || 5);
   }
 
   function captureNow() {
     const video = document.getElementById('localCameraVideo');
-    if (!video || !video.videoWidth) return;
+    if (!video || !video.videoWidth || !isStreamReady()) {
+      const label = document.getElementById('localCameraLabel');
+      if (label) label.textContent = 'Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.';
+      return;
+    }
 
     if (countdownTimer) {
       clearInterval(countdownTimer);
@@ -185,12 +226,26 @@
   }
 
   function close() {
+    openingSequence += 1;
+    suspendedByBackground = false;
     stopStream();
     const modal = document.getElementById('localCameraModal');
     if (modal) modal.classList.remove('show');
     const video = document.getElementById('localCameraVideo');
     if (video) video.srcObject = null;
   }
+
+  document.addEventListener('visibilitychange', () => {
+    const modal = document.getElementById('localCameraModal');
+    if (!modal?.classList.contains('show')) return;
+    if (document.visibilityState === 'hidden') {
+      suspendedByBackground = true;
+      stopStream();
+    } else if (suspendedByBackground) {
+      const label = document.getElementById('localCameraLabel');
+      if (label) label.textContent = 'Kamera dijeda. Tekan Ulang timer untuk mengaktifkan lagi.';
+    }
+  });
 
   window.LocalCamera = { open, close, restart, captureNow };
 })();

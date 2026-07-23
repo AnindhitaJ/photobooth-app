@@ -93,6 +93,9 @@ export default async function handler(req, res) {
     const email = String(body.email || '').trim().toLowerCase();
     const whatsapp = String(body.whatsapp_number || '').replace(/[\s\-().]/g, '');
     const password = String(body.password || '');
+    // Permission akun baru selalu dimulai dari semua fitur. Nilai dari browser
+    // tidak dipercaya agar default tidak dapat diubah di luar CMS.
+    const permissions = ['all'];
 
     if (!boothName) return send(res, 400, { ok: false, error: 'Nama photobooth harus diisi.' });
     if (!/^\S+@\S+\.\S+$/.test(email)) return send(res, 400, { ok: false, error: 'Email tidak valid.' });
@@ -129,7 +132,8 @@ export default async function handler(req, res) {
         id: userId,
         booth_name: boothName,
         email,
-        whatsapp_number: whatsapp
+        whatsapp_number: whatsapp,
+        permissions
       })
     });
     const profile = await readJson(profileResponse);
@@ -145,7 +149,8 @@ export default async function handler(req, res) {
         id: userId,
         email,
         booth_name: boothName,
-        whatsapp_number: whatsapp
+        whatsapp_number: whatsapp,
+        permissions
       }
     });
   } catch (error) {

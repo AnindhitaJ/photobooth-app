@@ -1,6 +1,6 @@
 {
   "name": "lux-photobooth-template-text-editor",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "description": "Static LUX Photobooth PWA with draggable multi-text template elements.",

@@ -506,7 +506,7 @@
   <div style="display:flex;gap:8px;">
     <button class="btn-bar-cancel" onclick="clearSelection()">✕ Batal</button>
     <button class="btn-bar-del" id="btnBarDel" onclick="openDeleteModal()" style="display:none">🗑️ Hapus</button>
-    <button class="btn-bar-print" id="btnBarPrint" onclick="openPrintModal()" style="display:none;padding:11px 22px;border-radius:50px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--yellow),#c9972a);color:white;font-size:14px;font-weight:800;box-shadow:0 4px 16px rgba(229,184,66,0.4);transition:all 0.2s;">🖨️ Print Sekaligus</button>
+    <button class="btn-bar-print" id="btnBarPrint" onclick="openPrintModal()" style="display:none;padding:11px 22px;border-radius:50px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--yellow),#c9972a);color:white;font-size:14px;font-weight:800;box-shadow:0 4px 16px rgba(229,184,66,0.4);transition:all 0.2s;">✨ Generate / Print</button>
   </div>
 </div>
 
@@ -554,13 +554,14 @@
 
 <!-- PRINT MODAL -->
 <div class="modal-wrap" id="printModal" style="position:fixed;inset:0;z-index:9000;display:none;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px;">
-  <div style="background:white;border-radius:24px;padding:28px;max-width:480px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);animation:popIn 0.25s ease;">
+  <div style="background:white;border-radius:24px;padding:28px;max-width:560px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.3);animation:popIn 0.25s ease;">
     <div style="font-size:19px;font-weight:900;margin-bottom:6px;color:var(--text);" id="printModalTitle">🖨️ Print Sekaligus</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:20px;" id="printModalSub">2 strip akan digabung dalam ukuran 10×15 cm siap cetak.</div>
     <div id="printPreview" style="display:flex;gap:12px;margin-bottom:20px;justify-content:center;"></div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="closePrintModal()" style="flex:1;padding:14px;border-radius:50px;border:2px solid var(--border);background:white;color:var(--text2);font-size:14px;font-weight:700;cursor:pointer;">Batal</button>
-      <button id="btnGenPrint" onclick="generatePrint()" style="flex:2;padding:14px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--yellow),#c9972a);color:white;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(229,184,66,0.4);display:flex;align-items:center;justify-content:center;gap:8px;">🖨️ Generate & Download</button>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;">
+      <button onclick="closePrintModal()" style="padding:14px 10px;border-radius:50px;border:2px solid var(--border);background:white;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">Batal</button>
+      <button id="btnGenSave" onclick="generatePrint('save')" style="padding:14px 10px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--orange),#c83b6f);color:white;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(216,75,126,0.32);display:flex;align-items:center;justify-content:center;gap:7px;">💾 Generate & Save</button>
+      <button id="btnGenPrint" onclick="generatePrint('print')" style="padding:14px 10px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--yellow),#c9972a);color:white;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(229,184,66,0.4);display:flex;align-items:center;justify-content:center;gap:7px;">🖨️ Generate & Print</button>
     </div>
     <div id="printProgress" style="display:none;margin-top:14px;text-align:center;font-size:13px;color:var(--text2);font-weight:600;">
       <span id="printProgressText">Membuat file...</span>
@@ -1059,7 +1060,7 @@
       const first = selected.length ? allSessions.find(s => s.ts === selected[0]) : null;
       label.textContent = first && normalizeProductType(first) === 'photobox'
         ? '/ 1 photobox dipilih'
-        : '/ 2 strip dipilih';
+        : `/ ${selected.length} dari maksimal 2 strip dipilih`;
     }
     bar.classList.toggle('visible', selected.length > 0 && mode !== 'view');
   }
@@ -1283,79 +1284,278 @@
       document.getElementById('printPreview').innerHTML =
         `<img src="${sessions[0].strip.url}" alt="photobox" style="width:52%;max-height:360px;border-radius:12px;border:2px solid var(--border);object-fit:contain;">`;
     } else {
-      if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
-      document.getElementById('printModalTitle').textContent = '🖨️ Print 2 Strip';
-      document.getElementById('printModalSub').textContent = '2 strip akan digabung dalam ukuran 10×15 cm siap cetak.';
+      if (selected.length < 1 || selected.length > 2) { showToast('❌ Pilih 1 atau 2 strip untuk digenerate'); return; }
+      const isSingleStrip = selected.length === 1;
+      document.getElementById('printModalTitle').textContent = isSingleStrip ? '✨ Generate 1 Strip' : '✨ Generate 2 Strip';
+      document.getElementById('printModalSub').textContent = isSingleStrip
+        ? '1 strip akan ditempatkan di sisi kiri kertas 10×15 cm, dengan sisi kanan tetap kosong.'
+        : '2 strip akan digabung berdampingan dalam ukuran 10×15 cm siap simpan atau cetak.';
       document.getElementById('printPreview').innerHTML = sessions.map(s =>
-        `<img src="${s.strip.url}" alt="strip" style="width:calc(50% - 6px);border-radius:12px;border:2px solid var(--border);object-fit:cover;aspect-ratio:9/16;">`
+        `<img src="${s.strip.url}" alt="strip" style="width:${isSingleStrip ? '46%' : 'calc(50% - 6px)'};max-height:360px;border-radius:12px;border:2px solid var(--border);object-fit:contain;">`
       ).join('');
     }
 
     document.getElementById('printModal').style.display = 'flex';
     document.getElementById('printProgress').style.display = 'none';
-    document.getElementById('btnGenPrint').disabled = false;
+    setPrintActionButtonsDisabled(false);
     document.getElementById('printProgBar').style.width = '0%';
+    document.getElementById('printProgressText').textContent = 'Membuat file...';
   }
 
   function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
 
-  async function generatePrint() {
-    if (!selected.length) return;
-    const btn  = document.getElementById('btnGenPrint');
-    const prog = document.getElementById('printProgress');
-    const bar  = document.getElementById('printProgBar');
-    const txt  = document.getElementById('printProgressText');
-    btn.disabled = true; prog.style.display = 'block';
-    try {
-      const sessions = selected.map(ts => allSessions.find(s => s.ts === ts)).filter(Boolean);
-      const firstProduct = normalizeProductType(sessions[0]);
+  function setPrintActionButtonsDisabled(disabled) {
+    const saveBtn = document.getElementById('btnGenSave');
+    const printBtn = document.getElementById('btnGenPrint');
+    if (saveBtn) saveBtn.disabled = disabled;
+    if (printBtn) printBtn.disabled = disabled;
+  }
 
-      if (firstProduct === 'photobox') {
-        bar.style.width = '35%'; txt.textContent = 'Menyiapkan Photobox 4R...';
-        await triggerDownload(sessions[0].strip.url, `lux-photobox-4r-${Date.now()}.jpg`);
-        bar.style.width = '100%'; txt.textContent = 'Selesai ✓';
-        setTimeout(() => { closePrintModal(); showToast('✅ File Photobox 4R siap print!', 'success'); clearSelection(); }, 600);
-        return;
-      }
-
-      if (selected.length !== 2) { showToast('❌ Pilih tepat 2 strip untuk dicetak'); return; }
-
-      const PW = 1181, PH = 1772;
-      const canvas = document.createElement('canvas');
-      canvas.width = PW; canvas.height = PH;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,PW,PH);
-      const slotW = Math.floor(PW/2);
-      bar.style.width = '20%'; txt.textContent = 'Memuat strip 1...';
-      const img1 = await loadImage(sessions[0].strip.url);
-      bar.style.width = '50%'; txt.textContent = 'Memuat strip 2...';
-      const img2 = await loadImage(sessions[1].strip.url);
-      bar.style.width = '75%'; txt.textContent = 'Menyusun layout...';
-      drawCover(ctx, img1, 0, 0, slotW, PH);
-      drawCover(ctx, img2, slotW, 0, slotW, PH);
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(slotW,0); ctx.lineTo(slotW,PH); ctx.stroke();
-      bar.style.width = '90%'; txt.textContent = 'Membuat file...';
-      const printBlob = await new Promise((resolve, reject) => {
+  function canvasToBlob(canvas, type = 'image/jpeg', quality = 0.95) {
+    return new Promise((resolve, reject) => {
+      try {
         canvas.toBlob(blob => {
           if (blob) resolve(blob);
-          else reject(new Error('Browser gagal membuat file hasil gabungan'));
-        }, 'image/jpeg', 0.95);
-      });
-      bar.style.width = '100%'; txt.textContent = 'Selesai ✓';
-      const objectUrl = URL.createObjectURL(printBlob);
+          else reject(new Error('Browser gagal membuat file hasil generate'));
+        }, type, quality);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function saveGeneratedBlob(blob, filename) {
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
+  }
+
+  function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Gagal membaca hasil generate untuk print'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function escapePrintText(value) {
+    return String(value || '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[char]));
+  }
+
+  function reservePrintWindow() {
+    const popup = window.open('', '_blank', 'width=980,height=820');
+    if (!popup) return null;
+
+    popup.document.open();
+    popup.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Menyiapkan print...</title>
+      <style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f6fb;color:#1D3557;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center;padding:32px}.spinner{width:46px;height:46px;margin:0 auto 18px;border:5px solid #e5e7eb;border-top-color:#D84B7E;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}h1{font-size:20px;margin:0 0 8px}p{font-size:13px;color:#64748b;margin:0}</style>
+      </head><body><div class="box"><div class="spinner"></div><h1>Menyiapkan file 10 × 15 cm</h1><p>Jendela print akan terbuka otomatis setelah generate selesai.</p></div></body></html>`);
+    popup.document.close();
+    return popup;
+  }
+
+  function buildGalleryPrintHTML(imageDataURL, filename, title) {
+    const safeTitle = escapePrintText(title || 'Print Galeri LUX');
+    const safeFilename = escapePrintText(filename || 'lux-print-10x15.jpg');
+    const imageJSON = JSON.stringify(imageDataURL);
+    const filenameJSON = JSON.stringify(filename || 'lux-print-10x15.jpg');
+
+    return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${safeTitle}</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #eef2f7; color: #1D3557; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .toolbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; background: rgba(255,255,255,.96); border-bottom: 1px solid #e5e7eb; box-shadow: 0 8px 24px rgba(15,23,42,.08); }
+    .toolbar h1 { margin: 0 0 3px; font-size: 18px; font-weight: 900; }
+    .toolbar p { margin: 0; font-size: 12px; color: #64748b; }
+    .buttons { display: flex; gap: 8px; }
+    button { border: 0; border-radius: 999px; padding: 11px 17px; font-weight: 900; cursor: pointer; }
+    .print { color: #fff; background: linear-gradient(135deg,#D84B7E,#E5B842); }
+    .save { color: #1D3557; background: #eef2ff; }
+    .preview { display: grid; place-items: start center; padding: 24px; }
+    .sheet { width: 10cm; height: 15cm; background: #fff; box-shadow: 0 16px 46px rgba(15,23,42,.2); overflow: hidden; }
+    .sheet img { width: 10cm; height: 15cm; display: block; object-fit: contain; background: #fff; }
+    @page { size: 10cm 15cm; margin: 0; }
+    @media print {
+      html, body { width: 10cm; height: 15cm; background: #fff; }
+      .toolbar { display: none !important; }
+      .preview { padding: 0; display: block; }
+      .sheet { width: 10cm; height: 15cm; box-shadow: none; }
+    }
+    @media (max-width: 680px) { .toolbar { align-items: flex-start; flex-direction: column; } .buttons { width: 100%; } button { flex: 1; } .preview { overflow: auto; justify-content: start; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div><h1>${safeTitle}</h1><p>Ukuran dokumen 10 × 15 cm. Pada dialog printer gunakan margin none, scale 100%, dan matikan header/footer.</p></div>
+    <div class="buttons"><button class="save" type="button" onclick="saveImage()">💾 Save</button><button class="print" type="button" onclick="window.print()">🖨️ Print</button></div>
+  </div>
+  <div class="preview"><div class="sheet"><img id="printImage" alt="${safeFilename}"></div></div>
+  <script>
+    const imageDataURL = ${imageJSON};
+    const filename = ${filenameJSON};
+    const image = document.getElementById('printImage');
+    image.src = imageDataURL;
+    function saveImage() {
       const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = `lux-print-10x15-${Date.now()}.jpg`;
+      a.href = imageDataURL;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
-      setTimeout(() => { closePrintModal(); showToast('✅ File print berhasil!', 'success'); clearSelection(); }, 800);
-    } catch(e) {
-      txt.textContent = '⚠️ Gagal: ' + e.message;
-      btn.disabled = false;
     }
+    image.onload = () => setTimeout(() => window.print(), 350);
+  <\/script>
+</body>
+</html>`;
+  }
+
+  async function openGeneratedPrint(blob, filename, title, reservedPopup = null) {
+    if (!blob) throw new Error('File hasil generate kosong');
+    const imageDataURL = await blobToDataURL(blob);
+    const popup = reservedPopup && !reservedPopup.closed
+      ? reservedPopup
+      : window.open('', '_blank', 'width=980,height=820');
+
+    if (popup) {
+      popup.document.open();
+      popup.document.write(buildGalleryPrintHTML(imageDataURL, filename, title));
+      popup.document.close();
+      popup.focus();
+      return 'popup';
+    }
+
+    const oldFrame = document.getElementById('galleryPrintFrame');
+    if (oldFrame) oldFrame.remove();
+    const iframe = document.createElement('iframe');
+    iframe.id = 'galleryPrintFrame';
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;border:0;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><style>@page{size:10cm 15cm;margin:0}*{margin:0;padding:0;box-sizing:border-box}body,img{width:10cm;height:15cm}img{display:block;object-fit:contain}</style></head><body><img src="${imageDataURL}" onload="setTimeout(function(){window.print()},250)"></body></html>`);
+    doc.close();
+    return 'iframe';
+  }
+
+  async function buildSelectedPrintAsset(progress = {}) {
+    const sessions = selected.map(ts => allSessions.find(s => s.ts === ts)).filter(Boolean);
+    if (!sessions.length) throw new Error('Sesi yang dipilih tidak ditemukan');
+
+    const firstProduct = normalizeProductType(sessions[0]);
+    const PW = 1181;
+    const PH = 1772;
+    const canvas = document.createElement('canvas');
+    canvas.width = PW;
+    canvas.height = PH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Browser tidak mendukung Canvas 2D');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, PW, PH);
+
+    if (firstProduct === 'photobox') {
+      if (sessions.length !== 1) throw new Error('Photobox 4R harus dipilih satu file');
+      progress.update?.(30, 'Memuat Photobox 4R...');
+      const image = await loadImage(sessions[0].strip.url);
+      progress.update?.(72, 'Menyesuaikan ukuran 10 × 15 cm...');
+      drawContain(ctx, image, 0, 0, PW, PH);
+      progress.update?.(90, 'Membuat file JPG...');
+      return {
+        blob: await canvasToBlob(canvas, 'image/jpeg', 0.96),
+        filename: `lux-photobox-4r-${Date.now()}.jpg`,
+        title: 'Print Photobox 4R'
+      };
+    }
+
+    if (sessions.length < 1 || sessions.length > 2) throw new Error('Pilih 1 atau 2 Photostrip');
+    const slotW = Math.floor(PW / 2);
+    progress.update?.(25, 'Memuat strip 1...');
+    const image1 = await loadImage(sessions[0].strip.url);
+    drawCover(ctx, image1, 0, 0, slotW, PH);
+
+    if (sessions.length === 1) {
+      progress.update?.(76, 'Menyusun 1 strip pada kertas 10 × 15 cm...');
+      progress.update?.(90, 'Membuat file JPG...');
+      return {
+        blob: await canvasToBlob(canvas, 'image/jpeg', 0.96),
+        filename: `lux-1-strip-10x15-${Date.now()}.jpg`,
+        title: 'Print 1 Photostrip — 10 × 15 cm'
+      };
+    }
+
+    progress.update?.(48, 'Memuat strip 2...');
+    const image2 = await loadImage(sessions[1].strip.url);
+    progress.update?.(72, 'Menggabungkan 2 strip...');
+    drawCover(ctx, image2, slotW, 0, PW - slotW, PH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(slotW, 0);
+    ctx.lineTo(slotW, PH);
+    ctx.stroke();
+    progress.update?.(90, 'Membuat file JPG...');
+    return {
+      blob: await canvasToBlob(canvas, 'image/jpeg', 0.96),
+      filename: `lux-2-strip-10x15-${Date.now()}.jpg`,
+      title: 'Print 2 Photostrip — 10 × 15 cm'
+    };
+  }
+
+  async function generatePrint(action = 'save') {
+    if (!selected.length) return;
+    const isPrint = action === 'print';
+    const reservedPopup = isPrint ? reservePrintWindow() : null;
+    const prog = document.getElementById('printProgress');
+    const bar = document.getElementById('printProgBar');
+    const txt = document.getElementById('printProgressText');
+    const updateProgress = (percent, message) => {
+      bar.style.width = `${percent}%`;
+      txt.textContent = message;
+    };
+
+    setPrintActionButtonsDisabled(true);
+    prog.style.display = 'block';
+    updateProgress(8, 'Memulai generate...');
+
+    try {
+      const asset = await buildSelectedPrintAsset({ update: updateProgress });
+      updateProgress(100, isPrint ? 'Membuka dialog print...' : 'Menyimpan file...');
+
+      if (isPrint) {
+        await openGeneratedPrint(asset.blob, asset.filename, asset.title, reservedPopup);
+        closePrintModal();
+        showToast('✅ Hasil generate siap diprint!', 'success');
+      } else {
+        saveGeneratedBlob(asset.blob, asset.filename);
+        closePrintModal();
+        showToast('✅ Hasil generate berhasil disimpan!', 'success');
+      }
+      clearSelection();
+    } catch (error) {
+      if (reservedPopup && !reservedPopup.closed) reservedPopup.close();
+      updateProgress(0, '⚠️ Gagal: ' + (error?.message || error));
+      setPrintActionButtonsDisabled(false);
+      console.error('Generate galeri gagal:', error);
+    }
+  }
+
+  function drawContain(ctx, img, x, y, w, h) {
+    const scale = Math.min(w / img.width, h / img.height);
+    const dw = img.width * scale;
+    const dh = img.height * scale;
+    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   }
 
   function drawCover(ctx, img, x, y, w, h) {

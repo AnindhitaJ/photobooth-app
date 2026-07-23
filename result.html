@@ -1088,7 +1088,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     // Hanya simpan file media, bukan manifest JSON.
     try {
       if ((blob.type || '').startsWith('image/') || (blob.type || '').startsWith('video/')) {
-        await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions`, {
+        const metadataResponse = await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions`, {
           method: 'POST',
           headers: {
             apikey: SUPABASE_ANON,
@@ -1099,9 +1099,19 @@ async function uploadToSupabase(blob, filename, options = {}) {
           body: JSON.stringify({
             user_id: userId,
             file_path: path,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            product_type: isPhotoboxMode ? 'photobox' : 'photostrip',
+            session_id: String(ts),
+            template_name: localStorage.getItem('templateName') || '',
+            template_category: localStorage.getItem('templateCategory') || '',
+            photo_count: Math.max(1, Number(filteredPhotos?.length) || 1)
           })
         });
+
+        if (!metadataResponse.ok) {
+          const metadataError = await metadataResponse.text().catch(() => '');
+          throw new Error(`Metadata photo_sessions gagal (${metadataResponse.status})${metadataError ? `: ${metadataError}` : ''}`);
+        }
       }
     } catch (dbErr) {
       console.warn('Gagal simpan photo_sessions:', dbErr);

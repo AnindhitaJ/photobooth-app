@@ -372,12 +372,12 @@
 <div class="home-shell">
     <div class="btn-group">
       <div class="product-grid">
-        <button class="product-card strip" onclick="mulaiPhotostrip()">
+        <button class="product-card strip" data-lux-permission="photostrip" onclick="mulaiPhotostrip()">
           <span class="product-icon">🎞️</span>
           <span class="product-title">Photostrip</span>
           <span class="product-desc">template strip 5×15, hasil bisa cetak 1 strip atau 2 strip</span>
         </button>
-        <button class="product-card box" onclick="mulaiPhotobox()">
+        <button class="product-card box" data-lux-permission="photobooth" onclick="mulaiPhotobox()">
           <span class="product-icon">🖼️</span>
           <span class="product-title">Photobox 4R</span>
           <span class="product-desc">layout 10×15 / 4R, hasil langsung cetak 4R</span>
@@ -385,7 +385,7 @@
       </div>
 
       <div class="feature-grid">
-        <button class="feature-card ganci" onclick="bukaGanci()">
+        <button class="feature-card ganci" data-lux-permission="ganci" onclick="bukaGanci()">
           <span class="feature-icon">🪝</span>
           <span>
             <span class="feature-title">Ganci Photo Insert</span>
@@ -393,7 +393,7 @@
           </span>
         </button>
 
-        <button class="feature-card kalender" onclick="bukaKalender()">
+        <button class="feature-card kalender" data-lux-permission="kalender" onclick="bukaKalender()">
           <span class="feature-icon">📅</span>
           <span>
             <span class="feature-title">Photobooth Kalender</span>
@@ -401,7 +401,7 @@
           </span>
         </button>
 
-        <button class="feature-card idcard" onclick="bukaIdCard()">
+        <button class="feature-card idcard" data-lux-permission="idcard" onclick="bukaIdCard()">
           <span class="feature-icon">🪪</span>
           <span>
             <span class="feature-title">ID Card</span>
@@ -409,7 +409,7 @@
           </span>
         </button>
 
-        <button class="feature-card magazine" onclick="bukaMagazine()">
+        <button class="feature-card magazine" data-lux-permission="magazine" onclick="bukaMagazine()">
           <span class="feature-icon">📰</span>
           <span>
             <span class="feature-title">Magazine Cover</span>
@@ -417,7 +417,7 @@
           </span>
         </button>
 
-        <button class="feature-card newspaper" onclick="bukaNewspaper()">
+        <button class="feature-card newspaper" data-lux-permission="newspaper" onclick="bukaNewspaper()">
           <span class="feature-icon">🗞️</span>
           <span>
             <span class="feature-title">Newspaper Cover</span>
@@ -425,14 +425,14 @@
           </span>
         </button>
 
-        <button class="feature-card trading" onclick="bukaTradingCard()">
+        <button class="feature-card trading" data-lux-permission="trading-card" onclick="bukaTradingCard()">
           <span class="feature-icon">🃏</span>
           <span>
             <span class="feature-title">Trading Card</span>
             <span class="feature-desc">collectible card dengan stats & rarity</span>
           </span>
         </button>
-<button class="feature-card certificate" onclick="bukaCertificate()">
+<button class="feature-card certificate" data-lux-permission="certificate" onclick="bukaCertificate()">
           <span class="feature-icon">📜</span>
           <span>
             <span class="feature-title">Certificate</span>
@@ -440,7 +440,7 @@
           </span>
         </button>
 
-        <button class="feature-card game" onclick="bukaGameCharacter()">
+        <button class="feature-card game" data-lux-permission="game-character" onclick="bukaGameCharacter()">
           <span class="feature-icon">🎮</span>
           <span>
             <span class="feature-title">Game Character</span>
@@ -448,7 +448,7 @@
           </span>
         </button>
 
-        <button class="feature-card detective" onclick="bukaDetectiveCase()">
+        <button class="feature-card detective" data-lux-permission="detective-case" onclick="bukaDetectiveCase()">
           <span class="feature-icon">🕵️</span>
           <span>
             <span class="feature-title">Detective Case File</span>
@@ -513,6 +513,22 @@
         </details>`;
       document.body.appendChild(topShortcut);
 
+      const routeParams = new URLSearchParams(window.location.search);
+      if (routeParams.get('reason') === 'permission_denied') {
+        showPermissionNotice(routeParams.get('feature'), true);
+        history.replaceState(null, '', '/app');
+      }
+
+      const visibleFeatureCards = [...document.querySelectorAll('[data-lux-permission]')]
+        .filter(card => !card.hidden);
+      if (!visibleFeatureCards.length && status !== 'inactive') {
+        const empty = document.createElement('div');
+        empty.className = 'permission-empty';
+        empty.style.cssText = 'background:#fff;border:2px dashed var(--border,#fad0e4);border-radius:16px;padding:18px;text-align:center;color:#64748b;font-size:13px;font-weight:700;';
+        empty.textContent = 'Belum ada fitur foto yang diaktifkan untuk akun ini. Menu Galeri, Admin, Tutorial, dan menu umum tetap tersedia.';
+        document.querySelector('.btn-group')?.appendChild(empty);
+      }
+
       // Block akses hanya kalau akun dinonaktifkan oleh admin.
       if (status === 'inactive' && !Auth.isSuperAdmin()) {
         document.querySelector('.btn-group').innerHTML = `
@@ -535,30 +551,54 @@
       ].forEach(k => localStorage.removeItem(k));
     }
 
+    function showPermissionNotice(permission, fromRedirect = false) {
+      const label = Auth.getPermissionLabel(permission);
+      document.getElementById('permissionNotice')?.remove();
+      const notice = document.createElement('div');
+      notice.id = 'permissionNotice';
+      notice.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9999;width:min(92vw,520px);background:#1D3557;color:#fff;border:2px solid #E5B842;border-radius:16px;padding:13px 16px;box-shadow:0 16px 45px rgba(29,53,87,.3);font-size:13px;font-weight:750;text-align:center;';
+      notice.textContent = `${label} belum diaktifkan untuk akun ini. Permission hanya dapat diubah melalui CMS.`;
+      document.body.appendChild(notice);
+      setTimeout(() => notice.remove(), fromRedirect ? 5500 : 4000);
+    }
+
+    function canOpenFeature(permission) {
+      if (Auth.hasPermission(permission)) return true;
+      showPermissionNotice(permission);
+      return false;
+    }
+
     function mulai() { mulaiPhotostrip(); }
     function mulaiPhotostrip() {
+      if (!canOpenFeature('photostrip')) return;
       clearEventState();
       localStorage.removeItem('captureFlow');
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
     }
     function mulaiPhotobox() {
+      if (!canOpenFeature('photobooth')) return;
       clearEventState();
       localStorage.setItem('captureFlow', 'photobox');
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
     }
-    function bukaGanci() { clearEventState(); window.location.href = '/ganci'; }
-    function bukaKalender() { clearEventState(); window.location.href = '/kalender'; }
+    function openDirectFeature(permission, url) {
+      if (!canOpenFeature(permission)) return;
+      clearEventState();
+      window.location.href = url;
+    }
+    function bukaGanci() { openDirectFeature('ganci', '/ganci'); }
+    function bukaKalender() { openDirectFeature('kalender', '/kalender'); }
     function bukaGaleri() { window.location.href = '/gallery'; }
-    function bukaIdCard() { clearEventState(); window.location.href = '/idcard'; }
-    function bukaMagazine() { clearEventState(); window.location.href = '/magazine'; }
-    function bukaNewspaper() { clearEventState(); window.location.href = '/newspaper'; }
-    function bukaTradingCard() { clearEventState(); window.location.href = '/trading-card'; }
+    function bukaIdCard() { openDirectFeature('idcard', '/idcard'); }
+    function bukaMagazine() { openDirectFeature('magazine', '/magazine'); }
+    function bukaNewspaper() { openDirectFeature('newspaper', '/newspaper'); }
+    function bukaTradingCard() { openDirectFeature('trading-card', '/trading-card'); }
     function bukaIconPortrait() { return; }
-    function bukaCertificate() { clearEventState(); window.location.href = '/certificate'; }
-    function bukaGameCharacter() { clearEventState(); window.location.href = '/game-character'; }
-    function bukaDetectiveCase() { clearEventState(); window.location.href = '/detective-case'; }
+    function bukaCertificate() { openDirectFeature('certificate', '/certificate'); }
+    function bukaGameCharacter() { openDirectFeature('game-character', '/game-character'); }
+    function bukaDetectiveCase() { openDirectFeature('detective-case', '/detective-case'); }
   </script>
   <script>
     if ("serviceWorker" in navigator) {

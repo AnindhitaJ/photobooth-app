@@ -11,6 +11,42 @@ const SUPABASE_URL  = LUX_CONFIG.SUPABASE_URL || '';
 const SUPABASE_ANON = LUX_CONFIG.SUPABASE_ANON_KEY || '';
 const LUX_SUPER_ADMIN_EMAIL = LUX_CONFIG.SUPER_ADMIN_EMAIL || 'luxphotobooth.id@gmail.com';
 
+
+const LUX_FEATURE_PERMISSIONS = Object.freeze({
+  all: 'Semua Fitur',
+  photostrip: 'Photostrip',
+  photobooth: 'Photobooth',
+  ganci: 'Ganci Photo Insert',
+  kalender: 'Photobooth Kalender',
+  idcard: 'ID Card',
+  magazine: 'Magazine Cover',
+  newspaper: 'Newspaper Cover',
+  'trading-card': 'Trading Card',
+  certificate: 'Certificate',
+  'game-character': 'Game Character',
+  'detective-case': 'Detective Case File'
+});
+
+const LUX_DIRECT_FEATURE_PATHS = Object.freeze({
+  '/ganci': 'ganci', '/ganci.html': 'ganci',
+  '/kalender': 'kalender', '/kalender.html': 'kalender',
+  '/idcard': 'idcard', '/idcard.html': 'idcard',
+  '/magazine': 'magazine', '/magazine.html': 'magazine',
+  '/newspaper': 'newspaper', '/newspaper.html': 'newspaper',
+  '/trading-card': 'trading-card', '/trading-card.html': 'trading-card',
+  '/certificate': 'certificate', '/certificate.html': 'certificate',
+  '/game-character': 'game-character', '/game-character.html': 'game-character',
+  '/detective-case': 'detective-case', '/detective-case.html': 'detective-case'
+});
+
+const LUX_CAPTURE_PATHS = new Set([
+  '/template', '/template.html',
+  '/camera', '/camera.html',
+  '/preview', '/preview.html',
+  '/filter', '/filter.html',
+  '/result', '/result.html'
+]);
+
 const AUTH_KEYS = Object.freeze({
   session: 'sb_session',
   userId: 'sb_user_id',
@@ -65,6 +101,7 @@ function addAuthGateStyle() {
   style.id = 'lux-auth-gate-style';
   style.textContent = `
     html.lux-auth-pending body { visibility: hidden !important; }
+    [data-lux-permission][hidden] { display: none !important; }
     #lux-auth-status {
       position: fixed; inset: 0; z-index: 2147483647; display: flex;
       align-items: center; justify-content: center; background: #0b1220;
@@ -132,6 +169,80 @@ const Auth = {
   showWatermark() {
     const p = this.getProfile();
     return p ? p.show_watermark !== false : true;
+  },
+
+
+  getPermissions() {
+    if (this.isSuperAdmin?.()) return ['all'];
+    const raw = this.getProfile()?.permissions;
+    let values = raw;
+    if (typeof values === 'string') {
+      try { values = JSON.parse(values); }
+      catch (_) { values = values.split(','); }
+    }
+    // Backward compatible: akun lama yang belum memiliki kolom permission
+    // tetap memperoleh seluruh fitur sampai migrasi database diterapkan.
+    if (!Array.isArray(values) || values.length === 0) return ['all'];
+    const allowed = new Set(Object.keys(LUX_FEATURE_PERMISSIONS));
+    const normalized = [...new Set(values.map(v => String(v || '').trim().toLowerCase()))]
+      .filter(v => allowed.has(v));
+    return normalized.length ? normalized : ['all'];
+  },
+
+  hasPermission(permission) {
+    const key = String(permission || '').trim().toLowerCase();
+    if (!key || this.isSuperAdmin?.()) return true;
+    const permissions = this.getPermissions();
+    return permissions.includes('all') || permissions.includes(key);
+  },
+
+  getPermissionLabel(permission) {
+    return LUX_FEATURE_PERMISSIONS[String(permission || '').toLowerCase()] || 'fitur ini';
+  },
+
+  getCurrentFeaturePermission() {
+    const path = currentPath();
+    if (LUX_DIRECT_FEATURE_PATHS[path]) return LUX_DIRECT_FEATURE_PATHS[path];
+    if (!LUX_CAPTURE_PATHS.has(path)) return null;
+
+    const params = new URLSearchParams(window.location.search || '');
+    const queryProduct = String(params.get('product') || '').toLowerCase();
+    const eventProduct = String(localStorage.getItem('activeEventProductType') || '').toLowerCase();
+    const captureFlow = String(localStorage.getItem('captureFlow') || '').toLowerCase();
+    const returnUrl = String(localStorage.getItem('captureReturnUrl') || '');
+
+    if (captureFlow === 'ganci') return 'ganci';
+    if (captureFlow === 'product') {
+      try {
+        const returnPath = new URL(returnUrl || '/app', window.location.origin).pathname.replace(/\/+$/, '') || '/';
+        return LUX_DIRECT_FEATURE_PATHS[returnPath] || 'photostrip';
+      } catch (_) {
+        return 'photostrip';
+      }
+    }
+    if (captureFlow === 'photobox' || queryProduct === 'photobox' || eventProduct === 'photobox') {
+      return 'photobooth';
+    }
+    return 'photostrip';
+  },
+
+  guardCurrentFeatureAccess() {
+    const permission = this.getCurrentFeaturePermission();
+    if (!permission || this.hasPermission(permission)) return true;
+    ['captureFlow', 'captureReturnUrl', 'activeEventProductType'].forEach(k => localStorage.removeItem(k));
+    const target = `/app?reason=permission_denied&feature=${encodeURIComponent(permission)}`;
+    window.location.replace(target);
+    return false;
+  },
+
+  applyPermissionVisibility(root = document) {
+    root.querySelectorAll?.('[data-lux-permission]').forEach(el => {
+      const allowed = this.hasPermission(el.getAttribute('data-lux-permission'));
+      el.hidden = !allowed;
+      el.setAttribute('aria-hidden', allowed ? 'false' : 'true');
+      if (!allowed) el.setAttribute('tabindex', '-1');
+      else el.removeAttribute('tabindex');
+    });
   },
 
   isExpired(session = this.getSession(), skewSeconds = 0) {
@@ -459,8 +570,13 @@ window.LUX_AUTH_READY = Auth.ready;
 
 Auth.ready.then(async ok => {
   if (!ok || isPublicAuthPage()) return;
-  document.documentElement.classList.remove('lux-auth-pending');
   await Auth.refreshProfile();
+  if (!Auth.guardCurrentFeatureAccess()) return;
+  if (document.readyState === 'loading') {
+    await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+  }
+  Auth.applyPermissionVisibility(document);
+  document.documentElement.classList.remove('lux-auth-pending');
 
   const logoUrl = Auth.getLogoUrl();
   const boothName = Auth.getBoothName();
@@ -557,7 +673,8 @@ Object.assign(Auth, {
   },
 
   isSuperAdmin() {
-    return localStorage.getItem('sb_user_email') === LUX_SUPER_ADMIN_EMAIL;
+    const email = this.getSession()?.user?.email || localStorage.getItem('sb_user_email') || '';
+    return String(email).trim().toLowerCase() === String(LUX_SUPER_ADMIN_EMAIL).trim().toLowerCase();
   },
 
   needsProWatermark() {

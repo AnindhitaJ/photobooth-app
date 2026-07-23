@@ -1,7 +1,7 @@
 window.LUX_CONFIG = Object.freeze({
   SUPABASE_URL: 'https://PROJECT_REF.supabase.co',
   SUPABASE_ANON_KEY: 'PUBLIC_ANON_KEY',
-  SUPER_ADMIN_EMAIL: 'admin@example.com',
+  SUPER_ADMIN_EMAIL: 'luxphotobooth.id@gmail.com',
   STORAGE_BUCKET: 'photobooth',
-  APP_VERSION: 'redeploy-ready-v1.2-template-text'
+  APP_VERSION: 'v1.23-feature-permissions'
 });

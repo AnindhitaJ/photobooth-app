@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.22-media-proxy-fix';
+const CACHE_NAME = 'lux-photobooth-v1.23-feature-permissions';
 
 const CORE_ASSETS = [
   '/', '/index.html', '/about.html', '/app.html', '/login.html', '/reset-password.html',

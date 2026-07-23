@@ -110,8 +110,28 @@
     .btn-free:hover { background:#0369a1; color:white; }
     .btn-password { background:#f3e8ff; color:#7e22ce; }
     .btn-password:hover { background:#7e22ce; color:white; }
+    .btn-permission { background:#fff7ed; color:#c2410c; }
+    .btn-permission:hover { background:#c2410c; color:white; }
 
     .btn-actions { display:flex; gap:6px; flex-wrap:wrap; }
+    .permission-badge {
+      display:inline-flex; align-items:center; gap:5px; max-width:180px;
+      padding:5px 9px; border-radius:10px; background:#fff7ed; color:#c2410c;
+      font-size:11px; font-weight:800; line-height:1.3;
+    }
+    .permission-list {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px;
+      max-height:46vh; overflow:auto; padding:2px 2px 8px; margin-bottom:18px;
+    }
+    .permission-option {
+      display:flex; align-items:center; gap:10px; min-height:46px; padding:10px 12px;
+      border:2px solid var(--border); border-radius:13px; cursor:pointer;
+      font-size:13px; font-weight:750; background:#fff;
+    }
+    .permission-option:hover { border-color:var(--orange); }
+    .permission-option.select-all { grid-column:1/-1; background:#f8fafc; border-color:#cbd5e1; }
+    .permission-option input { width:18px; height:18px; accent-color:var(--orange); flex:0 0 auto; }
+    .permission-help { font-size:12px; color:var(--text2); line-height:1.5; margin:-8px 0 14px; }
 
     /* ── PRO MODAL ── */
     .modal-wrap {
@@ -264,6 +284,49 @@
     @keyframes spin { to { transform:rotate(360deg); } }
 
     .empty { text-align:center; padding:40px; color:var(--text2); font-size:14px; }
+
+    @media (max-width: 760px) {
+      .cms-header { padding:13px 14px; align-items:flex-start; gap:10px; position:sticky; top:0; z-index:100; }
+      .cms-logo { min-width:0; flex-wrap:wrap; gap:7px; font-size:16px; }
+      .cms-logo svg { width:28px; height:28px; }
+      .btn-logout { padding:7px 12px; flex:0 0 auto; }
+      .cms-body { padding:14px 12px 28px; }
+      .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+      .stat-card { padding:14px; border-radius:14px; }
+      .stat-value { font-size:24px; }
+      .section-card { border-radius:14px; overflow:visible; }
+      .section-header { padding:14px; align-items:stretch; flex-direction:column; }
+      .section-tools { width:100%; display:grid; grid-template-columns:1fr; }
+      .search-input, .btn-create-account { width:100%; min-height:42px; }
+      table, tbody, tr, td { display:block; width:100%; }
+      thead { display:none; }
+      tbody { padding:10px; display:grid; gap:10px; }
+      tr { border:2px solid var(--border); border-radius:14px; padding:7px 10px; background:#fff; }
+      tr:hover td { background:transparent; }
+      td {
+        padding:9px 2px; border-bottom:1px solid var(--border);
+        display:grid; grid-template-columns:92px minmax(0,1fr); gap:10px; align-items:start;
+        overflow-wrap:anywhere;
+      }
+      td::before { content:attr(data-label); font-size:10px; font-weight:900; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; padding-top:2px; }
+      td:last-child { border-bottom:0; display:block; padding-top:11px; }
+      td:last-child::before { display:block; margin-bottom:8px; }
+      .btn-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+      .btn-sm { width:100%; min-height:36px; padding:7px 8px; white-space:normal; }
+      .permission-badge { max-width:none; }
+      .modal-wrap { align-items:flex-end; padding:0; }
+      .modal-box { max-width:none; border-radius:22px 22px 0 0; padding:22px 16px calc(18px + env(safe-area-inset-bottom)); max-height:92vh; overflow:auto; }
+      .permission-list { grid-template-columns:1fr; max-height:none; overflow:visible; }
+      .permission-option.select-all { grid-column:auto; }
+      .modal-actions { position:sticky; bottom:0; background:#fff; padding-top:10px; }
+      .toast { width:min(92vw,520px); white-space:normal; text-align:center; bottom:16px; }
+    }
+
+    @media (max-width: 390px) {
+      .stats-grid { grid-template-columns:1fr; }
+      .btn-actions { grid-template-columns:1fr; }
+      td { grid-template-columns:78px minmax(0,1fr); }
+    }
   </style>
 </head>
 <body>
@@ -343,6 +406,7 @@
 
     <label class="modal-field-label" for="createPassword">Password Awal</label>
     <input type="password" class="modal-input" id="createPassword" placeholder="Minimal 6 karakter" autocomplete="new-password" onkeydown="if(event.key==='Enter') confirmCreateAccount()">
+    <div class="permission-help">Akun baru otomatis memperoleh permission <b>Semua Fitur</b>. Permission dapat diubah setelah akun dibuat.</div>
 
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeCreateAccountModal()">Batal</button>
@@ -394,6 +458,36 @@
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closePasswordModal()">Batal</button>
       <button class="btn-modal-confirm" id="btnConfirmPassword" onclick="confirmChangePassword()">Simpan Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- PERMISSION MODAL -->
+<div class="modal-wrap" id="permissionModal">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-title">🔐 Atur Permission</div>
+    <div class="modal-sub">Pilih fitur yang dapat digunakan oleh <span class="modal-user" id="permissionUserEmail">—</span></div>
+    <div class="permission-help">Galeri, Admin, Tutorial, Tentang Aplikasi, Event, dan menu umum lainnya tetap muncul untuk semua akun.</div>
+    <div class="permission-list" id="permissionList">
+      <label class="permission-option select-all">
+        <input type="checkbox" id="permissionAll" onchange="toggleAllPermissions(this.checked)">
+        <span>✅ Select All / Semua Fitur</span>
+      </label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="photostrip" onchange="syncSelectAllPermission()"><span>🎞️ Photostrip</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="photobooth" onchange="syncSelectAllPermission()"><span>🖼️ Photobooth</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="ganci" onchange="syncSelectAllPermission()"><span>🪝 Ganci Photo Insert</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="kalender" onchange="syncSelectAllPermission()"><span>📅 Photobooth Kalender</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="idcard" onchange="syncSelectAllPermission()"><span>🪪 ID Card</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="magazine" onchange="syncSelectAllPermission()"><span>📰 Magazine Cover</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="newspaper" onchange="syncSelectAllPermission()"><span>🗞️ Newspaper Cover</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="trading-card" onchange="syncSelectAllPermission()"><span>🃏 Trading Card</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="certificate" onchange="syncSelectAllPermission()"><span>📜 Certificate</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="game-character" onchange="syncSelectAllPermission()"><span>🎮 Game Character</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="detective-case" onchange="syncSelectAllPermission()"><span>🕵️ Detective Case File</span></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closePermissionModal()">Batal</button>
+      <button class="btn-modal-confirm" id="btnConfirmPermission" onclick="confirmUpdatePermissions()">Simpan Permission</button>
     </div>
   </div>
 </div>
@@ -451,15 +545,35 @@
   let allUsers = [];
   let selectedUserId = null;
   let selectedPasswordUserId = null;
+  let selectedPermissionUserId = null;
   let currentProReceipt = null;
+
+  const FEATURE_PERMISSION_KEYS = Object.freeze([
+    'photostrip', 'photobooth', 'ganci', 'kalender', 'idcard', 'magazine',
+    'newspaper', 'trading-card', 'certificate', 'game-character', 'detective-case'
+  ]);
+
+  function normalizedSessionEmail() {
+    const sessionEmail = Auth.getSession()?.user?.email || localStorage.getItem('sb_user_email') || '';
+    return String(sessionEmail).trim().toLowerCase();
+  }
+
+  function ensureExpectedSuperAdmin() {
+    if (normalizedSessionEmail() !== String(SUPER_ADMIN_EMAIL).trim().toLowerCase()) {
+      throw new Error('Akses ditolak. Wajib login sebagai luxphotobooth.id@gmail.com.');
+    }
+    return true;
+  }
 
   // ── AUTH CHECK ───────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', async () => {
+    await Promise.resolve(Auth.ready).catch(() => false);
     const session = Auth.getSession();
     if (!session) { window.location.href = '/login'; return; }
-    const email = localStorage.getItem('sb_user_email');
-    if (email !== SUPER_ADMIN_EMAIL) {
-      alert('Akses ditolak. Halaman ini hanya untuk super admin.');
+    try {
+      ensureExpectedSuperAdmin();
+    } catch (error) {
+      alert(error.message);
       window.location.href = '/app';
       return;
     }
@@ -507,7 +621,8 @@
           booth_name: boothName,
           email,
           whatsapp_number: whatsapp,
-          password
+          password,
+          permissions: ['all']
         })
       });
 
@@ -597,30 +712,119 @@
         : `<button class="btn-sm btn-pro" onclick="openProModal('${u.id}','${safeEmail}')">⏳ Perpanjang PRO</button><button class="btn-sm btn-free" onclick="setFree('${u.id}')">🆓 Jadikan Free</button>`;
 
       const passBtn = `<button class="btn-sm btn-password" onclick="openPasswordModal('${u.id}','${(u.email||'').replace(/'/g, '&#39;')}')">🔑 Ganti Password</button>`;
+      const permissionBtn = `<button class="btn-sm btn-permission" onclick="openPermissionModal('${u.id}','${safeEmail}')">🔐 Permission</button>`;
+      const permissionInfo = formatPermissionSummary(u.permissions);
       const waBtn = u.whatsapp_number
         ? `<button class="btn-sm btn-free" onclick="copyWhatsapp('${String(u.whatsapp_number || '').replace(/'/g, '&#39;')}')">📱 Copy WA</button>`
         : '';
 
       return `<tr>
-        <td>
+        <td data-label="Akun">
           <div style="font-weight:700">${u.booth_name || '—'}</div>
           <div style="font-size:11px;color:var(--text2)">${u.email || '—'}</div>
           <div style="font-size:11px;color:var(--text2);margin-top:3px">📱 ${u.whatsapp_number || 'Belum ada nomor WA'}</div>
         </td>
-        <td>${badge}</td>
-        <td style="font-size:12px;color:var(--text2)">${endInfo}</td>
-        <td style="font-size:12px;color:var(--text2)">${new Date(u.created_at).toLocaleDateString('id-ID')}</td>
-        <td><div class="btn-actions">${proBtn}${activeBtn}${passBtn}${waBtn}</div></td>
+        <td data-label="Status">${badge}</td>
+        <td data-label="Berlaku" style="font-size:12px;color:var(--text2)">${endInfo}</td>
+        <td data-label="Permission"><span class="permission-badge">${permissionInfo}</span></td>
+        <td data-label="Daftar" style="font-size:12px;color:var(--text2)">${new Date(u.created_at).toLocaleDateString('id-ID')}</td>
+        <td data-label="Aksi"><div class="btn-actions">${permissionBtn}${proBtn}${activeBtn}${passBtn}${waBtn}</div></td>
       </tr>`;
     }).join('');
 
     document.getElementById('tableWrap').innerHTML = `
       <table>
         <thead><tr>
-          <th>Akun</th><th>Status</th><th>Berlaku</th><th>Daftar</th><th>Aksi</th>
+          <th>Akun</th><th>Status</th><th>Berlaku</th><th>Permission</th><th>Daftar</th><th>Aksi</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
+  }
+
+  function normalizePermissions(value) {
+    let permissions = value;
+    if (typeof permissions === 'string') {
+      try { permissions = JSON.parse(permissions); }
+      catch (_) { permissions = permissions.split(','); }
+    }
+    if (!Array.isArray(permissions) || !permissions.length) return ['all'];
+    const normalized = [...new Set(permissions.map(v => String(v || '').trim().toLowerCase()))]
+      .filter(v => v === 'all' || FEATURE_PERMISSION_KEYS.includes(v));
+    return normalized.length ? normalized : ['all'];
+  }
+
+  function formatPermissionSummary(value) {
+    const permissions = normalizePermissions(value);
+    if (permissions.includes('all')) return '✅ Semua fitur';
+    return `🔐 ${permissions.length} fitur aktif`;
+  }
+
+  function openPermissionModal(userId, email) {
+    try { ensureExpectedSuperAdmin(); }
+    catch (error) { return showToast(error.message, 'error'); }
+    selectedPermissionUserId = userId;
+    const user = allUsers.find(u => u.id === userId) || {};
+    const permissions = normalizePermissions(user.permissions);
+    const allSelected = permissions.includes('all');
+    document.getElementById('permissionUserEmail').textContent = email || user.email || userId;
+    document.querySelectorAll('.permission-item').forEach(input => {
+      input.checked = allSelected || permissions.includes(input.value);
+    });
+    document.getElementById('permissionAll').checked = allSelected || FEATURE_PERMISSION_KEYS.every(key => permissions.includes(key));
+    document.getElementById('permissionModal').classList.add('open');
+  }
+
+  function closePermissionModal() {
+    document.getElementById('permissionModal').classList.remove('open');
+    selectedPermissionUserId = null;
+  }
+
+  function toggleAllPermissions(checked) {
+    document.querySelectorAll('.permission-item').forEach(input => { input.checked = checked; });
+  }
+
+  function syncSelectAllPermission() {
+    const items = [...document.querySelectorAll('.permission-item')];
+    document.getElementById('permissionAll').checked = items.length > 0 && items.every(input => input.checked);
+  }
+
+  async function confirmUpdatePermissions() {
+    if (!selectedPermissionUserId) return;
+    try { ensureExpectedSuperAdmin(); }
+    catch (error) { return showToast(error.message, 'error'); }
+
+    const selected = [...document.querySelectorAll('.permission-item:checked')].map(input => input.value);
+    if (!selected.length) return showToast('Pilih minimal satu permission', 'error');
+    const permissions = selected.length === FEATURE_PERMISSION_KEYS.length ? ['all'] : selected;
+    const btn = document.getElementById('btnConfirmPermission');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    try {
+      const session = Auth.getSession();
+      if (!session?.access_token) throw new Error('Session admin habis. Login ulang.');
+      const response = await fetch('/api/admin-update-permissions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: selectedPermissionUserId, permissions })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
+
+      const idx = allUsers.findIndex(u => u.id === selectedPermissionUserId);
+      if (idx !== -1) allUsers[idx] = { ...allUsers[idx], permissions: data.permissions || permissions };
+      renderTable(allUsers);
+      closePermissionModal();
+      showToast('✅ Permission berhasil diperbarui', 'success');
+    } catch (error) {
+      showToast('❌ Gagal menyimpan permission: ' + error.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Simpan Permission';
+    }
   }
 
   function copyWhatsapp(number) {
@@ -643,6 +847,7 @@
 
 
   async function patchProfile(userId, updates) {
+    ensureExpectedSuperAdmin();
     const session = Auth.getSession();
     if (!session?.access_token) throw new Error('Session tidak ditemukan');
 

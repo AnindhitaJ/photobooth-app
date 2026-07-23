@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -13,6 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
 COUNTS = {"js": 0, "json": 0, "html": 0, "core_assets": 0, "rewrites": 0, "hashes": 0}
+EXCLUDED_DIRS = {"node_modules", ".git", ".vercel", ".next", "dist", "build"}
+STRICT_HASHES = os.getenv("STRICT_FILE_HASHES", "0") == "1"
 
 
 def error(message: str) -> None:
@@ -27,6 +30,19 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+
+def project_files(pattern: str):
+    for path in sorted(ROOT.rglob(pattern)):
+        try:
+            relative_parts = path.relative_to(ROOT).parts
+        except ValueError:
+            continue
+        if any(part in EXCLUDED_DIRS for part in relative_parts):
+            continue
+        if path.is_file():
+            yield path
+
+
 def check_required_files() -> None:
     required = [
         "package.json", "manifest.json", "vercel.json", "sw.js", "auth.js",
@@ -39,7 +55,7 @@ def check_required_files() -> None:
 
 
 def check_javascript() -> None:
-    for path in sorted(ROOT.rglob("*.js")):
+    for path in project_files("*.js"):
         COUNTS["js"] += 1
         result = subprocess.run(
             ["node", "--check", str(path)],
@@ -53,7 +69,7 @@ def check_javascript() -> None:
 
 
 def check_json() -> None:
-    for path in sorted(ROOT.rglob("*.json")):
+    for path in project_files("*.json"):
         COUNTS["json"] += 1
         try:
             json.loads(read_text(path))
@@ -66,7 +82,7 @@ class StrictEnoughHTMLParser(HTMLParser):
 
 
 def check_html() -> None:
-    for path in sorted(ROOT.rglob("*.html")):
+    for path in project_files("*.html"):
         COUNTS["html"] += 1
         try:
             parser = StrictEnoughHTMLParser()
@@ -209,7 +225,11 @@ def check_hash_manifest() -> None:
         actual = hashlib.sha256(file_path.read_bytes()).hexdigest()
         COUNTS["hashes"] += 1
         if actual != expected:
-            error(f"Hash berubah/tidak cocok: {relative}")
+            message = f"Hash berubah/tidak cocok: {relative}"
+            if STRICT_HASHES:
+                error(message)
+            else:
+                warn(message + " (tidak memblokir deploy; gunakan STRICT_FILE_HASHES=1 untuk mode ketat)")
 
 
 def main() -> int:

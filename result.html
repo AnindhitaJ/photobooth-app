@@ -1483,14 +1483,77 @@ async function uploadToSupabase(blob, filename, options = {}) {
     if (btnShare2) btnShare2.style.display = 'none';
   }
 
-  function loadImage(src) {
+  function loadImageOnce(src, useCors = false, timeoutMs = 20000) {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload  = () => resolve(img);
-      img.onerror = reject;
+      let settled = false;
+
+      const finish = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        img.onload = null;
+        img.onerror = null;
+        callback(value);
+      };
+
+      const timer = setTimeout(() => {
+        finish(reject, new Error(`Timeout memuat gambar: ${src}`));
+      }, timeoutMs);
+
+      if (useCors) img.crossOrigin = 'anonymous';
+
+      img.onload = () => finish(resolve, img);
+      img.onerror = () => finish(reject, new Error(`Gagal memuat gambar: ${src}`));
       img.src = src;
     });
+  }
+
+  async function loadImage(src) {
+    const normalizedSrc = String(src || '').trim();
+    if (!normalizedSrc) throw new Error('Sumber gambar kosong.');
+
+    let parsedUrl = null;
+    let isCrossOriginHttp = false;
+
+    try {
+      parsedUrl = new URL(normalizedSrc, window.location.href);
+      isCrossOriginHttp =
+        /^https?:$/i.test(parsedUrl.protocol) &&
+        parsedUrl.origin !== window.location.origin;
+    } catch (_) {
+      parsedUrl = null;
+    }
+
+    try {
+      // Percobaan pertama tetap memakai URL asli. Untuk URL lintas origin,
+      // anonymous CORS wajib agar canvas tidak menjadi tainted.
+      return await loadImageOnce(normalizedSrc, isCrossOriginHttp);
+    } catch (directError) {
+      // data:, blob:, dan URL lokal tidak dapat/tidak perlu melewati proxy.
+      if (!isCrossOriginHttp || !parsedUrl || parsedUrl.protocol !== 'https:') {
+        throw directError;
+      }
+
+      const proxySrc = `/api/media-proxy?src=${encodeURIComponent(parsedUrl.href)}`;
+      console.warn('Load media langsung gagal. Mencoba media proxy:', {
+        source: parsedUrl.href,
+        error: directError.message
+      });
+
+      try {
+        // Endpoint proxy berada pada origin aplikasi, sehingga aman untuk canvas
+        // dan tidak bergantung pada header CORS dari custom domain media.
+        return await loadImageOnce(proxySrc, false);
+      } catch (proxyError) {
+        throw new Error(
+          `Gambar gagal dimuat langsung maupun melalui media proxy. ` +
+          `Sumber: ${parsedUrl.href}. ` +
+          `Direct: ${directError.message}. ` +
+          `Proxy: ${proxyError.message}`
+        );
+      }
+    }
   }
 
   function dataURLtoBlob(dataURL) {

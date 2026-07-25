@@ -2928,11 +2928,11 @@ async function uploadToSupabase(blob, filename, options = {}) {
       return dataURLtoBlob(finalDataURL);
     }
 
-    // Share 1 strip = file strip 5×15 tanpa area kosong.
+    // Share 1 strip = layout 4R landscape (kiri strip, kanan putih).
     const STRIP_W = 590;
     const STRIP_H = 1772;
     const canvas  = document.createElement('canvas');
-    canvas.width  = STRIP_W;
+    canvas.width  = STRIP_W * 2;
     canvas.height = STRIP_H;
     const ctx = canvas.getContext('2d');
 
@@ -2944,7 +2944,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const sy = (img.height - sh) / 2;
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, STRIP_W, STRIP_H);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, STRIP_W, STRIP_H);
 
     return await canvasToBlobSafe(canvas, 'image/jpeg', 0.95);

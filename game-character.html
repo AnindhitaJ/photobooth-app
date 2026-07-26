@@ -63,6 +63,8 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <script src="/photo-storage.js"></script>
+  <script src="/product-photo-flow.js"></script>
   <script src="/product-photobooth.js"></script>
 </head>
 <body>
@@ -257,36 +259,69 @@
       buildForm(); render();
     }
 
-    function mulaiAmbilFoto() {
-      LocalCamera.open({
-        seconds: 5,
-        onCapture: (photo) => loadPhoto(photo)
+    const PHOTO_FEATURE = 'game-character';
+
+    async function mulaiAmbilFoto() {
+      try {
+        await LuxProductPhotoFlow.capture({
+          feature: PHOTO_FEATURE,
+          seconds: 5,
+          maxWidth: 1600,
+          maxHeight: 2000,
+          quality: 0.88,
+          onReady: src => loadPhoto(src),
+          onError: error => toast('Foto gagal: ' + (error?.message || 'coba lagi'))
+        });
+      } catch (error) {
+        console.error('[LUX] Kamera game character gagal:', error);
+        toast(error?.message || 'Kamera gagal dibuka');
+      }
+    }
+
+    async function checkAndLoadProductPhoto() {
+      try {
+        await LuxProductPhotoFlow.restoreOrMigrateLegacy({
+          feature: PHOTO_FEATURE,
+          onReady: src => loadPhoto(src, true)
+        });
+      } catch (error) {
+        console.warn('[LUX] Foto game character sebelumnya tidak dapat dipulihkan:', error);
+      }
+    }
+
+    function loadPhoto(src, silent = false) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          state.photo = src;
+          state.photoImg = img;
+          state.zoom = 1; state.rotate = 0; state.photoX = 0; state.photoY = 0;
+          render();
+          if (!silent) toast('Foto berhasil masuk ke layout ✓');
+          resolve(img);
+        };
+        img.onerror = () => reject(new Error('Foto gagal dimuat ke layout game character.'));
+        img.src = src;
       });
     }
-
-    function checkAndLoadProductPhoto() {
-      const photo = localStorage.getItem('productPhoto');
-      if (!photo) return;
-      localStorage.removeItem('productPhoto');
-      loadPhoto(photo);
-    }
-
-    function loadPhoto(src) {
-      const img = new Image();
-      img.onload = () => {
-        state.photo = src;
-        state.photoImg = img;
-        state.zoom = 1; state.rotate = 0; state.photoX = 0; state.photoY = 0;
-        render();
-      };
-      img.src = src;
-    }
-    function uploadPhoto(ev) {
+    async function uploadPhoto(ev) {
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => loadPhoto(e.target.result);
-      reader.readAsDataURL(file);
+      try {
+        await LuxProductPhotoFlow.upload({
+          feature: PHOTO_FEATURE,
+          file,
+          maxWidth: 1600,
+          maxHeight: 2000,
+          quality: 0.88,
+          onReady: src => loadPhoto(src)
+        });
+      } catch (error) {
+        console.error('[LUX] Upload game character gagal:', error);
+        toast(error?.message || 'Foto gagal dimuat');
+      } finally {
+        ev.target.value = '';
+      }
     }
     function adjustPhoto(action) {
       if (action === 'zoomIn') state.zoom = Math.min(2.4, state.zoom + .08);
@@ -325,12 +360,16 @@
       toast(mode === 'fit' ? 'Fit to 4R didownload ✓' : 'Original 4R didownload ✓');
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       buildThemes(); buildBeautify(); buildFilters(); buildForm(); render();
+      await checkAndLoadProductPhoto();
     });
   </script>
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    window.LuxPhotoStorage?.requestPersistence?.().catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(registration => registration.update()).catch(() => {});
+    }
   </script>
 <script src="/local-camera.js"></script>
 <script src="/beautify.js"></script>

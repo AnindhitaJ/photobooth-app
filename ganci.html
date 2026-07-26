@@ -244,6 +244,7 @@
   <script src="/auth.js"></script>
   <script src="/ganci-utils.js"></script>
   <script src="/ganci-print.js"></script>
+  <script src="/photo-storage.js"></script>
 </head>
 <body>
 
@@ -786,10 +787,123 @@
       };
     }
 
-    function loadPreviewPhotoFromState() {
-      let saved = null;
-      try { saved = JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) {}
-      const src = saved?.photo || saved?.originalPhoto || null;
+    let currentGanciState = null;
+    let currentGanciPhotoUrl = null;
+    let ganciStateLoadPromise = null;
+
+    function readGanciMetadata() {
+      try {
+        return JSON.parse(localStorage.getItem('ganciState') || 'null');
+      } catch (error) {
+        console.warn('[LUX] Metadata ganci rusak dan akan diabaikan:', error);
+        return null;
+      }
+    }
+
+    function clearStalePhotoStorage() {
+      [
+        'photos', 'filteredPhotos', 'livePhotos', 'finalPhoto', 'finalPhotoThumb',
+        'photosStore', 'filteredPhotosStore', 'livePhotosStore'
+      ].forEach(key => {
+        try { localStorage.removeItem(key); } catch (_) {}
+      });
+    }
+
+    function toGanciMetadata(saved) {
+      if (!saved) return null;
+      const metadata = { ...saved };
+      delete metadata.photo;
+      delete metadata.originalPhoto;
+      metadata.photoStore = 'indexedDB';
+      metadata.photoKey = window.LuxPhotoStorage?.GANCI_PHOTO_KEY || 'ganci:current-photo:v2';
+      metadata.updatedAt = new Date().toISOString();
+      return metadata;
+    }
+
+    function persistGanciMetadata(saved) {
+      const metadata = toGanciMetadata(saved);
+      if (!metadata) return;
+
+      // Hapus state lama yang mungkin masih berisi Base64 besar sebelum menulis metadata kecil.
+      try { localStorage.removeItem('ganciState'); } catch (_) {}
+      localStorage.setItem('ganciConfig', JSON.stringify(metadata.config || getGanciConfig()));
+      localStorage.setItem('ganciState', JSON.stringify(metadata));
+    }
+
+    function replaceCurrentPhotoUrl(blob) {
+      if (currentGanciPhotoUrl) {
+        try { URL.revokeObjectURL(currentGanciPhotoUrl); } catch (_) {}
+      }
+      currentGanciPhotoUrl = URL.createObjectURL(blob);
+      return currentGanciPhotoUrl;
+    }
+
+    async function migrateLegacyGanciPhoto(metadata) {
+      const legacyPhoto = metadata?.photo || metadata?.originalPhoto || null;
+      if (!legacyPhoto || !window.LuxPhotoStorage) return metadata;
+
+      try {
+        const blob = window.LuxPhotoStorage.dataUrlToBlob(legacyPhoto);
+        await window.LuxPhotoStorage.saveGanciPhoto(blob);
+        const migrated = { ...metadata };
+        delete migrated.photo;
+        delete migrated.originalPhoto;
+        migrated.photoStore = 'indexedDB';
+        migrated.photoKey = window.LuxPhotoStorage.GANCI_PHOTO_KEY;
+        persistGanciMetadata(migrated);
+        return migrated;
+      } catch (error) {
+        console.warn('[LUX] Migrasi foto ganci lama gagal:', error);
+        return metadata;
+      }
+    }
+
+    async function loadGanciState(force = false) {
+      if (!force && currentGanciState?.photo) return currentGanciState;
+      if (!force && ganciStateLoadPromise) return ganciStateLoadPromise;
+
+      ganciStateLoadPromise = (async () => {
+        let metadata = readGanciMetadata();
+        if (!metadata) {
+          currentGanciState = null;
+          return null;
+        }
+
+        metadata = await migrateLegacyGanciPhoto(metadata);
+
+        if (!window.LuxPhotoStorage) {
+          const legacySrc = metadata.photo || metadata.originalPhoto || null;
+          currentGanciState = legacySrc ? { ...metadata, photo: legacySrc } : null;
+          return currentGanciState;
+        }
+
+        const record = await window.LuxPhotoStorage.loadGanciPhoto();
+        if (!record?.blob) {
+          currentGanciState = null;
+          return null;
+        }
+
+        const photoUrl = replaceCurrentPhotoUrl(record.blob);
+        currentGanciState = {
+          ...metadata,
+          photo: photoUrl,
+          photoSize: record.size || record.blob.size,
+          photoMimeType: record.mimeType || record.blob.type || 'image/jpeg'
+        };
+        return currentGanciState;
+      })().catch(error => {
+        console.error('[LUX] Foto ganci gagal dimuat:', error);
+        currentGanciState = null;
+        return null;
+      }).finally(() => {
+        ganciStateLoadPromise = null;
+      });
+
+      return ganciStateLoadPromise;
+    }
+
+    function loadPreviewPhotoFromState(saved = currentGanciState) {
+      const src = saved?.photo || null;
 
       if (!src) {
         previewPhotoImg = null;
@@ -817,15 +931,36 @@
       img.src = src;
     }
 
-    function mulaiFotoGanci() {
+    async function mulaiFotoGanci() {
       updatePreview();
-      LocalCamera.open({
+
+      if (!window.LocalCamera || !window.LuxPhotoStorage) {
+        alert('Modul kamera atau penyimpanan belum termuat. Muat ulang halaman lalu coba lagi.');
+        return;
+      }
+
+      // Browser yang mendukungnya akan diminta mempertahankan data saat ruang mulai terbatas.
+      window.LuxPhotoStorage.requestPersistence().catch(() => {});
+
+      await LocalCamera.open({
         seconds: 5,
-        onCapture: (photo) => {
+        output: 'blob',
+        maxWidth: 1440,
+        maxHeight: 1920,
+        quality: 0.88,
+        onCapture: async (photoBlob, captureInfo) => {
           const config = getGanciConfig();
+          clearStalePhotoStorage();
+
+          await window.LuxPhotoStorage.saveGanciPhoto(photoBlob);
+          const photoUrl = replaceCurrentPhotoUrl(photoBlob);
           const saved = {
-            photo,
-            originalPhoto: photo,
+            photo: photoUrl,
+            photoStore: 'indexedDB',
+            photoKey: window.LuxPhotoStorage.GANCI_PHOTO_KEY,
+            photoSize: captureInfo?.size || photoBlob.size,
+            photoWidth: captureInfo?.width || null,
+            photoHeight: captureInfo?.height || null,
             filter: { tone: 'normal' },
             beautify: state.beautify,
             mode: 'ganci',
@@ -842,27 +977,24 @@
             config,
             updatedAt: new Date().toISOString()
           };
-          localStorage.setItem('ganciConfig', JSON.stringify(config));
-          localStorage.setItem('ganciState', JSON.stringify(saved));
-          localStorage.removeItem('photos');
-          localStorage.removeItem('filteredPhotos');
-          localStorage.removeItem('livePhotos');
-          localStorage.removeItem('finalPhoto');
-          localStorage.removeItem('finalPhotoThumb');
+
+          persistGanciMetadata(saved);
+          currentGanciState = saved;
           generatedLayout = null;
           currentLayoutPage = 0;
-          renderSavedGanciState();
-          updatePreview();
+          renderSavedGanciState(saved);
+          loadPreviewPhotoFromState(saved);
+          document.getElementById('layoutStatus').textContent = 'Foto tersimpan aman. Silakan generate layout cetak.';
+        },
+        onError: error => {
+          alert('Foto belum berhasil masuk ke layout. ' + (error?.message || 'Silakan coba lagi.'));
         }
       });
     }
 
-    function renderSavedGanciState() {
+    function renderSavedGanciState(saved = currentGanciState) {
       const box = document.getElementById('savedGanciBox');
-      if (!box) return;
-      let saved = null;
-      try { saved = JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) {}
-      if (!saved || !saved.photo) return;
+      if (!box || !saved?.photo) return;
       document.getElementById('savedGanciImg').src = saved.photo;
       const frameLabel = saved.frameLabel || (window.GanciFrames?.labels?.[saved.frame]) || saved.frame || '-';
       const tone = saved.filter?.tone || 'normal';
@@ -871,14 +1003,14 @@
       document.getElementById('savedGanciMeta').textContent = `Frame: ${frameLabel}${corner} · Filter: ${tone} · ${cfg.jumlah || state.jumlah || 1} set`;
       box.classList.add('show');
       document.getElementById('printCard').classList.add('show');
-      loadPreviewPhotoFromState();
+      loadPreviewPhotoFromState(saved);
     }
 
     let generatedLayout = null;
     let currentLayoutPage = 0;
 
     function getSavedState() {
-      try { return JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) { return null; }
+      return currentGanciState;
     }
 
     function syncInputsFromConfig(cfg) {
@@ -932,7 +1064,7 @@
     };
 
     window.generateGanciLayout = async function(auto = false) {
-      const saved = getSavedState();
+      const saved = await loadGanciState();
       if (!saved || !saved.photo) {
         alert('Ambil dan simpan foto ganci dulu ya.');
         return;
@@ -950,8 +1082,8 @@
         saved.bentuk = freshConfig.bentuk;
         saved.cornerStyle = freshConfig.cornerStyle;
         saved.config = { ...(saved.config || {}), ...freshConfig };
-        localStorage.setItem('ganciConfig', JSON.stringify(saved.config));
-        localStorage.setItem('ganciState', JSON.stringify(saved));
+        persistGanciMetadata(saved);
+        currentGanciState = saved;
         const logoUrl = (typeof Auth !== 'undefined' && Auth.getLogoUrl) ? Auth.getLogoUrl() : '/logo.png';
         generatedLayout = await window.GanciPrint.generateSheets(saved, { logoUrl, dpi: 300 });
         currentLayoutPage = 0;
@@ -1069,16 +1201,28 @@
     };
 
     // Init
-    const params = new URLSearchParams(window.location.search);
-    const existing = getSavedState();
-    if (existing?.config) syncInputsFromConfig(existing.config);
-    updatePreview();
-    renderSavedGanciState();
-    loadPreviewPhotoFromState();
-    if (existing?.photo) document.getElementById('printCard').classList.add('show');
-    if (params.get('done') === '1' && existing?.photo) {
-      setTimeout(() => generateGanciLayout(true), 120);
-    }
+    (async function initGanciPage() {
+      const params = new URLSearchParams(window.location.search);
+      const metadata = readGanciMetadata();
+      if (metadata?.config) syncInputsFromConfig(metadata.config);
+      updatePreview();
+
+      const existing = await loadGanciState();
+      if (existing?.config) syncInputsFromConfig(existing.config);
+      if (existing?.photo) {
+        renderSavedGanciState(existing);
+        loadPreviewPhotoFromState(existing);
+        document.getElementById('printCard').classList.add('show');
+        if (params.get('done') === '1') {
+          setTimeout(() => generateGanciLayout(true), 120);
+        }
+      }
+
+      window.LuxPhotoStorage?.requestPersistence?.().catch(() => {});
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(registration => registration.update()).catch(() => {});
+      }
+    })();
   </script>
 <script src="/local-camera.js"></script>
 <script src="/beautify.js"></script>

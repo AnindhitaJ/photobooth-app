@@ -63,6 +63,8 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <script src="/photo-storage.js"></script>
+  <script src="/product-photo-flow.js"></script>
   <script src="/cover-maker.js"></script>
 </head>
 <body>
@@ -338,44 +340,89 @@
     }
 
 
-    function mulaiAmbilFoto() {
-      LocalCamera.open({
-        seconds: 5,
-        onCapture: (photo) => loadPhoto(photo)
+    const PHOTO_FEATURE = 'newspaper';
+
+    function getNextPhotoTarget() {
+      if (state.photoLayout !== 'quad') return { layout: 'hero', slot: 'hero' };
+      state.photoImgs = state.photoImgs || [];
+      let index = state.photoImgs.findIndex(item => !item);
+      if (index < 0) index = Number.isInteger(state.nextPhotoSlot) ? state.nextPhotoSlot : 0;
+      index = Math.max(0, Math.min(3, index));
+      return { layout: 'quad', index, slot: `quad-${index}` };
+    }
+
+    async function mulaiAmbilFoto() {
+      const target = getNextPhotoTarget();
+      try {
+        await LuxProductPhotoFlow.capture({
+          feature: PHOTO_FEATURE,
+          slot: target.slot,
+          seconds: 5,
+          maxWidth: 1600,
+          maxHeight: 2000,
+          quality: 0.88,
+          onReady: src => loadPhoto(src, target),
+          onError: error => showToast('Foto gagal: ' + (error?.message || 'coba lagi'))
+        });
+      } catch (error) {
+        console.error('[LUX] Kamera newspaper gagal:', error);
+        showToast(error?.message || 'Kamera gagal dibuka');
+      }
+    }
+
+
+    function loadPhoto(src, target = {}) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const useQuad = target.layout === 'quad' || (!target.layout && state.photoLayout === 'quad');
+          if (useQuad) {
+            state.photos = state.photos || [];
+            state.photoImgs = state.photoImgs || [];
+            let idx = Number.isInteger(target.index) ? target.index : state.photoImgs.findIndex(item => !item);
+            if (idx < 0) idx = Number.isInteger(state.nextPhotoSlot) ? state.nextPhotoSlot : 0;
+            idx = Math.max(0, Math.min(3, idx));
+            state.photos[idx] = src;
+            state.photoImgs[idx] = img;
+            state.nextPhotoSlot = (idx + 1) % 4;
+          } else {
+            state.photo = src;
+            state.photoImg = img;
+          }
+          state.zoom = 1;
+          state.photoX = 0;
+          state.photoY = 0;
+          render();
+          if (!target.silent) showToast('Foto berhasil masuk ke layout ✓');
+          resolve(img);
+        };
+        img.onerror = () => reject(new Error('Foto gagal dimuat ke layout newspaper.'));
+        img.src = src;
       });
     }
 
+    async function checkAndLoadProductPhoto() {
+      try {
+        await LuxProductPhotoFlow.restoreOrMigrateLegacy({
+          feature: PHOTO_FEATURE,
+          slot: 'hero',
+          onReady: src => loadPhoto(src, { layout: 'hero', silent: true })
+        });
+      } catch (error) {
+        console.warn('[LUX] Foto hero newspaper tidak dapat dipulihkan:', error);
+      }
 
-    function loadPhoto(src) {
-      const img = new Image();
-      img.onload = () => {
-        if (state.photoLayout === 'quad') {
-          state.photos = state.photos || [];
-          state.photoImgs = state.photoImgs || [];
-          let idx = state.photoImgs.findIndex(item => !item);
-          if (idx < 0) idx = Number.isInteger(state.nextPhotoSlot) ? state.nextPhotoSlot : 0;
-          idx = Math.max(0, Math.min(3, idx));
-          state.photos[idx] = src;
-          state.photoImgs[idx] = img;
-          state.nextPhotoSlot = (idx + 1) % 4;
-        } else {
-          state.photo = src;
-          state.photoImg = img;
+      for (let index = 0; index < 4; index += 1) {
+        try {
+          await LuxProductPhotoFlow.restore({
+            feature: PHOTO_FEATURE,
+            slot: `quad-${index}`,
+            onReady: src => loadPhoto(src, { layout: 'quad', index, silent: true })
+          });
+        } catch (error) {
+          console.warn(`[LUX] Foto newspaper slot ${index + 1} tidak dapat dipulihkan:`, error);
         }
-        state.zoom = 1;
-        state.photoX = 0;
-        state.photoY = 0;
-        render();
-      };
-      img.onerror = () => alert('Foto gagal dimuat. Coba ulangi ya.');
-      img.src = src;
-    }
-
-    function checkAndLoadProductPhoto() {
-      const photo = localStorage.getItem('productPhoto');
-      if (!photo) return;
-      localStorage.removeItem('productPhoto');
-      loadPhoto(photo);
+      }
     }
 
     function adjustPhoto(action) {
@@ -438,18 +485,22 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       buildThemeGrid();
       buildFilterGrid();
       buildForm();
       render();
+      await checkAndLoadProductPhoto();
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => render()).catch(() => {});
       }
     });
   </script>
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    window.LuxPhotoStorage?.requestPersistence?.().catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(registration => registration.update()).catch(() => {});
+    }
   </script>
 <script src="/local-camera.js"></script>
 <script src="/beautify.js"></script>

@@ -4,6 +4,7 @@
   let captureOptions = {};
   let openingSequence = 0;
   let suspendedByBackground = false;
+  let isCapturing = false;
 
   function ensureModal() {
     if (document.getElementById('localCameraModal')) return;
@@ -192,10 +193,30 @@
     startCountdown(captureOptions.seconds || 5);
   }
 
-  function captureNow() {
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('Browser gagal membuat file foto.'));
+      }, type, quality);
+    });
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error || new Error('File foto gagal dibaca.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function captureNow() {
+    if (isCapturing) return;
+
     const video = document.getElementById('localCameraVideo');
+    const label = document.getElementById('localCameraLabel');
     if (!video || !video.videoWidth || !isStreamReady()) {
-      const label = document.getElementById('localCameraLabel');
       if (label) label.textContent = 'Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.';
       return;
     }
@@ -205,24 +226,57 @@
       countdownTimer = null;
     }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    isCapturing = true;
+    if (label) label.textContent = 'Memproses dan menyimpan foto...';
 
-    // Mirror output to match front-camera preview.
-    ctx.save();
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
+    try {
+      const sourceWidth = video.videoWidth;
+      const sourceHeight = video.videoHeight;
+      const maxWidth = Math.max(1, Number(captureOptions.maxWidth) || sourceWidth);
+      const maxHeight = Math.max(1, Number(captureOptions.maxHeight) || sourceHeight);
+      const scale = Math.min(1, maxWidth / sourceWidth, maxHeight / sourceHeight);
 
-    const dataUrl = canvas.toDataURL('image/jpeg', captureOptions.quality || 0.98);
-    const callback = captureOptions.onCapture;
-    close();
-    if (typeof callback === 'function') callback(dataUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+      canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (!ctx) throw new Error('Canvas kamera tidak tersedia.');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Mirror output to match front-camera preview.
+      ctx.save();
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      const mimeType = captureOptions.mimeType || 'image/jpeg';
+      const quality = Math.min(0.98, Math.max(0.6, Number(captureOptions.quality) || 0.98));
+      const blob = await canvasToBlob(canvas, mimeType, quality);
+      const callback = captureOptions.onCapture;
+      const output = captureOptions.output === 'blob' ? blob : await blobToDataUrl(blob);
+
+      if (typeof callback === 'function') {
+        await callback(output, {
+          blob,
+          width: canvas.width,
+          height: canvas.height,
+          size: blob.size,
+          mimeType: blob.type || mimeType
+        });
+      }
+
+      close();
+    } catch (error) {
+      console.error('Local camera capture error:', error);
+      if (label) label.textContent = 'Foto gagal disimpan. Tekan Ambil sekarang untuk mencoba lagi.';
+      if (typeof captureOptions.onError === 'function') {
+        try { captureOptions.onError(error); } catch (_) {}
+      }
+    } finally {
+      isCapturing = false;
+    }
   }
 
   function close() {

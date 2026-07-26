@@ -210,6 +210,7 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <script src="/media-fetch.js"></script>
 </head>
 <body>
 
@@ -319,6 +320,9 @@
   let consentSettings = null;
   let consentDone = sessionStorage.getItem('lux_consent_done_' + (photoURL || manifestURL || 'x')) === '1';
   let pendingDownloadAction = null;
+  let preparedPhotoBlob = null;
+  let preparedPhotoURL = '';
+  let preparePhotoToken = 0;
 
 
   function getOwnerIdFromURL(url) {
@@ -423,7 +427,7 @@
     try {
       if (manifestURL) {
         document.getElementById('statusSub').textContent = 'Memuat daftar file...';
-        const res = await fetch(manifestURL, { 
+        const res = await fetch(LuxMedia.toBrowserURL(manifestURL), { 
           cache: 'no-store',
           mode: 'cors'
         });
@@ -451,10 +455,53 @@
     }
   }
 
+  function setSharePhotoButton(title, sub, disabled = false) {
+    const button = document.getElementById('btnShare');
+    if (!button) return;
+    const titleEl = button.querySelector('.btn-info-title');
+    const subEl = button.querySelector('.btn-info-sub');
+    if (titleEl) titleEl.textContent = title;
+    if (subEl) subEl.textContent = sub;
+    button.disabled = disabled;
+  }
+
+  function preparePhotoForShare() {
+    const token = ++preparePhotoToken;
+    preparedPhotoBlob = null;
+    preparedPhotoURL = String(photoURL || '');
+
+    if (!LuxMedia.supportsFileShare()) {
+      setSharePhotoButton(
+        navigator.share ? 'Bagikan Link Foto' : 'Simpan Foto',
+        navigator.share ? 'Kirim link foto ke aplikasi lain' : 'Download file foto ke perangkat',
+        false
+      );
+      return;
+    }
+
+    setSharePhotoButton('Menyiapkan Foto...', 'File sedang disiapkan untuk dibagikan', true);
+    LuxMedia.prefetch(preparedPhotoURL)
+      .then(blob => {
+        if (token !== preparePhotoToken || preparedPhotoURL !== photoURL) return;
+        preparedPhotoBlob = blob;
+        setSharePhotoButton('Bagikan Foto', 'Kirim ke WhatsApp, IG, dll', false);
+      })
+      .catch(error => {
+        if (token !== preparePhotoToken || preparedPhotoURL !== photoURL) return;
+        console.warn('[download] Gagal prefetch file share:', error);
+        preparedPhotoBlob = null;
+        setSharePhotoButton(
+          navigator.share ? 'Bagikan Link Foto' : 'Simpan Foto',
+          'File tetap dapat dibuka atau didownload',
+          false
+        );
+      });
+  }
+
   async function init() {
     try {
       const preview = document.getElementById('preview');
-      preview.crossOrigin = 'anonymous';
+      preview.removeAttribute('crossorigin');
       preview.onload = () => {
         // Sembunyikan spinner, tampilkan sukses
         document.getElementById('spinner').style.display = 'none';
@@ -464,9 +511,9 @@
         // Tampilkan preview
         document.getElementById('previewWrap').classList.add('visible');
 
-        // Enable tombol
+        // Enable download dan siapkan file share sebelum tombol digunakan.
         document.getElementById('btnJpg').disabled = false;
-        document.getElementById('btnShare').disabled = false;
+        preparePhotoForShare();
 
         renderIndividualPhotos();
 
@@ -478,7 +525,7 @@
       preview.onerror = () => {
         showError('Foto tidak bisa dimuat', 'Link mungkin sudah kadaluarsa. Minta foto baru dari photobooth.');
       };
-      preview.src = photoURL;
+      preview.src = LuxMedia.toBrowserURL(photoURL);
       startCountdown();
     } catch(e) {
       showError('Terjadi kesalahan', e.message);
@@ -515,14 +562,12 @@
     btn.disabled = true;
     btn.querySelector('.btn-info-title').textContent = 'Mengunduh...';
     try {
-      const res  = await fetch(photoURL);
-      if (!res.ok) throw new Error('Gagal fetch');
-      const blob = await res.blob();
+      const blob = preparedPhotoBlob || await LuxMedia.fetchBlob(photoURL);
       triggerDl(blob, `lux-photobooth-${Date.now()}.jpg`);
       showToast('✓ Download dimulai!', 'success');
     } catch(e) {
-      window.open(photoURL, '_blank');
-      showToast('Dibuka di tab baru', '');
+      const opened = window.open(LuxMedia.toBrowserURL(photoURL), '_blank');
+      showToast(opened ? 'Dibuka di tab baru' : 'Download gagal: ' + (e.message || e), opened ? '' : 'error');
     } finally {
       btn.disabled = false;
       btn.querySelector('.btn-info-title').textContent = 'Download Foto';
@@ -564,7 +609,6 @@
     img.alt = `Foto ${idx + 1}`;
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
       if (placeholder) placeholder.replaceWith(img);
       if (previewBtn) previewBtn.remove();
@@ -575,7 +619,7 @@
       showToast('Preview tidak bisa dimuat', 'error');
     };
     if (previewBtn) previewBtn.textContent = 'Memuat...';
-    img.src = url;
+    img.src = LuxMedia.toBrowserURL(url);
   }
 
   async function dlIndividual(idx, skipConsent = false) {
@@ -583,14 +627,12 @@
     const url = individualURLs[idx];
     if (!url) return;
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Gagal fetch foto satuan');
-      const blob = await res.blob();
+      const blob = await LuxMedia.fetchBlob(url);
       triggerDl(blob, `lux-foto-${idx + 1}-${Date.now()}.jpg`);
       showToast(`✓ Foto ${idx + 1} didownload!`, 'success');
     } catch(e) {
-      window.open(url, '_blank');
-      showToast('Dibuka di tab baru', '');
+      const opened = window.open(LuxMedia.toBrowserURL(url), '_blank');
+      showToast(opened ? 'Dibuka di tab baru' : 'Download gagal: ' + (e.message || e), opened ? '' : 'error');
     }
   }
 
@@ -618,13 +660,12 @@
     btn.disabled = true;
     btn.querySelector('.btn-info-title').textContent = 'Mengunduh...';
     try {
-      const res  = await fetch(gifURL);
-      if (!res.ok) throw new Error('Gagal fetch GIF');
-      const blob = await res.blob();
+      const blob = await LuxMedia.fetchBlob(gifURL);
       triggerDl(blob, `lux-animated-${Date.now()}.gif`);
       showToast('✓ GIF didownload!', 'success');
     } catch(e) {
-      window.open(gifURL, '_blank');
+      const opened = window.open(LuxMedia.toBrowserURL(gifURL), '_blank');
+      if (!opened) showToast('GIF gagal didownload: ' + (e.message || e), 'error');
     } finally {
       btn.disabled = false;
       btn.querySelector('.btn-info-title').textContent = 'Download Animasi';
@@ -633,23 +674,52 @@
 
   async function sharePhoto(skipConsent = false) {
     if (!skipConsent) return ensureConsentThen(() => sharePhoto(true));
-    try {
-      const res  = await fetch(photoURL);
-      const blob = await res.blob();
-      const file = new File([blob], 'lux-photobooth.jpg', { type: 'image/jpeg' });
-      // Share hanya file strip utama. Foto satuan dan GIF tetap tersedia
-      // melalui tombol download masing-masing agar tidak semuanya ditarik dari CDN.
-      const files = [file];
+    const button = document.getElementById('btnShare');
+    if (button) button.disabled = true;
 
-      if (navigator.canShare && navigator.canShare({ files })) {
-        await navigator.share({ files, title: 'Foto LUX Photobooth' });
-      } else {
-        // Fallback
-        window.open(photoURL, '_blank');
-        showToast('Dibuka di tab baru', '');
+    try {
+      if (preparedPhotoBlob && LuxMedia.supportsFileShare(LuxMedia.inferMimeType(preparedPhotoBlob, photoURL))) {
+        const file = LuxMedia.makeFile(preparedPhotoBlob, 'lux-photobooth.jpg', photoURL);
+        await navigator.share({
+          files: [file],
+          title: 'Foto LUX Photobooth',
+          text: 'Hasil foto dari LUX Photobooth ✨'
+        });
+        return;
       }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Foto LUX Photobooth',
+          text: 'Hasil foto dari LUX Photobooth ✨',
+          url: photoURL
+        });
+        return;
+      }
+
+      const blob = preparedPhotoBlob || await LuxMedia.fetchBlob(photoURL);
+      triggerDl(blob, `lux-photobooth-${Date.now()}.jpg`);
+      showToast('Share tidak tersedia. Foto didownload.', 'success');
     } catch(e) {
-      if (e.name !== 'AbortError') showToast('Gagal share: ' + e.message, 'error');
+      if (e?.name === 'AbortError') return;
+      console.warn('[download] Share gagal, fallback download:', e);
+      try {
+        const blob = preparedPhotoBlob || await LuxMedia.fetchBlob(photoURL);
+        triggerDl(blob, `lux-photobooth-${Date.now()}.jpg`);
+        showToast('Share tidak tersedia. Foto didownload.', 'success');
+      } catch (downloadError) {
+        showToast('Gagal share: ' + (downloadError.message || e.message || e), 'error');
+      }
+    } finally {
+      if (preparedPhotoBlob) {
+        setSharePhotoButton('Bagikan Foto', 'Kirim ke WhatsApp, IG, dll', false);
+      } else {
+        setSharePhotoButton(
+          navigator.share ? 'Bagikan Link Foto' : 'Simpan Foto',
+          navigator.share ? 'Kirim link foto ke aplikasi lain' : 'Download file foto ke perangkat',
+          false
+        );
+      }
     }
   }
 

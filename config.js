@@ -10,5 +10,5 @@ window.LUX_CONFIG = Object.freeze({
   SUPER_ADMIN_EMAIL: 'luxphotobooth.id@gmail.com',
   STORAGE_BUCKET: 'photobooth',
   R2_PUBLIC_URL: 'https://media.lux-photo.web.id',
-  APP_VERSION: 'v1.23-feature-permissions'
+  APP_VERSION: 'v1.29-gallery-share-modal'
 });

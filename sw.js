@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.26-all-product-photo-storage';
+const CACHE_NAME = 'lux-photobooth-v1.29-gallery-share-modal';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
@@ -12,7 +12,7 @@ const CORE_ASSETS = [
   '/newspaper.html', '/magazine.html', '/config.js', '/auth.js',
   '/local-camera.js', '/beautify.js', '/product-photobooth.js',
   '/cover-maker.js', '/ganci-utils.js', '/ganci-print.js', '/photo-storage.js',
-  '/product-photo-flow.js',
+  '/product-photo-flow.js', '/media-fetch.js',
   '/manifest.json', '/holidays/2026.json', '/logo.png', '/logo.svg',
   '/icon-192.png', '/icon-512.png'
 ];
@@ -145,8 +145,10 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // API dan data dinamis tidak boleh diintersepsi/cache oleh service worker.
-  if (url.pathname.startsWith('/api/')) return;
+  // API dan media hasil foto tidak boleh diintersepsi/cache oleh service worker.
+  // /media/* sudah diproxy oleh Vercel dan memakai HTTP cache dari origin/CDN.
+  // Menghindari Cache Storage PWA terisi file foto berukuran besar tanpa batas.
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(navigationNetworkFirst(request));

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.25-ganci-storage';
+const CACHE_NAME = 'lux-photobooth-v1.26-all-product-photo-storage';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
@@ -11,7 +11,8 @@ const CORE_ASSETS = [
   '/certificate.html', '/trading-card.html', '/detective-case.html',
   '/newspaper.html', '/magazine.html', '/config.js', '/auth.js',
   '/local-camera.js', '/beautify.js', '/product-photobooth.js',
-  '/cover-maker.js', '/ganci-utils.js', '/ganci-storage.js', '/ganci-print.js',
+  '/cover-maker.js', '/ganci-utils.js', '/ganci-print.js', '/photo-storage.js',
+  '/product-photo-flow.js',
   '/manifest.json', '/holidays/2026.json', '/logo.png', '/logo.svg',
   '/icon-192.png', '/icon-512.png'
 ];

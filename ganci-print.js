@@ -11,7 +11,7 @@
   function loadImage(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      if (/^https?:\/\//i.test(String(src || ''))) img.crossOrigin = 'anonymous';
+      if (!String(src || '').startsWith('data:')) img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error('Gagal memuat gambar'));
       img.src = src;
@@ -285,27 +285,19 @@
   }
 
   function downloadDataUrl(dataUrl, filename) {
-    const blob = dataUrlToBlob(dataUrl);
-    const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = objectUrl;
+    a.href = dataUrl;
     a.download = filename || `ganci-${Date.now()}.jpg`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
   }
 
-  async function saveLocalGallery(entry) {
-    if (window.GanciStorage?.saveGalleryEntry) {
-      return window.GanciStorage.saveGalleryEntry(entry, entry?.preview);
-    }
-
-    // Fallback lama hanya dipakai bila helper IndexedDB tidak termuat.
+  function saveLocalGallery(entry) {
     const prev = JSON.parse(localStorage.getItem(LOCAL_GALLERY_KEY) || '[]');
     prev.unshift(entry);
-    localStorage.setItem(LOCAL_GALLERY_KEY, JSON.stringify(prev.slice(0, 3)));
-    return Math.min(prev.length, 3);
+    localStorage.setItem(LOCAL_GALLERY_KEY, JSON.stringify(prev.slice(0, 12)));
+    return prev.length + 1;
   }
 
   window.GanciPrint = {

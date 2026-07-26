@@ -178,6 +178,8 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <script src="/photo-storage.js"></script>
+  <script src="/product-photo-flow.js"></script>
 </head>
 <body>
   <div class="header">
@@ -691,30 +693,52 @@
     }
 
 
-    function mulaiAmbilFoto() {
-      LocalCamera.open({
-        seconds: 5,
-        onCapture: (photo) => loadPhoto(photo)
+    const PHOTO_FEATURE = 'idcard';
+
+    async function mulaiAmbilFoto() {
+      try {
+        await LuxProductPhotoFlow.capture({
+          feature: PHOTO_FEATURE,
+          seconds: 5,
+          maxWidth: 1600,
+          maxHeight: 2000,
+          quality: 0.88,
+          onReady: src => loadPhoto(src),
+          onError: error => showToast('Foto gagal: ' + (error?.message || 'coba lagi'))
+        });
+      } catch (error) {
+        console.error('[LUX] Kamera ID Card gagal:', error);
+        showToast(error?.message || 'Kamera gagal dibuka');
+      }
+    }
+
+    async function checkAndLoadProductPhoto() {
+      try {
+        await LuxProductPhotoFlow.restoreOrMigrateLegacy({
+          feature: PHOTO_FEATURE,
+          onReady: src => loadPhoto(src, true)
+        });
+      } catch (error) {
+        console.warn('[LUX] Foto ID Card sebelumnya tidak dapat dipulihkan:', error);
+      }
+    }
+
+    function loadPhoto(src, silent = false) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          state.photo = src;
+          renderPreview();
+          applyLabels();
+          if (!silent) showToast('Foto berhasil masuk ✓');
+          resolve(img);
+        };
+        img.onerror = () => {
+          if (!silent) showToast('Foto gagal dimuat');
+          reject(new Error('Foto gagal dimuat ke layout ID Card.'));
+        };
+        img.src = src;
       });
-    }
-
-    function checkAndLoadProductPhoto() {
-      const photo = localStorage.getItem('productPhoto');
-      if (!photo) return;
-      localStorage.removeItem('productPhoto');
-      loadPhoto(photo);
-    }
-
-    function loadPhoto(src) {
-      const img = new Image();
-      img.onload = () => {
-        state.photo = src;
-        renderPreview();
-        applyLabels();
-        showToast('Foto berhasil masuk ✓');
-      };
-      img.onerror = () => showToast('Foto gagal dimuat');
-      img.src = src;
     }
 
     function renderPreview() {
@@ -1270,7 +1294,7 @@
     }
 
     // Init
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       applyLabels();
       buildSelects();
       buildThemeGrid();
@@ -1278,11 +1302,15 @@
       randomizeId();
       renderPreview();
       renderHistory();
+      await checkAndLoadProductPhoto();
     });
   </script>
 
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    window.LuxPhotoStorage?.requestPersistence?.().catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(registration => registration.update()).catch(() => {});
+    }
   </script>
 <script src="/local-camera.js"></script>
 <script src="/beautify.js"></script>

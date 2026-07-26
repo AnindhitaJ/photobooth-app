@@ -176,6 +176,10 @@
   ],
   "rewrites": [
     {
+      "source": "/media/:path*",
+      "destination": "https://media.lux-photo.web.id/:path*"
+    },
+    {
       "source": "/about",
       "destination": "/about.html"
     },

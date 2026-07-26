@@ -3,5 +3,5 @@ window.LUX_CONFIG = Object.freeze({
   SUPABASE_ANON_KEY: 'PUBLIC_ANON_KEY',
   SUPER_ADMIN_EMAIL: 'luxphotobooth.id@gmail.com',
   STORAGE_BUCKET: 'photobooth',
-  APP_VERSION: 'v1.23-feature-permissions'
+  APP_VERSION: 'v1.27-media-share-fix'
 });

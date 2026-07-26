@@ -435,6 +435,7 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <script src="/media-fetch.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -527,8 +528,8 @@
       <img class="sm-strip-img" id="smStripImg" src="" alt="strip">
       <div class="sm-strip-actions">
         <div class="sm-strip-label">📷 Foto Strip</div>
-        <button class="btn-sm btn-sm-primary" onclick="downloadStrip()">⬇️ Download Strip</button>
-        <button class="btn-sm btn-sm-outline" style="border:2px solid var(--border)!important" onclick="shareStrip()">📤 Share Strip</button>
+        <button class="btn-sm btn-sm-primary" id="btnDownloadStrip" onclick="downloadStrip()">⬇️ Download Strip</button>
+        <button class="btn-sm btn-sm-outline" id="btnShareStrip" style="border:2px solid var(--border)!important" onclick="shareStrip()">📤 Share Strip</button>
         <button class="btn-sm btn-sm-outline" style="border:2px solid var(--border)!important" onclick="openSessionQR()">📲 Scan QR</button>
       </div>
     </div>
@@ -660,6 +661,9 @@
   let selected    = []; // ts yang dipilih untuk hapus
   let mode        = 'view';
   let activeSess  = null; // session yang sedang dibuka di modal
+  let activeStripBlob = null;
+  let activeStripBlobURL = '';
+  let activeStripPrefetchToken = 0;
   let currentProductFilter = 'all';
   const SESSION_RENDER_BATCH = 24;
   let visibleSessionCount = SESSION_RENDER_BATCH;
@@ -1066,6 +1070,50 @@
   }
 
   // ── SESSION MODAL ────────────────────────────────────────────────────
+  function setShareStripButton(text, disabled = false) {
+    const button = document.getElementById('btnShareStrip');
+    if (!button) return;
+    button.textContent = text;
+    button.disabled = disabled;
+  }
+
+  function restoreShareStripButton() {
+    if (!activeSess) return;
+    if (activeStripBlob && LuxMedia.supportsFileShare(LuxMedia.inferMimeType(activeStripBlob, activeStripBlobURL))) {
+      setShareStripButton('📤 Share Strip', false);
+    } else if (navigator.share) {
+      setShareStripButton('📤 Share Link', false);
+    } else {
+      setShareStripButton('⬇️ Simpan Strip', false);
+    }
+  }
+
+  function prepareActiveStrip(url) {
+    const token = ++activeStripPrefetchToken;
+    activeStripBlob = null;
+    activeStripBlobURL = String(url || '');
+
+    // Browser tanpa file sharing tidak perlu menarik file besar saat modal dibuka.
+    if (!LuxMedia.supportsFileShare()) {
+      restoreShareStripButton();
+      return;
+    }
+
+    setShareStripButton('⏳ Menyiapkan file...', true);
+    LuxMedia.prefetch(activeStripBlobURL)
+      .then(blob => {
+        if (token !== activeStripPrefetchToken || !activeSess) return;
+        activeStripBlob = blob;
+        restoreShareStripButton();
+      })
+      .catch(error => {
+        if (token !== activeStripPrefetchToken || !activeSess) return;
+        console.warn('[gallery] Gagal menyiapkan file share:', error);
+        activeStripBlob = null;
+        restoreShareStripButton();
+      });
+  }
+
   function openSessionModal(sess) {
     activeSess = sess;
     const dateLabel = sess.date.toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
@@ -1073,29 +1121,36 @@
 
     document.getElementById('smTitle').textContent = 'Sesi ' + timeLabel;
     document.getElementById('smDate').textContent  = dateLabel;
-    document.getElementById('smStripImg').src      = sess.strip.url;
+    document.getElementById('smStripImg').src      = LuxMedia.toBrowserURL(sess.strip.url);
 
     // Individual photos
     const grid = document.getElementById('smIndGrid');
     const label = document.getElementById('smIndLabel');
     if (sess.individuals.length) {
       label.textContent = `📸 Foto Individual (${sess.individuals.length})`;
-      grid.innerHTML = sess.individuals.map((p, i) => `
-        <div class="sm-photo-item" onclick="downloadIndividual('${p.url}', ${i+1})">
-          <img src="${p.url}" alt="foto ${i+1}" loading="lazy">
-          <div class="sm-photo-dl">⬇️</div>
-        </div>
-      `).join('');
+      grid.innerHTML = sess.individuals.map((p, i) => {
+        const previewURL = LuxMedia.toBrowserURL(p.url);
+        return `
+          <div class="sm-photo-item" onclick="downloadIndividual('${p.url}', ${i+1})">
+            <img src="${previewURL}" alt="foto ${i+1}" loading="lazy">
+            <div class="sm-photo-dl">⬇️</div>
+          </div>
+        `;
+      }).join('');
     } else {
       label.textContent = '📸 Foto Individual';
       grid.innerHTML = `<div class="sm-no-individual" style="grid-column:1/-1">Foto individual tidak tersedia untuk sesi ini</div>`;
     }
 
     document.getElementById('sessionModal').classList.add('open');
+    prepareActiveStrip(sess.strip.url);
   }
 
   function closeSessionModal() {
     document.getElementById('sessionModal').classList.remove('open');
+    activeStripPrefetchToken += 1;
+    activeStripBlob = null;
+    activeStripBlobURL = '';
     activeSess = null;
   }
 
@@ -1107,43 +1162,79 @@
   // ── DOWNLOAD / SHARE ─────────────────────────────────────────────────
   async function downloadStrip() {
     if (!activeSess) return;
-    await triggerDownload(activeSess.strip.url, `lux-strip-${activeSess.ts}.jpg`);
-    showToast('✅ Strip didownload!', 'success');
+    const session = activeSess;
+    const button = document.getElementById('btnDownloadStrip');
+    if (button) button.disabled = true;
+    try {
+      await triggerDownload(session.strip.url, `lux-strip-${session.ts}.jpg`);
+      showToast('✅ Strip didownload!', 'success');
+    } catch (error) {
+      showToast('Gagal download: ' + (error.message || error));
+    } finally {
+      if (button) button.disabled = false;
+    }
   }
 
   async function shareStrip() {
     if (!activeSess) return;
+    const session = activeSess;
+    const filename = `lux-strip-${session.ts}.jpg`;
+    const button = document.getElementById('btnShareStrip');
+    if (button) button.disabled = true;
+
     try {
-      const res  = await fetch(activeSess.strip.url);
-      const blob = await res.blob();
-      const file = new File([blob], `lux-strip-${activeSess.ts}.jpg`, { type: 'image/jpeg' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Foto Strip LUX Photobooth' });
-      } else {
-        await triggerDownload(activeSess.strip.url, `lux-strip-${activeSess.ts}.jpg`);
-        showToast('Download strip berhasil', 'success');
+      if (activeStripBlob && LuxMedia.supportsFileShare(LuxMedia.inferMimeType(activeStripBlob, session.strip.url))) {
+        const file = LuxMedia.makeFile(activeStripBlob, filename, session.strip.url);
+        await navigator.share({
+          files: [file],
+          title: 'Foto Strip LUX Photobooth',
+          text: 'Hasil foto dari LUX Photobooth ✨'
+        });
+        return;
       }
-    } catch(e) {
-      if (e.name !== 'AbortError') showToast('Gagal share: ' + e.message);
+
+      // Fallback tanpa fetch: share URL langsung agar tetap berjalan pada desktop
+      // atau ketika bucket/CDN sedang menolak CORS untuk file sharing.
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Foto Strip LUX Photobooth',
+          text: 'Hasil foto dari LUX Photobooth ✨',
+          url: session.strip.url
+        });
+        return;
+      }
+
+      await triggerDownload(session.strip.url, filename);
+      showToast('Download strip berhasil', 'success');
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      console.warn('[gallery] Share gagal, fallback download:', error);
+      try {
+        await triggerDownload(session.strip.url, filename);
+        showToast('Share tidak tersedia. File didownload.', 'success');
+      } catch (downloadError) {
+        showToast('Gagal share: ' + (downloadError.message || error.message || error));
+      }
+    } finally {
+      if (activeSess === session) restoreShareStripButton();
     }
   }
 
   async function downloadIndividual(url, idx) {
-    await triggerDownload(url, `lux-foto-${idx}-${activeSess?.ts || Date.now()}.jpg`);
-    showToast(`✅ Foto ${idx} didownload!`, 'success');
+    try {
+      await triggerDownload(url, `lux-foto-${idx}-${activeSess?.ts || Date.now()}.jpg`);
+      showToast(`✅ Foto ${idx} didownload!`, 'success');
+    } catch (error) {
+      showToast(`Gagal download foto ${idx}: ${error.message || error}`);
+    }
   }
 
   async function triggerDownload(url, filename) {
     try {
-      const res  = await fetch(url);
-      const blob = await res.blob();
-      const a    = document.createElement('a');
-      a.href     = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a); a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 2000);
-    } catch(e) {
-      window.open(url, '_blank');
+      await LuxMedia.download(url, filename);
+    } catch (error) {
+      const opened = window.open(LuxMedia.toBrowserURL(url), '_blank');
+      if (!opened) throw error;
     }
   }
 
@@ -1184,7 +1275,7 @@
     // Cek manifest yang dibuat result.html. Jika tersedia, URL QR ini sama persis
     // dengan QR asli: download.html?m={manifest}&owner={uuid}.
     try {
-      const response = await fetch(manifestURL, {
+      const response = await fetch(LuxMedia.toBrowserURL(manifestURL), {
         method: 'GET',
         mode: 'cors',
         credentials: 'omit',
@@ -1566,6 +1657,7 @@
   function loadImageDirect(src, options = {}) {
     const useCors = options.useCors !== false;
     const timeoutMs = Number(options.timeoutMs) || 15000;
+    const browserSrc = LuxMedia.toBrowserURL(src);
 
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -1576,7 +1668,14 @@
         reject(new Error(`Timeout memuat gambar (${timeoutMs / 1000} detik)`));
       }, timeoutMs);
 
-      if (useCors) img.crossOrigin = 'anonymous';
+      try {
+        const parsed = new URL(browserSrc, window.location.href);
+        if (useCors && parsed.origin !== window.location.origin) {
+          img.crossOrigin = 'anonymous';
+        }
+      } catch (_) {
+        if (useCors) img.crossOrigin = 'anonymous';
+      }
       img.referrerPolicy = 'no-referrer';
       img.decoding = 'async';
 
@@ -1591,10 +1690,10 @@
         if (settled) return;
         settled = true;
         clearTimeout(timeoutId);
-        reject(new Error('Media CDN menolak akses Canvas/CORS'));
+        reject(new Error('Media tidak dapat dimuat untuk canvas'));
       };
 
-      img.src = src;
+      img.src = browserSrc;
     });
   }
 
@@ -1613,30 +1712,10 @@
   }
 
   async function loadImageViaProxy(src) {
-    const proxySrc = `/api/media-proxy?src=${encodeURIComponent(src)}`;
-    const response = await fetch(proxySrc, {
-      method: 'GET',
-      cache: 'no-store',
-      headers: { Accept: 'image/*' }
+    const blob = await LuxMedia.fetchBlob(src, {
+      memoryCache: false,
+      cache: 'no-store'
     });
-
-    if (!response.ok) {
-      const detail = await readProxyError(response);
-      throw new Error(
-        `media-proxy HTTP ${response.status}${detail ? ` — ${detail}` : ''}`
-      );
-    }
-
-    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
-    if (!contentType.startsWith('image/')) {
-      const detail = await readProxyError(response);
-      throw new Error(
-        `media-proxy mengembalikan ${contentType || 'Content-Type kosong'}${detail ? ` — ${detail}` : ''}`
-      );
-    }
-
-    const blob = await response.blob();
-    if (!blob.size) throw new Error('media-proxy mengembalikan file kosong');
 
     const objectUrl = URL.createObjectURL(blob);
     try {

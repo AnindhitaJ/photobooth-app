@@ -60,8 +60,6 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
-  <script src="/photo-storage.js"></script>
-  <script src="/product-photo-flow.js"></script>
   <script src="/cover-maker.js"></script>
 </head>
 <body>
@@ -306,53 +304,33 @@
     }
 
 
-    const PHOTO_FEATURE = 'magazine';
-
-    async function mulaiAmbilFoto() {
-      try {
-        await LuxProductPhotoFlow.capture({
-          feature: PHOTO_FEATURE,
-          seconds: 5,
-          maxWidth: 1600,
-          maxHeight: 2000,
-          quality: 0.88,
-          onReady: src => loadPhoto(src),
-          onError: error => showToast('Foto gagal: ' + (error?.message || 'coba lagi'))
-        });
-      } catch (error) {
-        console.error('[LUX] Kamera magazine gagal:', error);
-        showToast(error?.message || 'Kamera gagal dibuka');
-      }
-    }
-
-
-    function loadPhoto(src, silent = false) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          state.photo = src;
-          state.photoImg = img;
-          state.zoom = 1;
-          state.photoX = 0;
-          state.photoY = 0;
-          render();
-          if (!silent) showToast('Foto berhasil masuk ke layout ✓');
-          resolve(img);
-        };
-        img.onerror = () => reject(new Error('Foto gagal dimuat ke layout magazine.'));
-        img.src = src;
+    function mulaiAmbilFoto() {
+      LocalCamera.open({
+        seconds: 5,
+        onCapture: (photo) => loadPhoto(photo)
       });
     }
 
-    async function checkAndLoadProductPhoto() {
-      try {
-        await LuxProductPhotoFlow.restoreOrMigrateLegacy({
-          feature: PHOTO_FEATURE,
-          onReady: src => loadPhoto(src, true)
-        });
-      } catch (error) {
-        console.warn('[LUX] Foto magazine sebelumnya tidak dapat dipulihkan:', error);
-      }
+
+    function loadPhoto(src) {
+      const img = new Image();
+      img.onload = () => {
+        state.photo = src;
+        state.photoImg = img;
+        state.zoom = 1;
+        state.photoX = 0;
+        state.photoY = 0;
+        render();
+      };
+      img.onerror = () => alert('Foto gagal dimuat. Coba ulangi ya.');
+      img.src = src;
+    }
+
+    function checkAndLoadProductPhoto() {
+      const photo = localStorage.getItem('productPhoto');
+      if (!photo) return;
+      localStorage.removeItem('productPhoto');
+      loadPhoto(photo);
     }
 
     function adjustPhoto(action) {
@@ -415,19 +393,15 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
       buildThemeGrid();
       buildFilterGrid();
       buildForm();
       render();
-      await checkAndLoadProductPhoto();
     });
   </script>
   <script>
-    window.LuxPhotoStorage?.requestPersistence?.().catch(() => {});
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(registration => registration.update()).catch(() => {});
-    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
 <script src="/local-camera.js"></script>
 <script src="/beautify.js"></script>

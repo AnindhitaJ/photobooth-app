@@ -243,6 +243,7 @@
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
   <script src="/ganci-utils.js"></script>
+  <script src="/ganci-storage.js"></script>
   <script src="/ganci-print.js"></script>
 </head>
 <body>
@@ -370,7 +371,7 @@
       <div class="card action-card" style="margin-top:16px;margin-bottom:16px;">
         <div class="card-title">📸 Foto Ganci</div>
         <div class="flow-note">
-          Mode Ganci memakai kamera photobooth yang sama, tapi hanya 1 foto per sesi. Setelah foto diambil, user bisa retake berkali-kali sebelum lanjut ke filter.
+          Mode Ganci memakai 1 foto per sesi. Setelah foto diambil, foto disimpan ke penyimpanan browser yang lebih besar dan layout cetak dibuat otomatis.
         </div>
         <button class="btn-start-ganci" onclick="mulaiFotoGanci()">Mulai Ambil Foto Ganci →</button>
         <div class="saved-ganci" id="savedGanciBox">
@@ -786,9 +787,19 @@
       };
     }
 
-    function loadPreviewPhotoFromState() {
-      let saved = null;
-      try { saved = JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) {}
+    let activeGanciState = null;
+    let isOpeningGanciCamera = false;
+    let isSavingGanciPhoto = false;
+
+    async function getSavedState(forceReload = false) {
+      if (!forceReload && activeGanciState?.photo) return activeGanciState;
+      if (!window.GanciStorage) return null;
+      activeGanciState = await window.GanciStorage.loadState();
+      return activeGanciState;
+    }
+
+    async function loadPreviewPhotoFromState(savedState = null) {
+      const saved = savedState || await getSavedState();
       const src = saved?.photo || saved?.originalPhoto || null;
 
       if (!src) {
@@ -817,69 +828,110 @@
       img.src = src;
     }
 
-    function mulaiFotoGanci() {
+    async function mulaiFotoGanci() {
+      if (isOpeningGanciCamera || isSavingGanciPhoto) return;
       updatePreview();
-      LocalCamera.open({
-        seconds: 5,
-        onCapture: (photo) => {
-          const config = getGanciConfig();
-          const saved = {
-            photo,
-            originalPhoto: photo,
-            filter: { tone: 'normal' },
-            beautify: state.beautify,
-            mode: 'ganci',
-            bentuk: config.bentuk,
-            cornerStyle: config.cornerStyle,
-            frame: config.frame,
-            frameLabel: config.frameLabel,
-            ukuranKertas: config.ukuranKertas,
-            customW: config.customW,
-            customH: config.customH,
-            ganciW: config.ganciW,
-            ganciH: config.ganciH,
-            jumlah: config.jumlah,
-            config,
-            updatedAt: new Date().toISOString()
-          };
-          localStorage.setItem('ganciConfig', JSON.stringify(config));
-          localStorage.setItem('ganciState', JSON.stringify(saved));
-          localStorage.removeItem('photos');
-          localStorage.removeItem('filteredPhotos');
-          localStorage.removeItem('livePhotos');
-          localStorage.removeItem('finalPhoto');
-          localStorage.removeItem('finalPhotoThumb');
-          generatedLayout = null;
-          currentLayoutPage = 0;
-          renderSavedGanciState();
-          updatePreview();
+      const triggerButton = document.querySelector('.action-card .btn-start-ganci');
+      const originalText = triggerButton?.textContent || 'Mulai Ambil Foto Ganci →';
+      isOpeningGanciCamera = true;
+      if (triggerButton) {
+        triggerButton.disabled = true;
+        triggerButton.textContent = 'Membuka kamera...';
+      }
+
+      try {
+        await window.GanciStorage?.requestPersistentStorage?.();
+        const opened = await LocalCamera.open({
+          seconds: 5,
+          output: 'blob',
+          type: 'image/jpeg',
+          quality: 0.90,
+          maxWidth: 1800,
+          maxHeight: 2400,
+          onCapture: async (photoBlob) => {
+            isSavingGanciPhoto = true;
+            if (triggerButton) {
+              triggerButton.disabled = true;
+              triggerButton.textContent = 'Menyimpan foto...';
+            }
+
+            try {
+              const config = getGanciConfig();
+              const stateToSave = {
+                filter: { tone: 'normal' },
+                beautify: state.beautify,
+                mode: 'ganci',
+                bentuk: config.bentuk,
+                cornerStyle: config.cornerStyle,
+                frame: config.frame,
+                frameLabel: config.frameLabel,
+                ukuranKertas: config.ukuranKertas,
+                customW: config.customW,
+                customH: config.customH,
+                ganciW: config.ganciW,
+                ganciH: config.ganciH,
+                jumlah: config.jumlah,
+                config,
+                updatedAt: new Date().toISOString()
+              };
+
+              activeGanciState = await window.GanciStorage.saveState(stateToSave, photoBlob);
+              try { localStorage.setItem('ganciConfig', JSON.stringify(config)); } catch (storageError) {
+                console.warn('Konfigurasi Ganci tidak tersimpan di localStorage:', storageError);
+              }
+              generatedLayout = null;
+              currentLayoutPage = 0;
+              await renderSavedGanciState(activeGanciState);
+              // Tutup stream kamera lebih dulu, lalu generate layout agar RAM perangkat tidak terbebani bersamaan.
+              setTimeout(() => { void generateGanciLayout(true); }, 80);
+            } catch (error) {
+              console.error('Gagal menyimpan foto Ganci:', error);
+              alert('Foto Ganci gagal masuk ke layout. ' + (error?.message || error));
+              throw error;
+            } finally {
+              isSavingGanciPhoto = false;
+              if (triggerButton) {
+                triggerButton.disabled = false;
+                triggerButton.textContent = originalText;
+              }
+            }
+          }
+        });
+
+        if (!opened) {
+          alert('Kamera belum bisa dibuka. Periksa izin kamera lalu tekan tombol mulai lagi.');
         }
-      });
+      } finally {
+        isOpeningGanciCamera = false;
+        if (!isSavingGanciPhoto && triggerButton) {
+          triggerButton.disabled = false;
+          triggerButton.textContent = originalText;
+        }
+      }
     }
 
-    function renderSavedGanciState() {
+    async function renderSavedGanciState(savedState = null) {
       const box = document.getElementById('savedGanciBox');
       if (!box) return;
-      let saved = null;
-      try { saved = JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) {}
-      if (!saved || !saved.photo) return;
+      const saved = savedState || await getSavedState();
+      if (!saved || !saved.photo) {
+        box.classList.remove('show');
+        return;
+      }
       document.getElementById('savedGanciImg').src = saved.photo;
       const frameLabel = saved.frameLabel || (window.GanciFrames?.labels?.[saved.frame]) || saved.frame || '-';
       const tone = saved.filter?.tone || 'normal';
       const cfg = saved.config || {};
       const corner = (saved.bentuk || cfg.bentuk || state.bentuk) === 'persegi' ? ` · Sudut: ${saved.cornerStyle || cfg.cornerStyle || state.cornerStyle || 'rounded'}` : '';
-      document.getElementById('savedGanciMeta').textContent = `Frame: ${frameLabel}${corner} · Filter: ${tone} · ${cfg.jumlah || state.jumlah || 1} set`;
+      const storageLabel = saved._storageMode === 'indexedDB' ? 'IndexedDB' : 'fallback';
+      document.getElementById('savedGanciMeta').textContent = `Frame: ${frameLabel}${corner} · Filter: ${tone} · ${cfg.jumlah || state.jumlah || 1} set · Storage: ${storageLabel}`;
       box.classList.add('show');
       document.getElementById('printCard').classList.add('show');
-      loadPreviewPhotoFromState();
+      await loadPreviewPhotoFromState(saved);
     }
 
     let generatedLayout = null;
     let currentLayoutPage = 0;
-
-    function getSavedState() {
-      try { return JSON.parse(localStorage.getItem('ganciState') || 'null'); } catch(e) { return null; }
-    }
 
     function syncInputsFromConfig(cfg) {
       if (!cfg) return;
@@ -932,9 +984,9 @@
     };
 
     window.generateGanciLayout = async function(auto = false) {
-      const saved = getSavedState();
+      const saved = await getSavedState();
       if (!saved || !saved.photo) {
-        alert('Ambil dan simpan foto ganci dulu ya.');
+        if (!auto) alert('Ambil dan simpan foto ganci dulu ya.');
         return;
       }
       const btn = document.getElementById('btnGenerateLayout');
@@ -951,7 +1003,7 @@
         saved.cornerStyle = freshConfig.cornerStyle;
         saved.config = { ...(saved.config || {}), ...freshConfig };
         localStorage.setItem('ganciConfig', JSON.stringify(saved.config));
-        localStorage.setItem('ganciState', JSON.stringify(saved));
+        await window.GanciStorage.saveMetadata(saved);
         const logoUrl = (typeof Auth !== 'undefined' && Auth.getLogoUrl) ? Auth.getLogoUrl() : '/logo.png';
         generatedLayout = await window.GanciPrint.generateSheets(saved, { logoUrl, dpi: 300 });
         currentLayoutPage = 0;
@@ -977,12 +1029,12 @@
       document.getElementById('layoutStatus').textContent = `JPG siap print berhasil didownload${generatedLayout.pages.length > 1 ? ' (' + generatedLayout.pages.length + ' file)' : ''}.`;
     };
 
-    window.saveLayoutToGallery = function() {
+    window.saveLayoutToGallery = async function() {
       if (!generatedLayout?.pages?.length) return;
       try {
-        const saved = getSavedState();
+        const saved = await getSavedState();
         const page = generatedLayout.pages[currentLayoutPage];
-        window.GanciPrint.saveLocalGallery({
+        await window.GanciPrint.saveLocalGallery({
           type: 'ganci-layout',
           createdAt: new Date().toISOString(),
           preview: page.dataUrl,
@@ -998,7 +1050,8 @@
         });
         document.getElementById('layoutStatus').textContent = 'Hasil cetak tersimpan di galeri lokal browser ini.';
       } catch (e) {
-        alert('Gagal menyimpan ke galeri lokal. Storage mungkin penuh.');
+        console.error('Simpan galeri Ganci gagal:', e);
+        alert('Gagal menyimpan ke galeri lokal. ' + (e?.message || 'Storage browser tidak tersedia.'));
       }
     };
 
@@ -1069,18 +1122,33 @@
     };
 
     // Init
-    const params = new URLSearchParams(window.location.search);
-    const existing = getSavedState();
-    if (existing?.config) syncInputsFromConfig(existing.config);
-    updatePreview();
-    renderSavedGanciState();
-    loadPreviewPhotoFromState();
-    if (existing?.photo) document.getElementById('printCard').classList.add('show');
-    if (params.get('done') === '1' && existing?.photo) {
-      setTimeout(() => generateGanciLayout(true), 120);
-    }
+    (async function initGanciPage() {
+      const params = new URLSearchParams(window.location.search);
+      try {
+        await window.GanciStorage?.requestPersistentStorage?.();
+        const existing = await getSavedState(true);
+        if (existing?.config) syncInputsFromConfig(existing.config);
+        updatePreview();
+        await renderSavedGanciState(existing);
+        await loadPreviewPhotoFromState(existing);
+        if (existing?.photo) document.getElementById('printCard').classList.add('show');
+        if (params.get('done') === '1' && existing?.photo) {
+          setTimeout(() => { void generateGanciLayout(true); }, 120);
+        }
+      } catch (error) {
+        console.error('Inisialisasi Ganci gagal:', error);
+        updatePreview();
+      }
+    })();
   </script>
 <script src="/local-camera.js"></script>
 <script src="/beautify.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then(registration => registration.update())
+      .catch(error => console.warn('Service worker Ganci gagal diperbarui:', error));
+  }
+</script>
 </body>
 </html>

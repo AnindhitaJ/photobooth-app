@@ -276,6 +276,7 @@
   })();
   </script>
   <script src="/ganci-utils.js"></script>
+  <script src="/ganci-storage.js"></script>
 </head>
 <body>
 
@@ -1418,7 +1419,8 @@
           config: ganciConfig,
           updatedAt: new Date().toISOString()
         };
-        localStorage.setItem('ganciState', JSON.stringify(ganciState));
+        if (!window.GanciStorage) throw new Error('Penyimpanan Ganci belum termuat.');
+        await window.GanciStorage.saveState(ganciState, ganciState.photo);
         window.location.assign('/ganci?done=1');
         return;
       }
@@ -1510,7 +1512,7 @@
 
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(registration => registration.update()).catch(() => {});
   }
 </script>
 </body>

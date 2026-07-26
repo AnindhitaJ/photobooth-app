@@ -1,9 +1,12 @@
 (function () {
+  'use strict';
+
   let stream = null;
   let countdownTimer = null;
   let captureOptions = {};
   let openingSequence = 0;
   let suspendedByBackground = false;
+  let isCapturing = false;
 
   function ensureModal() {
     if (document.getElementById('localCameraModal')) return;
@@ -57,13 +60,16 @@
       }
       .local-camera-retake, .local-camera-now {
         border:0; border-radius:999px; padding:11px 16px; cursor:pointer;
-        font: 900 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font:900 13px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       }
       .local-camera-retake { background:#f1f5f9; color:#1f2937; }
       .local-camera-now { background:linear-gradient(135deg,#D84B7E,#E5B842); color:white; }
+      .local-camera-retake:disabled, .local-camera-now:disabled, .local-camera-close:disabled {
+        opacity:.55; cursor:not-allowed;
+      }
       @media (max-width: 520px) {
         .local-camera-box { width: 94vw; }
-        .local-camera-number { min-width: 94px; height:94px; font-size:54px; }
+        .local-camera-number { min-width:94px; height:94px; font-size:54px; }
       }
     `;
     document.head.appendChild(style);
@@ -92,28 +98,57 @@
     document.body.appendChild(modal);
   }
 
+  function setControlsDisabled(disabled) {
+    document.querySelectorAll('.local-camera-retake, .local-camera-now, .local-camera-close').forEach(button => {
+      button.disabled = Boolean(disabled);
+    });
+  }
+
+  function setLabel(message) {
+    const label = document.getElementById('localCameraLabel');
+    if (label) label.textContent = message;
+  }
+
   function stopStream() {
     if (countdownTimer) {
       clearInterval(countdownTimer);
       countdownTimer = null;
     }
     if (stream) {
-      stream.getTracks().forEach(t => t.stop());
+      stream.getTracks().forEach(track => track.stop());
       stream = null;
     }
   }
 
-  function setNumber(n) {
-    const el = document.getElementById('localCameraNumber');
-    const label = document.getElementById('localCameraLabel');
-    if (el) el.textContent = String(n);
-    if (label) label.textContent = `Foto otomatis dalam ${n} detik`;
+  function setNumber(value) {
+    const number = document.getElementById('localCameraNumber');
+    if (number) number.textContent = String(value);
+    setLabel(`Foto otomatis dalam ${value} detik`);
   }
 
   function isStreamReady() {
     const video = document.getElementById('localCameraVideo');
     const track = stream?.getVideoTracks?.().find(item => item.readyState === 'live');
-    return !!(track && video?.srcObject === stream && !video.paused && video.videoWidth > 0);
+    return Boolean(track && video?.srcObject === stream && !video.paused && video.videoWidth > 0 && video.videoHeight > 0);
+  }
+
+  function getOutputSize(width, height) {
+    const maxWidth = Math.max(1, Number(captureOptions.maxWidth) || width);
+    const maxHeight = Math.max(1, Number(captureOptions.maxHeight) || height);
+    const scale = Math.min(1, maxWidth / width, maxHeight / height);
+    return {
+      width: Math.max(1, Math.round(width * scale)),
+      height: Math.max(1, Math.round(height * scale))
+    };
+  }
+
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('Browser gagal membuat file foto.'));
+      }, type, quality);
+    });
   }
 
   async function open(options = {}) {
@@ -122,51 +157,58 @@
     const modal = document.getElementById('localCameraModal');
     const video = document.getElementById('localCameraVideo');
     const sequence = ++openingSequence;
+    isCapturing = false;
+    setControlsDisabled(false);
     modal.classList.add('show');
 
     try {
       stopStream();
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia tidak didukung.');
+
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: captureOptions.facingMode || 'user',
-          width: { ideal: 1920 },
-          height: { ideal: 2560 }
+          width: { ideal: Number(captureOptions.cameraWidth) || 1920 },
+          height: { ideal: Number(captureOptions.cameraHeight) || 2560 }
         },
         audio: false
       });
+
       if (sequence !== openingSequence) {
         stream.getTracks().forEach(track => track.stop());
         return false;
       }
+
       const track = stream.getVideoTracks()[0];
       if (track) {
         track.onended = () => {
           suspendedByBackground = true;
-          const label = document.getElementById('localCameraLabel');
-          if (label) label.textContent = 'Kamera berhenti. Tekan Ulang timer untuk mengaktifkan lagi.';
+          setLabel('Kamera berhenti. Tekan Ulang timer untuk mengaktifkan lagi.');
         };
       }
+
       video.srcObject = stream;
       await video.play();
       if (!video.videoWidth) {
         await new Promise((resolve, reject) => {
           const timer = setTimeout(() => reject(new Error('Preview kamera timeout.')), 7000);
-          video.addEventListener('loadedmetadata', () => { clearTimeout(timer); resolve(); }, { once: true });
+          video.addEventListener('loadedmetadata', () => {
+            clearTimeout(timer);
+            resolve();
+          }, { once: true });
         });
       }
+
       suspendedByBackground = false;
       startCountdown(captureOptions.seconds || 5);
       return true;
-    } catch (e) {
-      console.error('Local camera error:', e);
+    } catch (error) {
+      console.error('Local camera error:', error);
       stopStream();
-      const label = document.getElementById('localCameraLabel');
-      if (label) label.textContent = 'Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.';
+      setLabel('Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.');
       return false;
     }
   }
-
 
   function startCountdown(seconds = 5) {
     if (countdownTimer) clearInterval(countdownTimer);
@@ -177,7 +219,7 @@
       if (left <= 0) {
         clearInterval(countdownTimer);
         countdownTimer = null;
-        captureNow();
+        void captureNow();
       } else {
         setNumber(left);
       }
@@ -185,6 +227,7 @@
   }
 
   async function restart() {
+    if (isCapturing) return;
     if (!isStreamReady()) {
       await open(captureOptions);
       return;
@@ -192,43 +235,74 @@
     startCountdown(captureOptions.seconds || 5);
   }
 
-  function captureNow() {
+  async function captureNow() {
+    if (isCapturing) return false;
+
     const video = document.getElementById('localCameraVideo');
-    if (!video || !video.videoWidth || !isStreamReady()) {
-      const label = document.getElementById('localCameraLabel');
-      if (label) label.textContent = 'Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.';
-      return;
+    if (!video || !isStreamReady()) {
+      setLabel('Kamera belum aktif. Tekan Ulang timer untuk mencoba lagi.');
+      return false;
     }
 
+    isCapturing = true;
+    setControlsDisabled(true);
     if (countdownTimer) {
       clearInterval(countdownTimer);
       countdownTimer = null;
     }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    try {
+      setLabel('Memproses dan menyimpan foto...');
+      const output = getOutputSize(video.videoWidth, video.videoHeight);
+      const canvas = document.createElement('canvas');
+      canvas.width = output.width;
+      canvas.height = output.height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas kamera tidak tersedia.');
 
-    // Mirror output to match front-camera preview.
-    ctx.save();
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.save();
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.restore();
 
-    const dataUrl = canvas.toDataURL('image/jpeg', captureOptions.quality || 0.98);
-    const callback = captureOptions.onCapture;
-    close();
-    if (typeof callback === 'function') callback(dataUrl);
+      const type = captureOptions.type || 'image/jpeg';
+      const quality = Math.min(1, Math.max(0.5, Number(captureOptions.quality) || 0.92));
+      const outputMode = captureOptions.output === 'blob' ? 'blob' : 'dataUrl';
+      const payload = outputMode === 'blob'
+        ? await canvasToBlob(canvas, type, quality)
+        : canvas.toDataURL(type, quality);
+
+      const callback = captureOptions.onCapture;
+      if (typeof callback === 'function') {
+        await Promise.resolve(callback(payload, {
+          width: canvas.width,
+          height: canvas.height,
+          type,
+          quality,
+          output: outputMode
+        }));
+      }
+
+      close();
+      return true;
+    } catch (error) {
+      console.error('Local camera capture error:', error);
+      setLabel(`Foto gagal disimpan: ${error?.message || error}. Tekan Ulang timer untuk mencoba lagi.`);
+      setControlsDisabled(false);
+      return false;
+    } finally {
+      isCapturing = false;
+    }
   }
 
   function close() {
     openingSequence += 1;
     suspendedByBackground = false;
     stopStream();
+    setControlsDisabled(false);
     const modal = document.getElementById('localCameraModal');
     if (modal) modal.classList.remove('show');
     const video = document.getElementById('localCameraVideo');
@@ -242,8 +316,7 @@
       suspendedByBackground = true;
       stopStream();
     } else if (suspendedByBackground) {
-      const label = document.getElementById('localCameraLabel');
-      if (label) label.textContent = 'Kamera dijeda. Tekan Ulang timer untuk mengaktifkan lagi.';
+      setLabel('Kamera dijeda. Tekan Ulang timer untuk mengaktifkan lagi.');
     }
   });
 

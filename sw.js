@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.27-media-share-fix';
+const CACHE_NAME = 'lux-photobooth-v1.28-share-button-fix';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

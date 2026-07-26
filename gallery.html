@@ -435,7 +435,7 @@
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
-  <script src="/media-fetch.js"></script>
+  <script src="/media-fetch.js?v=1.28"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1079,12 +1079,25 @@
 
   function restoreShareStripButton() {
     if (!activeSess) return;
+    const button = document.getElementById('btnShareStrip');
+    if (!button) return;
+
+    // Tombol harus selalu bisa ditekan. Prefetch hanya peningkatan kualitas agar
+    // browser yang mendukung file sharing dapat membagikan file asli. Jika file
+    // belum siap, shareStrip() langsung membagikan URL tanpa menunggu jaringan.
     if (activeStripBlob && LuxMedia.supportsFileShare(LuxMedia.inferMimeType(activeStripBlob, activeStripBlobURL))) {
       setShareStripButton('📤 Share Strip', false);
+      button.title = 'Bagikan file foto strip';
+      button.removeAttribute('aria-busy');
     } else if (navigator.share) {
-      setShareStripButton('📤 Share Link', false);
+      setShareStripButton('📤 Share Strip', false);
+      button.title = 'Bagikan tautan sekarang; file asli disiapkan di latar belakang';
+      if (activeStripBlobURL && !activeStripBlob) button.setAttribute('aria-busy', 'true');
+      else button.removeAttribute('aria-busy');
     } else {
       setShareStripButton('⬇️ Simpan Strip', false);
+      button.title = 'Browser ini tidak mendukung menu share; foto akan disimpan';
+      button.removeAttribute('aria-busy');
     }
   }
 
@@ -1093,13 +1106,13 @@
     activeStripBlob = null;
     activeStripBlobURL = String(url || '');
 
-    // Browser tanpa file sharing tidak perlu menarik file besar saat modal dibuka.
-    if (!LuxMedia.supportsFileShare()) {
-      restoreShareStripButton();
-      return;
-    }
+    // Jangan pernah menonaktifkan tombol ketika menunggu file. Pada koneksi
+    // lambat atau rewrite media bermasalah, pengguna tetap dapat share URL.
+    restoreShareStripButton();
 
-    setShareStripButton('⏳ Menyiapkan file...', true);
+    // Browser tanpa file sharing tidak perlu menarik file besar saat modal dibuka.
+    if (!LuxMedia.supportsFileShare()) return;
+
     LuxMedia.prefetch(activeStripBlobURL)
       .then(blob => {
         if (token !== activeStripPrefetchToken || !activeSess) return;
@@ -1180,7 +1193,14 @@
     const session = activeSess;
     const filename = `lux-strip-${session.ts}.jpg`;
     const button = document.getElementById('btnShareStrip');
-    if (button) button.disabled = true;
+
+    // navigator.share harus dipanggil langsung dari klik pengguna. Karena itu,
+    // jangan menunggu fetch/prefetch di sini. Jika Blob belum siap, bagikan URL.
+    if (button) {
+      button.disabled = true;
+      button.textContent = '⏳ Membuka share...';
+      button.removeAttribute('aria-busy');
+    }
 
     try {
       if (activeStripBlob && LuxMedia.supportsFileShare(LuxMedia.inferMimeType(activeStripBlob, session.strip.url))) {
@@ -1193,8 +1213,8 @@
         return;
       }
 
-      // Fallback tanpa fetch: share URL langsung agar tetap berjalan pada desktop
-      // atau ketika bucket/CDN sedang menolak CORS untuk file sharing.
+      // File belum siap atau browser tidak mendukung share file. Share URL
+      // langsung sehingga klik selalu menghasilkan respons tanpa menunggu proxy.
       if (navigator.share) {
         await navigator.share({
           title: 'Foto Strip LUX Photobooth',
@@ -1824,7 +1844,7 @@
 </script>
 
 <script>
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=1.28-share-button').then(reg => reg.update()).catch(() => {});
 </script>
 </body>
 </html>

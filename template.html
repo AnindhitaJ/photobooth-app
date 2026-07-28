@@ -99,6 +99,17 @@
       color: #3d2600; font-size: 10px; font-weight: 800; padding: 2px 7px;
       border-radius: 50px; z-index: 2;
     }
+    .layout-badge {
+      position: absolute; top: 32px; left: 6px; z-index: 3;
+      padding: 3px 8px; border-radius: 50px;
+      background: #1D3557; color: white;
+      font-size: 10px; font-weight: 900; letter-spacing: .15px;
+      box-shadow: 0 3px 10px rgba(29,53,87,.24);
+    }
+    .layout-badge.pigura {
+      background: linear-gradient(135deg, #8b5e34, #d6b56d);
+      color: #fffdf7;
+    }
     .info-box {
       display: none; background: white; border: 2px solid var(--green);
       border-radius: 14px; padding: 12px 20px; font-size: 14px; font-weight: 600;
@@ -551,26 +562,65 @@
     { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
   ];
 
-  // Katalog built-in Photobox 4R memakai tema dan wording yang sama dengan Photostrip.
-  // Di setiap kategori, jumlah slot diputar 4 → 5 → 6 agar pilihannya beragam.
-  const photoboxCategoryIndex = new Map();
-  PHOTOBOX_DEFS = BUILTIN_FRAME_DEFS
-    .filter(def => !HIDDEN_CATEGORIES.includes(def.category))
-    .map(def => {
-      const indexInCategory = photoboxCategoryIndex.get(def.category) || 0;
-      const slotCount = 4 + (indexInCategory % 3);
-      photoboxCategoryIndex.set(def.category, indexInCategory + 1);
+  // Koleksi khusus Photobox 4R satu foto dengan tampilan seperti pigura fisik.
+  const PIGURA_FRAME_DEFS = [
+    { id:'pigura_classic_walnut', category:'Pigura', name:'Pigura Walnut Klasik', bg:'#efe4d3', accent:'#6f4427', accent2:'#d6b98c', ink:'#3f2a1f', motif:'frame', frameStyle:'classic', layout:'single-frame-classic' },
+    { id:'pigura_oak_minimal', category:'Pigura', name:'Pigura Oak Minimal', bg:'#f6f2e9', accent:'#b98b5e', accent2:'#ead9bd', ink:'#4a3728', motif:'frame', frameStyle:'minimal', layout:'single-frame-minimal' },
+    { id:'pigura_gold_gallery', category:'Pigura', name:'Pigura Gold Gallery', bg:'#f7f1e3', accent:'#b9913f', accent2:'#f3df9d', ink:'#5f4505', motif:'frame', frameStyle:'gold', layout:'single-frame-gallery' },
+    { id:'pigura_black_museum', category:'Pigura', name:'Pigura Black Museum', bg:'#e9e7e2', accent:'#171717', accent2:'#a3a3a3', ink:'#171717', motif:'frame', frameStyle:'museum', layout:'single-frame-gallery' },
+    { id:'pigura_white_mat', category:'Pigura', name:'Pigura White Mat', bg:'#f5f5f4', accent:'#d6d3d1', accent2:'#ffffff', ink:'#44403c', motif:'frame', frameStyle:'white', layout:'single-frame-wide-mat' },
+    { id:'pigura_rose_vintage', category:'Pigura', name:'Pigura Rose Vintage', bg:'#faeeee', accent:'#a95d67', accent2:'#e8b9bf', ink:'#6f3039', motif:'frame', frameStyle:'vintage', layout:'single-frame-classic' },
+    { id:'pigura_ornate_royal', category:'Pigura', name:'Pigura Royal Ornate', bg:'#17130f', accent:'#c29b48', accent2:'#f0d68d', ink:'#fff6d8', motif:'frame', frameStyle:'ornate', layout:'single-frame-ornate' },
+    { id:'pigura_floating_glass', category:'Pigura', name:'Pigura Floating Glass', bg:'#eaf0f2', accent:'#64748b', accent2:'#dbeafe', ink:'#334155', motif:'frame', frameStyle:'floating', layout:'single-frame-floating' },
+    { id:'pigura_polaroid_display', category:'Pigura', name:'Pigura Polaroid Display', bg:'#d9d1c5', accent:'#ffffff', accent2:'#e7e5e4', ink:'#292524', motif:'frame', frameStyle:'polaroid', layout:'single-frame-polaroid' },
+    { id:'pigura_botanical_home', category:'Pigura', name:'Pigura Botanical Home', bg:'#eaf2e7', accent:'#6b7f5e', accent2:'#cbd8c1', ink:'#31402b', motif:'frame', frameStyle:'botanical', layout:'single-frame-classic' }
+  ];
 
-      return {
-        ...def,
-        sourceId: def.id,
-        id: `photobox_${def.id}`,
-        // Nama dibuat identik dengan Photostrip; label produk sudah ditangani UI.
-        name: def.name,
-        slotCount,
-        layout: `slots-${slotCount}`
-      };
-    });
+  // Katalog built-in Photobox 4R memakai tema dan wording yang sama dengan Photostrip.
+  // Setiap desain memiliki varian multi-foto dan varian satu foto.
+  const visiblePhotoboxFrameDefs = BUILTIN_FRAME_DEFS
+    .filter(def => !HIDDEN_CATEGORIES.includes(def.category));
+  const photoboxCategoryIndex = new Map();
+
+  const multiPhotoPhotoboxDefs = visiblePhotoboxFrameDefs.map(def => {
+    const indexInCategory = photoboxCategoryIndex.get(def.category) || 0;
+    const slotCount = 4 + (indexInCategory % 3);
+    photoboxCategoryIndex.set(def.category, indexInCategory + 1);
+
+    return {
+      ...def,
+      sourceId: def.id,
+      id: `photobox_${def.id}`,
+      name: def.name,
+      slotCount,
+      layout: `slots-${slotCount}`
+    };
+  });
+
+  const singlePhotoPhotoboxDefs = visiblePhotoboxFrameDefs.map(def => ({
+    ...def,
+    sourceId: def.id,
+    id: `photobox_single_${def.id}`,
+    name: `${def.name} · 1 Foto`,
+    slotCount: 1,
+    layout: def.category === 'Social Media' ? 'single-social' : 'single-portrait',
+    isSinglePhoto: true
+  }));
+
+  const pictureFramePhotoboxDefs = PIGURA_FRAME_DEFS.map(def => ({
+    ...def,
+    sourceId: def.id,
+    id: `photobox_${def.id}`,
+    slotCount: 1,
+    isSinglePhoto: true,
+    isPictureFrame: true
+  }));
+
+  PHOTOBOX_DEFS = [
+    ...multiPhotoPhotoboxDefs,
+    ...singlePhotoPhotoboxDefs,
+    ...pictureFramePhotoboxDefs
+  ];
 
   const builtInCache = new Map();
 
@@ -1956,16 +2006,28 @@
 
 
   function generatePhotoboxSlots(layout) {
-    const match = String(layout || '').match(/(4|5|6)/);
+    const layoutName = String(layout || '');
+    const match = layoutName.match(/(1|4|5|6)/);
     const slotCount = match ? Number(match[1]) : 4;
 
-    /*
-      Komposisi Photobox 4R dibuat memenuhi tinggi kertas secara seimbang.
-      Area slot dimulai setelah header dan berakhir tepat sebelum footer,
-      sehingga desain tidak lagi berat di bagian atas dan kosong di bawah.
-    */
+    // Layout satu foto: aperture dibuat besar tetapi tetap menyisakan ruang aman
+    // untuk header, footer, dan ornamen frame 4R.
+    if (slotCount === 1 || layoutName.startsWith('single-')) {
+      const singleLayouts = {
+        'single-social':        { x: 104, y: 258, w: 973, h: 1212, r: 0 },
+        'single-portrait':      { x: 142, y: 272, w: 897, h: 1210, r: 0 },
+        'single-frame-classic': { x: 194, y: 310, w: 793, h: 1060, r: 0 },
+        'single-frame-minimal': { x: 168, y: 286, w: 845, h: 1115, r: 0 },
+        'single-frame-gallery': { x: 184, y: 294, w: 813, h: 1085, r: 0 },
+        'single-frame-wide-mat':{ x: 218, y: 332, w: 745, h: 1000, r: 0 },
+        'single-frame-ornate':  { x: 205, y: 320, w: 771, h: 1035, r: 0 },
+        'single-frame-floating':{ x: 178, y: 300, w: 825, h: 1090, r: 0 },
+        'single-frame-polaroid':{ x: 185, y: 285, w: 811, h: 990, r: 0 }
+      };
+      return [{ ...(singleLayouts[layoutName] || singleLayouts['single-portrait']) }];
+    }
+
     if (slotCount === 5) {
-      // 1 hero landscape + 2 baris pendamping; menyebar sampai area bawah.
       return [
         { x: 92,  y: 270,  w: 997, h: 360, r: 0 },
         { x: 92,  y: 720,  w: 478, h: 335, r: 0 },
@@ -1976,7 +2038,6 @@
     }
 
     if (slotCount === 6) {
-      // Grid 2 × 3 full-height dengan jarak vertikal yang konsisten.
       return [
         { x: 92,  y: 270,  w: 478, h: 330, r: 0 },
         { x: 611, y: 270,  w: 478, h: 330, r: 0 },
@@ -1987,7 +2048,6 @@
       ];
     }
 
-    // 4 slot: dua baris besar yang memenuhi bidang tengah sampai bawah.
     return [
       { x: 92,  y: 285, w: 478, h: 550, r: 0 },
       { x: 611, y: 285, w: 478, h: 550, r: 0 },
@@ -2205,9 +2265,12 @@
     const headerY = 126;
 
     // Wording mengambil copy yang dipakai pada built-in Photostrip.
-    roundRect(ctx, W / 2 - 330, 54, 660, 136, 44, withAlpha('#ffffff', .18), withAlpha(def.accent, .30), 2);
-    text(ctx, copy.title, W / 2, copy.subtitle ? headerY - 14 : headerY + 2, 42, def.ink, 950);
-    if (copy.subtitle) text(ctx, copy.subtitle, W / 2, headerY + 34, 18, withAlpha(def.ink, .64), 850);
+    // Kategori Pigura dibuat seperti frame pajangan, sehingga tidak memakai header besar.
+    if (category !== 'Pigura') {
+      roundRect(ctx, W / 2 - 330, 54, 660, 136, 44, withAlpha('#ffffff', .18), withAlpha(def.accent, .30), 2);
+      text(ctx, copy.title, W / 2, copy.subtitle ? headerY - 14 : headerY + 2, 42, def.ink, 950);
+      if (copy.subtitle) text(ctx, copy.subtitle, W / 2, headerY + 34, 18, withAlpha(def.ink, .64), 850);
+    }
 
     if (category === 'Korean') {
       for (let y = 250; y < H - 220; y += 150) {
@@ -2331,6 +2394,57 @@
       }
     }
 
+    if (category === 'Pigura') {
+      // Nuansa dinding/galeri agar hasil terasa seperti foto yang benar-benar dipajang.
+      const wall = ctx.createLinearGradient(0, 0, 0, H);
+      wall.addColorStop(0, withAlpha('#ffffff', .34));
+      wall.addColorStop(.52, withAlpha(def.bg, .08));
+      wall.addColorStop(1, withAlpha(def.ink, .07));
+      ctx.fillStyle = wall;
+      ctx.fillRect(0, 0, W, H);
+
+      for (let y = 110; y < H; y += 118) {
+        line(ctx, 0, y, W, y, withAlpha(def.ink, .035), 1);
+      }
+
+      const slot = slots[0];
+      ctx.save();
+      ctx.shadowColor = withAlpha('#000000', .24);
+      ctx.shadowBlur = 42;
+      ctx.shadowOffsetY = 22;
+      roundRect(ctx, slot.x - 92, slot.y - 92, slot.w + 184, slot.h + 184, 26, withAlpha('#000000', .08), null);
+      ctx.restore();
+
+      if (def.frameStyle === 'botanical') {
+        for (const [x, y, flip] of [[92, 245, 1], [W - 92, H - 245, -1]]) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.scale(flip, 1);
+          for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = withAlpha(def.accent, .42 - i * .035);
+            ctx.beginPath();
+            ctx.ellipse(i * 18, i * 24, 12, 28, -.55, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      if (def.frameStyle === 'ornate' || def.frameStyle === 'gold') {
+        text(ctx, '❦', 90, 180, 42, def.accent2, 900);
+        text(ctx, '❦', W - 90, 180, 42, def.accent2, 900);
+        text(ctx, '❦', 90, H - 140, 42, def.accent2, 900);
+        text(ctx, '❦', W - 90, H - 140, 42, def.accent2, 900);
+      }
+
+      const plaqueText = def.frameStyle === 'museum' ? 'PRIVATE COLLECTION'
+        : def.frameStyle === 'polaroid' ? 'OUR FAVORITE MOMENT'
+        : 'MEMORY FRAME';
+      roundRect(ctx, W / 2 - 190, H - 170, 380, 62, 18,
+        withAlpha('#ffffff', .45), withAlpha(def.accent, .34), 1.5);
+      text(ctx, plaqueText, W / 2, H - 138, 17, def.ink, 900);
+    }
+
     if (category === 'Pattern') {
       roundRect(ctx, 66, 66, W - 132, H - 132, 42, null, withAlpha(def.accent, .34), 3);
       roundRect(ctx, 86, 86, W - 172, H - 172, 34, null, withAlpha(def.accent2, .24), 1.5);
@@ -2338,7 +2452,7 @@
 
     // Social Media sudah menaruh footer di dalam action card.
     // Kategori lain tetap memakai footer bawah seperti sebelumnya.
-    if (copy.footer && category !== 'Social Media') {
+    if (copy.footer && !['Social Media', 'Pigura'].includes(category)) {
       text(ctx, copy.footer, W / 2, H - 102, 23, def.ink, 900);
     }
   }
@@ -2347,22 +2461,74 @@
     const labels = getPhotostripSlotLabels(def, slots.length);
 
     slots.forEach((slot, idx) => {
-      // Ring solid di luar aperture; bagian foto tetap benar-benar transparan.
-      roundRect(ctx, slot.x - 12, slot.y - 12, slot.w + 24, slot.h + 24, 30, null, withAlpha(def.accent, .76), 5);
-      roundRect(ctx, slot.x - 3, slot.y - 3, slot.w + 6, slot.h + 6, 22, null, withAlpha('#ffffff', .90), 3);
+      if (def.category === 'Pigura' || def.isPictureFrame) {
+        const style = def.frameStyle || 'classic';
+        const outerPad = style === 'ornate' ? 86 : style === 'minimal' ? 56 : 72;
+        const matPad = style === 'white' ? 54 : 36;
+        const outerRadius = style === 'ornate' ? 24 : 18;
 
-      // Label slot memakai gaya istilah yang sama seperti Photostrip per kategori.
+        ctx.save();
+        ctx.shadowColor = withAlpha('#000000', .30);
+        ctx.shadowBlur = 34;
+        ctx.shadowOffsetY = 18;
+        roundRect(ctx,
+          slot.x - outerPad, slot.y - outerPad,
+          slot.w + outerPad * 2, slot.h + outerPad * 2,
+          outerRadius, def.accent, withAlpha(def.ink, .56), 4);
+        ctx.restore();
+
+        roundRect(ctx,
+          slot.x - outerPad + 12, slot.y - outerPad + 12,
+          slot.w + (outerPad - 12) * 2, slot.h + (outerPad - 12) * 2,
+          Math.max(8, outerRadius - 4), null, withAlpha(def.accent2, .80), 8);
+        roundRect(ctx,
+          slot.x - outerPad + 28, slot.y - outerPad + 28,
+          slot.w + (outerPad - 28) * 2, slot.h + (outerPad - 28) * 2,
+          Math.max(6, outerRadius - 8), null, withAlpha(def.ink, .25), 3);
+
+        roundRect(ctx,
+          slot.x - matPad, slot.y - matPad,
+          slot.w + matPad * 2, slot.h + matPad * 2,
+          12, style === 'museum' ? '#f5f5f4' : withAlpha('#ffffff', .96), withAlpha(def.ink, .18), 2);
+
+        ctx.clearRect(slot.x, slot.y, slot.w, slot.h);
+        roundRect(ctx, slot.x - 2, slot.y - 2, slot.w + 4, slot.h + 4, 4, null, withAlpha(def.ink, .62), 4);
+        roundRect(ctx, slot.x + 5, slot.y + 5, slot.w - 10, slot.h - 10, 2, null, withAlpha('#ffffff', .36), 2);
+
+        if (style === 'ornate') {
+          const corners = [
+            [slot.x - outerPad + 26, slot.y - outerPad + 28],
+            [slot.x + slot.w + outerPad - 26, slot.y - outerPad + 28],
+            [slot.x - outerPad + 26, slot.y + slot.h + outerPad - 28],
+            [slot.x + slot.w + outerPad - 26, slot.y + slot.h + outerPad - 28]
+          ];
+          corners.forEach(([x, y]) => {
+            circle(ctx, x, y, 17, def.accent2, withAlpha(def.ink, .45));
+            drawStar(ctx, x, y, 10, withAlpha('#ffffff', .72), 6);
+          });
+        }
+        return;
+      }
+
+      const isSingle = slots.length === 1;
+      const outerPad = isSingle ? 18 : 12;
+      roundRect(ctx, slot.x - outerPad, slot.y - outerPad, slot.w + outerPad * 2, slot.h + outerPad * 2,
+        isSingle ? 36 : 30, null, withAlpha(def.accent, .76), isSingle ? 7 : 5);
+      roundRect(ctx, slot.x - 3, slot.y - 3, slot.w + 6, slot.h + 6,
+        isSingle ? 26 : 22, null, withAlpha('#ffffff', .90), isSingle ? 4 : 3);
+
       const label = labels[idx] || String(idx + 1).padStart(2, '0');
       const labelWidth = Math.max(96, Math.min(176, 38 + label.length * 10));
       const labelY = slot.y - 32;
-      roundRect(ctx, slot.x + 12, labelY - 13, labelWidth, 27, 13, withAlpha(def.bg, .94), withAlpha(def.accent2, .40), 1.2);
+      roundRect(ctx, slot.x + 12, labelY - 13, labelWidth, 27, 13,
+        withAlpha(def.bg, .94), withAlpha(def.accent2, .40), 1.2);
       text(ctx, label, slot.x + 12 + labelWidth / 2, labelY + 1, 13, def.ink, 900);
     });
   }
 
   function generatePhotoboxFrameSrc(def, previewOnly = false) {
-    const previewScale = previewOnly ? 0.28 : 1;
-    const cacheKey = `photobox_v5_social_footer_inside_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
+    const previewScale = previewOnly ? 0.24 : 1;
+    const cacheKey = `photobox_v6_single_photo_picture_frame_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
     if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
 
     const W = PHOTOBOX_W;
@@ -2413,6 +2579,9 @@
         isBuiltIn: true,
         isBuiltInPhotobox: true,
         isPhotobox: true,
+        isSinglePhoto: data.slots.length === 1,
+        isPictureFrame: !!def.isPictureFrame,
+        frameStyle: def.frameStyle || '',
         photoboxDef: def,
         slotCount: data.slots.length,
         src: data.src,
@@ -2809,8 +2978,12 @@
       const slotLen = Array.isArray(tmpl.slots) && tmpl.slots.length ? tmpl.slots.length : (tmpl.category === 'Social Media' ? 3 : 0);
       const textLen = Array.isArray(tmpl.text_elements) ? tmpl.text_elements.length : 0;
       const basicBadge = (tmpl.isBasic || tmpl.isBuiltIn) ? '<span class="basic-badge">Built-in</span>' : '';
+      const layoutBadge = slotLen === 1
+        ? `<span class="layout-badge ${tmpl.isPictureFrame || tmpl.category === 'Pigura' ? 'pigura' : ''}">${tmpl.isPictureFrame || tmpl.category === 'Pigura' ? '🖼 Pigura' : '1 Foto'}</span>`
+        : '';
       card.innerHTML = `
         ${basicBadge}
+        ${layoutBadge}
         <span class="selected-badge">✓ Dipilih</span>
         <img src="${customTemplateThumbURL(tmpl)}"
              data-original="${encodeURIComponent(tmpl.src)}"
@@ -2925,7 +3098,7 @@
     const h2 = document.querySelector('h2');
     const sub = document.querySelector('.sub');
     if (h2) h2.textContent = 'Pilih Template Photobox 4R';
-    if (sub) sub.textContent = 'Desain built-in Photostrip kini tersedia dalam layout 10×15 / 4R';
+    if (sub) sub.textContent = 'Pilih layout multi-foto, 1 foto, atau gaya pigura dalam ukuran 10×15 / 4R';
     const btn = document.getElementById('btnLanjut');
     if (btn) btn.textContent = 'Mulai Photobox →';
   } else {

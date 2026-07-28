@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.29-gallery-share-modal';
+const CACHE_NAME = 'lux-photobooth-v1.30-photobox-single-frame';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

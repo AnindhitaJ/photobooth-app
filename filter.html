@@ -618,7 +618,9 @@
   let currentImg   = new Image();
   let photoReady = false;
   let isProcessingResult = false;
+  let isApplyingAll = false;
   let activeLoadToken = 0;
+  let faceLandmarkerPromise = null;
 
   function readyButtonLabel() {
     return isGanciMode ? 'Simpan Ganci ✓' : 'Lihat Hasil →';
@@ -644,6 +646,8 @@
 
   // ── Switch foto ─────────────────────────────────────────────────────────────
   function switchPhoto(idx) {
+    if (isApplyingAll) return;
+
     const src = photos[idx];
     if (!src) {
       photoReady = false;
@@ -710,22 +714,38 @@
   }
 
   // ── MediaPipe face landmark ──────────────────────────────────────────────────
+  async function getFaceLandmarker() {
+    if (!faceLandmarkerPromise) {
+      faceLandmarkerPromise = (async () => {
+        const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
+        const { FaceLandmarker, FilesetResolver } = vision;
+        const filesetResolver = await FilesetResolver.forVisionTasks(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        );
+        return FaceLandmarker.createFromOptions(filesetResolver, {
+          baseOptions: {
+            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+            delegate: 'CPU'
+          },
+          runningMode: 'IMAGE', numFaces: 4
+        });
+      })().catch(error => {
+        faceLandmarkerPromise = null;
+        throw error;
+      });
+    }
+    return faceLandmarkerPromise;
+  }
+
+  async function detectFaceLandmarks(image) {
+    const faceLandmarker = await getFaceLandmarker();
+    const result = faceLandmarker.detect(image);
+    return result.faceLandmarks || [];
+  }
+
   async function loadMediaPipe(image = currentImg) {
     try {
-      const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
-      const { FaceLandmarker, FilesetResolver } = vision;
-      const filesetResolver = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
-      const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-        baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-          delegate: 'CPU'
-        },
-        runningMode: 'IMAGE', numFaces: 4
-      });
-      const result = faceLandmarker.detect(image);
-      allLandmarks = result.faceLandmarks || [];
+      allLandmarks = await detectFaceLandmarks(image);
       const n = allLandmarks.length;
       statusBar.textContent = n > 0 ? n + ' wajah terdeteksi ✓' : 'Wajah tidak terdeteksi';
     } catch(e) {
@@ -1261,33 +1281,104 @@
     applyFilter();
   };
 
-  window.terapkanSemua = function() {
-    const current = JSON.parse(JSON.stringify(filterStates[currentIdx]));
-    filterStates = filterStates.map(() => JSON.parse(JSON.stringify(current)));
-    const orig = currentIdx;
-    const tasks = photos.map((src, i) => new Promise(resolve => {
-      if (!src) { resolve(); return; }
-      currentIdx = i;
-      currentImg = new Image();
-      currentImg.onload = () => {
-        applyFilter();
-        filteredPhotos[i] = isNeutralFilterState(filterStates[i])
-          ? photos[i]
-          : canvas.toDataURL('image/jpeg', productLikeExportQuality);
-        resolve();
+  function loadImageForFilter(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => {
+        if (!image.naturalWidth || !image.naturalHeight) {
+          reject(new Error('Ukuran foto tidak valid'));
+          return;
+        }
+        resolve(image);
       };
-      currentImg.src = src;
-    }));
-    Promise.all(tasks).then(() => {
-      currentIdx = orig;
-      currentImg = new Image();
-      currentImg.onload = () => { applyFilter(); };
-      currentImg.src = photos[orig];
-      const btn = document.querySelector('[onclick="terapkanSemua()"]');
-      btn.textContent = '✓ Diterapkan ke semua!';
-      btn.disabled = true;
-      setTimeout(() => { btn.textContent = '✦ Terapkan ke Semua Foto'; btn.disabled = false; }, 1800);
+      image.onerror = () => reject(new Error('Foto gagal dimuat'));
+      image.src = src;
     });
+  }
+
+  function filterNeedsFaceDetection(state) {
+    const s = normalizeFilterState(state);
+    return s.smooth > 0 || s.brightness > 0 || s.lip !== 'off' || s.blush !== 'off';
+  }
+
+  window.terapkanSemua = async function() {
+    if (isApplyingAll || !photos.length || !filterStates[currentIdx]) return;
+
+    const btn = document.querySelector('[onclick="terapkanSemua()"]');
+    const originalIdx = currentIdx;
+    const current = normalizeFilterState(filterStates[currentIdx]);
+    const failedSlots = [];
+
+    isApplyingAll = true;
+    ++activeLoadToken; // batalkan callback preview yang mungkin masih berjalan
+    photoReady = false;
+    filterStates = photos.map(() => ({ ...current }));
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Menerapkan filter...';
+    }
+    document.querySelectorAll('.photo-tab').forEach(tab => { tab.disabled = true; });
+    setContinueButtonReady(false, 'Menerapkan Filter...');
+
+    try {
+      // Harus berurutan karena currentIdx, currentImg, allLandmarks, dan canvas
+      // adalah state render bersama. Pemrosesan paralel membuat foto saling menimpa.
+      for (let i = 0; i < photos.length; i++) {
+        const src = photos[i];
+        if (!src) continue;
+
+        statusBar.textContent = `Menerapkan filter ke foto ${i + 1} dari ${photos.length}...`;
+
+        if (isNeutralFilterState(filterStates[i])) {
+          filteredPhotos[i] = src;
+          continue;
+        }
+
+        try {
+          const image = await loadImageForFilter(src);
+          currentIdx = i;
+          currentImg = image;
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          allLandmarks = [];
+
+          if (filterNeedsFaceDetection(filterStates[i])) {
+            try {
+              allLandmarks = await detectFaceLandmarks(image);
+            } catch (error) {
+              console.warn(`Deteksi wajah foto ${i + 1} gagal:`, error);
+              allLandmarks = [];
+            }
+          }
+
+          applyFilter();
+          filteredPhotos[i] = canvas.toDataURL('image/jpeg', productLikeExportQuality);
+        } catch (error) {
+          console.error(`Gagal menerapkan filter ke foto ${i + 1}:`, error);
+          filteredPhotos[i] = src;
+          failedSlots.push(i + 1);
+        }
+      }
+
+      if (btn) btn.textContent = failedSlots.length ? '⚠ Sebagian gagal' : '✓ Diterapkan ke semua!';
+      if (failedSlots.length) {
+        statusBar.textContent = `Filter gagal pada foto ${failedSlots.join(', ')}; foto asli dipertahankan.`;
+      }
+    } finally {
+      isApplyingAll = false;
+      photoReady = false; // cegah switchPhoto menyimpan canvas slot terakhir ke slot lain
+      document.querySelectorAll('.photo-tab').forEach(tab => { tab.disabled = false; });
+      switchPhoto(originalIdx);
+
+      setTimeout(() => {
+        if (btn) {
+          btn.textContent = '✦ Terapkan ke Semua Foto';
+          btn.disabled = false;
+        }
+      }, 1800);
+    }
   };
 
   window.resetFilter = function() {

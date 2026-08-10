@@ -1102,6 +1102,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
             created_at: new Date().toISOString(),
             product_type: isPhotoboxMode ? 'photobox' : 'photostrip',
             session_id: String(ts),
+            event_id: eventStorageGet('eventMode') === '1' ? (activeEventId() || null) : null,
             template_name: localStorage.getItem('templateName') || '',
             template_category: localStorage.getItem('templateCategory') || '',
             photo_count: Math.max(1, Number(filteredPhotos?.length) || 1)
@@ -1170,8 +1171,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
     if (!ownerId) return;
     const payload = {
       user_id: ownerId,
-      session_id: String(Date.now()),
-      event_id: eventIdForConsent(),
+      session_id: String(cloudSessionId || Date.now()),
+      event_id: eventIdForConsent() || null,
       publish_consent: skipped ? false : document.getElementById('resultPublishConsent').checked,
       tag_consent: skipped ? false : document.getElementById('resultTagConsent').checked,
       instagram_username: skipped ? '' : cleanConsentUsername(document.getElementById('resultIgUsername').value),

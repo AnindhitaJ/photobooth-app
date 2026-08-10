@@ -38,16 +38,26 @@ label{display:block;font-size:12px;font-weight:900;color:var(--text2);text-trans
 if(!Auth.getSession()) location.href='/login';
 let sessions=[]; let consents=[]; let events=[];
 async function api(path){const token=Auth.getToken();const r=await fetch(SUPABASE_URL+path,{headers:{apikey:SUPABASE_ANON,Authorization:'Bearer '+token}}); if(!r.ok) throw new Error(await r.text()); return r.json();}
-async function load(){sessions=(await api('/rest/v1/analytics_sessions_view?select=*&order=created_at.desc')).filter(s=>{
-  const fp=String(s.file_path||'');
-  if(!fp) return true;
-  return fp.endsWith('strip.jpg') || fp.includes('_strip.jpg');
-});consents=await api('/rest/v1/photo_consents?select=*&order=created_at.desc').catch(()=>[]);events=await api('/rest/v1/lux_events?select=id,name').catch(()=>[]);eventFilter.innerHTML='<option value="all">Semua Event</option>'+events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');render();}
+async function load(){
+  const authOk=await Auth.ready;
+  const userId=Auth.getUserId();
+  if(!authOk||!userId){location.href='/login';return;}
+  const userFilter='&user_id=eq.'+encodeURIComponent(userId);
+  sessions=(await api('/rest/v1/analytics_sessions_view?select=*'+userFilter+'&order=created_at.desc')).filter(s=>{
+    const fp=String(s.file_path||'');
+    if(!fp) return true;
+    return fp.endsWith('strip.jpg') || fp.includes('_strip.jpg');
+  });
+  consents=await api('/rest/v1/photo_consents?select=*'+userFilter+'&order=created_at.desc').catch(()=>[]);
+  events=await api('/rest/v1/lux_events?select=id,name'+userFilter+'&order=created_at.desc').catch(()=>[]);
+  eventFilter.innerHTML='<option value="all">Semua Event</option>'+events.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  render();
+}
 function inRange(d){const v=range.value;const t=new Date(d).getTime();const now=Date.now();if(v==='today')return new Date(d).toDateString()===new Date().toDateString();if(v==='week')return now-t<=7*864e5;if(v==='month')return now-t<=30*864e5;return true;}
 function filtered(){return sessions.filter(s=>inRange(s.created_at)&&(eventFilter.value==='all'||String(s.event_id)===eventFilter.value));}
 function countBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x)||'-';m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function rank(el,data,total){el.innerHTML=data.length?data.slice(0,6).map(([k,v])=>`<div class="list-item"><div><b>${k}</b><div class="bar"><span style="width:${Math.max(8,Math.round(v/Math.max(1,total)*100))}%"></span></div></div><b>${v}</b></div>`).join(''):'<div class="sub">Belum ada data</div>';}
-function render(){const data=filtered();const total=data.length;const photo=data.reduce((s,x)=>s+(Number(x.photo_count)||1),0);const byHour=countBy(data,x=>new Date(x.created_at).getHours()+':00');const byDay=countBy(data,x=>new Date(x.created_at).toLocaleDateString('id-ID',{weekday:'long'}));const byTpl=countBy(data,x=>x.template_name);const byCat=countBy(data,x=>x.template_category);const relevantCons=consents.filter(c=>inRange(c.created_at));totalSession.textContent=total;totalPhoto.textContent=photo;peakHour.textContent=byHour[0]?.[0]||'-';consentRate.textContent=relevantCons.length?Math.round(relevantCons.filter(c=>c.publish_consent).length/relevantCons.length*100)+'%':'0%';rank(templateRank,byTpl,total);rank(dayRank,byDay,total);rank(catRank,byCat,total);const ins=[];if(byHour[0])ins.push('Jam tersibuk berada pada pukul '+byHour[0][0]+'.');if(byTpl[0])ins.push('Template '+byTpl[0][0]+' menjadi template paling populer.');if(byDay[0])ins.push('Hari '+byDay[0][0]+' memiliki jumlah sesi terbanyak.');if(relevantCons.length)ins.push('Consent rate publikasi saat ini '+consentRate.textContent+'.');insights.innerHTML=ins.length?ins.map(x=>'<div class="stat"><div style="font-weight:850">'+x+'</div></div>').join(''):'<div class="sub">Insight akan muncul setelah ada data sesi.</div>';}
+function render(){const data=filtered();const total=data.length;const photo=data.reduce((s,x)=>s+(Number(x.photo_count)||1),0);const byHour=countBy(data,x=>new Date(x.created_at).getHours()+':00');const byDay=countBy(data,x=>new Date(x.created_at).toLocaleDateString('id-ID',{weekday:'long'}));const byTpl=countBy(data,x=>x.template_name);const byCat=countBy(data,x=>x.template_category);const relevantCons=consents.filter(c=>inRange(c.created_at)&&(eventFilter.value==='all'||String(c.event_id)===eventFilter.value));totalSession.textContent=total;totalPhoto.textContent=photo;peakHour.textContent=byHour[0]?.[0]||'-';consentRate.textContent=relevantCons.length?Math.round(relevantCons.filter(c=>c.publish_consent).length/relevantCons.length*100)+'%':'0%';rank(templateRank,byTpl,total);rank(dayRank,byDay,total);rank(catRank,byCat,total);const ins=[];if(byHour[0])ins.push('Jam tersibuk berada pada pukul '+byHour[0][0]+'.');if(byTpl[0])ins.push('Template '+byTpl[0][0]+' menjadi template paling populer.');if(byDay[0])ins.push('Hari '+byDay[0][0]+' memiliki jumlah sesi terbanyak.');if(relevantCons.length)ins.push('Consent rate publikasi saat ini '+consentRate.textContent+'.');insights.innerHTML=ins.length?ins.map(x=>'<div class="stat"><div style="font-weight:850">'+x+'</div></div>').join(''):'<div class="sub">Insight akan muncul setelah ada data sesi.</div>';}
 function exportAnalytics(){const data=filtered();const head=['Tanggal','Event','Template','Kategori','Product Type','Photo Count'];const lines=[head,...data.map(x=>[x.created_at,x.event_name||'',x.template_name||'',x.template_category||'',x.product_type||'',x.photo_count||1])];const csv=lines.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='lux-analytics-export.csv';a.click();}
 load().catch(e=>{insights.innerHTML='<div class="sub">Error: '+e.message+'</div>'});
 </script></body></html>

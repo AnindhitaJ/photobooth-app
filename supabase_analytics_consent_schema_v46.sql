@@ -186,7 +186,8 @@ create index if not exists idx_photo_consents_session_id
 on public.photo_consents(session_id);
 
 -- 6) Analytics helper view
-create or replace view public.analytics_sessions_view as
+create or replace view public.analytics_sessions_view
+with (security_invoker = true) as
 select
   ps.id,
   ps.user_id,

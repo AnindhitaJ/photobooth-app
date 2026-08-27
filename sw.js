@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.31-filter-apply-all-fix';
+const CACHE_NAME = 'lux-photobooth-v1.32-result-photo-editor';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

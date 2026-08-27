@@ -1,0 +1,22 @@
+LUX PHOTOBOOTH - RESULT PHOTO EDITOR v1.32
+
+Ganti file di root project dengan 3 file berikut:
+1. result.html
+2. beautify.js
+3. sw.js
+
+Tidak perlu mengganti camera.html atau filter.html untuk versi ini.
+
+Fitur yang ditambahkan:
+- pilih foto/slot di halaman Result
+- drag untuk geser foto
+- scroll mouse untuk zoom
+- pinch dua jari untuk zoom dan geser
+- tombol zoom +/-
+- rotate kiri/kanan
+- flip horizontal
+- reset per foto
+- Simpan Perubahan untuk memperbarui hasil QR/cloud
+- cache Service Worker dinaikkan ke v1.32
+
+Setelah deploy, lakukan hard refresh sekali jika browser masih memegang Service Worker lama.

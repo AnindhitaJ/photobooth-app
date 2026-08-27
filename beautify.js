@@ -17,10 +17,12 @@
   function drawCover(ctx, img, x, y, w, h, options = {}) {
     if (!img) return;
     const preset = get(options.beautify || 'off');
-    const zoom = options.zoom || 1;
-    const offsetX = options.offsetX || 0;
-    const offsetY = options.offsetY || 0;
-    const rotate = options.rotate || 0;
+    const zoom = Number.isFinite(Number(options.zoom)) ? Math.max(0.1, Number(options.zoom)) : 1;
+    const offsetX = Number(options.offsetX) || 0;
+    const offsetY = Number(options.offsetY) || 0;
+    const rotate = Number(options.rotate) || 0;
+    const flipX = options.flipX === true ? -1 : 1;
+    const flipY = options.flipY === true ? -1 : 1;
 
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
@@ -31,6 +33,7 @@
     ctx.save();
     ctx.translate(x + w / 2 + offsetX, y + h / 2 + offsetY);
     ctx.rotate(rotate * Math.PI / 180);
+    ctx.scale(flipX, flipY);
     ctx.filter = preset.css;
     ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
 

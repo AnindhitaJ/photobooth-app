@@ -765,9 +765,63 @@
       }
     }
 
+
+    /* Result photo editor v1.32 */
+    .result-editor {
+      margin-top: 12px;
+      width: min(100%, 420px);
+      background: rgba(255,255,255,.96);
+      border: 1px solid rgba(29,53,87,.12);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 10px 28px rgba(29,53,87,.09);
+      display: none;
+    }
+    .result-editor.is-ready { display: block; }
+    .editor-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .editor-title { font-size:14px; font-weight:900; color:var(--navy); }
+    .editor-hint { margin-top:2px; font-size:11px; line-height:1.45; color:var(--text2); }
+    .editor-photo-tabs { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+    .editor-photo-tab {
+      appearance:none; border:1px solid rgba(29,53,87,.18); background:#fff; color:var(--navy);
+      border-radius:999px; min-height:36px; padding:7px 12px; font:800 12px/1 'Segoe UI',Arial,sans-serif;
+      cursor:pointer; transition:.16s ease;
+    }
+    .editor-photo-tab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .editor-row { display:grid; grid-template-columns:62px 36px 1fr 36px 48px; gap:7px; align-items:center; margin:9px 0; }
+    .editor-row-label { font-size:12px; font-weight:800; color:var(--navy); }
+    .editor-value { text-align:right; font-size:11px; font-weight:800; color:var(--text2); }
+    .editor-range { width:100%; accent-color:var(--pink); }
+    .editor-icon-btn {
+      appearance:none; border:1px solid rgba(29,53,87,.15); background:#fff; color:var(--navy);
+      border-radius:10px; min-height:36px; padding:7px; font-size:17px; font-weight:900; cursor:pointer;
+    }
+    .editor-icon-btn:active { transform:scale(.97); }
+    .editor-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:10px; }
+    .editor-action-btn {
+      appearance:none; border:1px solid rgba(29,53,87,.15); background:#fff; color:var(--navy);
+      border-radius:11px; min-height:42px; padding:7px 5px; font:800 11px/1.15 'Segoe UI',Arial,sans-serif; cursor:pointer;
+    }
+    .editor-action-btn.active { background:#fff1f6; border-color:rgba(216,75,126,.42); color:#b52f64; }
+    .editor-save {
+      margin-top:10px; width:100%; min-height:42px; border:0; border-radius:11px; padding:9px 12px;
+      background:var(--navy); color:#fff; font:900 12px/1.2 'Segoe UI',Arial,sans-serif; cursor:pointer;
+    }
+    .editor-save:disabled { opacity:.48; cursor:default; }
+    .editor-sync-status { margin-top:7px; min-height:16px; font-size:10px; line-height:1.4; color:var(--text2); text-align:center; }
+    #resultCanvas.result-editable { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+    #resultCanvas.result-editable.is-dragging { cursor:grabbing; }
+    .editor-selected-outline { pointer-events:none; }
+    @media (max-width: 560px) {
+      .result-editor { width:100%; }
+      .editor-row { grid-template-columns:56px 36px 1fr 36px 44px; gap:5px; }
+      .editor-actions { grid-template-columns:repeat(2,1fr); }
+    }
+
 </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
+  <script src="/beautify.js"></script>
 </head>
 <body>
 
@@ -790,6 +844,31 @@
         </div>
       </div>
       <div class="preview-meta" id="previewMeta">Photostrip hasil foto</div>
+
+      <section class="result-editor" id="resultEditor" aria-label="Atur posisi foto">
+        <div class="editor-head">
+          <div>
+            <div class="editor-title">Atur Foto</div>
+            <div class="editor-hint">Pilih foto, lalu drag untuk geser. Scroll atau cubit untuk zoom.</div>
+          </div>
+        </div>
+        <div class="editor-photo-tabs" id="editorPhotoTabs"></div>
+        <div class="editor-row">
+          <div class="editor-row-label">Zoom</div>
+          <button class="editor-icon-btn" type="button" onclick="adjustResultZoom(-0.05)" aria-label="Zoom out">−</button>
+          <input class="editor-range" id="editorZoom" type="range" min="1" max="3" step="0.01" value="1" oninput="setResultZoom(this.value)">
+          <button class="editor-icon-btn" type="button" onclick="adjustResultZoom(0.05)" aria-label="Zoom in">+</button>
+          <div class="editor-value" id="editorZoomValue">100%</div>
+        </div>
+        <div class="editor-actions">
+          <button class="editor-action-btn" type="button" onclick="rotateResultPhoto(-5)">↶<br>Putar Kiri</button>
+          <button class="editor-action-btn" type="button" onclick="rotateResultPhoto(5)">↷<br>Putar Kanan</button>
+          <button class="editor-action-btn" id="editorFlipBtn" type="button" onclick="flipResultPhoto()">↔<br>Flip</button>
+          <button class="editor-action-btn" type="button" onclick="resetResultPhoto()">↺<br>Reset</button>
+        </div>
+        <button class="editor-save" id="editorSaveBtn" type="button" onclick="syncEditedResult()" disabled>Simpan Perubahan</button>
+        <div class="editor-sync-status" id="editorSyncStatus">Hasil awal sudah siap.</div>
+      </section>
     </aside>
 
     <section class="action-panel">
@@ -1371,6 +1450,304 @@ async function uploadToSupabase(blob, filename, options = {}) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
+  // ─── Interactive result editor ───
+  const RESULT_TRANSFORMS_KEY = 'luxResultPhotoTransformsV132';
+  const photoTransforms = slots.map(() => ({ zoom: 1, offsetX: 0, offsetY: 0, rotation: 0, flipX: false }));
+  let selectedEditSlot = 0;
+  let resultEditRevision = 0;
+  let resultEditDirty = false;
+  let resultEditorReady = false;
+  let editorRenderQueued = false;
+  let editorRenderBusy = false;
+  let editorRenderAgain = false;
+  const resultImageCache = new Map();
+  const activeEditorPointers = new Map();
+  let dragState = null;
+  let pinchState = null;
+
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(RESULT_TRANSFORMS_KEY) || '[]');
+    if (Array.isArray(saved)) {
+      saved.slice(0, photoTransforms.length).forEach((item, i) => {
+        if (!item || typeof item !== 'object') return;
+        photoTransforms[i] = {
+          zoom: Math.min(3, Math.max(1, Number(item.zoom) || 1)),
+          offsetX: Number(item.offsetX) || 0,
+          offsetY: Number(item.offsetY) || 0,
+          rotation: Number(item.rotation) || 0,
+          flipX: item.flipX === true
+        };
+      });
+    }
+  } catch (_) {}
+
+  function currentPhotoTransform() {
+    if (!photoTransforms.length) return null;
+    selectedEditSlot = Math.min(Math.max(0, selectedEditSlot), photoTransforms.length - 1);
+    return photoTransforms[selectedEditSlot];
+  }
+
+  function persistPhotoTransforms() {
+    try { sessionStorage.setItem(RESULT_TRANSFORMS_KEY, JSON.stringify(photoTransforms)); } catch (_) {}
+  }
+
+  function buildResultEditor() {
+    const editor = document.getElementById('resultEditor');
+    const tabs = document.getElementById('editorPhotoTabs');
+    if (!editor || !tabs || !slots.length || !filteredPhotos.length) return;
+    tabs.innerHTML = slots.map((_, i) => `<button type="button" class="editor-photo-tab ${i === selectedEditSlot ? 'active' : ''}" onclick="selectResultPhoto(${i})">Foto ${i + 1}</button>`).join('');
+    editor.classList.add('is-ready');
+    canvas.classList.add('result-editable');
+    resultEditorReady = true;
+    updateResultEditorUI();
+  }
+
+  function updateResultEditorUI() {
+    const t = currentPhotoTransform();
+    if (!t) return;
+    document.querySelectorAll('.editor-photo-tab').forEach((button, i) => button.classList.toggle('active', i === selectedEditSlot));
+    const zoom = document.getElementById('editorZoom');
+    const zoomValue = document.getElementById('editorZoomValue');
+    const flipButton = document.getElementById('editorFlipBtn');
+    if (zoom) zoom.value = String(t.zoom);
+    if (zoomValue) zoomValue.textContent = `${Math.round(t.zoom * 100)}%`;
+    if (flipButton) flipButton.classList.toggle('active', t.flipX);
+  }
+
+  function selectResultPhoto(index) {
+    if (!photoTransforms.length) return;
+    selectedEditSlot = Math.min(Math.max(0, Number(index) || 0), photoTransforms.length - 1);
+    updateResultEditorUI();
+  }
+
+  function markResultEdited() {
+    resultEditRevision += 1;
+    resultEditDirty = true;
+    persistPhotoTransforms();
+    const save = document.getElementById('editorSaveBtn');
+    const status = document.getElementById('editorSyncStatus');
+    const btnQR = document.getElementById('btnQR');
+    if (save) save.disabled = false;
+    if (status) status.textContent = 'Ada perubahan. Simpan agar QR memakai hasil terbaru.';
+    if (btnQR) btnQR.disabled = true;
+    finalPublicURL = null;
+    finalManifestURL = '';
+  }
+
+  function setResultZoom(value) {
+    const t = currentPhotoTransform();
+    if (!t) return;
+    t.zoom = Math.min(3, Math.max(1, Number(value) || 1));
+    updateResultEditorUI();
+    markResultEdited();
+    scheduleResultEditorRender();
+  }
+
+  function adjustResultZoom(delta) {
+    const t = currentPhotoTransform();
+    if (!t) return;
+    setResultZoom(t.zoom + Number(delta || 0));
+  }
+
+  function rotateResultPhoto(degrees) {
+    const t = currentPhotoTransform();
+    if (!t) return;
+    t.rotation = ((t.rotation + Number(degrees || 0) + 180) % 360) - 180;
+    markResultEdited();
+    scheduleResultEditorRender();
+  }
+
+  function flipResultPhoto() {
+    const t = currentPhotoTransform();
+    if (!t) return;
+    t.flipX = !t.flipX;
+    updateResultEditorUI();
+    markResultEdited();
+    scheduleResultEditorRender();
+  }
+
+  function resetResultPhoto() {
+    if (!photoTransforms.length) return;
+    photoTransforms[selectedEditSlot] = { zoom: 1, offsetX: 0, offsetY: 0, rotation: 0, flipX: false };
+    updateResultEditorUI();
+    markResultEdited();
+    scheduleResultEditorRender();
+  }
+
+  function canvasPointFromClient(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) * (canvas.width / Math.max(1, rect.width)),
+      y: (clientY - rect.top) * (canvas.height / Math.max(1, rect.height))
+    };
+  }
+
+  function pointInSlot(point, slot) {
+    const cx = Number(slot.x) + Number(slot.w) / 2;
+    const cy = Number(slot.y) + Number(slot.h) / 2;
+    const angle = -(Number(slot.r ?? slot.rotate ?? slot.rotation ?? 0) || 0) * Math.PI / 180;
+    const dx = point.x - cx;
+    const dy = point.y - cy;
+    const lx = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const ly = dx * Math.sin(angle) + dy * Math.cos(angle);
+    return Math.abs(lx) <= Number(slot.w) / 2 && Math.abs(ly) <= Number(slot.h) / 2;
+  }
+
+  function slotAtPoint(point) {
+    for (let i = slots.length - 1; i >= 0; i--) if (pointInSlot(point, slots[i])) return i;
+    return -1;
+  }
+
+  function globalDeltaToSlotLocal(dx, dy, slot) {
+    const angle = -(Number(slot.r ?? slot.rotate ?? slot.rotation ?? 0) || 0) * Math.PI / 180;
+    return {
+      x: dx * Math.cos(angle) - dy * Math.sin(angle),
+      y: dx * Math.sin(angle) + dy * Math.cos(angle)
+    };
+  }
+
+  async function flushResultEditorRender() {
+    if (editorRenderBusy) { editorRenderAgain = true; return; }
+    editorRenderBusy = true;
+    try { await generateResult(true); }
+    finally {
+      editorRenderBusy = false;
+      if (editorRenderAgain) {
+        editorRenderAgain = false;
+        scheduleResultEditorRender();
+      }
+    }
+  }
+
+  function scheduleResultEditorRender() {
+    if (editorRenderQueued) return;
+    editorRenderQueued = true;
+    requestAnimationFrame(() => {
+      editorRenderQueued = false;
+      flushResultEditorRender();
+    });
+  }
+
+  function pointerDistance(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+  function pointerMidpoint(a, b) { return { x:(a.x+b.x)/2, y:(a.y+b.y)/2 }; }
+
+  canvas.addEventListener('pointerdown', event => {
+    if (!resultEditorReady) return;
+    const p = canvasPointFromClient(event.clientX, event.clientY);
+    const hit = slotAtPoint(p);
+    if (hit >= 0) selectResultPhoto(hit);
+    if (hit < 0 && activeEditorPointers.size === 0) return;
+    event.preventDefault();
+    canvas.setPointerCapture?.(event.pointerId);
+    activeEditorPointers.set(event.pointerId, p);
+
+    if (activeEditorPointers.size === 1) {
+      dragState = { pointerId:event.pointerId, last:p };
+      canvas.classList.add('is-dragging');
+    } else if (activeEditorPointers.size === 2) {
+      const pts = [...activeEditorPointers.values()];
+      const t = currentPhotoTransform();
+      pinchState = {
+        distance: Math.max(1, pointerDistance(pts[0], pts[1])),
+        midpoint: pointerMidpoint(pts[0], pts[1]),
+        zoom: t?.zoom || 1,
+        offsetX: t?.offsetX || 0,
+        offsetY: t?.offsetY || 0
+      };
+      dragState = null;
+    }
+  });
+
+  canvas.addEventListener('pointermove', event => {
+    if (!activeEditorPointers.has(event.pointerId)) return;
+    event.preventDefault();
+    const p = canvasPointFromClient(event.clientX, event.clientY);
+    activeEditorPointers.set(event.pointerId, p);
+    const t = currentPhotoTransform();
+    const slot = slots[selectedEditSlot];
+    if (!t || !slot) return;
+
+    if (activeEditorPointers.size >= 2 && pinchState) {
+      const pts = [...activeEditorPointers.values()].slice(0,2);
+      const distance = Math.max(1, pointerDistance(pts[0], pts[1]));
+      const midpoint = pointerMidpoint(pts[0], pts[1]);
+      t.zoom = Math.min(3, Math.max(1, pinchState.zoom * distance / pinchState.distance));
+      const local = globalDeltaToSlotLocal(midpoint.x - pinchState.midpoint.x, midpoint.y - pinchState.midpoint.y, slot);
+      t.offsetX = pinchState.offsetX + local.x;
+      t.offsetY = pinchState.offsetY + local.y;
+      updateResultEditorUI();
+      markResultEdited();
+      scheduleResultEditorRender();
+      return;
+    }
+
+    if (dragState && dragState.pointerId === event.pointerId) {
+      const local = globalDeltaToSlotLocal(p.x - dragState.last.x, p.y - dragState.last.y, slot);
+      t.offsetX += local.x;
+      t.offsetY += local.y;
+      dragState.last = p;
+      markResultEdited();
+      scheduleResultEditorRender();
+    }
+  });
+
+  function finishEditorPointer(event) {
+    activeEditorPointers.delete(event.pointerId);
+    if (activeEditorPointers.size < 2) pinchState = null;
+    if (activeEditorPointers.size === 1) {
+      const [id, point] = activeEditorPointers.entries().next().value;
+      dragState = { pointerId:id, last:point };
+    } else if (activeEditorPointers.size === 0) {
+      dragState = null;
+      canvas.classList.remove('is-dragging');
+    }
+  }
+  canvas.addEventListener('pointerup', finishEditorPointer);
+  canvas.addEventListener('pointercancel', finishEditorPointer);
+
+  canvas.addEventListener('wheel', event => {
+    if (!resultEditorReady) return;
+    const point = canvasPointFromClient(event.clientX, event.clientY);
+    const hit = slotAtPoint(point);
+    if (hit < 0) return;
+    event.preventDefault();
+    selectResultPhoto(hit);
+    const t = currentPhotoTransform();
+    const multiplier = Math.exp(-event.deltaY * 0.0015);
+    setResultZoom(t.zoom * multiplier);
+  }, { passive:false });
+
+  async function loadResultImage(src) {
+    const key = String(src || '');
+    if (!key) return null;
+    if (!resultImageCache.has(key)) resultImageCache.set(key, loadImage(key));
+    try { return await resultImageCache.get(key); }
+    catch (e) { resultImageCache.delete(key); throw e; }
+  }
+
+  async function syncEditedResult() {
+    if (!finalDataURL) return;
+    const save = document.getElementById('editorSaveBtn');
+    const status = document.getElementById('editorSyncStatus');
+    if (save) save.disabled = true;
+    if (status) status.textContent = 'Menyimpan hasil terbaru...';
+    const revisionToSave = resultEditRevision;
+    try {
+      // Pastikan finalDataURL sudah memakai transform terakhir sebelum upload dimulai.
+      await generateResult(true);
+      await uploadForQR();
+      const qrButton = document.getElementById('btnQR');
+      if (revisionToSave !== resultEditRevision || !finalPublicURL || qrButton?.disabled) {
+        throw new Error('Hasil berubah atau upload belum selesai dengan benar.');
+      }
+      resultEditDirty = false;
+      if (status) status.textContent = 'Perubahan tersimpan. QR sudah memakai hasil terbaru.';
+    } catch (e) {
+      if (save) save.disabled = false;
+      if (status) status.textContent = 'Gagal menyimpan ke cloud. Download lokal tetap bisa dipakai.';
+    }
+  }
+
   const displayW = 240;
   const displayH = Math.round(tmplH * displayW / tmplW);
   canvas.style.width  = displayW + 'px';
@@ -1667,7 +2044,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   }
 
   // ─── Generate composite image ───
-  async function generateResult() {
+  async function generateResult(previewOnly = false) {
     try {
       if (!filteredPhotosReady) {
         filteredPhotos = await loadLargePhotoArray('filteredPhotos');
@@ -1684,7 +2061,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, tmplW, tmplH);
 
-      const templateImage = templateSrc ? await loadImage(templateSrc) : null;
+      const templateImage = templateSrc ? await loadResultImage(templateSrc) : null;
       if (templateImage && templatePhotoLayer === 'front') {
         ctx.drawImage(templateImage, 0, 0, tmplW, tmplH);
       }
@@ -1693,11 +2070,9 @@ async function uploadToSupabase(blob, filename, options = {}) {
         const slot = slots[i];
         const src  = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
         if (!src) continue;
-        const photo = await loadImage(src);
+        const photo = await loadResultImage(src);
         const angle = ((Number(slot.r ?? slot.rotate ?? slot.rotation ?? 0) || 0) * Math.PI) / 180;
-        const scale = Math.max(slot.w / photo.width, slot.h / photo.height);
-        const sw = slot.w / scale, sh = slot.h / scale;
-        const sx = (photo.width - sw) / 2, sy = (photo.height - sh) / 2;
+        const transform = photoTransforms[i] || { zoom: 1, offsetX: 0, offsetY: 0, rotation: 0, flipX: false };
 
         ctx.save();
         ctx.translate(slot.x + slot.w / 2, slot.y + slot.h / 2);
@@ -1705,7 +2080,14 @@ async function uploadToSupabase(blob, filename, options = {}) {
         ctx.beginPath();
         ctx.rect(-slot.w / 2, -slot.h / 2, slot.w, slot.h);
         ctx.clip();
-        ctx.drawImage(photo, sx, sy, sw, sh, -slot.w / 2, -slot.h / 2, slot.w, slot.h);
+        Beautify.drawCover(ctx, photo, -slot.w / 2, -slot.h / 2, slot.w, slot.h, {
+          zoom: transform.zoom,
+          offsetX: transform.offsetX,
+          offsetY: transform.offsetY,
+          rotate: transform.rotation,
+          flipX: transform.flipX,
+          beautify: 'off'
+        });
         ctx.restore();
       }
 
@@ -1839,6 +2221,12 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
       finalDataURL = canvas.toDataURL('image/jpeg', 0.97);
 
+      if (!resultEditorReady) buildResultEditor();
+      if (previewOnly) {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        return;
+      }
+
       // Bersihkan base64 besar dari localStorage setelah dipakai
       // (URL Supabase tetap aman disimpan)
       try {
@@ -1891,6 +2279,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   }
 
   async function uploadForQR() {
+    const uploadRevision = resultEditRevision;
     const qrStatus = document.getElementById('qrStatus');
     const btnQR    = document.getElementById('btnQR');
     const btnLabel = document.getElementById('btnQRLabel');
@@ -1975,6 +2364,17 @@ async function uploadToSupabase(blob, filename, options = {}) {
         colorDark: '#1D3557', colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M
       });
+      if (uploadRevision !== resultEditRevision) {
+        finalPublicURL = null;
+        finalManifestURL = '';
+        qrStatus.style.color = 'var(--text2)';
+        qrStatus.textContent = 'Foto diubah setelah upload. Simpan perubahan untuk memperbarui QR.';
+        btnQR.disabled = true;
+        btnLabel.textContent = 'Simpan perubahan dulu';
+        const save = document.getElementById('editorSaveBtn');
+        if (save) save.disabled = false;
+        return;
+      }
       qrStatus.style.color = 'var(--text2)';
       const uploaded = individualURLs.filter(Boolean).length;
       qrStatus.textContent = `Strip + ${uploaded} foto individual tersimpan ✓`;
@@ -2154,7 +2554,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   function downloadJpg(skipConsent = false) {
     if (!skipConsent) return ensureResultConsent(() => downloadJpg(true));
     if (!finalDataURL) return;
-    if (finalPublicURL || finalManifestURL) {
+    if (!resultEditDirty && (finalPublicURL || finalManifestURL)) {
       window.location.href = buildDownloadPageURL();
       return;
     }
@@ -3264,6 +3664,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('lux_result_consent_done');
     sessionStorage.removeItem('luxPhotoSessionId');
+    sessionStorage.removeItem(RESULT_TRANSFORMS_KEY);
     await idbClearAll();
     window.location.href = isEventMode ? '/event-run' : '/app';
   }

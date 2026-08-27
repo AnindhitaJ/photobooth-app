@@ -1386,6 +1386,26 @@
     if (e.dataTransfer.files[0]) loadTemplate(e.dataTransfer.files[0]);
   });
 
+  // ─── Auto-fill nama template dari nama file ───
+  function titleCaseFromFilename(rawBaseName) {
+    return String(rawBaseName || '')
+      .replace(/\.[a-z0-9]+$/i, '')     // buang ekstensi apapun (jaga-jaga)
+      .replace(/[_-]+/g, ' ')            // underscore/dash jadi spasi
+      .replace(/\s+/g, ' ')              // rapikan spasi ganda
+      .trim()
+      .replace(/\w\S*/g, word =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      );
+  }
+
+  function autoFillTemplateNameFromFile(file) {
+    const nameInput = document.getElementById('templateName');
+    if (!nameInput || nameInput.value.trim()) return; // jangan timpa kalau user sudah isi manual
+    const rawBase = String(file?.name || '').replace(/\.png$/i, '');
+    const formatted = titleCaseFromFilename(rawBase);
+    if (formatted) nameInput.value = formatted;
+  }
+
   function loadTemplate(file) {
     if (!file) return;
     if (file.type !== 'image/png' && !String(file.name || '').toLowerCase().endsWith('.png')) {
@@ -1396,6 +1416,8 @@
       showToast('Ukuran template maksimal 20 MB.', true);
       return;
     }
+
+    autoFillTemplateNameFromFile(file);
 
     const reader = new FileReader();
     reader.onload = e => {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.33-result-editor-gallery-sync';
+const CACHE_NAME = 'lux-photobooth-v1.35-gallery-fresh-photo-sessions';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

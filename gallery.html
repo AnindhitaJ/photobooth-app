@@ -844,26 +844,53 @@
   // ── LOAD & GROUP ─────────────────────────────────────────────────────
   async function loadPhotos() {
     try {
-      const session = Auth.getSession();
-      const token   = Auth.getToken();
-      // Pastikan currentUserId ter-set dari berbagai sumber
-      if (!currentUserId) {
-        currentUserId = Auth.getUserId();
+      // Pastikan token yang dipakai Galeri masih valid dan berasal dari akun aktif.
+      // Ini penting karena Result baru saja menulis photo_sessions memakai token aktif.
+      if (typeof Auth.ensureValidSession === 'function') {
+        await Auth.ensureValidSession({ forceServerCheck: true });
       }
 
-      // Baca dari tabel photo_sessions (per user, RLS otomatis filter)
+      const token = Auth.getToken();
+      currentUserId = Auth.getUserId();
+
+      if (!token || !currentUserId) {
+        throw new Error('Session login tidak tersedia. Silakan login ulang.');
+      }
+
+      // Query dibuat eksplisit per user selain tetap dilindungi RLS.
+      // cache:no-store mencegah browser menampilkan daftar photo_sessions lama
+      // sesaat setelah foto baru disimpan dari halaman Result.
+      const galleryQuery = new URLSearchParams({
+        select: 'file_path,product_type,template_name,template_category,created_at,session_id',
+        user_id: `eq.${currentUserId}`,
+        order: 'created_at.desc'
+      });
+
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/photo_sessions?select=file_path,product_type,template_name,template_category,created_at,session_id&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/photo_sessions?${galleryQuery.toString()}`,
         {
+          method: 'GET',
+          cache: 'no-store',
           headers: {
             'apikey': SUPABASE_ANON,
             'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
           }
         }
       );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        throw new Error(`Photo sessions gagal (${res.status})${detail ? `: ${detail.slice(0, 160)}` : ''}`);
+      }
+
       const rows = await res.json();
-      if (!Array.isArray(rows)) throw new Error('Respons tidak valid');
+      if (!Array.isArray(rows)) throw new Error('Respons photo_sessions tidak valid');
+      console.log('[Gallery] photo_sessions terbaru:', {
+        userId: currentUserId,
+        count: rows.length,
+        newest: rows[0] || null
+      });
 
       // Group by sesi — pakai timestamp dari nama file sebagai session key
       const sessMap = {};
@@ -2010,7 +2037,7 @@
 </script>
 
 <script>
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=1.29-gallery-share-modal').then(reg => reg.update()).catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=1.35-gallery-fresh-photo-sessions').then(reg => reg.update()).catch(() => {});
 </script>
 </body>
 </html>

@@ -1064,8 +1064,20 @@
   // ─── Categories (derived from Supabase templates) ───
   let _allTemplates = []; // cache
 
+  // Semua key localStorage terkait template di-scope per user_id supaya
+  // beberapa akun admin yang login bergantian di device/browser yang sama
+  // tidak saling bocor data (kategori kustom, tombstone delete, dll).
+  function currentUserScopeKey() {
+    const userId = Auth.getUserId ? Auth.getUserId() : null;
+    return userId ? String(userId) : 'anon';
+  }
+
+  function scopedStorageKey(base) {
+    return `${base}_${currentUserScopeKey()}`;
+  }
+
   function getDeletedTemplateIds() {
-    try { return JSON.parse(localStorage.getItem('pb_deleted_template_ids') || '[]').map(String); }
+    try { return JSON.parse(localStorage.getItem(scopedStorageKey('pb_deleted_template_ids')) || '[]').map(String); }
     catch(e) { return []; }
   }
 
@@ -1074,7 +1086,7 @@
     const ids = getDeletedTemplateIds();
     if (!ids.includes(String(id))) {
       ids.push(String(id));
-      localStorage.setItem('pb_deleted_template_ids', JSON.stringify(ids));
+      localStorage.setItem(scopedStorageKey('pb_deleted_template_ids'), JSON.stringify(ids));
     }
   }
 
@@ -1119,9 +1131,16 @@
   async function fetchAllTemplates() {
     try {
       const token = Auth.getToken();
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?select=*&order=created_at.desc`, {
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` }
-      });
+      const userId = Auth.getUserId ? Auth.getUserId() : null;
+      if (!token || !userId) throw new Error('Session user tidak ditemukan. Login ulang.');
+
+      // Filter user_id=eq.<userId> supaya hanya template milik akun yang
+      // sedang login yang diambil. Sebelumnya endpoint ini tidak difilter
+      // sama sekali sehingga template & kategori semua akun ikut tercampur.
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/templates?select=*&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`,
+        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${token}` } }
+      );
       if (!res.ok) throw new Error(await res.text());
       const deletedIds = getDeletedTemplateIds();
       _allTemplates = (await res.json()).map(normalizeTemplateRecord).filter(t => !deletedIds.includes(String(t.id)));
@@ -1160,10 +1179,10 @@
 
     if (selectedProductType === 'photobox') {
       selectedCategory = 'Photobox 4R';
-      const cats = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+      const cats = JSON.parse(localStorage.getItem(scopedStorageKey('pb_categories')) || '[]');
       if (!cats.includes(selectedCategory)) {
         cats.push(selectedCategory);
-        localStorage.setItem('pb_categories', JSON.stringify(cats));
+        localStorage.setItem(scopedStorageKey('pb_categories'), JSON.stringify(cats));
       }
     }
     updateUploadHint();
@@ -1188,17 +1207,17 @@
         .map(t => t.category)
         .filter(Boolean)
     )];
-    const fromLS = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    const fromLS = JSON.parse(localStorage.getItem(scopedStorageKey('pb_categories')) || '[]');
     return [...new Set([...DEFAULT_UPLOAD_CATEGORIES, ...fromDB, ...fromLS])];
   }
 
   function tambahKategori() {
     const val = document.getElementById('newCatInput').value.trim();
     if (!val) return;
-    const cats = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    const cats = JSON.parse(localStorage.getItem(scopedStorageKey('pb_categories')) || '[]');
     if (cats.includes(val) || getCategories().includes(val)) { showToast('Kategori sudah ada', true); return; }
     cats.push(val);
-    localStorage.setItem('pb_categories', JSON.stringify(cats));
+    localStorage.setItem(scopedStorageKey('pb_categories'), JSON.stringify(cats));
     document.getElementById('newCatInput').value = '';
     renderCategoryTags();
     renderCatTabs();
@@ -1269,9 +1288,9 @@
   }
 
   function hapusKategori(idx) {
-    const cats = JSON.parse(localStorage.getItem('pb_categories') || '[]');
+    const cats = JSON.parse(localStorage.getItem(scopedStorageKey('pb_categories')) || '[]');
     cats.splice(idx, 1);
-    localStorage.setItem('pb_categories', JSON.stringify(cats));
+    localStorage.setItem(scopedStorageKey('pb_categories'), JSON.stringify(cats));
     renderCategoryTags();
     renderCatTabs();
     renderManageCats();

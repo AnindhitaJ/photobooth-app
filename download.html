@@ -449,7 +449,7 @@
         photoURL = manifest.photo || photoURL;
         gifURL = manifest.gif || gifURL;
         videoURL = manifest.video || videoURL;
-        autoDownload = manifest.autoDownload === true;
+        autoDownload = manifest.autoDownload === true || params.get('auto') === '1';
         ownerId = manifest.ownerId || ownerId;
         eventId = manifest.eventId || eventId;
         individualURLs = Array.isArray(manifest.photos) ? manifest.photos.filter(Boolean) : individualURLs;
@@ -713,11 +713,50 @@
     for (let i = 0; i < individualURLs.length; i++) tasks.push(() => dlIndividual(i, true));
     if (gifURL) tasks.push(() => dlGif(true));
     if (videoURL) tasks.push(() => dlVideo(true));
+
+    if (!tasks.length) return;
+
+    // Browser dapat memblokir multiple automatic downloads yang tidak berasal
+    // dari user gesture. Tetap coba otomatis; jika diblokir, tampilkan tombol
+    // fallback agar user cukup tap sekali untuk melanjutkan semua file.
+    let successCount = 0;
     for (const task of tasks) {
-      try { await task(); } catch(e) { console.warn('[auto-download] failed:', e); }
-      await new Promise(resolve => setTimeout(resolve, 350));
+      try {
+        await task();
+        successCount++;
+      } catch(e) {
+        console.warn('[auto-download] failed:', e);
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
-    showToast('✓ Semua hasil foto sedang didownload', 'success');
+
+    if (successCount === tasks.length) {
+      showToast('✓ Semua hasil foto sedang didownload', 'success');
+    } else {
+      showAutoDownloadFallback();
+    }
+  }
+
+  function showAutoDownloadFallback() {
+    if (document.getElementById('autoDownloadFallback')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'autoDownloadFallback';
+    wrap.style.cssText = 'position:fixed;left:16px;right:16px;bottom:18px;z-index:9999;background:#fff;border:1px solid #ddd;border-radius:16px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.15);text-align:center;';
+    wrap.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Download otomatis diblokir browser</div><div style="font-size:13px;color:#666;margin-bottom:10px">Tap sekali untuk mengizinkan semua hasil foto didownload satu per satu (tanpa ZIP).</div><button type="button" style="border:0;border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer">Download Semua Hasil</button>';
+    wrap.querySelector('button').onclick = async () => {
+      wrap.remove();
+      const tasks = [];
+      if (photoURL) tasks.push(() => dlJpg(true));
+      for (let i = 0; i < individualURLs.length; i++) tasks.push(() => dlIndividual(i, true));
+      if (gifURL) tasks.push(() => dlGif(true));
+      if (videoURL) tasks.push(() => dlVideo(true));
+      for (const task of tasks) {
+        try { await task(); } catch(e) { console.warn('[auto-download-fallback] failed:', e); }
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      showToast('✓ Semua hasil foto sedang didownload', 'success');
+    };
+    document.body.appendChild(wrap);
   }
 
   async function sharePhoto(skipConsent = false) {

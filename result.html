@@ -1367,10 +1367,14 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const downloadBaseURL = 'https://www.lux-photo.web.id/download.html';
 
     if (extra.manifest || finalManifestURL) {
-      return downloadBaseURL + '?' + new URLSearchParams({
+      const manifestParams = new URLSearchParams({
         m: extra.manifest || finalManifestURL,
         owner: ownerId
-      }).toString();
+      });
+      // Kirim juga flag lewat URL sebagai fallback jika manifest lama/cache belum
+      // memiliki field autoDownload.
+      if (Auth.getProfile()?.auto_download === true) manifestParams.set('auto', '1');
+      return downloadBaseURL + '?' + manifestParams.toString();
     }
 
     // Fallback lama kalau upload manifest gagal.

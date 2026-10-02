@@ -1375,6 +1375,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
     // Fallback lama kalau upload manifest gagal.
     const params = new URLSearchParams({ photo: finalPublicURL || '', owner: ownerId });
+    if (Auth.getProfile()?.auto_download === true) params.set('auto', '1');
+    if (finalLiveURL) params.set('video', finalLiveURL);
     const photos = (finalIndividualURLs || []).filter(Boolean);
     photos.forEach(url => params.append('p', url));
     if (finalGifURL) params.set('gif', finalGifURL);
@@ -1382,7 +1384,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     return downloadBaseURL + '?' + params.toString();
   }
 
-  async function uploadDownloadManifest({ photo, photos = [], gif = '' }) {
+  async function uploadDownloadManifest({ photo, photos = [], gif = '', video = '' }) {
     const manifest = {
       version: 1,
       type: isPhotoboxMode ? 'photobox' : 'photostrip',
@@ -1391,6 +1393,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
       photo,
       photos: photos.filter(Boolean),
       gif: gif || '',
+      video: video || '',
+      autoDownload: Auth.getProfile()?.auto_download === true,
       createdAt: new Date().toISOString()
     };
     const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -1824,6 +1828,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   let finalManifestURL = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
+  let finalLiveURL   = '';
 
   let selectedPrintMode = 1;
   let selectedShareMode = 1;
@@ -2411,7 +2416,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
         finalManifestURL = await uploadDownloadManifest({
           photo: finalPublicURL,
           photos: finalIndividualURLs,
-          gif: gifURL
+          gif: gifURL,
+          video: finalLiveURL
         });
       } catch(e) {
         console.warn('Upload manifest gagal, fallback query panjang:', e);
@@ -2474,7 +2480,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
               finalManifestURL = await uploadDownloadManifest({
                 photo: finalPublicURL,
                 photos: finalIndividualURLs,
-                gif: gifURL
+                gif: gifURL,
+                video: finalLiveURL
               });
             } catch(e) {
               console.warn('Update manifest GIF gagal:', e);
@@ -2553,9 +2560,29 @@ async function uploadToSupabase(blob, filename, options = {}) {
       // Upload ke Supabase kalau belum
       if (finalPublicURL && !liveUploaded) {
         try {
-          await uploadToSupabase(blob, 'live.webm', { sessionId: cloudSessionId });
+          finalLiveURL = await uploadToSupabase(blob, 'live.webm', { sessionId: cloudSessionId });
           liveUploaded = true;
           console.log('[auto] Live photo uploaded');
+          if (finalPublicURL) {
+            try {
+              finalManifestURL = await uploadDownloadManifest({
+                photo: finalPublicURL,
+                photos: finalIndividualURLs,
+                gif: finalGifURL || '',
+                video: finalLiveURL
+              });
+              const qrBox = document.getElementById('qrcodeModal');
+              if (qrBox && finalManifestURL) {
+                const downloadPageURL = buildDownloadPageURL({ manifest: finalManifestURL });
+                qrBox.innerHTML = '';
+                new QRCode(qrBox, {
+                  text: downloadPageURL, width: 260, height: 260,
+                  colorDark: '#1D3557', colorLight: '#ffffff',
+                  correctLevel: QRCode.CorrectLevel.M
+                });
+              }
+            } catch(e) { console.warn('Update manifest live video gagal:', e); }
+          }
         } catch(e) { console.warn('Auto live upload gagal:', e); }
       }
     } catch(e) {

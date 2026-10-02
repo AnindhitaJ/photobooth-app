@@ -273,6 +273,15 @@
       <span class="btn-badge">GIF</span>
     </button>
 
+    <button class="btn btn-outline" id="btnVideo" onclick="dlVideo()" style="display:none">
+      <span class="btn-icon">🎬</span>
+      <div class="btn-info">
+        <div class="btn-info-title">Download Video</div>
+        <div class="btn-info-sub">Video hasil photobooth</div>
+      </div>
+      <span class="btn-badge">WEBM</span>
+    </button>
+
     <button class="btn btn-outline" id="btnShare" onclick="sharePhoto()" disabled>
       <span class="btn-icon">📤</span>
       <div class="btn-info">
@@ -310,6 +319,9 @@
   const manifestURL = params.get('m');
   let photoURL = params.get('photo');
   let gifURL   = params.get('gif');
+  let videoURL = params.get('video');
+  let autoDownload = params.get('auto') === '1';
+  let autoDownloadStarted = false;
   let ownerId  = params.get('owner') || '';
   let eventId  = params.get('event') || '';
   let individualURLs = [
@@ -436,6 +448,8 @@
         console.log('[LUX] Manifest loaded:', manifest);
         photoURL = manifest.photo || photoURL;
         gifURL = manifest.gif || gifURL;
+        videoURL = manifest.video || videoURL;
+        autoDownload = manifest.autoDownload === true;
         ownerId = manifest.ownerId || ownerId;
         eventId = manifest.eventId || eventId;
         individualURLs = Array.isArray(manifest.photos) ? manifest.photos.filter(Boolean) : individualURLs;
@@ -520,6 +534,14 @@
         // Tampilkan GIF kalau ada
         if (gifURL) {
           document.getElementById('btnGif').classList.add('visible');
+        }
+        if (videoURL) {
+          const videoBtn = document.getElementById('btnVideo');
+          if (videoBtn) videoBtn.classList.add('visible');
+        }
+        if (autoDownload && !autoDownloadStarted) {
+          autoDownloadStarted = true;
+          setTimeout(() => autoDownloadAll(), 700);
         }
       };
       preview.onerror = () => {
@@ -670,6 +692,32 @@
       btn.disabled = false;
       btn.querySelector('.btn-info-title').textContent = 'Download Animasi';
     }
+  }
+
+  async function dlVideo(skipConsent = false) {
+    if (!skipConsent) return ensureConsentThen(() => dlVideo(true));
+    if (!videoURL) return;
+    try {
+      const blob = await LuxMedia.fetchBlob(videoURL);
+      triggerDl(blob, `lux-fotostrip-live-${Date.now()}.webm`);
+      showToast('✓ Video didownload!', 'success');
+    } catch(e) {
+      const opened = window.open(LuxMedia.toBrowserURL(videoURL), '_blank');
+      if (!opened) showToast('Video gagal didownload: ' + (e.message || e), 'error');
+    }
+  }
+
+  async function autoDownloadAll() {
+    const tasks = [];
+    if (photoURL) tasks.push(() => dlJpg(true));
+    for (let i = 0; i < individualURLs.length; i++) tasks.push(() => dlIndividual(i, true));
+    if (gifURL) tasks.push(() => dlGif(true));
+    if (videoURL) tasks.push(() => dlVideo(true));
+    for (const task of tasks) {
+      try { await task(); } catch(e) { console.warn('[auto-download] failed:', e); }
+      await new Promise(resolve => setTimeout(resolve, 350));
+    }
+    showToast('✓ Semua hasil foto sedang didownload', 'success');
   }
 
   async function sharePhoto(skipConsent = false) {

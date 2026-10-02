@@ -841,6 +841,16 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <div class="watermark-row">
+        <div>
+          <div class="watermark-label">Auto Download Hasil Foto</div>
+          <div class="watermark-sub">Otomatis download semua foto, strip, GIF, dan video tanpa ZIP</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoDownloadToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
   </div>
   <button class="btn-save-profile" id="btnSaveProfile" onclick="saveProfile()">💾 Simpan Perubahan</button>
@@ -2382,6 +2392,7 @@
     if (p.email) document.getElementById('profileEmail').value = p.email;
     if (p.whatsapp_number) document.getElementById('profileWhatsapp').value = p.whatsapp_number;
     document.getElementById('watermarkToggle').checked = p.show_watermark !== false;
+    document.getElementById('autoDownloadToggle').checked = p.auto_download === true;
     renderMembershipInfo();
   }
 
@@ -2480,6 +2491,7 @@
         whatsapp_number: whatsappNumber,
         logo_url:       logoUrl,
         show_watermark: document.getElementById('watermarkToggle').checked,
+        auto_download: document.getElementById('autoDownloadToggle').checked,
       });
 
       if (result) {

@@ -1367,20 +1367,14 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const downloadBaseURL = 'https://www.lux-photo.web.id/download.html';
 
     if (extra.manifest || finalManifestURL) {
-      const manifestParams = new URLSearchParams({
+      return downloadBaseURL + '?' + new URLSearchParams({
         m: extra.manifest || finalManifestURL,
         owner: ownerId
-      });
-      // Kirim juga flag lewat URL sebagai fallback jika manifest lama/cache belum
-      // memiliki field autoDownload.
-      if (Auth.getProfile()?.auto_download === true) manifestParams.set('auto', '1');
-      return downloadBaseURL + '?' + manifestParams.toString();
+      }).toString();
     }
 
     // Fallback lama kalau upload manifest gagal.
     const params = new URLSearchParams({ photo: finalPublicURL || '', owner: ownerId });
-    if (Auth.getProfile()?.auto_download === true) params.set('auto', '1');
-    if (finalLiveURL) params.set('video', finalLiveURL);
     const photos = (finalIndividualURLs || []).filter(Boolean);
     photos.forEach(url => params.append('p', url));
     if (finalGifURL) params.set('gif', finalGifURL);
@@ -1388,7 +1382,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     return downloadBaseURL + '?' + params.toString();
   }
 
-  async function uploadDownloadManifest({ photo, photos = [], gif = '', video = '' }) {
+  async function uploadDownloadManifest({ photo, photos = [], gif = '' }) {
     const manifest = {
       version: 1,
       type: isPhotoboxMode ? 'photobox' : 'photostrip',
@@ -1397,8 +1391,6 @@ async function uploadToSupabase(blob, filename, options = {}) {
       photo,
       photos: photos.filter(Boolean),
       gif: gif || '',
-      video: video || '',
-      autoDownload: Auth.getProfile()?.auto_download === true,
       createdAt: new Date().toISOString()
     };
     const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -1832,7 +1824,6 @@ async function uploadToSupabase(blob, filename, options = {}) {
   let finalManifestURL = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
-  let finalLiveURL   = '';
 
   let selectedPrintMode = 1;
   let selectedShareMode = 1;
@@ -2066,6 +2057,76 @@ async function uploadToSupabase(blob, filename, options = {}) {
     el.style.color = color;
     el.textContent = msg;
     setTimeout(() => { el.textContent = ''; }, 4000);
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function isAutoDownloadEnabled() {
+    try {
+      const profile = (typeof Auth !== 'undefined' && Auth.getProfile) ? Auth.getProfile() : null;
+      return profile?.auto_download_result === true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function getAutoDownloadSessionKey() {
+    const sessionId = sessionStorage.getItem('luxPhotoSessionId')
+      || localStorage.getItem('photosSessionId')
+      || String(cloudSessionId || 'current');
+    return `lux_auto_download_done_${sessionId}`;
+  }
+
+  async function autoDownloadAllResultFiles() {
+    if (!isAutoDownloadEnabled() || !finalDataURL) return;
+
+    const doneKey = getAutoDownloadSessionKey();
+    if (sessionStorage.getItem(doneKey) === '1') return;
+
+    // Tandai sebelum mulai agar refresh/error parsial tidak memicu badai download berulang.
+    sessionStorage.setItem(doneKey, '1');
+    showStatus('Auto download aktif — menyiapkan semua file...');
+
+    try {
+      // Tunggu aset turunan selesai dibuat. Keduanya aman dipanggil ulang karena punya guard internal.
+      await Promise.allSettled([autoGenerateGif(), autoGenerateLive()]);
+
+      const stamp = Date.now();
+      const queue = [];
+
+      // 1. Hasil utama/composite
+      queue.push({ href: finalDataURL, filename: `lux-photobooth-${stamp}.jpg` });
+
+      // 2. Semua foto satuan yang tersedia
+      filteredPhotos.forEach((src, i) => {
+        if (src) queue.push({ href: src, filename: `lux-foto-${i + 1}-${stamp}.jpg` });
+      });
+
+      // 3. GIF animasi
+      if (gifBlob) {
+        queue.push({ href: URL.createObjectURL(gifBlob), filename: `lux-animated-${stamp}.gif`, revoke: true });
+      }
+
+      // 4. Live photo/video bila tersedia
+      if (liveMP4URL) {
+        queue.push({ href: liveMP4URL, filename: `lux-fotostrip-live-${stamp}.webm` });
+      }
+
+      for (const item of queue) {
+        triggerDownload(item.href, item.filename);
+        if (item.revoke) setTimeout(() => URL.revokeObjectURL(item.href), 5000);
+        await sleep(450);
+      }
+
+      showStatus(`${queue.length} file auto download diproses ✓`);
+    } catch (e) {
+      console.warn('[auto-download] gagal:', e);
+      // Izinkan percobaan lagi setelah refresh jika benar-benar gagal sebelum antrean selesai.
+      sessionStorage.removeItem(doneKey);
+      showStatus('Auto download gagal: ' + (e?.message || e), '#e94560');
+    }
   }
 
   function setProgress(id, pct) {
@@ -2337,6 +2398,9 @@ async function uploadToSupabase(blob, filename, options = {}) {
       // Generate GIF & Live Photo otomatis di background
       autoGenerateGif();
       autoGenerateLive();
+      // Jika diaktifkan dari Admin > Profil, download semua hasil sebagai file terpisah.
+      // Dipanggil setelah hasil utama siap; fungsi akan menunggu GIF/live selesai dibuat.
+      setTimeout(() => autoDownloadAllResultFiles(), 250);
       // Tampilkan plan banner
       showPlanBanner();
       loadResultConsentSettings();
@@ -2420,8 +2484,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
         finalManifestURL = await uploadDownloadManifest({
           photo: finalPublicURL,
           photos: finalIndividualURLs,
-          gif: gifURL,
-          video: finalLiveURL
+          gif: gifURL
         });
       } catch(e) {
         console.warn('Upload manifest gagal, fallback query panjang:', e);
@@ -2484,8 +2547,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
               finalManifestURL = await uploadDownloadManifest({
                 photo: finalPublicURL,
                 photos: finalIndividualURLs,
-                gif: gifURL,
-                video: finalLiveURL
+                gif: gifURL
               });
             } catch(e) {
               console.warn('Update manifest GIF gagal:', e);
@@ -2564,29 +2626,9 @@ async function uploadToSupabase(blob, filename, options = {}) {
       // Upload ke Supabase kalau belum
       if (finalPublicURL && !liveUploaded) {
         try {
-          finalLiveURL = await uploadToSupabase(blob, 'live.webm', { sessionId: cloudSessionId });
+          await uploadToSupabase(blob, 'live.webm', { sessionId: cloudSessionId });
           liveUploaded = true;
           console.log('[auto] Live photo uploaded');
-          if (finalPublicURL) {
-            try {
-              finalManifestURL = await uploadDownloadManifest({
-                photo: finalPublicURL,
-                photos: finalIndividualURLs,
-                gif: finalGifURL || '',
-                video: finalLiveURL
-              });
-              const qrBox = document.getElementById('qrcodeModal');
-              if (qrBox && finalManifestURL) {
-                const downloadPageURL = buildDownloadPageURL({ manifest: finalManifestURL });
-                qrBox.innerHTML = '';
-                new QRCode(qrBox, {
-                  text: downloadPageURL, width: 260, height: 260,
-                  colorDark: '#1D3557', colorLight: '#ffffff',
-                  correctLevel: QRCode.CorrectLevel.M
-                });
-              }
-            } catch(e) { console.warn('Update manifest live video gagal:', e); }
-          }
         } catch(e) { console.warn('Auto live upload gagal:', e); }
       }
     } catch(e) {
@@ -3759,6 +3801,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     }
     ['photos','photosStore','photosSessionId','filteredPhotos','filteredPhotosStore','finalPhoto','finalPhotoThumb','livePhotos','livePhotosStore'].forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('lux_result_consent_done');
+    try { sessionStorage.removeItem(getAutoDownloadSessionKey()); } catch (_) {}
     sessionStorage.removeItem('luxPhotoSessionId');
     sessionStorage.removeItem(RESULT_TRANSFORMS_KEY);
     await idbClearAll();

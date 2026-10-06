@@ -559,7 +559,7 @@
 </div>
 
 <!-- Camera -->
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="flash"></div>
 <div id="countdown"></div>
@@ -972,8 +972,10 @@
       return;
     }
     try {
-      // Nama kamera biasanya baru muncul setelah permission diberikan.
-      if (requestPermission && navigator.mediaDevices?.getUserMedia) {
+      // Nama/ID kamera baru terbaca setelah permission diberikan.
+      // Hanya dipanggil dari tombol (=== true). Event devicechange mengirim objek Event,
+      // jadi tidak boleh dianggap permintaan izin. Jika stream sedang aktif, izin sudah ada.
+      if (requestPermission === true && navigator.mediaDevices?.getUserMedia && !(stream && stream.active)) {
         try {
           const temp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
           temp.getTracks().forEach(t => t.stop());
@@ -983,25 +985,31 @@
       }
 
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(d => d.kind === 'videoinput');
+      const allCameras = devices.filter(d => d.kind === 'videoinput');
+      // Sebelum izin diberikan browser mengirim deviceId kosong.
+      const cameras = allCameras.filter(d => d.deviceId);
+      const permissionHidden = allCameras.length > 0 && cameras.length === 0;
 
       cameraSelect.innerHTML = '<option value="">Kamera default</option>' + cameras.map((d, i) => {
         const selected = d.deviceId === selectedCameraId ? 'selected' : '';
         return `<option value="${d.deviceId}" ${selected}>${makeCameraLabel(d, i)}</option>`;
       }).join('');
 
-      if (selectedCameraId && !cameras.some(d => d.deviceId === selectedCameraId)) {
+      // Hapus pilihan tersimpan hanya jika daftar sudah terbaca penuh dan perangkatnya benar-benar tidak ada.
+      if (selectedCameraId && cameras.length && !cameras.some(d => d.deviceId === selectedCameraId)) {
         selectedCameraId = '';
         localStorage.removeItem('selectedCameraId');
         cameraSelect.value = '';
-      } else if (selectedCameraId) {
+      } else if (selectedCameraId && cameras.length) {
         cameraSelect.value = selectedCameraId;
       }
 
       const help = document.getElementById('cameraHelp');
-      if (help) help.textContent = cameras.length
-        ? 'Pilih kamera yang mau dipakai. Kamera eksternal muncul kalau terbaca browser sebagai webcam.'
-        : 'Belum ada daftar kamera. Klik Izinkan / Refresh dan pastikan permission kamera di-allow.';
+      if (help && !help.dataset.lock) help.textContent = permissionHidden
+        ? 'Nama kamera belum terbaca karena izin belum diberikan. Klik Izinkan / Refresh.'
+        : cameras.length
+          ? 'Pilih kamera yang mau dipakai. Kamera eksternal / capture card muncul kalau terbaca browser sebagai webcam.'
+          : 'Belum ada daftar kamera. Klik Izinkan / Refresh dan pastikan permission kamera di-allow.';
     } catch(e) {
       console.warn('enumerateDevices gagal:', e);
       if (statusMsg) statusMsg.textContent = 'Daftar kamera belum bisa dibaca.';
@@ -1019,9 +1027,19 @@
 
     const help = document.getElementById('cameraHelp');
     if (!captureMode) {
-      if (help) help.textContent = selectedCameraId
-        ? 'Kamera dipilih. Sekarang pilih timer dan mode foto.'
-        : 'Kamera default dipilih. Sekarang pilih timer dan mode foto.';
+      if (!selectedCameraId) {
+        if (help) { delete help.dataset.lock; help.textContent = 'Kamera default dipilih. Sekarang pilih timer dan mode foto.'; }
+        return;
+      }
+      // Langsung tes kamera yang dipilih supaya ketahuan sekarang apakah gambar benar-benar masuk.
+      if (help) { help.dataset.lock = '1'; help.textContent = 'Mengecek kamera...'; }
+      statusMsg.textContent = '';
+      const okPreview = await startCamera({ reason: 'camera_select_preview' });
+      if (help) {
+        help.textContent = okPreview
+          ? `Kamera aktif (${video.videoWidth}x${video.videoHeight}). Sekarang pilih timer dan mode foto.`
+          : (statusMsg.textContent || 'Kamera belum bisa dibuka.');
+      }
       return;
     }
 
@@ -1064,6 +1082,12 @@
     );
   }
 
+  function makeCameraError(name, message) {
+    const err = new Error(message);
+    err.name = name;
+    return err;
+  }
+
   function waitForVideoReady(timeoutMs = 7000) {
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       return Promise.resolve(true);
@@ -1086,8 +1110,8 @@
       const onReady = () => {
         if (video.videoWidth > 0 && video.videoHeight > 0) finish(() => resolve(true));
       };
-      const onError = () => finish(() => reject(new Error('Video kamera gagal diputar.')));
-      const timer = setTimeout(() => finish(() => reject(new Error('Kamera terlalu lama menyiapkan preview.'))), timeoutMs);
+      const onError = () => finish(() => reject(makeCameraError('PlayError', 'Video kamera gagal diputar.')));
+      const timer = setTimeout(() => finish(() => reject(makeCameraError('NoFrameError', 'Kamera terlalu lama menyiapkan preview.'))), timeoutMs);
       video.addEventListener('loadedmetadata', onReady);
       video.addEventListener('canplay', onReady);
       video.addEventListener('error', onError, { once: true });
@@ -1111,6 +1135,12 @@
     if (name === 'AbortError') {
       return 'Pembukaan kamera terhenti. Ketuk Ambil untuk mencoba kembali.';
     }
+    if (name === 'NoFrameError') {
+      return 'Kamera terbuka tapi belum ada gambar masuk. Cek sinyal HDMI dari kamera (clean output), pastikan capture card tidak dipakai aplikasi lain (OBS dll), lalu coba lagi atau cabut-pasang capture card.';
+    }
+    if (name === 'PlayError') {
+      return 'Preview gagal diputar oleh browser. Ketuk Ambil untuk mencoba lagi.';
+    }
     return 'Kamera tidak bisa diakses. Cek permission atau pilih kamera lain.';
   }
 
@@ -1121,7 +1151,7 @@
     });
   }
 
-  async function attachCameraStream(candidateStream, sequence) {
+  async function attachCameraStream(candidateStream, sequence, readyTimeoutMs = 7000) {
     if (sequence !== cameraStartSequence) {
       candidateStream.getTracks().forEach(track => track.stop());
       return false;
@@ -1142,8 +1172,13 @@
     };
 
     video.srcObject = candidateStream;
-    await video.play();
-    await waitForVideoReady();
+    try {
+      await video.play();
+    } catch (playError) {
+      if (playError?.name === 'AbortError') throw playError;
+      throw makeCameraError('PlayError', 'video.play gagal: ' + (playError?.message || playError));
+    }
+    await waitForVideoReady(readyTimeoutMs);
 
     if (sequence !== cameraStartSequence || stream !== candidateStream) {
       candidateStream.getTracks().forEach(trackItem => trackItem.stop());
@@ -1156,6 +1191,23 @@
     statusMsg.textContent = '';
     setTimeout(refreshCameraDevices, 250);
     return true;
+  }
+
+  function cameraConstraintAttempts() {
+    if (selectedCameraId) {
+      // Kamera eksternal / capture card: jangan paksa 4:3. Capture card HDMI umumnya 16:9.
+      // Percobaan kedua hanya memakai deviceId supaya browser memilih mode bawaan perangkat.
+      return [
+        { deviceId: { exact: selectedCameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        { deviceId: { exact: selectedCameraId } }
+      ];
+    }
+    return [{
+      facingMode: { ideal: 'user' },
+      width: { ideal: 1920 },
+      height: { ideal: 1440 },
+      aspectRatio: { ideal: 4 / 3 }
+    }];
   }
 
   async function startCamera({ reason = 'manual' } = {}) {
@@ -1175,62 +1227,64 @@
 
       stopCameraStream();
 
-      const videoConstraint = selectedCameraId
-        ? {
-            deviceId: { exact: selectedCameraId },
-            width: { ideal: 1920 },
-            height: { ideal: 1440 },
-            aspectRatio: { ideal: 4 / 3 }
-          }
-        : {
-            facingMode: { ideal: 'user' },
-            width: { ideal: 1920 },
-            height: { ideal: 1440 },
-            aspectRatio: { ideal: 4 / 3 }
-          };
+      const external = !!selectedCameraId;
+      const attempts = cameraConstraintAttempts();
+      let lastError = null;
 
-      const candidate = await requestCameraStream(videoConstraint);
-      return await attachCameraStream(candidate, sequence);
+      for (let i = 0; i < attempts.length; i++) {
+        if (sequence !== cameraStartSequence) return false;
+        try {
+          const candidate = await requestCameraStream(attempts[i]);
+          return await attachCameraStream(candidate, sequence, external ? 12000 : 7000);
+        } catch (attemptError) {
+          lastError = attemptError;
+          console.warn('Kamera percobaan', i + 1, 'gagal:', reason, attemptError?.name, attemptError?.message);
+          if (sequence !== cameraStartSequence) return false;
+          stopCameraStream();
+          const n = attemptError?.name || '';
+          const retryable = ['NoFrameError', 'OverconstrainedError', 'ConstraintNotSatisfiedError', 'AbortError'].includes(n);
+          if (!retryable) break;
+        }
+      }
+      throw lastError || new Error('Kamera gagal dibuka.');
     } catch (error) {
-      console.warn('Kamera gagal:', reason, error);
-      if (sequence === cameraStartSequence && stream) stopCameraStream();
+      console.warn('Kamera gagal:', reason, error?.name, error?.message);
+      if (sequence !== cameraStartSequence) return false;
+      stopCameraStream();
 
-      // Device ID dapat berubah setelah browser/PWA ditutup, permission di-reset,
-      // atau webcam dicabut-pasang. Coba kembali dengan kamera default.
-      if (selectedCameraId && sequence === cameraStartSequence) {
+      // Hanya lupakan kamera pilihan kalau perangkatnya memang tidak ada lagi.
+      // Error lain (tanpa sinyal, sedang dipakai aplikasi lain, izin) TIDAK menghapus pilihan.
+      const name = error?.name || '';
+      const deviceGone = ['NotFoundError', 'DevicesNotFoundError', 'OverconstrainedError', 'ConstraintNotSatisfiedError'].includes(name);
+      if (selectedCameraId && deviceGone) {
         selectedCameraId = '';
         localStorage.removeItem('selectedCameraId');
+        try { cameraSelect.value = ''; } catch (_) {}
         try {
-          const fallback = await requestCameraStream({
-            facingMode: { ideal: 'user' },
-            width: { ideal: 1920 },
-            height: { ideal: 1440 },
-            aspectRatio: { ideal: 4 / 3 }
-          });
+          const fallback = await requestCameraStream(cameraConstraintAttempts()[0]);
           const ok = await attachCameraStream(fallback, sequence);
           if (ok) {
-            statusMsg.textContent = 'Kamera pilihan tidak tersedia, memakai kamera default.';
+            statusMsg.textContent = 'Kamera pilihan tidak ditemukan, memakai kamera default.';
             return true;
           }
         } catch (fallbackError) {
           console.warn('Fallback camera gagal:', fallbackError);
           error = fallbackError;
         }
+        if (sequence !== cameraStartSequence) return false;
+        stopCameraStream();
       }
 
-      if (sequence === cameraStartSequence) {
-        stopCameraStream();
-        cameraResumeNeeded = true;
-        statusMsg.textContent = describeCameraError(error);
-        btnAmbil.disabled = false; // tombol menjadi tindakan retry berbasis user gesture
-      }
+      cameraResumeNeeded = true;
+      statusMsg.textContent = describeCameraError(error);
+      btnAmbil.disabled = false; // tombol menjadi tindakan retry berbasis user gesture
       return false;
     }
   }
 
 
   if (navigator.mediaDevices?.addEventListener) {
-    navigator.mediaDevices.addEventListener('devicechange', refreshCameraDevices);
+    navigator.mediaDevices.addEventListener('devicechange', () => refreshCameraDevices(false));
   }
 
   // ── Live recording ──
@@ -1315,8 +1369,8 @@
 
     // Pastikan data sesi lama selesai dibersihkan sebelum sesi kamera baru dimulai.
     tempCleanupReady.finally(async () => {
-      const ok = await startCamera({ reason: 'mode_selected' });
-      if (ok) setTimeout(updateFrameGuide, 600);
+      const ok = isCameraOperational() ? true : await startCamera({ reason: 'mode_selected' });
+      if (ok) { btnAmbil.disabled = false; setTimeout(updateFrameGuide, 600); }
     });
   }
 

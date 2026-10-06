@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.35-gallery-fresh-photo-sessions';
+const CACHE_NAME = 'lux-photobooth-v1.36-camera-capture-card';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

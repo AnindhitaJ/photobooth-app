@@ -822,6 +822,7 @@
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
   <script src="/beautify.js"></script>
+  <script src="/vintage-themes.js"></script>
 </head>
 <body>
 
@@ -1480,7 +1481,13 @@ async function uploadToSupabase(blob, filename, options = {}) {
   const captureFlow    = localStorage.getItem('captureFlow') || '';
   const isEventMode = eventStorageGet('eventMode') === '1';
   const isPhotoboxMode = captureFlow === 'photobox';
-  const templateSrc    = localStorage.getItem('templateSrc');
+  // Mode Vintage: frame digambar dari preset (tanpa upload admin) dan foto tidak bisa diedit lagi.
+  const isVintageMode  = !!(window.LuxVintage && window.LuxVintage.isActive());
+  const vintageThemeId = isVintageMode ? window.LuxVintage.activeThemeId() : '';
+  const vintageFilter  = isVintageMode ? window.LuxVintage.filterFor(vintageThemeId) : '';
+  const templateSrc    = isVintageMode
+    ? window.LuxVintage.makeFrame(vintageThemeId).src
+    : localStorage.getItem('templateSrc');
   const slots          = JSON.parse(localStorage.getItem('templateSlots') || '[]').map(s => ({
     ...s,
     r: Math.round((((Number(s?.r ?? s?.rotate ?? s?.rotation ?? 0) || 0) % 360) + 360) % 360)
@@ -1526,7 +1533,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   let pinchState = null;
 
   try {
-    const saved = JSON.parse(sessionStorage.getItem(RESULT_TRANSFORMS_KEY) || '[]');
+    const saved = isVintageMode ? [] : JSON.parse(sessionStorage.getItem(RESULT_TRANSFORMS_KEY) || '[]');
     if (Array.isArray(saved)) {
       saved.slice(0, photoTransforms.length).forEach((item, i) => {
         if (!item || typeof item !== 'object') return;
@@ -2217,7 +2224,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
           offsetY: transform.offsetY,
           rotate: transform.rotation,
           flipX: transform.flipX,
-          beautify: 'off'
+          beautify: 'off',
+          filter: vintageFilter || undefined
         });
         ctx.restore();
       }
@@ -2352,7 +2360,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
       finalDataURL = canvas.toDataURL('image/jpeg', 0.97);
 
-      if (!resultEditorReady) buildResultEditor();
+      if (!resultEditorReady && !isVintageMode) buildResultEditor();
       if (previewOnly) {
         document.getElementById('loadingOverlay').style.display = 'none';
         return;

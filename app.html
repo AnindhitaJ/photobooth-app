@@ -272,6 +272,7 @@
     .trading .feature-icon { background: linear-gradient(135deg, #f97316, #ec4899); }
     .portrait .feature-icon { background: linear-gradient(135deg, #8b5cf6, #d6b56d); }
     .certificate .feature-icon { background: linear-gradient(135deg, #d6b56d, #f59e0b); }
+    .vintage .feature-icon { background: linear-gradient(135deg, #8a5a2b, #d9b866); }
     .game .feature-icon { background: linear-gradient(135deg, #22d3ee, #7c3aed); }
     .detective .feature-icon { background: linear-gradient(135deg, #8c5a2b, #d84b7e); }
     .footer {
@@ -377,11 +378,6 @@
           <span class="product-title">Photostrip</span>
           <span class="product-desc">template strip 5×15, hasil bisa cetak 1 strip atau 2 strip</span>
         </button>
-        <button class="product-card strip" data-lux-permission="photostrip" onclick="mulaiVintagePhotobooth()">
-          <span class="product-icon">📷</span>
-          <span class="product-title">Vintage Photobooth</span>
-          <span class="product-desc">10 tema vintage, flow photostrip 5×15</span>
-        </button>
         <button class="product-card box" data-lux-permission="photobooth" onclick="mulaiPhotobox()">
           <span class="product-icon">🖼️</span>
           <span class="product-title">Photobox 4R</span>
@@ -390,6 +386,14 @@
       </div>
 
       <div class="feature-grid">
+        <button class="feature-card vintage" data-lux-permission="photostrip" onclick="bukaVintage()">
+          <span class="feature-icon">📻</span>
+          <span>
+            <span class="feature-title">Photobooth Vintage</span>
+            <span class="feature-desc">strip 4 foto, 10 tema vintage preset</span>
+          </span>
+        </button>
+
         <button class="feature-card ganci" data-lux-permission="ganci" onclick="bukaGanci()">
           <span class="feature-icon">🪝</span>
           <span>
@@ -552,7 +556,9 @@
         'activeEventName',
         'activeEventWelcomeURL',
         'activeEventWelcomeOverlay',
-        'activeEventProductType'
+        'activeEventProductType',
+        'vintageMode',
+        'vintageTheme'
       ].forEach(k => localStorage.removeItem(k));
     }
 
@@ -581,16 +587,6 @@
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
     }
-    function mulaiVintagePhotobooth() {
-      if (!canOpenFeature('photostrip')) return;
-      clearEventState();
-      localStorage.setItem('captureFlow', 'vintage-photobooth');
-      localStorage.setItem('vintageThemes', JSON.stringify([
-        'Polaroid 80s','Retro Cafe','Old Film','Korean Vintage','French Romance',
-        'Disco 70s','Newspaper','Cinema Noir','Garden Vintage','Sepia Memory'
-      ]));
-      window.location.href = '/template';
-    }
     function mulaiPhotobox() {
       if (!canOpenFeature('photobooth')) return;
       clearEventState();
@@ -603,6 +599,7 @@
       clearEventState();
       window.location.href = url;
     }
+    function bukaVintage() { openDirectFeature('photostrip', '/vintage'); }
     function bukaGanci() { openDirectFeature('ganci', '/ganci'); }
     function bukaKalender() { openDirectFeature('kalender', '/kalender'); }
     function bukaGaleri() { window.location.href = '/gallery'; }

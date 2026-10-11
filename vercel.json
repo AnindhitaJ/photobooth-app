@@ -200,6 +200,10 @@
       "destination": "/detective-case.html"
     },
     {
+      "source": "/vintage",
+      "destination": "/vintage.html"
+    },
+    {
       "source": "/game-character",
       "destination": "/game-character.html"
     },

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.36-camera-capture-card';
+const CACHE_NAME = 'lux-photobooth-v1.37-vintage-photostrip';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
@@ -9,7 +9,8 @@ const CORE_ASSETS = [
   '/event.html', '/event-run.html', '/ganci.html', '/kalender.html',
   '/idcard.html', '/icon-portrait.html', '/game-character.html',
   '/certificate.html', '/trading-card.html', '/detective-case.html',
-  '/newspaper.html', '/magazine.html', '/config.js', '/auth.js',
+  '/newspaper.html', '/magazine.html', '/vintage.html', '/vintage-themes.js',
+  '/config.js', '/auth.js',
   '/local-camera.js', '/beautify.js', '/product-photobooth.js',
   '/cover-maker.js', '/ganci-utils.js', '/ganci-print.js', '/photo-storage.js',
   '/product-photo-flow.js', '/media-fetch.js',
@@ -45,6 +46,7 @@ const CLEAN_ROUTE_FALLBACKS = Object.freeze({
   '/certificate': '/certificate.html',
   '/trading-card': '/trading-card.html',
   '/detective-case': '/detective-case.html',
+  '/vintage': '/vintage.html',
   '/newspaper': '/newspaper.html',
   '/magazine': '/magazine.html'
 });

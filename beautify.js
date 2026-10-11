@@ -34,7 +34,8 @@
     ctx.translate(x + w / 2 + offsetX, y + h / 2 + offsetY);
     ctx.rotate(rotate * Math.PI / 180);
     ctx.scale(flipX, flipY);
-    ctx.filter = preset.css;
+    // options.filter (opsional) menimpa preset, dipakai oleh tema Vintage.
+    ctx.filter = options.filter || preset.css;
     ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
 
     if (preset.smooth > 0) {

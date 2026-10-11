@@ -1,22 +1,24 @@
-LUX PHOTOBOOTH - RESULT PHOTO EDITOR v1.32
+LUX PHOTOBOOTH - PHOTOBOOTH VINTAGE v1.37
 
-Ganti file di root project dengan 3 file berikut:
-1. result.html
-2. beautify.js
-3. sw.js
+FILE BARU (taruh di root project):
+1. vintage.html          -> halaman pilih 10 tema vintage (route: /vintage)
+2. vintage-themes.js     -> generator 10 frame preset (digambar lewat canvas, TIDAK upload via admin)
 
-Tidak perlu mengganti camera.html atau filter.html untuk versi ini.
+FILE YANG DIUBAH (ganti dengan versi baru):
+3. app.html       -> tombol "Photobooth Vintage" di dashboard
+4. camera.html    -> mode vintage: tanpa Edit Filter, tombol langsung ke hasil, tombol kembali ke /vintage
+5. result.html    -> frame dari preset, tone foto per tema, editor geser/zoom/rotate DIMATIKAN
+6. beautify.js    -> drawCover mendukung options.filter (dipakai tema vintage)
+7. template.html  -> bersihkan flag vintage saat memakai alur photostrip biasa
+8. auth.js        -> /vintage memakai permission "photostrip"
+9. sw.js          -> cache v1.37 + daftar vintage.html & vintage-themes.js
+10. vercel.json   -> rewrite /vintage -> /vintage.html
 
-Fitur yang ditambahkan:
-- pilih foto/slot di halaman Result
-- drag untuk geser foto
-- scroll mouse untuk zoom
-- pinch dua jari untuk zoom dan geser
-- tombol zoom +/-
-- rotate kiri/kanan
-- flip horizontal
-- reset per foto
-- Simpan Perubahan untuk memperbarui hasil QR/cloud
-- cache Service Worker dinaikkan ke v1.32
+PERMISSION:
+Vintage memakai permission "photostrip" yang sudah ada, jadi TIDAK perlu migrasi SQL.
+Akun yang boleh photostrip otomatis boleh Vintage.
 
-Setelah deploy, lakukan hard refresh sekali jika browser masih memegang Service Worker lama.
+10 TEMA: Sepia Classic, Noir Silver, Polaroid 70s, Film Reel 35mm, Victorian Parlor,
+Art Deco 20s, Retro Diner 50s, Sunny 80s, Old Postcard, Old West Tintype.
+
+Setelah deploy, hard refresh sekali jika browser masih memegang Service Worker lama.

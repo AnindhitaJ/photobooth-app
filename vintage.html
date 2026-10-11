@@ -1,36 +1,143 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vintage Photobooth</title>
-<style>
-body{margin:0;background:#efe0c8;font-family:Georgia,serif;color:#3d2b1f;padding:25px}
-h1{text-align:center}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:500px;margin:auto}
-.card{background:#fff8e8;border:2px solid #b08b57;border-radius:18px;padding:20px;text-align:center;cursor:pointer}
-.card:hover{transform:scale(1.03);background:#f5dfb7}
-.name{font-size:20px;font-weight:bold}.desc{font-size:13px}
-</style></head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#D84B7E">
+  <title>Photobooth Vintage - LUX Photobooth</title>
+  <style>
+    :root { --pink:#D84B7E; --yellow:#E5B842; --navy:#1D3557; --bg:#FFF8FC; --border:#f5c6da; --text:#1D3557; --text2:#6b7fa3; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { min-height:100vh; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); padding-bottom:110px; }
+    body::before { content:''; position:fixed; inset:0; z-index:-1; background-image:radial-gradient(circle,rgba(216,75,126,.07) 1px,transparent 1px); background-size:28px 28px; }
+    .header { position:sticky; top:0; z-index:50; background:white; border-bottom:2px solid var(--border); padding:14px 18px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 14px rgba(216,75,126,.1); }
+    .btn-back { width:40px; height:40px; border-radius:999px; border:2px solid var(--border); background:#fff8fc; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text); font-size:18px; font-weight:900; }
+    .header-main { flex:1; min-width:0; }
+    .header-title { font-size:18px; font-weight:950; letter-spacing:-.5px; background:linear-gradient(135deg,var(--pink),var(--yellow)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .header-sub { font-size:12px; color:var(--text2); font-weight:750; margin-top:2px; }
+    .wrap { max-width:1100px; margin:0 auto; padding:18px 16px; }
+    .info { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+    .chip { border:2px solid var(--border); border-radius:999px; padding:6px 12px; background:white; color:var(--text2); font-size:12px; font-weight:850; }
+    .chip b { color:var(--pink); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+    .theme { position:relative; border:3px solid var(--border); background:white; border-radius:20px; padding:10px; cursor:pointer; text-align:center; font-family:inherit; transition:.18s; box-shadow:0 4px 18px rgba(216,75,126,.07); }
+    .theme:hover { transform:translateY(-2px); }
+    .theme.active { border-color:var(--pink); box-shadow:0 0 0 4px rgba(216,75,126,.14), 0 10px 28px rgba(216,75,126,.18); }
+    .theme.active::after { content:'✓'; position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%; background:var(--pink); color:#fff; font-weight:900; display:grid; place-items:center; font-size:14px; }
+    .thumb { width:100%; aspect-ratio:591/1772; border-radius:10px; background:#eee; display:block; overflow:hidden; box-shadow:0 6px 16px rgba(29,53,87,.18); }
+    .thumb canvas { width:100%; height:100%; display:block; }
+    .t-name { margin-top:10px; font-size:13px; font-weight:950; color:var(--text); }
+    .t-desc { margin-top:3px; font-size:11px; font-weight:700; color:var(--text2); line-height:1.35; }
+    .bar { position:fixed; left:0; right:0; bottom:0; z-index:60; background:white; border-top:2px solid var(--border); padding:12px 16px calc(12px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:12px; box-shadow:0 -6px 24px rgba(216,75,126,.12); }
+    .bar-info { flex:1; min-width:0; }
+    .bar-label { font-size:11px; font-weight:900; color:var(--text2); letter-spacing:1.2px; text-transform:uppercase; }
+    .bar-name { font-size:16px; font-weight:950; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .btn-go { border:0; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:950; color:#fff; background:linear-gradient(135deg,var(--pink),var(--yellow)); box-shadow:0 8px 24px rgba(216,75,126,.3); cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .btn-go:disabled { opacity:.6; cursor:wait; }
+    .toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:#fff; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; z-index:99; transition:.25s; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+  </style>
+  <script src="/config.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/vintage-themes.js"></script>
+</head>
 <body>
-<h1>🎞 Vintage Photobooth</h1>
-<p style="text-align:center">Pilih suasana vintage, alur tetap seperti Photostrip.</p>
-<div class="grid" id="grid"></div>
-<script>
-const themes=[
-["Polaroid 80s","cream frame + grain"],
-["Retro Cafe","warm brown aesthetic"],
-["Old Film","black white film"],
-["Korean Vintage","soft pastel retro"],
-["French Romance","elegant classic"],
-["Disco 70s","gold vintage"],
-["Newspaper","old magazine style"],
-["Cinema Noir","dramatic film"],
-["Garden Vintage","floral classic"],
-["Sepia Memory","old camera look"]
-];
-grid.innerHTML=themes.map((t,i)=>`<div class="card" onclick="choose(${i})"><div class="name">${t[0]}</div><div class="desc">${t[1]}</div></div>`).join("");
-function choose(i){
- localStorage.setItem("captureFlow","vintage");
- localStorage.setItem("vintageTheme",JSON.stringify({id:i,name:themes[i][0]}));
- location.href="/template";
-}
-</script></body></html>
+  <div class="header">
+    <a class="btn-back" href="/app" title="Kembali">←</a>
+    <div class="header-main">
+      <div class="header-title">📻 Photobooth Vintage</div>
+      <div class="header-sub">10 tema vintage preset · strip 5×15 · 4 foto</div>
+    </div>
+    <img data-auth-logo src="/logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+  </div>
+
+  <div class="wrap">
+    <div class="info">
+      <span class="chip">🎞️ Konsep <b>photostrip</b></span>
+      <span class="chip">🎨 Tema <b>preset</b> (tanpa upload)</span>
+      <span class="chip">🔒 Foto <b>tidak bisa diedit</b> setelah diambil</span>
+    </div>
+    <div class="grid" id="themeGrid"></div>
+  </div>
+
+  <div class="bar">
+    <div class="bar-info">
+      <div class="bar-label">Tema dipilih</div>
+      <div class="bar-name" id="barName">-</div>
+    </div>
+    <button class="btn-go" id="btnGo" onclick="mulai()">Mulai Foto →</button>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    if (typeof Auth !== 'undefined' && !Auth.getSession()) window.location.href = '/login?next=/vintage';
+
+    let selectedId = LuxVintage.themes[0].id;
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg; el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2600);
+    }
+
+    function select(id) {
+      selectedId = id;
+      document.querySelectorAll('.theme').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+      const t = LuxVintage.getTheme(id);
+      document.getElementById('barName').textContent = t.emoji + ' ' + t.name;
+    }
+
+    function build() {
+      const grid = document.getElementById('themeGrid');
+      LuxVintage.themes.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'theme'; btn.dataset.id = t.id;
+        btn.innerHTML = '<span class="thumb"></span><div class="t-name"></div><div class="t-desc"></div>';
+        btn.querySelector('.t-name').textContent = t.emoji + ' ' + t.name;
+        btn.querySelector('.t-desc').textContent = t.desc;
+        btn.onclick = () => select(t.id);
+        grid.appendChild(btn);
+      });
+      select(selectedId);
+      // render preview satu per satu supaya halaman tetap responsif
+      const themes = LuxVintage.themes.slice();
+      (function next() {
+        const t = themes.shift();
+        if (!t) return;
+        const holder = grid.querySelector('.theme[data-id="' + t.id + '"] .thumb');
+        try { holder.appendChild(LuxVintage.render(t.id, { scale: 0.35, placeholder: true })); } catch (e) { console.warn(e); }
+        setTimeout(next, 0);
+      })();
+    }
+
+    async function mulai() {
+      const btn = document.getElementById('btnGo');
+      btn.disabled = true;
+      try {
+        await window.LUX_REQUIRE_AUTH('vintage_start_requires_login');
+      } catch (error) {
+        console.error('[LUX AUTH] Alur foto diblokir:', error);
+        btn.disabled = false;
+        return;
+      }
+      try {
+        LuxVintage.apply(selectedId);
+      } catch (e) {
+        toast('Gagal menyiapkan tema: ' + (e.message || e));
+        btn.disabled = false;
+        return;
+      }
+      window.location.href = '/camera';
+    }
+
+    build();
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

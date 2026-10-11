@@ -36,7 +36,9 @@ const LUX_DIRECT_FEATURE_PATHS = Object.freeze({
   '/trading-card': 'trading-card', '/trading-card.html': 'trading-card',
   '/certificate': 'certificate', '/certificate.html': 'certificate',
   '/game-character': 'game-character', '/game-character.html': 'game-character',
-  '/detective-case': 'detective-case', '/detective-case.html': 'detective-case'
+  '/detective-case': 'detective-case', '/detective-case.html': 'detective-case',
+  // Vintage = varian photostrip, jadi memakai permission photostrip yang sama.
+  '/vintage': 'photostrip', '/vintage.html': 'photostrip'
 });
 
 const LUX_CAPTURE_PATHS = new Set([

@@ -377,6 +377,11 @@
           <span class="product-title">Photostrip</span>
           <span class="product-desc">template strip 5×15, hasil bisa cetak 1 strip atau 2 strip</span>
         </button>
+        <button class="product-card vintage" data-lux-permission="photostrip" onclick="mulaiVintage()">
+          <span class="product-icon">📷</span>
+          <span class="product-title">Vintage Photobooth</span>
+          <span class="product-desc">10 tema vintage, ukuran & hasil mengikuti photostrip</span>
+        </button>
         <button class="product-card box" data-lux-permission="photobooth" onclick="mulaiPhotobox()">
           <span class="product-icon">🖼️</span>
           <span class="product-title">Photobox 4R</span>
@@ -575,6 +580,11 @@
       localStorage.removeItem('captureFlow');
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
+    }
+    function mulaiVintage() {
+      if (!canOpenFeature('photostrip')) return;
+      clearEventState();
+      window.location.href = '/vintage';
     }
     function mulaiPhotobox() {
       if (!canOpenFeature('photobooth')) return;

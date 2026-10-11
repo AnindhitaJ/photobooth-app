@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vintage Photobooth</title>
+<style>
+body{margin:0;background:#efe0c8;font-family:Georgia,serif;color:#3d2b1f;padding:25px}
+h1{text-align:center}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:500px;margin:auto}
+.card{background:#fff8e8;border:2px solid #b08b57;border-radius:18px;padding:20px;text-align:center;cursor:pointer}
+.card:hover{transform:scale(1.03);background:#f5dfb7}
+.name{font-size:20px;font-weight:bold}.desc{font-size:13px}
+</style></head>
+<body>
+<h1>🎞 Vintage Photobooth</h1>
+<p style="text-align:center">Pilih suasana vintage, alur tetap seperti Photostrip.</p>
+<div class="grid" id="grid"></div>
+<script>
+const themes=[
+["Polaroid 80s","cream frame + grain"],
+["Retro Cafe","warm brown aesthetic"],
+["Old Film","black white film"],
+["Korean Vintage","soft pastel retro"],
+["French Romance","elegant classic"],
+["Disco 70s","gold vintage"],
+["Newspaper","old magazine style"],
+["Cinema Noir","dramatic film"],
+["Garden Vintage","floral classic"],
+["Sepia Memory","old camera look"]
+];
+grid.innerHTML=themes.map((t,i)=>`<div class="card" onclick="choose(${i})"><div class="name">${t[0]}</div><div class="desc">${t[1]}</div></div>`).join("");
+function choose(i){
+ localStorage.setItem("captureFlow","vintage");
+ localStorage.setItem("vintageTheme",JSON.stringify({id:i,name:themes[i][0]}));
+ location.href="/template";
+}
+</script></body></html>

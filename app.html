@@ -377,10 +377,10 @@
           <span class="product-title">Photostrip</span>
           <span class="product-desc">template strip 5×15, hasil bisa cetak 1 strip atau 2 strip</span>
         </button>
-        <button class="product-card vintage" data-lux-permission="photostrip" onclick="mulaiVintage()">
+        <button class="product-card strip" data-lux-permission="photostrip" onclick="mulaiVintagePhotobooth()">
           <span class="product-icon">📷</span>
           <span class="product-title">Vintage Photobooth</span>
-          <span class="product-desc">10 tema vintage, ukuran & hasil mengikuti photostrip</span>
+          <span class="product-desc">10 tema vintage, flow photostrip 5×15</span>
         </button>
         <button class="product-card box" data-lux-permission="photobooth" onclick="mulaiPhotobox()">
           <span class="product-icon">🖼️</span>
@@ -581,10 +581,15 @@
       localStorage.removeItem('captureReturnUrl');
       window.location.href = '/template';
     }
-    function mulaiVintage() {
+    function mulaiVintagePhotobooth() {
       if (!canOpenFeature('photostrip')) return;
       clearEventState();
-      window.location.href = '/vintage';
+      localStorage.setItem('captureFlow', 'vintage-photobooth');
+      localStorage.setItem('vintageThemes', JSON.stringify([
+        'Polaroid 80s','Retro Cafe','Old Film','Korean Vintage','French Romance',
+        'Disco 70s','Newspaper','Cinema Noir','Garden Vintage','Sepia Memory'
+      ]));
+      window.location.href = '/template';
     }
     function mulaiPhotobox() {
       if (!canOpenFeature('photobooth')) return;

@@ -45,3 +45,28 @@ CATATAN:
   jalan; hanya penyimpanan tema yang menampilkan pesan error.
 - Ada file theme.js lama di folder project (rancangan lain berbasis variabel --t-*). Tidak dipakai halaman mana pun
   dan tidak diubah.
+
+=====================================================
+POPUP HALAMAN DEPAN (v1.39)
+=====================================================
+FILE BARU:
+- popup.js                     -> komponen popup (judul, deskripsi, banner)
+- supabase_site_popup_v82.sql  -> JALANKAN SEKALI di Supabase SQL Editor (tabel site_popup + RLS)
+
+FILE DIUBAH:
+- cms.html   -> kartu "Popup Halaman Depan" + modal pengaturan (aktif/nonaktif, judul, deskripsi, banner, pratinjau)
+- login.html -> memuat popup.js (halaman depan; index.html otomatis diarahkan ke sini)
+- app.html   -> memuat popup.js (dashboard setelah login)
+- sw.js      -> cache v1.39
+
+CARA PAKAI:
+1. Jalankan SQL, deploy, buka /cms (login super admin).
+2. Klik "Atur Popup": isi judul, deskripsi, pilih banner, aktifkan, lalu Simpan.
+3. Popup tampil ke semua orang (termasuk yang belum login). Setelah ditutup tidak muncul lagi di perangkat
+   itu sampai CMS menyimpan lagi (setiap Simpan menaikkan versi).
+
+CATATAN:
+- Banner diupload ke Storage (folder site/popup/). Jika policy Storage ditolak, otomatis disimpan sebagai
+  data URL terkompres di tabel, jadi tetap jalan.
+- Teks dirender sebagai teks biasa (aman dari injeksi HTML); banner hanya menerima https:// atau data:image.
+- Di dashboard, popup ikut warna tema akun (ui-theme.js); di halaman login tetap pink.

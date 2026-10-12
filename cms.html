@@ -181,6 +181,26 @@
     .btn-modal-confirm:disabled { opacity:0.6; cursor:not-allowed; }
 
     .modal-box-wide { max-width: 620px; }
+    /* Popup halaman depan */
+    textarea.modal-input { min-height:120px; resize:vertical; line-height:1.5; }
+    .pop-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:2px solid var(--border); border-radius:14px; margin-bottom:16px; }
+    .pop-row b { font-size:14px; }
+    .pop-row small { display:block; color:var(--text2); font-size:12px; margin-top:2px; }
+    .pop-switch { position:relative; width:50px; height:28px; flex:none; }
+    .pop-switch input { opacity:0; width:0; height:0; }
+    .pop-switch span { position:absolute; inset:0; background:#cbd5e1; border-radius:999px; cursor:pointer; transition:.2s; }
+    .pop-switch span::before { content:''; position:absolute; width:22px; height:22px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+    .pop-switch input:checked + span { background:#16a34a; }
+    .pop-switch input:checked + span::before { transform:translateX(22px); }
+    .pop-count { text-align:right; font-size:11px; color:var(--text2); margin:-10px 2px 12px; }
+    .pop-banner-box { border:2px dashed var(--border); border-radius:14px; padding:10px; margin-bottom:14px; text-align:center; }
+    .pop-banner-preview { width:100%; aspect-ratio:1200/630; border-radius:10px; background:#f1f5f9 center/cover no-repeat; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:13px; font-weight:700; margin-bottom:10px; }
+    .pop-banner-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+    .pop-mini { border:2px solid var(--border); background:#fff; border-radius:999px; padding:8px 14px; font:inherit; font-size:12.5px; font-weight:800; cursor:pointer; color:var(--text); }
+    .pop-hint { font-size:11.5px; color:var(--text2); margin-top:8px; line-height:1.45; }
+    .pop-badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:900; margin-right:8px; }
+    .pop-badge.on { background:#dcfce7; color:#166534; }
+    .pop-badge.off { background:#f1f5f9; color:#64748b; }
     .receipt-summary {
       background:#fffbeb;
       border:2px solid #fde68a;
@@ -373,6 +393,17 @@
     </div>
   </div>
 
+  <!-- Popup Halaman Depan -->
+  <div class="section-card" id="popupCard">
+    <div class="section-header">
+      <div class="section-title">📣 Popup Halaman Depan</div>
+      <div class="section-tools">
+        <button type="button" class="btn-create-account" onclick="openPopupModal()">✏️ Atur Popup</button>
+      </div>
+    </div>
+    <div id="popupStatus" style="font-size:13px;color:var(--text2);padding:2px;">Memuat...</div>
+  </div>
+
   <!-- Users Table -->
   <div class="section-card">
     <div class="section-header">
@@ -411,6 +442,43 @@
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeCreateAccountModal()">Batal</button>
       <button class="btn-modal-confirm" id="btnConfirmCreateAccount" onclick="confirmCreateAccount()">Buat Akun</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP MODAL -->
+<div class="modal-wrap" id="popupModal">
+  <div class="modal-box modal-box-wide" style="max-height:92vh;overflow:auto;">
+    <div class="modal-title">📣 Popup Halaman Depan</div>
+    <div class="modal-sub">Tampil ke semua orang di halaman login dan dashboard. Setiap kali disimpan, popup akan muncul lagi untuk yang sudah pernah menutupnya.</div>
+
+    <div class="pop-row">
+      <div><b>Tampilkan popup</b><small>Matikan untuk menyembunyikan tanpa menghapus isinya.</small></div>
+      <label class="pop-switch"><input type="checkbox" id="popEnabled"><span></span></label>
+    </div>
+
+    <label class="modal-field-label" for="popTitle">Judul</label>
+    <input type="text" class="modal-input" id="popTitle" maxlength="80" placeholder="Contoh: Promo Akhir Tahun">
+
+    <label class="modal-field-label" for="popDesc">Deskripsi</label>
+    <textarea class="modal-input" id="popDesc" maxlength="600" placeholder="Tulis isi pengumuman. Baris baru tetap dipertahankan."></textarea>
+    <div class="pop-count"><span id="popDescCount">0</span>/600</div>
+
+    <label class="modal-field-label">Banner</label>
+    <div class="pop-banner-box">
+      <div class="pop-banner-preview" id="popBannerPreview">Belum ada banner</div>
+      <div class="pop-banner-btns">
+        <button type="button" class="pop-mini" onclick="document.getElementById('popBannerFile').click()">🖼️ Pilih gambar</button>
+        <button type="button" class="pop-mini" id="popBannerRemove" onclick="removePopupBanner()" style="display:none;">🗑️ Hapus banner</button>
+      </div>
+      <input type="file" id="popBannerFile" accept="image/*" style="display:none;" onchange="onPopupBannerPicked(this)">
+      <div class="pop-hint">Ukuran ideal 1200 × 630 px (landscape). Gambar otomatis dikecilkan dan dikompres.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closePopupModal()">Batal</button>
+      <button class="btn-modal-cancel" onclick="previewPopup()">👁️ Pratinjau</button>
+      <button class="btn-modal-confirm" id="btnSavePopup" onclick="savePopup()">Simpan</button>
     </div>
   </div>
 </div>
@@ -1440,6 +1508,175 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { t.className = 'toast'; }, 3500);
   }
+</script>
+<script>window.LUX_POPUP_NO_AUTO = true;</script>
+<script src="/popup.js"></script>
+
+<script>
+  // ── POPUP HALAMAN DEPAN (diatur super admin) ─────────────────────────
+  const POPUP_BUCKET = window.LUX_CONFIG?.STORAGE_BUCKET || 'photobooth';
+  const popState = { loaded: false, row: null, version: 0, bannerUrl: '', newBlob: null, newDataUrl: '', bannerRemoved: false };
+
+  function popHeaders(extra) {
+    const session = Auth.getSession();
+    return Object.assign({ apikey: CMS_ANON, Authorization: `Bearer ${session?.access_token || CMS_ANON}` }, extra || {});
+  }
+
+  async function loadPopupSettings() {
+    const el = document.getElementById('popupStatus');
+    try {
+      const res = await fetch(`${CMS_URL}/rest/v1/site_popup?id=eq.main&select=*`, { headers: popHeaders() });
+      if (!res.ok) throw new Error(String(res.status));
+      const rows = await res.json();
+      popState.row = rows[0] || null;
+      popState.version = popState.row?.version || 0;
+      popState.bannerUrl = popState.row?.banner_url || '';
+      popState.loaded = true;
+      const r = popState.row;
+      if (!r || (!r.title && !r.description && !r.banner_url)) {
+        el.innerHTML = '<span class="pop-badge off">Kosong</span>Belum ada popup. Klik “Atur Popup” untuk membuat.';
+      } else {
+        const t = String(r.title || '(tanpa judul)').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+        el.innerHTML = (r.enabled ? '<span class="pop-badge on">Aktif</span>' : '<span class="pop-badge off">Nonaktif</span>') +
+          `<b>${t}</b> · versi ${r.version || 1}`;
+      }
+    } catch (e) {
+      popState.loaded = false;
+      el.textContent = 'Tabel popup belum siap. Jalankan supabase_site_popup_v82.sql di Supabase SQL Editor, lalu muat ulang halaman.';
+    }
+  }
+
+  function refreshBannerPreview() {
+    const box = document.getElementById('popBannerPreview');
+    const rm = document.getElementById('popBannerRemove');
+    const src = popState.newDataUrl || (popState.bannerRemoved ? '' : popState.bannerUrl);
+    if (src) { box.style.backgroundImage = `url("${src}")`; box.textContent = ''; rm.style.display = ''; }
+    else { box.style.backgroundImage = ''; box.textContent = 'Belum ada banner'; rm.style.display = 'none'; }
+  }
+
+  function openPopupModal() {
+    if (!popState.loaded) return showToast('Tabel popup belum siap. Jalankan supabase_site_popup_v82.sql dulu.', 'error');
+    const r = popState.row || {};
+    document.getElementById('popEnabled').checked = r.enabled === true;
+    document.getElementById('popTitle').value = r.title || '';
+    document.getElementById('popDesc').value = r.description || '';
+    document.getElementById('popDescCount').textContent = String((r.description || '').length);
+    popState.newBlob = null; popState.newDataUrl = ''; popState.bannerRemoved = false;
+    popState.bannerUrl = r.banner_url || '';
+    refreshBannerPreview();
+    document.getElementById('popupModal').classList.add('open');
+  }
+
+  function closePopupModal() { document.getElementById('popupModal').classList.remove('open'); }
+
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'popDesc') document.getElementById('popDescCount').textContent = String(e.target.value.length);
+  });
+
+  function compressBanner(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Gagal membaca gambar'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('File bukan gambar yang valid'));
+        img.onload = () => {
+          const maxW = 1200;
+          const ratio = Math.min(1, maxW / img.naturalWidth);
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.naturalWidth * ratio);
+          c.height = Math.round(img.naturalHeight * ratio);
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          const dataUrl = c.toDataURL('image/jpeg', 0.85);
+          c.toBlob(b => resolve({ blob: b, dataUrl }), 'image/jpeg', 0.85);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function onPopupBannerPicked(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type)) return showToast('Pilih file gambar', 'error');
+    try {
+      const out = await compressBanner(file);
+      popState.newBlob = out.blob; popState.newDataUrl = out.dataUrl; popState.bannerRemoved = false;
+      refreshBannerPreview();
+    } catch (e) { showToast(e.message || 'Gagal memproses gambar', 'error'); }
+  }
+
+  function removePopupBanner() {
+    popState.newBlob = null; popState.newDataUrl = ''; popState.bannerRemoved = true;
+    refreshBannerPreview();
+  }
+
+  function currentPopupForm() {
+    return {
+      enabled: document.getElementById('popEnabled').checked,
+      title: document.getElementById('popTitle').value.trim(),
+      description: document.getElementById('popDesc').value.trim(),
+      banner_url: popState.newDataUrl || (popState.bannerRemoved ? '' : popState.bannerUrl)
+    };
+  }
+
+  function previewPopup() {
+    const f = currentPopupForm();
+    if (!f.title && !f.description && !f.banner_url) return showToast('Isi judul, deskripsi, atau banner dulu', 'error');
+    window.LuxPopup.show(f, { preview: true });
+  }
+
+  async function uploadPopupBanner() {
+    const path = `site/popup/${Date.now()}.jpg`;
+    try {
+      const res = await fetch(`${CMS_URL}/storage/v1/object/${POPUP_BUCKET}/${path}`, {
+        method: 'POST',
+        headers: popHeaders({ 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }),
+        body: popState.newBlob
+      });
+      if (res.ok) return `${CMS_URL}/storage/v1/object/public/${POPUP_BUCKET}/${path}`;
+      console.warn('Upload banner ke Storage gagal, fallback ke data URL:', await res.text());
+    } catch (e) { console.warn('Upload banner exception, fallback ke data URL:', e); }
+    return popState.newDataUrl; // fallback: simpan langsung di tabel
+  }
+
+  async function savePopup() {
+    const btn = document.getElementById('btnSavePopup');
+    const f = currentPopupForm();
+    if (f.enabled && !f.title && !f.description && !f.banner_url) {
+      return showToast('Isi judul, deskripsi, atau banner sebelum mengaktifkan', 'error');
+    }
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    try {
+      let bannerUrl = popState.bannerRemoved ? '' : popState.bannerUrl;
+      if (popState.newBlob) bannerUrl = await uploadPopupBanner();
+      const res = await fetch(`${CMS_URL}/rest/v1/site_popup`, {
+        method: 'POST',
+        headers: popHeaders({ 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' }),
+        body: JSON.stringify({
+          id: 'main', enabled: f.enabled, title: f.title, description: f.description,
+          banner_url: bannerUrl || null, version: (popState.version || 0) + 1, updated_at: new Date().toISOString()
+        })
+      });
+      if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+      closePopupModal();
+      showToast('Popup disimpan', 'success');
+      await loadPopupSettings();
+    } catch (e) {
+      showToast('Gagal menyimpan: ' + (e.message || e), 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Simpan';
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    await Promise.resolve(Auth.ready).catch(() => false);
+    if (Auth.getSession()) loadPopupSettings();
+  });
 </script>
 </body>
 </html>

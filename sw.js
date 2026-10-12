@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.38-ui-theme';
+const CACHE_NAME = 'lux-photobooth-v1.39-site-popup';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
@@ -9,7 +9,7 @@ const CORE_ASSETS = [
   '/event.html', '/event-run.html', '/ganci.html', '/kalender.html',
   '/idcard.html', '/icon-portrait.html', '/game-character.html',
   '/certificate.html', '/trading-card.html', '/detective-case.html',
-  '/newspaper.html', '/magazine.html', '/vintage.html', '/vintage-themes.js', '/ui-theme.js',
+  '/newspaper.html', '/magazine.html', '/vintage.html', '/vintage-themes.js', '/ui-theme.js', '/popup.js',
   '/config.js', '/auth.js',
   '/local-camera.js', '/beautify.js', '/product-photobooth.js',
   '/cover-maker.js', '/ganci-utils.js', '/ganci-print.js', '/photo-storage.js',

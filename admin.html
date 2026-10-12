@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <script src="/ui-theme.js"></script>
   <meta name="robots" content="noindex, nofollow, noarchive">
 <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
@@ -54,6 +55,16 @@
     .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
     .btn-success { background: linear-gradient(135deg, var(--green), #c9972a); color: white; box-shadow: 0 4px 16px rgba(229,184,66,0.35); }
     .btn-success:hover { transform: translateY(-2px); }
+    /* Pemilih tema warna */
+    .theme-picker { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:12px; }
+    .theme-swatch { border:2px solid transparent; background:transparent; border-radius:14px; padding:8px 4px; cursor:pointer; text-align:center; font-family:inherit; transition:.15s; }
+    .theme-swatch:hover { transform:translateY(-2px); }
+    .theme-swatch .dot { position:relative; width:42px; height:42px; border-radius:50%; margin:0 auto 6px; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+    .theme-swatch .nm { font-size:11px; font-weight:800; color:#6b7fa3; }
+    .theme-swatch.active { border-color:#1D3557; background:rgba(29,53,87,.05); }
+    .theme-swatch.active .dot::after { content:'✓'; position:absolute; inset:0; display:grid; place-items:center; color:#fff; font-weight:900; font-size:18px; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+    .theme-swatch.active .nm { color:#1D3557; }
+    @media (max-width:520px) { .theme-picker { grid-template-columns:repeat(5,1fr); gap:4px; } .theme-swatch .dot { width:34px; height:34px; } }
     .btn-danger { background: white; color: #e94560; border: 2px solid #ffc0cb; font-size: 12px; padding: 6px 14px; }
     .btn-danger:hover { background: #fff0f3; border-color: #e94560; }
     .btn-sm { padding: 7px 14px; font-size: 12px; }
@@ -850,6 +861,14 @@
           <input type="checkbox" id="autoDownloadToggle">
           <span class="toggle-slider"></span>
         </label>
+      </div>
+
+      <div class="watermark-row" style="flex-direction:column;align-items:stretch;">
+        <div>
+          <div class="watermark-label">Tema warna aplikasi</div>
+          <div class="watermark-sub">Pilih nuansa warna untuk akun ini. Berlaku di semua halaman dan perangkat. Klik Simpan Perubahan untuk menyimpan.</div>
+        </div>
+        <div class="theme-picker" id="themePicker" data-lux-keep></div>
       </div>
     </div>
   </div>
@@ -2383,6 +2402,38 @@
   }
 
 
+  // ── Tema warna aplikasi ──
+  var savedTheme = 'pink';
+  var pendingTheme = 'pink';
+
+  function pickKnownTheme(id) {
+    const list = (window.LuxTheme && LuxTheme.themes) || [];
+    return list.some(t => t.id === id) ? id : 'pink';
+  }
+
+  function renderThemePicker() {
+    const box = document.getElementById('themePicker');
+    if (!box || !window.LuxTheme) return;
+    box.innerHTML = '';
+    LuxTheme.themes.forEach(t => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'theme-swatch' + (t.id === pendingTheme ? ' active' : '');
+      b.dataset.id = t.id;
+      b.innerHTML = '<div class="dot"></div><div class="nm"></div>';
+      b.querySelector('.dot').style.background = 'linear-gradient(135deg,' + t.c1 + ',' + t.c2 + ')';
+      b.querySelector('.nm').textContent = t.name;
+      b.onclick = () => pickTheme(t.id);
+      box.appendChild(b);
+    });
+  }
+
+  function pickTheme(id) {
+    pendingTheme = pickKnownTheme(id);
+    LuxTheme.apply(pendingTheme); // pratinjau langsung
+    document.querySelectorAll('#themePicker .theme-swatch').forEach(el => el.classList.toggle('active', el.dataset.id === pendingTheme));
+  }
+
   // Load profile ke form
   function loadProfile() {
     const p = Auth.getProfile();
@@ -2393,6 +2444,9 @@
     if (p.whatsapp_number) document.getElementById('profileWhatsapp').value = p.whatsapp_number;
     document.getElementById('watermarkToggle').checked = p.show_watermark !== false;
     document.getElementById('autoDownloadToggle').checked = p.auto_download_result === true;
+    savedTheme = pickKnownTheme(p.ui_theme);
+    pendingTheme = savedTheme;
+    renderThemePicker();
     renderMembershipInfo();
   }
 
@@ -2485,20 +2539,26 @@
       }
 
       // Update profile
-      const result = await Auth.updateProfile({
+      const updates = {
         booth_name:     document.getElementById('profileBoothName').value.trim(),
         email:          document.getElementById('profileEmail').value.trim(),
         whatsapp_number: whatsappNumber,
         logo_url:       logoUrl,
         show_watermark: document.getElementById('watermarkToggle').checked,
         auto_download_result: document.getElementById('autoDownloadToggle').checked,
-      });
+      };
+      // ui_theme hanya dikirim kalau berubah, supaya simpan profil biasa tetap jalan walau kolomnya belum dibuat.
+      if (pendingTheme !== savedTheme) updates.ui_theme = pendingTheme;
+      const result = await Auth.updateProfile(updates);
 
       if (result) {
+        savedTheme = pendingTheme;
         status.textContent = '✅ Profil berhasil disimpan!';
         status.className = 'profile-status ok';
       } else {
-        throw new Error('Gagal menyimpan');
+        throw new Error(updates.ui_theme
+          ? 'Gagal menyimpan tema. Pastikan kolom ui_theme sudah dibuat di Supabase (jalankan supabase_ui_theme_v81.sql).'
+          : 'Gagal menyimpan');
       }
     } catch(e) {
       status.textContent = '❌ ' + e.message;

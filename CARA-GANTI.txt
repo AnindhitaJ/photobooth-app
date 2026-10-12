@@ -22,3 +22,26 @@ Akun yang boleh photostrip otomatis boleh Vintage.
 Art Deco 20s, Retro Diner 50s, Sunny 80s, Old Postcard, Old West Tintype.
 
 Setelah deploy, hard refresh sekali jika browser masih memegang Service Worker lama.
+
+
+=====================================================
+TEMA WARNA APLIKASI (v1.38)
+=====================================================
+FILE BARU:
+- ui-theme.js                  -> 10 tema warna (pink default, biru, cokelat, hijau, ungu, merah, oranye, teal, slate, emas)
+- supabase_ui_theme_v81.sql    -> JALANKAN SEKALI di Supabase SQL Editor (tambah kolom profiles.ui_theme)
+
+FILE DIUBAH:
+- admin.html   -> pemilih tema di bawah toggle "Auto download hasil"
+- sw.js        -> cache v1.38
+- 24 halaman aplikasi (app, camera, result, gallery, template, filter, preview, ganci, idcard, trading-card,
+  icon-portrait, game-character, detective-case, certificate, vintage, newspaper, magazine, kalender,
+  tutorial, analytics, content-sharing, event, event-run, admin) -> tambah <script src="/ui-theme.js">
+
+CATATAN:
+- Login, reset password, dan halaman tamu (download) tetap pink.
+- Frame foto, template, dan hasil strip TIDAK ikut berubah (hanya tampilan aplikasi).
+- Urutan deploy: jalankan SQL dulu, baru deploy file. Jika SQL belum dijalankan, simpan profil biasa tetap
+  jalan; hanya penyimpanan tema yang menampilkan pesan error.
+- Ada file theme.js lama di folder project (rancangan lain berbasis variabel --t-*). Tidak dipakai halaman mana pun
+  dan tidak diubah.

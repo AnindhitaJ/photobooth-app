@@ -1,3 +1,4 @@
+(function loadShutter(){ if (window.ShutterSound) return; const sc=document.createElement('script'); sc.src='/shutter-sound.js'; document.head.appendChild(sc); })();
 (function () {
   let stream = null;
   let countdownTimer = null;
@@ -157,6 +158,7 @@
         });
       }
       suspendedByBackground = false;
+      if (window.ShutterSound) ShutterSound.unlock();
       startCountdown(captureOptions.seconds || 5);
       return true;
     } catch (e) {
@@ -213,6 +215,7 @@
 
   async function captureNow() {
     if (isCapturing) return;
+    if (window.ShutterSound) ShutterSound.play();
 
     const video = document.getElementById('localCameraVideo');
     const label = document.getElementById('localCameraLabel');

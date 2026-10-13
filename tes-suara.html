@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tes Suara Cekrek</title>
+<style>body{font-family:sans-serif;padding:20px;background:#111;color:#eee}
+button{font-size:20px;padding:16px 24px;border-radius:12px;border:0;background:#c9a24a;margin:8px 0;width:100%}
+pre{background:#222;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px}</style>
+</head><body>
+<h2>Tes Suara Cekrek</h2>
+<button id="b1">1. Tes file cekrek.mp3</button>
+<button id="b2">2. Tes suara sintesis</button>
+<pre id="log">Tekan tombol di atas, lalu kirim isi kotak ini ke saya.</pre>
+<script src="/shutter-sound.js"></script>
+<script>
+const log = t => document.getElementById('log').textContent += '\n' + t;
+document.getElementById('log').textContent = 'UA: ' + navigator.userAgent;
+log('ShutterSound dimuat: ' + !!window.ShutterSound);
+fetch('/cekrek.mp3', {cache:'no-store'}).then(r => {
+  log('cekrek.mp3 -> HTTP ' + r.status + ', type=' + r.headers.get('content-type'));
+}).catch(e => log('cekrek.mp3 gagal diambil: ' + e));
+document.getElementById('b1').onclick = async () => {
+  const a = new Audio('/cekrek.mp3'); a.volume = 1;
+  a.onerror = () => log('Audio error code: ' + (a.error && a.error.code));
+  try { await a.play(); log('HTML Audio: play() OK (kalau tetap hening, cek volume MEDIA HP)'); }
+  catch (e) { log('HTML Audio ditolak: ' + e.name + ' - ' + e.message); }
+};
+document.getElementById('b2').onclick = () => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const c = new AC();
+  c.resume().then(() => {
+    log('AudioContext state: ' + c.state);
+    const o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = 880; g.gain.value = 0.3; o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime + 0.3);
+  });
+};
+</script></body></html>

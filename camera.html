@@ -497,6 +497,7 @@
   })();
   </script>
   <script src="/ganci-utils.js"></script>
+  <script src="/shutter-sound.js"></script>
 </head>
 <body>
 
@@ -1382,6 +1383,7 @@
   // ── Countdown & Capture ──
   async function mulaiCountdown() {
     if (isCountingDown) return;
+    window.ShutterSound && ShutterSound.unlock(); // izinkan audio dari klik user
 
     if (!isCameraOperational()) {
       statusMsg.textContent = 'Mengaktifkan kamera...';
@@ -1415,6 +1417,7 @@
   }
 
   function ambilFoto() {
+    window.ShutterSound && ShutterSound.play(); // suara cekrek
     flashEl.classList.add('show');
     setTimeout(() => flashEl.classList.remove('show'), 180);
 

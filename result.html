@@ -2087,8 +2087,19 @@ async function uploadToSupabase(blob, filename, options = {}) {
     return `lux_auto_download_done_${sessionId}`;
   }
 
+  // iPhone/iPad (Safari) tidak mendukung banyak download otomatis berurutan:
+  // file (mis. GIF) malah dibuka sebagai halaman preview dan menutupi halaman hasil.
+  function isIOSDevice() {
+    const ua = navigator.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
   async function autoDownloadAllResultFiles() {
     if (!isAutoDownloadEnabled() || !finalDataURL) return;
+    if (isIOSDevice()) {
+      console.info('[auto-download] dilewati di iOS/iPadOS, gunakan tombol Download manual');
+      return;
+    }
 
     const doneKey = getAutoDownloadSessionKey();
     if (sessionStorage.getItem(doneKey) === '1') return;

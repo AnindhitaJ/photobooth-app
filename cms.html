@@ -543,6 +543,8 @@
       </label>
       <label class="permission-option"><input class="permission-item" type="checkbox" value="photostrip" onchange="syncSelectAllPermission()"><span>🎞️ Photostrip</span></label>
       <label class="permission-option"><input class="permission-item" type="checkbox" value="photobooth" onchange="syncSelectAllPermission()"><span>🖼️ Photobooth</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="vintage" onchange="syncSelectAllPermission()"><span>📻 Photobooth Vintage</span></label>
+      <label class="permission-option"><input class="permission-item" type="checkbox" value="upload-photo" onchange="syncSelectAllPermission()"><span>📤 Upload Foto</span></label>
       <label class="permission-option"><input class="permission-item" type="checkbox" value="ganci" onchange="syncSelectAllPermission()"><span>🪝 Ganci Photo Insert</span></label>
       <label class="permission-option"><input class="permission-item" type="checkbox" value="kalender" onchange="syncSelectAllPermission()"><span>📅 Photobooth Kalender</span></label>
       <label class="permission-option"><input class="permission-item" type="checkbox" value="idcard" onchange="syncSelectAllPermission()"><span>🪪 ID Card</span></label>
@@ -617,7 +619,7 @@
   let currentProReceipt = null;
 
   const FEATURE_PERMISSION_KEYS = Object.freeze([
-    'photostrip', 'photobooth', 'ganci', 'kalender', 'idcard', 'magazine',
+    'photostrip', 'photobooth', 'vintage', 'upload-photo', 'ganci', 'kalender', 'idcard', 'magazine',
     'newspaper', 'trading-card', 'certificate', 'game-character', 'detective-case'
   ]);
 

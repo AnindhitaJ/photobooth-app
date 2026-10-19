@@ -411,7 +411,7 @@
       </div>
 
       <div class="feature-grid">
-        <button class="feature-card upload" onclick="bukaUploadFoto()">
+        <button class="feature-card upload" data-lux-permission="upload-photo" onclick="bukaUploadFoto()">
           <span class="feature-icon">📤</span>
           <span>
             <span class="feature-title">Upload Foto</span>
@@ -419,7 +419,7 @@
           </span>
         </button>
 
-        <button class="feature-card vintage" data-lux-permission="photostrip" onclick="bukaVintage()">
+        <button class="feature-card vintage" data-lux-permission="vintage" onclick="bukaVintage()">
           <span class="feature-icon">📻</span>
           <span>
             <span class="feature-title">Photobooth Vintage</span>
@@ -636,7 +636,7 @@
     }
     function mulaiUploadFoto(product) {
       const permission = product === 'photobox' ? 'photobooth' : 'photostrip';
-      if (!canOpenFeature(permission)) { tutupUploadFoto(); return; }
+      if (!canOpenFeature('upload-photo') || !canOpenFeature(permission)) { tutupUploadFoto(); return; }
       clearEventState();
       if (product === 'photobox') localStorage.setItem('captureFlow', 'photobox');
       else localStorage.removeItem('captureFlow');
@@ -649,7 +649,7 @@
       clearEventState();
       window.location.href = url;
     }
-    function bukaVintage() { openDirectFeature('photostrip', '/vintage'); }
+    function bukaVintage() { openDirectFeature('vintage', '/vintage'); }
     function bukaGanci() { openDirectFeature('ganci', '/ganci'); }
     function bukaKalender() { openDirectFeature('kalender', '/kalender'); }
     function bukaGaleri() { window.location.href = '/gallery'; }

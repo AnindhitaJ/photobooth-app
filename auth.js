@@ -16,6 +16,8 @@ const LUX_FEATURE_PERMISSIONS = Object.freeze({
   all: 'Semua Fitur',
   photostrip: 'Photostrip',
   photobooth: 'Photobooth',
+  vintage: 'Photobooth Vintage',
+  'upload-photo': 'Upload Foto',
   ganci: 'Ganci Photo Insert',
   kalender: 'Photobooth Kalender',
   idcard: 'ID Card',
@@ -37,14 +39,13 @@ const LUX_DIRECT_FEATURE_PATHS = Object.freeze({
   '/certificate': 'certificate', '/certificate.html': 'certificate',
   '/game-character': 'game-character', '/game-character.html': 'game-character',
   '/detective-case': 'detective-case', '/detective-case.html': 'detective-case',
-  // Vintage = varian photostrip, jadi memakai permission photostrip yang sama.
-  '/vintage': 'photostrip', '/vintage.html': 'photostrip'
+  '/vintage': 'vintage', '/vintage.html': 'vintage',
+  '/upload-photo': 'upload-photo', '/upload-photo.html': 'upload-photo'
 });
 
 const LUX_CAPTURE_PATHS = new Set([
   '/template', '/template.html',
   '/camera', '/camera.html',
-  '/upload-photo', '/upload-photo.html',
   '/preview', '/preview.html',
   '/filter', '/filter.html',
   '/result', '/result.html'
@@ -238,6 +239,8 @@ const Auth = {
     const captureFlow = String(localStorage.getItem('captureFlow') || '').toLowerCase();
     const returnUrl = String(localStorage.getItem('captureReturnUrl') || '');
 
+    // Sesi Vintage berjalan lewat /camera, /filter, /result: izinnya mengikuti permission vintage.
+    if (localStorage.getItem('vintageMode') === '1') return 'vintage';
     if (captureFlow === 'ganci') return 'ganci';
     if (captureFlow === 'product') {
       try {

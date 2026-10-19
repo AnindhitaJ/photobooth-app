@@ -5,6 +5,8 @@
 - `all` — seluruh fitur
 - `photostrip`
 - `photobooth` — mengontrol menu Photobox 4R dan alur 4R
+- `vintage` — Photobooth Vintage (sebelumnya ikut `photostrip`)
+- `upload-photo` — menu Upload Foto (tetap butuh `photostrip` / `photobooth` sesuai jenis hasil yang dipilih)
 - `ganci`
 - `kalender`
 - `idcard`
@@ -19,7 +21,7 @@ Galeri, Admin, Tutorial, Tentang Aplikasi, Event, dan menu umum lainnya tidak di
 
 ## Urutan deployment
 
-1. Jalankan `supabase_feature_permissions_v75.sql` di Supabase SQL Editor.
+1. Jalankan `supabase_feature_permissions_v75.sql`, lalu `supabase_feature_permissions_v83_vintage_upload.sql`, di Supabase SQL Editor.
 2. Pastikan environment Vercel memiliki:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`

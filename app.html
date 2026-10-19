@@ -198,9 +198,6 @@
     }
     .product-card.strip .product-icon { background: linear-gradient(135deg,#D84B7E,#E5B842); }
     .product-card.box .product-icon { background: linear-gradient(135deg,#1D3557,#D84B7E); }
-    .product-card.upload { grid-column: 1 / -1; min-height: 96px; flex-direction: row; gap: 14px; text-align: left; justify-content: flex-start; padding: 16px 20px; }
-    .product-card.upload .product-icon { background: linear-gradient(135deg,#E5B842,#D84B7E); flex: 0 0 auto; }
-    .product-card.upload .product-text { display: flex; flex-direction: column; gap: 4px; }
     .upload-modal { position: fixed; inset: 0; z-index: 9998; background: rgba(29,53,87,.55); display: none; align-items: center; justify-content: center; padding: 20px; }
     .upload-modal.show { display: flex; }
     .upload-modal-box { background: #fff; border-radius: 24px; padding: 22px 20px; width: min(420px, 100%); box-shadow: 0 24px 60px rgba(29,53,87,.35); text-align: center; }
@@ -277,6 +274,7 @@
       box-shadow:0 3px 12px rgba(29,53,87,.05);
     }
     .top-action-btn:hover { border-color:#D84B7E; color:#D84B7E; }
+    .upload .feature-icon { background: linear-gradient(135deg, #E5B842, #D84B7E); }
     .ganci .feature-icon { background: linear-gradient(135deg, #E5B842, #f7c948); }
     .kalender .feature-icon { background: linear-gradient(135deg, #1D3557, #D84B7E); }
     .galeri .feature-icon { background: linear-gradient(135deg, #ffffff, #fff0f6); color: var(--pink); border: 2px solid var(--border); }
@@ -398,13 +396,6 @@
           <span class="product-title">Photobox 4R</span>
           <span class="product-desc">layout 10×15 / 4R, hasil langsung cetak 4R</span>
         </button>
-        <button class="product-card upload" onclick="bukaUploadFoto()">
-          <span class="product-icon">📤</span>
-          <span class="product-text">
-            <span class="product-title">Upload Foto</span>
-            <span class="product-desc">pakai foto dari perangkat atau galeri aplikasi, tanpa kamera — masuk template strip / photobox</span>
-          </span>
-        </button>
       </div>
 
       <div class="upload-modal" id="uploadModal" onclick="if(event.target===this)tutupUploadFoto()">
@@ -420,6 +411,14 @@
       </div>
 
       <div class="feature-grid">
+        <button class="feature-card upload" onclick="bukaUploadFoto()">
+          <span class="feature-icon">📤</span>
+          <span>
+            <span class="feature-title">Upload Foto</span>
+            <span class="feature-desc">foto dari perangkat atau galeri aplikasi</span>
+          </span>
+        </button>
+
         <button class="feature-card vintage" data-lux-permission="photostrip" onclick="bukaVintage()">
           <span class="feature-icon">📻</span>
           <span>

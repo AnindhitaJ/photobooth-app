@@ -10,7 +10,7 @@ const SUPER_ADMIN_EMAIL = String(
 ).trim().toLowerCase();
 
 const FEATURE_KEYS = Object.freeze([
-  'photostrip', 'photobooth', 'ganci', 'kalender', 'idcard', 'magazine',
+  'photostrip', 'photobooth', 'vintage', 'upload-photo', 'ganci', 'kalender', 'idcard', 'magazine',
   'newspaper', 'trading-card', 'certificate', 'game-character', 'detective-case'
 ]);
 const ALLOWED_KEYS = new Set(['all', ...FEATURE_KEYS]);

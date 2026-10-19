@@ -44,6 +44,7 @@ const LUX_DIRECT_FEATURE_PATHS = Object.freeze({
 const LUX_CAPTURE_PATHS = new Set([
   '/template', '/template.html',
   '/camera', '/camera.html',
+  '/upload-photo', '/upload-photo.html',
   '/preview', '/preview.html',
   '/filter', '/filter.html',
   '/result', '/result.html'

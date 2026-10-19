@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script src="/ui-theme.js"></script>
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1D3557">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Upload Foto - LUX Photobooth</title>
+  <style>
+    :root { --pink:#D84B7E; --yellow:#E5B842; --navy:#1D3557; --bg:#FFF8FC; --border:#f5c6da; --text:#1D3557; --text2:#6b7fa3; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:0 0 calc(96px + env(safe-area-inset-bottom)); }
+    .top { display:flex; align-items:center; gap:10px; padding:calc(14px + env(safe-area-inset-top)) 16px 10px; }
+    .btn-back { background:#fff; border:2px solid var(--border); border-radius:50px; padding:8px 14px; font-size:13px; font-weight:800; color:var(--text2); cursor:pointer; font-family:inherit; }
+    .top h1 { font-size:18px; font-weight:900; letter-spacing:-.4px; line-height:1.1; }
+    .top .sub { font-size:12px; font-weight:700; color:var(--text2); margin-top:2px; }
+    .wrap { max-width:720px; margin:0 auto; padding:0 16px; }
+    .slots { display:grid; gap:10px; margin:10px 0 16px; }
+    .slot { position:relative; background:#fff; border:2.5px dashed var(--border); border-radius:14px; overflow:hidden; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); font-weight:900; font-size:20px; }
+    .slot.filled { border-style:solid; border-color:var(--pink); }
+    .slot img { width:100%; height:100%; object-fit:cover; display:block; }
+    .slot .num { position:absolute; left:6px; top:6px; background:var(--navy); color:var(--yellow); width:22px; height:22px; border-radius:50%; font-size:12px; display:flex; align-items:center; justify-content:center; z-index:2; }
+    .slot .del { position:absolute; right:6px; top:6px; background:rgba(0,0,0,.6); color:#fff; border:none; width:24px; height:24px; border-radius:50%; font-size:14px; cursor:pointer; z-index:2; }
+    .sources { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .src { font-family:inherit; background:#fff; border:2.5px solid var(--border); border-radius:18px; padding:16px 10px; cursor:pointer; color:var(--text); font-weight:900; font-size:14px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .src span { font-size:28px; }
+    .src small { font-size:11px; font-weight:700; color:var(--text2); }
+    .src:hover { border-color:var(--pink); }
+    .hint { font-size:12px; font-weight:700; color:var(--text2); text-align:center; margin-top:12px; line-height:1.5; }
+    .bar { position:fixed; left:0; right:0; bottom:0; background:rgba(255,255,255,.96); border-top:2px solid var(--border); padding:12px 16px calc(12px + env(safe-area-inset-bottom)); z-index:20; }
+    .btn-go { display:block; width:min(520px,100%); margin:0 auto; border:none; border-radius:50px; padding:15px; font-size:16px; font-weight:900; font-family:inherit; color:#fff; background:linear-gradient(135deg,var(--pink),var(--navy)); cursor:pointer; box-shadow:0 8px 24px rgba(216,75,126,.35); }
+    .btn-go:disabled { background:#cbd5e1; box-shadow:none; cursor:not-allowed; }
+    .overlay { position:fixed; inset:0; z-index:50; background:rgba(29,53,87,.55); display:none; align-items:flex-end; justify-content:center; }
+    .overlay.show { display:flex; }
+    .sheet { background:#fff; width:min(720px,100%); max-height:88vh; border-radius:24px 24px 0 0; display:flex; flex-direction:column; overflow:hidden; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 10px; }
+    .sheet-head h3 { font-size:16px; font-weight:900; }
+    .sheet-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text2); }
+    .sheet-body { overflow-y:auto; padding:0 16px 12px; flex:1; }
+    .sheet-foot { padding:10px 16px calc(12px + env(safe-area-inset-bottom)); border-top:2px solid var(--border); }
+    .lock { text-align:center; padding:12px 6px 24px; }
+    .lock p { font-size:13px; font-weight:700; color:var(--text2); margin-bottom:12px; line-height:1.5; }
+    .lock input { width:100%; padding:13px 16px; border-radius:50px; border:2.5px solid var(--border); font-size:15px; font-family:inherit; outline:none; margin-bottom:10px; text-align:center; }
+    .lock input:focus { border-color:var(--pink); }
+    .err { color:#dc2626; font-size:12px; font-weight:800; margin-bottom:8px; display:none; }
+    .day { font-size:11px; font-weight:900; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin:12px 2px 6px; }
+    .gal { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .gal .g { position:relative; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:3px solid transparent; cursor:pointer; background:#f1f5f9; }
+    .gal .g img { width:100%; height:100%; object-fit:cover; display:block; }
+    .gal .g.sel { border-color:var(--pink); }
+    .gal .g .tick { position:absolute; right:4px; top:4px; background:var(--pink); color:#fff; width:22px; height:22px; border-radius:50%; font-size:12px; font-weight:900; display:none; align-items:center; justify-content:center; }
+    .gal .g.sel .tick { display:flex; }
+    .empty { text-align:center; padding:30px 10px; font-size:13px; font-weight:700; color:var(--text2); line-height:1.6; }
+    .busy { position:fixed; inset:0; z-index:60; background:rgba(255,255,255,.85); display:none; align-items:center; justify-content:center; flex-direction:column; gap:10px; font-weight:900; font-size:14px; }
+    .busy.show { display:flex; }
+    .spin { width:34px; height:34px; border:4px solid var(--border); border-top-color:var(--pink); border-radius:50%; animation:sp .8s linear infinite; }
+    @keyframes sp { to { transform:rotate(360deg); } }
+    .toast { position:fixed; left:50%; bottom:calc(100px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:var(--navy); color:#fff; padding:10px 18px; border-radius:50px; font-size:13px; font-weight:800; z-index:70; display:none; max-width:90vw; text-align:center; }
+  </style>
+  <script src="/config.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/media-fetch.js"></script>
+</head>
+<body>
+  <div class="top">
+    <button class="btn-back" onclick="kembali()">← Kembali</button>
+    <div>
+      <h1>Upload Foto</h1>
+      <div class="sub" id="subText"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="slots" id="slots"></div>
+
+    <div class="sources">
+      <button class="src" onclick="pilihDariPerangkat()"><span>📱</span>Dari Perangkat<small>galeri HP / file komputer</small></button>
+      <button class="src" onclick="bukaGaleriApp()"><span>🖼️</span>Galeri Aplikasi<small>foto sesi sebelumnya</small></button>
+    </div>
+    <div class="hint">Foto mengisi slot kosong secara berurutan. Tap slot untuk mengganti foto, ✕ untuk menghapus.<br>Foto dipotong otomatis di tengah sesuai bentuk slot, sama seperti hasil kamera.</div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple hidden>
+
+  <div class="bar"><button class="btn-go" id="btnGo" onclick="lanjutEdit()" disabled>Lanjut ke Edit →</button></div>
+
+  <div class="overlay" id="galOverlay" onclick="if(event.target===this)tutupGaleri()">
+    <div class="sheet">
+      <div class="sheet-head"><h3>🖼️ Galeri Aplikasi</h3><button class="sheet-close" onclick="tutupGaleri()">✕</button></div>
+      <div class="sheet-body" id="galBody"></div>
+      <div class="sheet-foot" id="galFoot" style="display:none"><button class="btn-go" id="btnPakai" onclick="pakaiFotoGaleri()" disabled>Pakai foto</button></div>
+    </div>
+  </div>
+
+  <div class="busy" id="busy"><div class="spin"></div><div id="busyText">Menyiapkan foto...</div></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ── Guard & data template (diset oleh /template) ─────────────────────
+  if (!Auth.getSession()) { window.location.replace('/login?next=/template'); }
+
+  const tmplSlots = (() => { try { return JSON.parse(localStorage.getItem('templateSlots') || '[]'); } catch (_) { return []; } })();
+  const slotCount = tmplSlots.length;
+  if (!slotCount) { window.location.replace('/template'); }
+
+  const isPhotobox = localStorage.getItem('captureFlow') === 'photobox';
+  document.getElementById('subText').textContent =
+    (isPhotobox ? 'Photobox 4R · ' : 'Photostrip · ') + (localStorage.getItem('templateName') || 'Template') + ' · ' + slotCount + ' foto';
+
+  const photos = new Array(slotCount).fill(null);
+  let pendingSlot = null;   // slot yang di-tap untuk diganti
+  let isSaving = false;
+
+  // ── Util ─────────────────────────────────────────────────────────────
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.display = 'none'; }, 2800);
+  }
+  function busy(on, text) {
+    document.getElementById('busyText').textContent = text || 'Menyiapkan foto...';
+    document.getElementById('busy').classList.toggle('show', !!on);
+  }
+  function kembali() {
+    if (photos.some(Boolean) && !confirm('Foto yang sudah dipilih akan hilang. Kembali ke pilihan template?')) return;
+    window.location.href = '/template';
+  }
+
+  // ── Render slot ──────────────────────────────────────────────────────
+  function render() {
+    const wrap = document.getElementById('slots');
+    wrap.style.gridTemplateColumns = `repeat(${Math.min(slotCount, 4)}, minmax(0, 1fr))`;
+    wrap.innerHTML = '';
+    tmplSlots.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'slot' + (photos[i] ? ' filled' : '');
+      const ratio = (s.w && s.h) ? (s.w / s.h) : (3 / 4);
+      el.style.aspectRatio = String(ratio);
+      el.onclick = () => pilihDariPerangkat(i);
+      el.innerHTML = `<span class="num">${i + 1}</span>`;
+      if (photos[i]) {
+        const img = document.createElement('img'); img.src = photos[i]; img.alt = 'Foto ' + (i + 1);
+        el.appendChild(img);
+        const del = document.createElement('button'); del.className = 'del'; del.textContent = '✕';
+        del.onclick = ev => { ev.stopPropagation(); photos[i] = null; render(); };
+        el.appendChild(del);
+      } else {
+        el.appendChild(document.createTextNode('+'));
+      }
+      wrap.appendChild(el);
+    });
+    const left = photos.filter(p => !p).length;
+    const btn = document.getElementById('btnGo');
+    btn.disabled = left > 0 || isSaving;
+    btn.textContent = left > 0 ? `Isi ${left} slot lagi` : 'Lanjut ke Edit →';
+  }
+
+  // ── Konversi file/blob → dataURL JPEG (format sama dengan hasil kamera) ──
+  async function blobToBitmapLike(blob) {
+    if (window.createImageBitmap) {
+      try { return await createImageBitmap(blob, { imageOrientation: 'from-image' }); } catch (_) {}
+    }
+    const url = URL.createObjectURL(blob);
+    try {
+      return await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im); im.onerror = () => rej(new Error('Format gambar tidak didukung'));
+        im.src = url;
+      });
+    } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
+  }
+  async function blobToDataURL(blob) {
+    const src = await blobToBitmapLike(blob);
+    const w = src.width || src.naturalWidth, h = src.height || src.naturalHeight;
+    if (!w || !h) throw new Error('Ukuran gambar tidak valid');
+    const scale = Math.min(1, 1920 / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, 0, 0, c.width, c.height);
+    if (src.close) src.close();
+    return c.toDataURL('image/jpeg', 0.90);
+  }
+
+  // Masukkan daftar blob ke slot (slot target dulu, sisanya slot kosong berurutan)
+  async function addBlobs(blobs, targetSlot = null) {
+    let added = 0, failed = 0, full = false;
+    busy(true);
+    try {
+      for (const blob of blobs) {
+        let idx = targetSlot;
+        if (idx === null || idx === undefined) idx = photos.findIndex(p => !p);
+        if (idx === -1) { full = true; break; }
+        try { photos[idx] = await blobToDataURL(blob); added++; }
+        catch (e) { console.warn('[Upload] gagal:', e); failed++; }
+        targetSlot = null; // hanya foto pertama yang memakai slot target
+      }
+    } finally { busy(false); render(); }
+    if (failed) toast(`${failed} foto gagal dibaca (format tidak didukung)`);
+    else if (full) toast('Semua slot sudah terisi. Hapus salah satu untuk mengganti.');
+    else if (added) toast(`${added} foto ditambahkan`);
+  }
+
+  // ── Dari perangkat ───────────────────────────────────────────────────
+  const fileInput = document.getElementById('fileInput');
+  function pilihDariPerangkat(slotIndex = null) {
+    pendingSlot = (typeof slotIndex === 'number') ? slotIndex : null;
+    fileInput.multiple = pendingSlot === null;
+    fileInput.value = '';
+    fileInput.click();
+  }
+  fileInput.addEventListener('change', () => {
+    const files = [...fileInput.files].filter(f => !f.type || f.type.startsWith('image/'));
+    const target = pendingSlot; pendingSlot = null;
+    if (files.length) addBlobs(files, target);
+  });
+
+  // ── Galeri aplikasi (foto individual dari photo_sessions) ────────────
+  const GAL_BUCKET = window.LUX_CONFIG?.STORAGE_BUCKET || 'photobooth';
+  const GAL_R2 = String(window.LUX_CONFIG?.R2_PUBLIC_URL || 'https://media.lux-photo.web.id').replace(/\/+$/, '');
+  const GAL_SB = `${String(SUPABASE_URL).replace(/\/+$/, '')}/storage/v1/object/public/${GAL_BUCKET}`;
+  const GAL_R2_MIGRATION_MS = Date.parse('2026-07-16T17:00:00.000Z'); // sama dengan gallery.html
+  let galUnlocked = false;
+  let galSelected = [];
+  let galMax = 0;
+
+  function parseGalPath(path) {
+    const fname = String(path || '').replace(/^\/+/, '').split('/').pop() || '';
+    const m = fname.match(/^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|anon)_(\d{13})_(.+)$/i)
+           || fname.match(/^(\d{13})_(.+)$/);
+    return m ? { ts: Number(m[1]), rest: m[2] } : null;
+  }
+  function galUrl(path) {
+    const raw = String(path || '').trim();
+    if (/^https?:\/\//i.test(raw)) return raw;
+    const clean = raw.replace(/^\/+/, '');
+    const p = parseGalPath(clean);
+    return `${(p && p.ts >= GAL_R2_MIGRATION_MS) ? GAL_R2 : GAL_SB}/${clean}`;
+  }
+
+  function bukaGaleriApp() {
+    galMax = photos.filter(p => !p).length;
+    if (!galMax) { toast('Semua slot sudah terisi. Hapus salah satu dulu.'); return; }
+    galSelected = [];
+    document.getElementById('galOverlay').classList.add('show');
+    if (galUnlocked) tampilkanGaleri(); else tampilkanKunci();
+  }
+  function tutupGaleri() { document.getElementById('galOverlay').classList.remove('show'); }
+
+  // Galeri berisi foto tamu, jadi dikunci dengan password login seperti halaman /gallery.
+  function tampilkanKunci() {
+    document.getElementById('galFoot').style.display = 'none';
+    document.getElementById('galBody').innerHTML = `
+      <div class="lock">
+        <p>🔒 Masukkan password login untuk membuka galeri aplikasi.</p>
+        <input type="password" id="galPw" placeholder="Password" autocomplete="current-password">
+        <div class="err" id="galErr"></div>
+        <button class="btn-go" onclick="verifikasiGaleri()">Buka Galeri</button>
+      </div>`;
+    const pw = document.getElementById('galPw');
+    pw.addEventListener('keydown', e => { if (e.key === 'Enter') verifikasiGaleri(); });
+    setTimeout(() => pw.focus(), 50);
+  }
+
+  async function verifikasiGaleri() {
+    const err = document.getElementById('galErr'); err.style.display = 'none';
+    const pw = document.getElementById('galPw').value;
+    const session = Auth.getSession();
+    const email = session?.user?.email || localStorage.getItem('sb_user_email') || '';
+    const uid = session?.user?.id;
+    if (!uid || !email) { window.location.replace('/login'); return; }
+    if (!pw) { err.textContent = '❌ Masukkan password login.'; err.style.display = 'block'; return; }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pw })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.access_token || !data?.user?.id) throw new Error(data?.error_description || data?.msg || 'Password salah.');
+      if (data.user.id !== uid) throw new Error('Akun hasil verifikasi berbeda dari akun yang sedang aktif.');
+      if (typeof Auth.setSession === 'function') Auth.setSession(data, { requireSameUser: true });
+      galUnlocked = true;
+      await tampilkanGaleri();
+    } catch (e) {
+      err.textContent = '❌ ' + (e?.message || 'Gagal verifikasi'); err.style.display = 'block';
+    }
+  }
+
+  async function tampilkanGaleri() {
+    const body = document.getElementById('galBody');
+    body.innerHTML = '<div class="empty">Memuat foto...</div>';
+    try {
+      if (typeof Auth.ensureValidSession === 'function') await Auth.ensureValidSession({ forceServerCheck: true });
+      const token = Auth.getToken(), uid = Auth.getUserId();
+      if (!token || !uid) throw new Error('Sesi login tidak tersedia. Silakan login ulang.');
+      const q = new URLSearchParams({
+        select: 'file_path,created_at',
+        user_id: `eq.${uid}`,
+        file_path: 'like.*foto-*',
+        order: 'created_at.desc',
+        limit: '300'
+      });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions?${q}`, {
+        cache: 'no-store',
+        headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}`, Accept: 'application/json' }
+      });
+      if (!res.ok) throw new Error(`Galeri gagal dimuat (${res.status})`);
+      const rows = await res.json();
+
+      const groups = {};
+      (Array.isArray(rows) ? rows : []).forEach(r => {
+        const p = parseGalPath(r.file_path);
+        if (!p || !p.rest.startsWith('foto-')) return;
+        (groups[p.ts] = groups[p.ts] || []).push({ url: galUrl(r.file_path), name: p.rest });
+      });
+      const keys = Object.keys(groups).map(Number).sort((a, b) => b - a);
+      if (!keys.length) {
+        body.innerHTML = '<div class="empty">Belum ada foto individual di galeri aplikasi.<br>Foto muncul di sini setelah sesi foto disimpan.</div>';
+        return;
+      }
+      body.innerHTML = '';
+      keys.forEach(ts => {
+        const h = document.createElement('div'); h.className = 'day';
+        h.textContent = new Date(ts).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        body.appendChild(h);
+        const grid = document.createElement('div'); grid.className = 'gal';
+        groups[ts].sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+          const g = document.createElement('div'); g.className = 'g';
+          g.innerHTML = `<img loading="lazy" alt="" src="${item.url}"><span class="tick">✓</span>`;
+          g.onclick = () => toggleGal(item.url, g);
+          grid.appendChild(g);
+        });
+        body.appendChild(grid);
+      });
+      document.getElementById('galFoot').style.display = 'block';
+      updatePakai();
+    } catch (e) {
+      body.innerHTML = `<div class="empty">⚠️ ${e.message}<br><br><button class="btn-go" onclick="tampilkanGaleri()">Coba Lagi</button></div>`;
+    }
+  }
+
+  function toggleGal(url, el) {
+    const i = galSelected.indexOf(url);
+    if (i >= 0) { galSelected.splice(i, 1); el.classList.remove('sel'); }
+    else {
+      if (galSelected.length >= galMax) { toast(`Maksimal ${galMax} foto (sesuai slot kosong)`); return; }
+      galSelected.push(url); el.classList.add('sel');
+    }
+    updatePakai();
+  }
+  function updatePakai() {
+    const b = document.getElementById('btnPakai');
+    b.disabled = !galSelected.length;
+    b.textContent = galSelected.length ? `Pakai ${galSelected.length} foto` : `Pilih foto (maks ${galMax})`;
+  }
+
+  async function pakaiFotoGaleri() {
+    if (!galSelected.length) return;
+    const urls = [...galSelected];
+    tutupGaleri();
+    busy(true, 'Mengambil foto dari galeri...');
+    const blobs = [];
+    try {
+      for (const u of urls) {
+        try { blobs.push(await LuxMedia.fetchBlob(u, { memoryCache: false })); }
+        catch (e) { console.warn('[Upload] ambil foto galeri gagal:', e); }
+      }
+    } finally { busy(false); }
+    if (!blobs.length) { toast('Foto galeri gagal diambil. Coba lagi.'); return; }
+    if (blobs.length < urls.length) toast(`${urls.length - blobs.length} foto gagal diambil`);
+    await addBlobs(blobs);
+  }
+
+  // ── Simpan ke IndexedDB (format sama dengan camera.html) → /filter ───
+  const PHOTO_STORE_DB = 'lux-photo-temp-db', PHOTO_STORE_NAME = 'items';
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(PHOTO_STORE_DB, 1);
+      req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(PHOTO_STORE_NAME)) req.result.createObjectStore(PHOTO_STORE_NAME); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB gagal dibuka'));
+    });
+  }
+  async function idbSet(key, value) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+      tx.objectStore(PHOTO_STORE_NAME).put(value, key);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB gagal menyimpan')); };
+    });
+  }
+  async function idbGet(key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTO_STORE_NAME, 'readonly');
+      const req = tx.objectStore(PHOTO_STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error || new Error('IndexedDB gagal membaca'));
+      tx.oncomplete = () => db.close();
+    });
+  }
+  async function idbDelete(key) {
+    try {
+      const db = await idbOpen();
+      await new Promise(resolve => {
+        const tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+        tx.objectStore(PHOTO_STORE_NAME).delete(key);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch (_) {}
+  }
+  async function saveLargePhotoArray(key, value, sessionId) {
+    const idbKey = `${key}:${sessionId}`;
+    try {
+      await idbSet(idbKey, value);
+      const ok = await idbGet(idbKey);
+      if (!Array.isArray(ok) || ok.filter(Boolean).length !== value.filter(Boolean).length) throw new Error('Verifikasi data IndexedDB gagal');
+      try { localStorage.removeItem(key); localStorage.setItem(key + 'Store', 'indexedDB'); } catch (_) {}
+      return;
+    } catch (e) { console.warn('[Upload] IndexedDB gagal, coba localStorage:', e); }
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key + 'Store', 'localStorage');
+    } catch (e) { throw new Error('Foto gagal disimpan ke browser: ' + (e?.message || e)); }
+  }
+
+  async function lanjutEdit() {
+    if (isSaving) return;
+    if (photos.filter(Boolean).length !== slotCount) { toast('Masih ada slot yang kosong.'); return; }
+    try { await Auth.ensureValidSession({ forceServerCheck: true }); }
+    catch (e) { window.location.replace('/login?next=/template'); return; }
+
+    isSaving = true; render(); busy(true, 'Menyimpan foto...');
+    try {
+      // Bersihkan sisa sesi sebelumnya agar filter/result tidak membaca foto lama
+      ['filteredPhotos','filteredPhotosStore','livePhotos','livePhotosStore','finalPhoto','finalPhotoThumb'].forEach(k => localStorage.removeItem(k));
+      await idbDelete('filteredPhotos'); await idbDelete('livePhotos');
+
+      const sessionId = (globalThis.crypto?.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+      await saveLargePhotoArray('photos', photos, sessionId);
+      try { sessionStorage.setItem('luxPhotoSessionId', sessionId); } catch (_) {}
+      try { localStorage.setItem('photosSessionId', sessionId); } catch (_) {}
+
+      window.location.assign(`/filter?photoSession=${encodeURIComponent(sessionId)}&handoff=2`);
+    } catch (e) {
+      isSaving = false; busy(false); render();
+      alert(e.message || e);
+    }
+  }
+
+  render();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>

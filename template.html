@@ -3071,6 +3071,11 @@
     localStorage.removeItem('filteredPhotos');
     localStorage.removeItem('livePhotos');
     localStorage.removeItem('finalPhoto');
+    // Alur "Upload Foto": template dipilih dulu, foto diambil dari perangkat/galeri (bukan kamera).
+    if (!isEventMode && localStorage.getItem('captureSource') === 'upload') {
+      window.location.href = '/upload-photo';
+      return;
+    }
     window.location.href = '/camera';
   }
 
@@ -3107,6 +3112,14 @@
   } else {
     const sub = document.querySelector('.sub');
     if (sub) sub.textContent = 'Template bawaan tersedia untuk semua akun; template upload hanya tampil untuk pemiliknya';
+  }
+
+  // Mode Upload Foto: teks tombol disesuaikan, template tetap sama.
+  if (!isEventMode && localStorage.getItem('captureSource') === 'upload') {
+    const btnUp = document.getElementById('btnLanjut');
+    if (btnUp) btnUp.textContent = 'Lanjut Upload Foto →';
+    const subUp = document.querySelector('.sub');
+    if (subUp) subUp.textContent = 'Pilih template, lalu upload foto dari perangkat atau galeri aplikasi';
   }
 
   // Init: load dari Supabase dulu

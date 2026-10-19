@@ -260,6 +260,10 @@
       "destination": "/template.html"
     },
     {
+      "source": "/upload-photo",
+      "destination": "/upload-photo.html"
+    },
+    {
       "source": "/camera",
       "destination": "/camera.html"
     },

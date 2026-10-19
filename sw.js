@@ -1,9 +1,9 @@
-const CACHE_NAME = 'lux-photobooth-v1.42-cekrek-mp3';
+const CACHE_NAME = 'lux-photobooth-v1.43-upload-photo';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
   '/', '/index.html', '/about.html', '/app.html', '/login.html', '/reset-password.html',
-  '/template.html', '/camera.html', '/filter.html', '/preview.html',
+  '/template.html', '/camera.html', '/upload-photo.html', '/filter.html', '/preview.html',
   '/result.html', '/download.html', '/gallery.html', '/admin.html',
   '/cms.html', '/tutorial.html', '/analytics.html', '/content-sharing.html',
   '/event.html', '/event-run.html', '/ganci.html', '/kalender.html',
@@ -26,6 +26,7 @@ const CLEAN_ROUTE_FALLBACKS = Object.freeze({
   '/reset-password': '/reset-password.html',
   '/template': '/template.html',
   '/camera': '/camera.html',
+  '/upload-photo': '/upload-photo.html',
   '/filter': '/filter.html',
   '/preview': '/preview.html',
   '/result': '/result.html',

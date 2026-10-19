@@ -198,6 +198,20 @@
     }
     .product-card.strip .product-icon { background: linear-gradient(135deg,#D84B7E,#E5B842); }
     .product-card.box .product-icon { background: linear-gradient(135deg,#1D3557,#D84B7E); }
+    .product-card.upload { grid-column: 1 / -1; min-height: 96px; flex-direction: row; gap: 14px; text-align: left; justify-content: flex-start; padding: 16px 20px; }
+    .product-card.upload .product-icon { background: linear-gradient(135deg,#E5B842,#D84B7E); flex: 0 0 auto; }
+    .product-card.upload .product-text { display: flex; flex-direction: column; gap: 4px; }
+    .upload-modal { position: fixed; inset: 0; z-index: 9998; background: rgba(29,53,87,.55); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .upload-modal.show { display: flex; }
+    .upload-modal-box { background: #fff; border-radius: 24px; padding: 22px 20px; width: min(420px, 100%); box-shadow: 0 24px 60px rgba(29,53,87,.35); text-align: center; }
+    .upload-modal-box h3 { font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+    .upload-modal-box p { font-size: 13px; color: var(--text2); margin-bottom: 14px; font-weight: 600; }
+    .upload-modal-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .upload-modal-opt { font-family: inherit; border: 2.5px solid var(--border); background: #fff; border-radius: 18px; padding: 14px 8px; cursor: pointer; color: var(--text); font-weight: 900; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .upload-modal-opt span { font-size: 26px; }
+    .upload-modal-opt small { font-size: 11px; color: var(--text2); font-weight: 700; }
+    .upload-modal-opt:hover { border-color: var(--pink); }
+    .upload-modal-cancel { margin-top: 12px; background: none; border: none; color: var(--text2); font-weight: 800; font-size: 13px; cursor: pointer; font-family: inherit; }
     .product-title { font-size: 18px; font-weight: 950; letter-spacing: -.45px; }
     .product-desc { font-size: 12px; font-weight: 700; color: var(--text2); line-height: 1.35; max-width: 230px; }
     @media (max-width: 560px) {
@@ -384,6 +398,25 @@
           <span class="product-title">Photobox 4R</span>
           <span class="product-desc">layout 10×15 / 4R, hasil langsung cetak 4R</span>
         </button>
+        <button class="product-card upload" onclick="bukaUploadFoto()">
+          <span class="product-icon">📤</span>
+          <span class="product-text">
+            <span class="product-title">Upload Foto</span>
+            <span class="product-desc">pakai foto dari perangkat atau galeri aplikasi, tanpa kamera — masuk template strip / photobox</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="upload-modal" id="uploadModal" onclick="if(event.target===this)tutupUploadFoto()">
+        <div class="upload-modal-box">
+          <h3>📤 Upload Foto</h3>
+          <p>Pilih jenis hasil dulu, lanjut pilih template, lalu upload fotonya.</p>
+          <div class="upload-modal-opts">
+            <button class="upload-modal-opt" onclick="mulaiUploadFoto('photostrip')"><span>🎞️</span>Photostrip<small>strip 5×15</small></button>
+            <button class="upload-modal-opt" onclick="mulaiUploadFoto('photobox')"><span>🖼️</span>Photobox 4R<small>10×15 / 4R</small></button>
+          </div>
+          <button class="upload-modal-cancel" onclick="tutupUploadFoto()">Batal</button>
+        </div>
       </div>
 
       <div class="feature-grid">
@@ -559,7 +592,8 @@
         'activeEventWelcomeOverlay',
         'activeEventProductType',
         'vintageMode',
-        'vintageTheme'
+        'vintageTheme',
+        'captureSource'
       ].forEach(k => localStorage.removeItem(k));
     }
 
@@ -593,6 +627,22 @@
       clearEventState();
       localStorage.setItem('captureFlow', 'photobox');
       localStorage.removeItem('captureReturnUrl');
+      window.location.href = '/template';
+    }
+    function bukaUploadFoto() {
+      document.getElementById('uploadModal')?.classList.add('show');
+    }
+    function tutupUploadFoto() {
+      document.getElementById('uploadModal')?.classList.remove('show');
+    }
+    function mulaiUploadFoto(product) {
+      const permission = product === 'photobox' ? 'photobooth' : 'photostrip';
+      if (!canOpenFeature(permission)) { tutupUploadFoto(); return; }
+      clearEventState();
+      if (product === 'photobox') localStorage.setItem('captureFlow', 'photobox');
+      else localStorage.removeItem('captureFlow');
+      localStorage.removeItem('captureReturnUrl');
+      localStorage.setItem('captureSource', 'upload');
       window.location.href = '/template';
     }
     function openDirectFeature(permission, url) {

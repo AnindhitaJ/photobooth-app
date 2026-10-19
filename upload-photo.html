@@ -292,56 +292,83 @@
     }
   }
 
-  async function tampilkanGaleri() {
+  let galSessions = [];
+
+  // Hanya strip.jpg yang dicatat di photo_sessions; foto-N.jpg diupload dengan awalan nama
+  // yang sama, jadi URL-nya diturunkan dari path strip lalu dicek apakah filenya ada.
+  // Hanya strip.jpg yang dicatat di photo_sessions. Foto individual (foto-N.jpg) ada di storage
+  // dengan awalan nama yang sama, jadi URL-nya diturunkan dari path strip. Yang sudah terhapus disembunyikan.
+  const GAL_PAGE = 40;
+  let galOffset = 0;
+
+  async function tampilkanGaleri(append = false) {
     const body = document.getElementById('galBody');
-    body.innerHTML = '<div class="empty">Memuat foto...</div>';
+    if (!append) { galOffset = 0; body.innerHTML = '<div class="empty">Memuat foto...</div>'; }
     try {
       if (typeof Auth.ensureValidSession === 'function') await Auth.ensureValidSession({ forceServerCheck: true });
       const token = Auth.getToken(), uid = Auth.getUserId();
       if (!token || !uid) throw new Error('Sesi login tidak tersedia. Silakan login ulang.');
-      const q = new URLSearchParams({
-        select: 'file_path,created_at',
-        user_id: `eq.${uid}`,
-        file_path: 'like.*foto-*',
-        order: 'created_at.desc',
-        limit: '300'
-      });
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/photo_sessions?${q}`, {
-        cache: 'no-store',
-        headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}`, Accept: 'application/json' }
-      });
+      const headers = { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}`, Accept: 'application/json' };
+      const fetchRows = async select => {
+        const q = new URLSearchParams({
+          select, user_id: `eq.${uid}`, file_path: 'like.*strip*',
+          order: 'created_at.desc', limit: String(GAL_PAGE), offset: String(galOffset)
+        });
+        return fetch(`${SUPABASE_URL}/rest/v1/photo_sessions?${q}`, { cache: 'no-store', headers });
+      };
+      let res = await fetchRows('file_path,created_at,photo_count');
+      if (!res.ok) res = await fetchRows('file_path,created_at'); // skema lama tanpa photo_count
       if (!res.ok) throw new Error(`Galeri gagal dimuat (${res.status})`);
       const rows = await res.json();
+      galOffset += Array.isArray(rows) ? rows.length : 0;
 
-      const groups = {};
+      const sessions = [];
       (Array.isArray(rows) ? rows : []).forEach(r => {
         const p = parseGalPath(r.file_path);
-        if (!p || !p.rest.startsWith('foto-')) return;
-        (groups[p.ts] = groups[p.ts] || []).push({ url: galUrl(r.file_path), name: p.rest });
+        if (!p || !p.rest.startsWith('strip')) return;
+        const count = Math.min(Math.max(Number(r.photo_count) || 0, 0), 12) || 8; // tanpa photo_count: coba 8
+        const urls = [];
+        for (let n = 1; n <= count; n++) {
+          urls.push(galUrl(String(r.file_path).replace(/_strip[^/]*$/, `_foto-${n}.jpg`)));
+        }
+        sessions.push({ ts: p.ts, urls });
       });
-      const keys = Object.keys(groups).map(Number).sort((a, b) => b - a);
-      if (!keys.length) {
-        body.innerHTML = '<div class="empty">Belum ada foto individual di galeri aplikasi.<br>Foto muncul di sini setelah sesi foto disimpan.</div>';
+
+      if (!append) body.innerHTML = '';
+      if (!sessions.length && !append) {
+        body.innerHTML = '<div class="empty">Belum ada sesi foto di galeri aplikasi.</div>';
         return;
       }
-      body.innerHTML = '';
-      keys.forEach(ts => {
+      body.querySelector('#galMore')?.remove();
+
+      sessions.forEach(sess => {
         const h = document.createElement('div'); h.className = 'day';
-        h.textContent = new Date(ts).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        body.appendChild(h);
+        h.textContent = new Date(sess.ts).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const grid = document.createElement('div'); grid.className = 'gal';
-        groups[ts].sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+        let alive = sess.urls.length;
+        const dropIfEmpty = () => { if (--alive <= 0) { h.remove(); grid.remove(); } };
+        sess.urls.forEach(url => {
           const g = document.createElement('div'); g.className = 'g';
-          g.innerHTML = `<img loading="lazy" alt="" src="${item.url}"><span class="tick">✓</span>`;
-          g.onclick = () => toggleGal(item.url, g);
+          const img = new Image();
+          img.alt = ''; img.src = url;
+          img.onerror = () => { g.remove(); dropIfEmpty(); }; // foto individual tidak ada / sudah dihapus
+          const tick = document.createElement('span'); tick.className = 'tick'; tick.textContent = '✓';
+          g.append(img, tick);
+          g.onclick = () => toggleGal(url, g);
           grid.appendChild(g);
         });
-        body.appendChild(grid);
+        body.append(h, grid);
       });
+
+      if (rows.length >= GAL_PAGE) {
+        const more = document.createElement('div'); more.id = 'galMore'; more.className = 'empty';
+        more.innerHTML = '<button class="btn-go" style="width:auto;padding:10px 24px;font-size:13px" onclick="tampilkanGaleri(true)">Muat yang lebih lama</button>';
+        body.appendChild(more);
+      }
       document.getElementById('galFoot').style.display = 'block';
       updatePakai();
     } catch (e) {
-      body.innerHTML = `<div class="empty">⚠️ ${e.message}<br><br><button class="btn-go" onclick="tampilkanGaleri()">Coba Lagi</button></div>`;
+      body.innerHTML = `<div class="empty">⚠️ ${e.message}<br><br><button class="btn-go" style="width:auto;padding:10px 24px;font-size:13px" onclick="tampilkanGaleri()">Coba Lagi</button></div>`;
     }
   }
 

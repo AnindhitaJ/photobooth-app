@@ -8,15 +8,7 @@
 
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
-  function loadImage(src) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      if (!String(src || '').startsWith('data:')) img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Gagal memuat gambar'));
-      img.src = src;
-    });
-  }
+  const loadImage = LuxUtils.loadImageElement;
 
   function rgbToCss(rgb) {
     return `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
@@ -270,14 +262,7 @@
     };
   }
 
-  function dataUrlToBlob(dataUrl) {
-    const parts = dataUrl.split(',');
-    const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
-    const binary = atob(parts[1]);
-    const arr = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
-    return new Blob([arr], { type: mime });
-  }
+  const dataUrlToBlob = src => LuxUtils.dataUrlToBlob(src, 'image/jpeg');
 
   function dataUrlToFile(dataUrl, filename) {
     const blob = dataUrlToBlob(dataUrl);

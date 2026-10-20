@@ -77,24 +77,9 @@
     }), 'Menghapus data Ganci terlalu lama.');
   }
 
-  function dataUrlToBlob(dataUrl) {
-    const match = String(dataUrl || '').match(/^data:([^;,]+)?(?:;charset=[^;,]+)?;base64,(.+)$/);
-    if (!match) throw new Error('Format foto tidak valid.');
-    const mime = match[1] || 'image/jpeg';
-    const binary = atob(match[2]);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
-  }
+  const dataUrlToBlob = src => LuxUtils.dataUrlToBlob(src, 'image/jpeg');
 
-  function blobToDataUrl(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(reader.error || new Error('Gagal mengubah foto untuk fallback.'));
-      reader.readAsDataURL(blob);
-    });
-  }
+  const blobToDataUrl = LuxUtils.blobToDataUrl;
 
   async function toBlob(input) {
     if (input instanceof Blob) return input;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.43-upload-photo';
+const CACHE_NAME = 'lux-photobooth-v1.44-split-scripts';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [
@@ -11,6 +11,7 @@ const CORE_ASSETS = [
   '/certificate.html', '/trading-card.html', '/detective-case.html',
   '/newspaper.html', '/magazine.html', '/vintage.html', '/vintage-themes.js', '/ui-theme.js', '/popup.js',
   '/config.js', '/auth.js',
+  '/lux-utils.js', '/template-page.js', '/result-page.js', '/gallery-page.js', '/admin-page.js', '/camera-page.js', '/filter-page.js', '/kalender-page.js', '/idcard-page.js', '/cms-page.js',
   '/local-camera.js', '/shutter-sound.js', '/cekrek.mp3', '/beautify.js', '/product-photobooth.js',
   '/cover-maker.js', '/ganci-utils.js', '/ganci-print.js', '/photo-storage.js',
   '/product-photo-flow.js', '/media-fetch.js',

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   
+  <script src="/lux-utils.js"></script>
   <script src="/ui-theme.js"></script>
   <meta name="robots" content="noindex, nofollow, noarchive">
 <link rel="manifest" href="/manifest.json">
@@ -235,9 +236,6 @@
       }).join('');
     }
 
-    function escapeHtml(str) {
-      return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
-    }
 
     function getFieldLabel(field) {
       return FIELD_LABELS[state.lang]?.[field.key] || field.label;

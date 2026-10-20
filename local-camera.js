@@ -204,14 +204,7 @@
     });
   }
 
-  function blobToDataUrl(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(reader.error || new Error('File foto gagal dibaca.'));
-      reader.readAsDataURL(blob);
-    });
-  }
+  const blobToDataUrl = LuxUtils.blobToDataUrl;
 
   async function captureNow() {
     if (isCapturing) return;

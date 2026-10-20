@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+  <script src="/lux-utils.js"></script>
   <script src="/ui-theme.js"></script>
   <meta name="robots" content="noindex, nofollow, noarchive">
 <link rel="manifest" href="/manifest.json">
@@ -206,8 +207,8 @@
         <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTemplate('${t.id}', this.checked)">
         <img src="${t.src}" alt="${t.name}" crossorigin="anonymous">
         <span class="tpl-info">
-          <span class="tpl-name">${escapeHTML(t.name || 'Template')}</span>
-          <span class="tpl-meta">${type} · ${escapeHTML(t.category || '-')} · ${photoSlotCount(t)} foto</span>
+          <span class="tpl-name">${escapeHtml(t.name || 'Template')}</span>
+          <span class="tpl-meta">${type} · ${escapeHtml(t.category || '-')} · ${photoSlotCount(t)} foto</span>
         </span>
       </label>`;
     }).join('');
@@ -247,7 +248,7 @@
       const count = Array.isArray(ev.template_ids) ? ev.template_ids.length : 0;
       return `<div class="event-item">
         <div>
-          <div class="event-name">${escapeHTML(ev.name)}</div>
+          <div class="event-name">${escapeHtml(ev.name)}</div>
           <div class="event-meta">${count} template · ${ev.welcome_screen_url ? 'welcome screen aktif' : 'tanpa welcome screen'}</div>
         </div>
         <div class="event-actions">
@@ -259,9 +260,6 @@
     }).join('');
   }
 
-  function escapeHTML(s) {
-    return String(s || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
-  }
 
   document.getElementById('welcomeInput').addEventListener('change', e => {
     const file = e.target.files?.[0];

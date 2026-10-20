@@ -1,4 +1,5 @@
 <!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <script src="/lux-utils.js"></script>
   <script src="/ui-theme.js"></script>
 <meta name="robots" content="noindex, nofollow, noarchive">
 <title>Analytics - LUX</title><script src="/config.js"></script><script src="/auth.js"></script>
@@ -50,7 +51,7 @@ if(!Auth.getSession()) location.href='/login';
 let sessions=[];let consents=[];let events=[];
 const DAY=864e5;
 const $=id=>document.getElementById(id);
-function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+const esc = escapeHtml;
 function fmtNum(v){return new Intl.NumberFormat('id-ID').format(Number(v)||0)}
 function fmtPct(v,d=0){return `${(Number(v)||0).toFixed(d)}%`}
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200)}

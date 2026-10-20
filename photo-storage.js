@@ -124,20 +124,7 @@
     return `${PRODUCT_PHOTO_PREFIX}:${cleanKeyPart(feature, 'unknown')}:${cleanKeyPart(slot, 'main')}`;
   }
 
-  function dataUrlToBlob(dataUrl) {
-    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
-      throw new Error('Format foto lama tidak valid.');
-    }
-    const commaIndex = dataUrl.indexOf(',');
-    if (commaIndex < 0) throw new Error('Data foto tidak lengkap.');
-    const header = dataUrl.slice(0, commaIndex);
-    const payload = dataUrl.slice(commaIndex + 1);
-    const mime = (header.match(/:(.*?);/) || [])[1] || 'image/jpeg';
-    const binary = atob(payload);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
-  }
+  const dataUrlToBlob = src => LuxUtils.dataUrlToBlob(src, 'image/jpeg');
 
   async function sourceToBlob(source) {
     if (source instanceof Blob) return source;

@@ -98,6 +98,10 @@
         <div class="card-title">📸 Foto</div>
         <div class="photo-controls">
           <button class="btn-primary" onclick="mulaiAmbilFoto()">📷 Ambil Foto</button>
+          <label class="btn-outline" style="display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            ⬆️ Upload Foto
+            <input type="file" accept="image/*" multiple style="display:none;" onchange="uploadPhoto(event)">
+          </label>
           <button class="btn-outline" onclick="mulaiAmbilFoto()">↺ Retake</button>
         </div>
         <div class="mini-row">
@@ -348,6 +352,31 @@
       if (index < 0) index = Number.isInteger(state.nextPhotoSlot) ? state.nextPhotoSlot : 0;
       index = Math.max(0, Math.min(3, index));
       return { layout: 'quad', index, slot: `quad-${index}` };
+    }
+
+    async function uploadPhoto(ev) {
+      const files = [...(ev.target.files || [])].filter(f => !f.type || f.type.startsWith('image/'));
+      ev.target.value = '';
+      if (!files.length) return;
+      // Mode quad: tiap file mengisi slot kosong berikutnya (maks 4). Mode hero: pakai file pertama.
+      const list = state.photoLayout === 'quad' ? files.slice(0, 4) : files.slice(0, 1);
+      for (const file of list) {
+        const target = getNextPhotoTarget();
+        try {
+          await LuxProductPhotoFlow.upload({
+            feature: PHOTO_FEATURE,
+            slot: target.slot,
+            file,
+            maxWidth: 1600,
+            maxHeight: 2000,
+            quality: 0.88,
+            onReady: src => loadPhoto(src, target)
+          });
+        } catch (error) {
+          console.error('[LUX] Upload newspaper gagal:', error);
+          showToast(error?.message || 'Foto gagal dimuat');
+        }
+      }
     }
 
     async function mulaiAmbilFoto() {

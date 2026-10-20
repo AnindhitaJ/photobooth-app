@@ -218,6 +218,10 @@
         <div class="card-title">📸 Photo Input</div>
         <div class="photo-box">
           <button class="btn-primary" id="btnTakePicture" onclick="mulaiAmbilFoto()">📷 Ambil Foto</button>
+          <label class="btn-outline" style="display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            ⬆️ Upload Foto
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
+          </label>
           <div class="photo-status" id="photoStatus">Belum ada foto. Foto akan masuk ke area kanan kartu.</div>
         </div>
       </div>

@@ -373,9 +373,13 @@
       <div class="card action-card" style="margin-top:16px;margin-bottom:16px;">
         <div class="card-title">📸 Foto Ganci</div>
         <div class="flow-note">
-          Mode Ganci memakai kamera photobooth yang sama, tapi hanya 1 foto per sesi. Setelah foto diambil, user bisa retake berkali-kali sebelum lanjut ke filter.
+          Mode Ganci bisa memakai kamera photobooth atau upload foto dari perangkat, hanya 1 foto per sesi. Setelah foto diambil, user bisa retake berkali-kali sebelum lanjut ke filter.
         </div>
         <button class="btn-start-ganci" onclick="mulaiFotoGanci()">Mulai Ambil Foto Ganci →</button>
+        <label class="btn-start-ganci" style="display:block;text-align:center;cursor:pointer;margin-top:10px;">
+          ⬆️ Upload Foto dari Perangkat
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadFotoGanci(event)">
+        </label>
         <div class="saved-ganci" id="savedGanciBox">
           <div class="saved-ganci-title">✅ Ganci tersimpan di state</div>
           <img id="savedGanciImg" alt="Preview foto ganci tersimpan">
@@ -933,6 +937,69 @@
       img.src = src;
     }
 
+    async function handleGanciPhotoBlob(photoBlob, captureInfo) {
+      const config = getGanciConfig();
+      clearStalePhotoStorage();
+
+      await window.LuxPhotoStorage.saveGanciPhoto(photoBlob);
+      const photoUrl = replaceCurrentPhotoUrl(photoBlob);
+      const saved = {
+        photo: photoUrl,
+        photoStore: 'indexedDB',
+        photoKey: window.LuxPhotoStorage.GANCI_PHOTO_KEY,
+        photoSize: captureInfo?.size || photoBlob.size,
+        photoWidth: captureInfo?.width || null,
+        photoHeight: captureInfo?.height || null,
+        filter: { tone: 'normal' },
+        beautify: state.beautify,
+        mode: 'ganci',
+        bentuk: config.bentuk,
+        cornerStyle: config.cornerStyle,
+        frame: config.frame,
+        frameLabel: config.frameLabel,
+        ukuranKertas: config.ukuranKertas,
+        customW: config.customW,
+        customH: config.customH,
+        ganciW: config.ganciW,
+        ganciH: config.ganciH,
+        jumlah: config.jumlah,
+        config,
+        updatedAt: new Date().toISOString()
+      };
+
+      persistGanciMetadata(saved);
+      currentGanciState = saved;
+      generatedLayout = null;
+      currentLayoutPage = 0;
+      renderSavedGanciState(saved);
+      loadPreviewPhotoFromState(saved);
+      document.getElementById('layoutStatus').textContent = 'Foto tersimpan aman. Silakan generate layout cetak.';
+    }
+
+    async function uploadFotoGanci(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      if (!window.LuxPhotoStorage) {
+        alert('Modul penyimpanan belum termuat. Muat ulang halaman lalu coba lagi.');
+        return;
+      }
+      try {
+        window.LuxPhotoStorage.requestPersistence().catch(() => {});
+        updatePreview();
+        const optimized = await window.LuxPhotoStorage.prepareImageBlob(file, {
+          maxWidth: 1440,
+          maxHeight: 1920,
+          maxBytes: 2500000,
+          quality: 0.88,
+          mimeType: 'image/jpeg'
+        });
+        await handleGanciPhotoBlob(optimized, { size: optimized.size });
+      } catch (error) {
+        alert('Foto belum berhasil masuk ke layout. ' + (error?.message || 'Silakan coba lagi.'));
+      }
+    }
+
     async function mulaiFotoGanci() {
       updatePreview();
 
@@ -950,44 +1017,7 @@
         maxWidth: 1440,
         maxHeight: 1920,
         quality: 0.88,
-        onCapture: async (photoBlob, captureInfo) => {
-          const config = getGanciConfig();
-          clearStalePhotoStorage();
-
-          await window.LuxPhotoStorage.saveGanciPhoto(photoBlob);
-          const photoUrl = replaceCurrentPhotoUrl(photoBlob);
-          const saved = {
-            photo: photoUrl,
-            photoStore: 'indexedDB',
-            photoKey: window.LuxPhotoStorage.GANCI_PHOTO_KEY,
-            photoSize: captureInfo?.size || photoBlob.size,
-            photoWidth: captureInfo?.width || null,
-            photoHeight: captureInfo?.height || null,
-            filter: { tone: 'normal' },
-            beautify: state.beautify,
-            mode: 'ganci',
-            bentuk: config.bentuk,
-            cornerStyle: config.cornerStyle,
-            frame: config.frame,
-            frameLabel: config.frameLabel,
-            ukuranKertas: config.ukuranKertas,
-            customW: config.customW,
-            customH: config.customH,
-            ganciW: config.ganciW,
-            ganciH: config.ganciH,
-            jumlah: config.jumlah,
-            config,
-            updatedAt: new Date().toISOString()
-          };
-
-          persistGanciMetadata(saved);
-          currentGanciState = saved;
-          generatedLayout = null;
-          currentLayoutPage = 0;
-          renderSavedGanciState(saved);
-          loadPreviewPhotoFromState(saved);
-          document.getElementById('layoutStatus').textContent = 'Foto tersimpan aman. Silakan generate layout cetak.';
-        },
+        onCapture: handleGanciPhotoBlob,
         onError: error => {
           alert('Foto belum berhasil masuk ke layout. ' + (error?.message || 'Silakan coba lagi.'));
         }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.44-split-scripts';
+const CACHE_NAME = 'lux-photobooth-v1.45-upload-all';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

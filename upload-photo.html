@@ -63,6 +63,7 @@
   <script src="/config.js"></script>
   <script src="/auth.js"></script>
   <script src="/media-fetch.js"></script>
+  <script src="/vintage-themes.js"></script>
 </head>
 <body>
   <div class="top">
@@ -107,8 +108,10 @@
   if (!slotCount) { window.location.replace('/template'); }
 
   const isPhotobox = localStorage.getItem('captureFlow') === 'photobox';
+  // Mode Vintage: tema preset, tanpa halaman filter -> langsung ke hasil (sama seperti jalur kamera).
+  const isVintage = !!(window.LuxVintage && window.LuxVintage.isActive && window.LuxVintage.isActive());
   document.getElementById('subText').textContent =
-    (isPhotobox ? 'Photobox 4R · ' : 'Photostrip · ') + (localStorage.getItem('templateName') || 'Template') + ' · ' + slotCount + ' foto';
+    (isVintage ? 'Vintage · ' : isPhotobox ? 'Photobox 4R · ' : 'Photostrip · ') + (localStorage.getItem('templateName') || 'Template') + ' · ' + slotCount + ' foto';
 
   const photos = new Array(slotCount).fill(null);
   let pendingSlot = null;   // slot yang di-tap untuk diganti
@@ -126,7 +129,7 @@
   }
   function kembali() {
     if (photos.some(Boolean) && !confirm('Foto yang sudah dipilih akan hilang. Kembali ke pilihan template?')) return;
-    window.location.href = '/template';
+    window.location.href = isVintage ? '/vintage' : '/template';
   }
 
   // ── Render slot ──────────────────────────────────────────────────────
@@ -155,7 +158,7 @@
     const left = photos.filter(p => !p).length;
     const btn = document.getElementById('btnGo');
     btn.disabled = left > 0 || isSaving;
-    btn.textContent = left > 0 ? `Isi ${left} slot lagi` : 'Lanjut ke Edit →';
+    btn.textContent = left > 0 ? `Isi ${left} slot lagi` : (isVintage ? 'Lanjut ke Hasil →' : 'Lanjut ke Edit →');
   }
 
   // ── Konversi file/blob → dataURL JPEG (format sama dengan hasil kamera) ──
@@ -444,8 +447,8 @@
       });
     } catch (_) {}
   }
-  async function saveLargePhotoArray(key, value, sessionId) {
-    const idbKey = `${key}:${sessionId}`;
+  async function saveLargePhotoArray(key, value, sessionId = '') {
+    const idbKey = sessionId ? `${key}:${sessionId}` : key;
     try {
       await idbSet(idbKey, value);
       const ok = await idbGet(idbKey);
@@ -466,6 +469,21 @@
     catch (e) { window.location.replace('/login?next=/template'); return; }
 
     isSaving = true; render(); busy(true, 'Menyimpan foto...');
+    if (isVintage) {
+      try {
+        // Sama seperti camera-page.langsungKeHasil: foto mentah dianggap hasil filter "Normal".
+        ['filteredPhotos','filteredPhotosStore','photos','photosStore','photosSessionId','livePhotos','livePhotosStore','finalPhoto','finalPhotoThumb'].forEach(k => localStorage.removeItem(k));
+        await idbDelete('filteredPhotos'); await idbDelete('photos'); await idbDelete('livePhotos');
+        await saveLargePhotoArray('filteredPhotos', photos.filter(Boolean));
+        try { sessionStorage.removeItem('luxPhotoSessionId'); } catch (_) {}
+        localStorage.setItem('filterSkipped', '1');
+        window.location.assign('/result?source=camera&filter=skipped');
+      } catch (e) {
+        isSaving = false; busy(false); render();
+        alert(e.message || e);
+      }
+      return;
+    }
     try {
       // Bersihkan sisa sesi sebelumnya agar filter/result tidak membaca foto lama
       ['filteredPhotos','filteredPhotosStore','livePhotos','livePhotosStore','finalPhoto','finalPhotoThumb'].forEach(k => localStorage.removeItem(k));

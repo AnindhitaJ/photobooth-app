@@ -95,6 +95,10 @@
         <div class="card-title">📸 Foto</div>
         <div class="photo-controls">
           <button class="btn-primary" onclick="mulaiAmbilFoto()">📷 Ambil Foto</button>
+          <label class="btn-outline" style="display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            ⬆️ Upload Foto
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
+          </label>
           <button class="btn-outline" onclick="mulaiAmbilFoto()">↺ Retake</button>
         </div>
         <div class="mini-row">
@@ -324,6 +328,25 @@
       }
     }
 
+
+    async function uploadPhoto(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      try {
+        await LuxProductPhotoFlow.upload({
+          feature: PHOTO_FEATURE,
+          file,
+          maxWidth: 1600,
+          maxHeight: 2000,
+          quality: 0.88,
+          onReady: src => loadPhoto(src)
+        });
+      } catch (error) {
+        console.error('[LUX] Upload magazine gagal:', error);
+        showToast(error?.message || 'Foto gagal dimuat');
+      }
+    }
 
     function loadPhoto(src, silent = false) {
       return new Promise((resolve, reject) => {

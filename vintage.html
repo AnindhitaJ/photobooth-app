@@ -37,6 +37,8 @@
     .bar-name { font-size:16px; font-weight:950; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .btn-go { border:0; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:950; color:#fff; background:linear-gradient(135deg,var(--pink),var(--yellow)); box-shadow:0 8px 24px rgba(216,75,126,.3); cursor:pointer; font-family:inherit; white-space:nowrap; }
     .btn-go:disabled { opacity:.6; cursor:wait; }
+    .btn-alt { background:#fff; color:var(--pink); border:2px solid var(--pink); box-shadow:none; padding:12px 16px; }
+    @media (max-width:420px) { .bar { gap:8px; } .btn-go { padding:13px 14px; font-size:14px; } .btn-alt { padding:11px 12px; } }
     .toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%) translateY(120px); background:var(--navy); color:#fff; border-radius:999px; padding:12px 18px; font-size:13px; font-weight:900; z-index:99; transition:.25s; }
     .toast.show { transform:translateX(-50%) translateY(0); }
   </style>
@@ -57,7 +59,7 @@
   <div class="wrap">
     <div class="info">
       <span class="chip">🎞️ Konsep <b>photostrip</b></span>
-      <span class="chip">🎨 Tema <b>preset</b> (tanpa upload)</span>
+      <span class="chip">🎨 Tema <b>preset</b> · kamera atau <b>upload foto</b></span>
       <span class="chip">🔒 Foto <b>tidak bisa diedit</b> setelah diambil</span>
     </div>
     <div class="grid" id="themeGrid"></div>
@@ -68,6 +70,7 @@
       <div class="bar-label">Tema dipilih</div>
       <div class="bar-name" id="barName">-</div>
     </div>
+    <button class="btn-go btn-alt" id="btnUpload" onclick="mulai('/upload-photo')">⬆️ Upload</button>
     <button class="btn-go" id="btnGo" onclick="mulai()">Mulai Foto →</button>
   </div>
   <div class="toast" id="toast"></div>
@@ -113,9 +116,15 @@
       })();
     }
 
-    async function mulai() {
+    async function mulai(dest = '/camera') {
+      const isUpload = dest === '/upload-photo';
       const btn = document.getElementById('btnGo');
-      btn.disabled = true;
+      const btnUp = document.getElementById('btnUpload');
+      if (isUpload && typeof Auth !== 'undefined' && Auth.hasPermission && !Auth.hasPermission('upload-photo')) {
+        toast('Fitur Upload Foto belum diaktifkan untuk akun ini.');
+        return;
+      }
+      btn.disabled = true; if (btnUp) btnUp.disabled = true;
       try {
         // LUX_REQUIRE_AUTH didefinisikan per-halaman (camera/template), tidak ada di vintage.html.
         // Di sini cukup cek sesi lokal; camera.html memvalidasi ulang sesi saat dibuka.
@@ -128,17 +137,17 @@
       } catch (error) {
         console.error('[LUX AUTH] Alur foto diblokir:', error);
         toast('Sesi login bermasalah, silakan login ulang.');
-        btn.disabled = false;
+        btn.disabled = false; if (btnUp) btnUp.disabled = false;
         return;
       }
       try {
         LuxVintage.apply(selectedId);
       } catch (e) {
         toast('Gagal menyiapkan tema: ' + (e.message || e));
-        btn.disabled = false;
+        btn.disabled = false; if (btnUp) btnUp.disabled = false;
         return;
       }
-      window.location.href = '/camera';
+      window.location.href = dest;
     }
 
     build();

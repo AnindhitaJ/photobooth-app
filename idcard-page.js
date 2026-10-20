@@ -384,6 +384,25 @@
       }
     }
 
+    async function uploadPhoto(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      try {
+        await LuxProductPhotoFlow.upload({
+          feature: PHOTO_FEATURE,
+          file,
+          maxWidth: 1600,
+          maxHeight: 2000,
+          quality: 0.88,
+          onReady: src => loadPhoto(src)
+        });
+      } catch (error) {
+        console.error('[LUX] Upload ID Card gagal:', error);
+        showToast(error?.message || 'Foto gagal dimuat');
+      }
+    }
+
     async function checkAndLoadProductPhoto() {
       try {
         await LuxProductPhotoFlow.restoreOrMigrateLegacy({

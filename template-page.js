@@ -1,0 +1,2763 @@
+  // ─── Built-in Frames: 4 slot (5×15cm = 591×1772px) ───
+  const FRAME_W = 591;
+  const FRAME_H = 1772;
+  const FRAME_PADDING = 20;
+  const FRAME_GAP = 12;
+  const FRAME_SLOTS = 4;
+  const FRAME_FOOTER_H = 90;
+
+  const FRAME_COLORS = [
+    { label: 'Putih',     bg: '#ffffff',   text: '#1D3557' },
+    { label: 'Hitam',     bg: '#1D3557',   text: '#ffffff' },
+    { label: 'Pink',      bg: '#D84B7E',   text: '#ffffff' },
+    { label: 'Merah',     bg: '#e94560',   text: '#ffffff' },
+    { label: 'Gold',      bg: '#E5B842',   text: '#1D3557' },
+    { label: 'Emas',      bg: '#f5a623',   text: '#1D3557' },
+    { label: 'Biru',      bg: '#3b82f6',   text: '#ffffff' },
+    { label: 'Hijau',     bg: '#22c55e',   text: '#1D3557' },
+    { label: 'Ungu',      bg: '#8b5cf6',   text: '#ffffff' },
+    { label: 'Krem',      bg: '#f5f0e8',   text: '#1D3557' },
+  ];
+  let selectedFrameColor = FRAME_COLORS[0];
+
+  const BUILTIN_CATEGORIES = [
+    'Korean',
+    'Film',
+    'Floral',
+    'Seasonal',
+    'Gaming',
+    'Pattern',
+    'Social Media'
+  ];
+  const HIDDEN_CATEGORIES = ['Elegant'];
+  const PHOTOBOX_CATEGORY = 'Photobox 4R';
+  const PHOTOBOX_W = 1181;
+  const PHOTOBOX_H = 1772;
+  const templateParams = new URLSearchParams(window.location.search);
+  const isEventMode = templateParams.has('event');
+
+  function eventStorageGet(key) {
+    try {
+      const v = sessionStorage.getItem(key);
+      if (v !== null) return v;
+    } catch (e) { console.warn('sessionStorage event read gagal:', e); }
+    try { return localStorage.getItem(key); }
+    catch (e) { console.warn('localStorage event read gagal:', e); return null; }
+  }
+
+  function eventStorageSet(key, value) {
+    try { sessionStorage.setItem(key, value); } catch (e) { console.warn('sessionStorage event write gagal:', e); }
+    try { localStorage.setItem(key, value); } catch (e) { console.warn('localStorage event write gagal:', e); }
+  }
+
+  function eventStorageRemove(key) {
+    try { sessionStorage.removeItem(key); } catch (e) {}
+    try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  function parseEventTemplateIds() {
+    try {
+      const value = JSON.parse(eventStorageGet('activeEventTemplateIds') || '[]');
+      return Array.isArray(value) ? value.map(String) : [];
+    } catch (e) { return []; }
+  }
+
+  if (!isEventMode) {
+    [
+      'eventMode',
+      'activeEvent',
+      'activeEventId',
+      'activeEventTemplateIds',
+      'activeEventName',
+      'activeEventWelcomeURL',
+      'activeEventWelcomeOverlay',
+      'activeEventProductType'
+    ].forEach(eventStorageRemove);
+  }
+  const eventTemplateIds = new Set(parseEventTemplateIds());
+  const eventId = templateParams.get('event') || eventStorageGet('activeEventId') || '';
+  const eventProductType = (templateParams.get('product') || eventStorageGet('activeEventProductType') || '').toLowerCase();
+  const isPhotoboxMode = !isEventMode && localStorage.getItem('captureFlow') === 'photobox';
+
+  function isPhotoboxCategory(cat) {
+    const c = String(cat || '').toLowerCase();
+    return c.includes('photobox') || c === '4r' || c.includes('4r');
+  }
+
+  function isPhotoboxTemplate(t) {
+    return (t?.product_type || (isPhotoboxCategory(t?.category) ? 'photobox' : 'photostrip')) === 'photobox';
+  }
+
+  // Photobox built-in memakai katalog visual yang sama dengan Photostrip.
+  // Nilainya diisi setelah BUILTIN_FRAME_DEFS tersedia.
+  let PHOTOBOX_DEFS = [];
+
+  const BUILTIN_FRAME_DEFS = [
+    // Korean
+    { id:'korean_lavender_cloud', category:'Korean', name:'Lavender Cloud', bg:'#f5efff', accent:'#a78bfa', accent2:'#f9a8d4', ink:'#6d5b8d', motif:'cloud' },
+    { id:'korean_pink_diary', category:'Korean', name:'Pink Diary', bg:'#fff1f7', accent:'#fb7185', accent2:'#fbcfe8', ink:'#9f3a58', motif:'diary' },
+    { id:'korean_cherry_blossom', category:'Korean', name:'Cherry Blossom', bg:'#fff7f9', accent:'#f472b6', accent2:'#fecdd3', ink:'#a21caf', motif:'sakura' },
+    { id:'korean_coquette_ribbon', category:'Korean', name:'Coquette Ribbon', bg:'#fff7ed', accent:'#f9a8d4', accent2:'#fde68a', ink:'#9d174d', motif:'ribbon' },
+    { id:'korean_milk_tea', category:'Korean', name:'Milk Tea', bg:'#fff7ed', accent:'#c08457', accent2:'#f3d7b6', ink:'#7c4a2d', motif:'latte' },
+    { id:'korean_cream_beige', category:'Korean', name:'Cream Beige', bg:'#faf3e8', accent:'#d6a86c', accent2:'#fff7d6', ink:'#76512a', motif:'clean' },
+    { id:'korean_matcha_latte', category:'Korean', name:'Matcha Latte', bg:'#f3fae8', accent:'#86a86b', accent2:'#d9f99d', ink:'#3f6212', motif:'latte' },
+    { id:'korean_sky_blue', category:'Korean', name:'Sky Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1e40af', motif:'cloud' },
+    { id:'korean_campus_day', category:'Korean', name:'Campus Day', bg:'#f8fafc', accent:'#1d4ed8', accent2:'#facc15', ink:'#0f172a', motif:'campus' },
+    { id:'korean_heart_stamp', category:'Korean', name:'Heart Stamp', bg:'#fff1f2', accent:'#e11d48', accent2:'#fecdd3', ink:'#881337', motif:'stamp' },
+
+    // Film
+    { id:'film_retro_film', category:'Film', name:'Retro Film', bg:'#171717', accent:'#f59e0b', accent2:'#faf3dd', ink:'#ffffff', motif:'film' },
+    { id:'film_kodak_yellow', category:'Film', name:'Kodak Yellow', bg:'#facc15', accent:'#ef4444', accent2:'#111827', ink:'#111827', motif:'film' },
+    { id:'film_analog_brown', category:'Film', name:'Analog Brown', bg:'#5a3e2b', accent:'#f4d7a1', accent2:'#a16207', ink:'#fff7ed', motif:'grain' },
+    { id:'film_vintage_camera', category:'Film', name:'Vintage Camera', bg:'#f5e4c3', accent:'#78350f', accent2:'#d97706', ink:'#422006', motif:'camera' },
+    { id:'film_roll_black', category:'Film', name:'Film Roll Black', bg:'#030712', accent:'#f8fafc', accent2:'#525252', ink:'#ffffff', motif:'film' },
+    { id:'film_polaroid_cream', category:'Film', name:'Polaroid Cream', bg:'#fff7ed', accent:'#0f172a', accent2:'#f97316', ink:'#0f172a', motif:'polaroid' },
+    { id:'film_dust_grain', category:'Film', name:'Dust & Grain', bg:'#262626', accent:'#e7d8b2', accent2:'#a3a3a3', ink:'#fafafa', motif:'grain' },
+    { id:'film_cinema_frame', category:'Film', name:'Cinema Frame', bg:'#111827', accent:'#eab308', accent2:'#7f1d1d', ink:'#fef3c7', motif:'cinema' },
+    { id:'film_disposable_camera', category:'Film', name:'Disposable Camera', bg:'#d9f99d', accent:'#84cc16', accent2:'#111827', ink:'#1a2e05', motif:'camera' },
+    { id:'film_old_memory', category:'Film', name:'Old Memory', bg:'#e7d2b0', accent:'#92400e', accent2:'#fef3c7', ink:'#451a03', motif:'vintage' },
+
+    // Elegant
+    { id:'elegant_black_gold', category:'Elegant', name:'Black Gold', bg:'#050505', accent:'#d6b56d', accent2:'#fff7d6', ink:'#fff7d6', motif:'luxury' },
+    { id:'elegant_white_gold', category:'Elegant', name:'White Gold', bg:'#ffffff', accent:'#c8a24a', accent2:'#f7e7b5', ink:'#5f4505', motif:'luxury' },
+    { id:'elegant_rose_gold', category:'Elegant', name:'Rose Gold', bg:'#fff1f2', accent:'#b76e79', accent2:'#f9a8d4', ink:'#7f1d1d', motif:'pearl' },
+    { id:'elegant_silver_pearl', category:'Elegant', name:'Silver Pearl', bg:'#f8fafc', accent:'#94a3b8', accent2:'#e2e8f0', ink:'#334155', motif:'pearl' },
+    { id:'elegant_emerald_luxury', category:'Elegant', name:'Emerald Luxury', bg:'#022c22', accent:'#d1b464', accent2:'#10b981', ink:'#fef3c7', motif:'luxury' },
+    { id:'elegant_royal_navy', category:'Elegant', name:'Royal Navy', bg:'#0f172a', accent:'#d6b56d', accent2:'#1e3a8a', ink:'#f8fafc', motif:'royal' },
+    { id:'elegant_champagne_gold', category:'Elegant', name:'Champagne Gold', bg:'#fbf1d3', accent:'#b58935', accent2:'#fff7d6', ink:'#65420c', motif:'pearl' },
+    { id:'elegant_luxury_marble', category:'Elegant', name:'Luxury Marble', bg:'#f8f5f0', accent:'#bfa26a', accent2:'#d1d5db', ink:'#3f3f46', motif:'marble' },
+    { id:'elegant_midnight_black', category:'Elegant', name:'Midnight Black', bg:'#020617', accent:'#c084fc', accent2:'#f5d76e', ink:'#f8fafc', motif:'stars' },
+    { id:'elegant_wedding_elegant', category:'Elegant', name:'Wedding Elegant', bg:'#fffaf0', accent:'#d6b56d', accent2:'#fecdd3', ink:'#7c2d12', motif:'wedding' },
+
+    // Floral
+    { id:'floral_sakura_garden', category:'Floral', name:'Sakura Garden', bg:'#fff1f7', accent:'#f472b6', accent2:'#fecdd3', ink:'#9d174d', motif:'sakura' },
+    { id:'floral_blue_rose', category:'Floral', name:'Blue Rose', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bfdbfe', ink:'#1e3a8a', motif:'rose' },
+    { id:'floral_sunflower_day', category:'Floral', name:'Sunflower Day', bg:'#fff7ed', accent:'#facc15', accent2:'#854d0e', ink:'#713f12', motif:'sunflower' },
+    { id:'floral_lavender_bloom', category:'Floral', name:'Lavender Bloom', bg:'#f5f3ff', accent:'#a78bfa', accent2:'#ddd6fe', ink:'#5b21b6', motif:'lavender' },
+    { id:'floral_daisy_field', category:'Floral', name:'Daisy Field', bg:'#f0fdf4', accent:'#fef08a', accent2:'#86efac', ink:'#166534', motif:'daisy' },
+    { id:'floral_pink_peony', category:'Floral', name:'Pink Peony', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#be123c', motif:'peony' },
+    { id:'floral_botanical_green', category:'Floral', name:'Botanical Green', bg:'#ecfdf5', accent:'#10b981', accent2:'#bbf7d0', ink:'#065f46', motif:'leaf' },
+    { id:'floral_wild_flower', category:'Floral', name:'Wild Flower', bg:'#fff7ed', accent:'#f97316', accent2:'#a7f3d0', ink:'#9a3412', motif:'wild' },
+    { id:'floral_hydrangea_dream', category:'Floral', name:'Hydrangea Dream', bg:'#eef2ff', accent:'#818cf8', accent2:'#f0abfc', ink:'#3730a3', motif:'hydrangea' },
+    { id:'floral_spring_blossom', category:'Floral', name:'Spring Blossom', bg:'#fdf2f8', accent:'#f9a8d4', accent2:'#bef264', ink:'#9d174d', motif:'spring' },
+
+    // Seasonal
+    { id:'seasonal_birthday_party', category:'Seasonal', name:'Birthday Party', bg:'#fff7ed', accent:'#fb7185', accent2:'#60a5fa', ink:'#7c2d12', motif:'birthday' },
+    { id:'seasonal_graduation_day', category:'Seasonal', name:'Graduation Day', bg:'#f8fafc', accent:'#0f172a', accent2:'#facc15', ink:'#0f172a', motif:'graduation' },
+    { id:'seasonal_christmas', category:'Seasonal', name:'Christmas', bg:'#064e3b', accent:'#ef4444', accent2:'#fef3c7', ink:'#fefce8', motif:'christmas' },
+    { id:'seasonal_valentine', category:'Seasonal', name:'Valentine', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#9f1239', motif:'valentine' },
+    { id:'seasonal_halloween', category:'Seasonal', name:'Halloween', bg:'#2e1065', accent:'#f97316', accent2:'#111827', ink:'#fef3c7', motif:'halloween' },
+    { id:'seasonal_eid_mubarak', category:'Seasonal', name:'Eid Mubarak', bg:'#ecfdf5', accent:'#10b981', accent2:'#facc15', ink:'#065f46', motif:'eid' },
+    { id:'seasonal_new_year_party', category:'Seasonal', name:'New Year Party', bg:'#020617', accent:'#facc15', accent2:'#a78bfa', ink:'#f8fafc', motif:'newyear' },
+    { id:'seasonal_summer_vacation', category:'Seasonal', name:'Summer Vacation', bg:'#ecfeff', accent:'#06b6d4', accent2:'#f97316', ink:'#155e75', motif:'summer' },
+    { id:'seasonal_autumn_leaves', category:'Seasonal', name:'Autumn Leaves', bg:'#fff7ed', accent:'#ea580c', accent2:'#facc15', ink:'#7c2d12', motif:'autumn' },
+    { id:'seasonal_winter_snow', category:'Seasonal', name:'Winter Snow', bg:'#eff6ff', accent:'#93c5fd', accent2:'#e0f2fe', ink:'#1e3a8a', motif:'winter' },
+
+    // Gaming
+    { id:'gaming_pixel_quest', category:'Gaming', name:'Pixel Quest', bg:'#111827', accent:'#22c55e', accent2:'#facc15', ink:'#f8fafc', motif:'pixel' },
+    { id:'gaming_arcade_neon', category:'Gaming', name:'Arcade Neon', bg:'#12002f', accent:'#22d3ee', accent2:'#f97316', ink:'#f0abfc', motif:'arcade' },
+    { id:'gaming_rpg_character', category:'Gaming', name:'RPG Character', bg:'#1e1b4b', accent:'#a78bfa', accent2:'#facc15', ink:'#ede9fe', motif:'rpg' },
+    { id:'gaming_cyber_gamer', category:'Gaming', name:'Cyber Gamer', bg:'#020617', accent:'#00f5ff', accent2:'#ff2bd6', ink:'#e0f2fe', motif:'cyber' },
+    { id:'gaming_fantasy_world', category:'Gaming', name:'Fantasy World', bg:'#064e3b', accent:'#a7f3d0', accent2:'#d6b56d', ink:'#ecfdf5', motif:'fantasy' },
+    { id:'gaming_magic_academy', category:'Gaming', name:'Magic Academy', bg:'#312e81', accent:'#facc15', accent2:'#c084fc', ink:'#ede9fe', motif:'magic' },
+    { id:'gaming_space_battle', category:'Gaming', name:'Space Battle', bg:'#020617', accent:'#38bdf8', accent2:'#f472b6', ink:'#f8fafc', motif:'space' },
+    { id:'gaming_monster_hunter', category:'Gaming', name:'Monster Hunter', bg:'#1f2937', accent:'#84cc16', accent2:'#ef4444', ink:'#f9fafb', motif:'monster' },
+    { id:'gaming_dungeon_explorer', category:'Gaming', name:'Dungeon Explorer', bg:'#292524', accent:'#d97706', accent2:'#a3e635', ink:'#fafaf9', motif:'dungeon' },
+    { id:'gaming_retro_console', category:'Gaming', name:'Retro Console', bg:'#f3f4f6', accent:'#ef4444', accent2:'#3b82f6', ink:'#111827', motif:'console' },
+
+    // Pattern
+    { id:'pattern_polkadot_pink', category:'Pattern', name:'Polkadot Pink', bg:'#fff1f2', accent:'#fb7185', accent2:'#fecdd3', ink:'#9f1239', motif:'polkadot' },
+    { id:'pattern_polkadot_blue', category:'Pattern', name:'Polkadot Blue', bg:'#eff6ff', accent:'#60a5fa', accent2:'#bae6fd', ink:'#1d4ed8', motif:'polkadot' },
+    { id:'pattern_candy_stripe', category:'Pattern', name:'Candy Stripe', bg:'#ffffff', accent:'#fb7185', accent2:'#fbcfe8', ink:'#be123c', motif:'stripe' },
+    { id:'pattern_rainbow_stripe', category:'Pattern', name:'Rainbow Stripe', bg:'#fefce8', accent:'#f97316', accent2:'#22c55e', ink:'#7c2d12', motif:'rainbow' },
+    { id:'pattern_checkerboard', category:'Pattern', name:'Checkerboard', bg:'#ffffff', accent:'#111827', accent2:'#f3f4f6', ink:'#111827', motif:'checker' },
+    { id:'pattern_gingham_pink', category:'Pattern', name:'Gingham Pink', bg:'#fff1f2', accent:'#f9a8d4', accent2:'#ffffff', ink:'#9f1239', motif:'gingham' },
+    { id:'pattern_gingham_blue', category:'Pattern', name:'Gingham Blue', bg:'#eff6ff', accent:'#93c5fd', accent2:'#ffffff', ink:'#1e40af', motif:'gingham' },
+    { id:'pattern_notebook_grid', category:'Pattern', name:'Notebook Grid', bg:'#f8fafc', accent:'#93c5fd', accent2:'#fca5a5', ink:'#334155', motif:'grid' },
+    { id:'pattern_star_pattern', category:'Pattern', name:'Star Pattern', bg:'#111827', accent:'#facc15', accent2:'#60a5fa', ink:'#f8fafc', motif:'stars' },
+    { id:'pattern_heart_pattern', category:'Pattern', name:'Heart Pattern', bg:'#fff1f2', accent:'#e11d48', accent2:'#f9a8d4', ink:'#881337', motif:'heart' },
+
+    // Social Media
+    { id:'social_instagram_feed', category:'Social Media', name:'Instagram Feed', bg:'#ffffff', accent:'#e1306c', accent2:'#f9a8d4', ink:'#111827', motif:'igfeed' },
+    { id:'social_instagram_story', category:'Social Media', name:'Instagram Story', bg:'#111827', accent:'#e1306c', accent2:'#facc15', ink:'#ffffff', motif:'igstory' },
+    { id:'social_tiktok_creator', category:'Social Media', name:'TikTok Creator', bg:'#020617', accent:'#00f2ea', accent2:'#ff0050', ink:'#ffffff', motif:'tiktok' },
+    { id:'social_youtube_vlog', category:'Social Media', name:'YouTube Vlog', bg:'#ffffff', accent:'#ff0000', accent2:'#111827', ink:'#111827', motif:'youtube' },
+    { id:'social_iphone_gallery', category:'Social Media', name:'iPhone Gallery', bg:'#f8fafc', accent:'#007aff', accent2:'#e5e7eb', ink:'#111827', motif:'iphone' },
+    { id:'social_camera_roll', category:'Social Media', name:'Camera Roll', bg:'#111827', accent:'#f8fafc', accent2:'#64748b', ink:'#f8fafc', motif:'cameraRoll' },
+    { id:'social_music_player', category:'Social Media', name:'Music Player', bg:'#ecfdf5', accent:'#22c55e', accent2:'#111827', ink:'#052e16', motif:'music' },
+    { id:'social_chat_bubble', category:'Social Media', name:'Chat Bubble', bg:'#eff6ff', accent:'#60a5fa', accent2:'#dbeafe', ink:'#1e3a8a', motif:'chat' },
+    { id:'social_profile', category:'Social Media', name:'Social Profile', bg:'#f8fafc', accent:'#8b5cf6', accent2:'#f9a8d4', ink:'#312e81', motif:'profile' },
+    { id:'social_viral_post', category:'Social Media', name:'Viral Post', bg:'#fff7ed', accent:'#f97316', accent2:'#e11d48', ink:'#7c2d12', motif:'viral' },
+  ];
+
+  // Koleksi khusus Photobox 4R satu foto dengan tampilan seperti pigura fisik.
+  const PIGURA_FRAME_DEFS = [
+    { id:'pigura_classic_walnut', category:'Pigura', name:'Pigura Walnut Klasik', bg:'#efe4d3', accent:'#6f4427', accent2:'#d6b98c', ink:'#3f2a1f', motif:'frame', frameStyle:'classic', layout:'single-frame-classic' },
+    { id:'pigura_oak_minimal', category:'Pigura', name:'Pigura Oak Minimal', bg:'#f6f2e9', accent:'#b98b5e', accent2:'#ead9bd', ink:'#4a3728', motif:'frame', frameStyle:'minimal', layout:'single-frame-minimal' },
+    { id:'pigura_gold_gallery', category:'Pigura', name:'Pigura Gold Gallery', bg:'#f7f1e3', accent:'#b9913f', accent2:'#f3df9d', ink:'#5f4505', motif:'frame', frameStyle:'gold', layout:'single-frame-gallery' },
+    { id:'pigura_black_museum', category:'Pigura', name:'Pigura Black Museum', bg:'#e9e7e2', accent:'#171717', accent2:'#a3a3a3', ink:'#171717', motif:'frame', frameStyle:'museum', layout:'single-frame-gallery' },
+    { id:'pigura_white_mat', category:'Pigura', name:'Pigura White Mat', bg:'#f5f5f4', accent:'#d6d3d1', accent2:'#ffffff', ink:'#44403c', motif:'frame', frameStyle:'white', layout:'single-frame-wide-mat' },
+    { id:'pigura_rose_vintage', category:'Pigura', name:'Pigura Rose Vintage', bg:'#faeeee', accent:'#a95d67', accent2:'#e8b9bf', ink:'#6f3039', motif:'frame', frameStyle:'vintage', layout:'single-frame-classic' },
+    { id:'pigura_ornate_royal', category:'Pigura', name:'Pigura Royal Ornate', bg:'#17130f', accent:'#c29b48', accent2:'#f0d68d', ink:'#fff6d8', motif:'frame', frameStyle:'ornate', layout:'single-frame-ornate' },
+    { id:'pigura_floating_glass', category:'Pigura', name:'Pigura Floating Glass', bg:'#eaf0f2', accent:'#64748b', accent2:'#dbeafe', ink:'#334155', motif:'frame', frameStyle:'floating', layout:'single-frame-floating' },
+    { id:'pigura_polaroid_display', category:'Pigura', name:'Pigura Polaroid Display', bg:'#d9d1c5', accent:'#ffffff', accent2:'#e7e5e4', ink:'#292524', motif:'frame', frameStyle:'polaroid', layout:'single-frame-polaroid' },
+    { id:'pigura_botanical_home', category:'Pigura', name:'Pigura Botanical Home', bg:'#eaf2e7', accent:'#6b7f5e', accent2:'#cbd8c1', ink:'#31402b', motif:'frame', frameStyle:'botanical', layout:'single-frame-classic' }
+  ];
+
+  // Katalog built-in Photobox 4R memakai tema dan wording yang sama dengan Photostrip.
+  // Setiap desain memiliki varian multi-foto dan varian satu foto.
+  const visiblePhotoboxFrameDefs = BUILTIN_FRAME_DEFS
+    .filter(def => !HIDDEN_CATEGORIES.includes(def.category));
+  const photoboxCategoryIndex = new Map();
+
+  const multiPhotoPhotoboxDefs = visiblePhotoboxFrameDefs.map(def => {
+    const indexInCategory = photoboxCategoryIndex.get(def.category) || 0;
+    const slotCount = 4 + (indexInCategory % 3);
+    photoboxCategoryIndex.set(def.category, indexInCategory + 1);
+
+    return {
+      ...def,
+      sourceId: def.id,
+      id: `photobox_${def.id}`,
+      name: def.name,
+      slotCount,
+      layout: `slots-${slotCount}`
+    };
+  });
+
+  const singlePhotoPhotoboxDefs = visiblePhotoboxFrameDefs.map(def => ({
+    ...def,
+    sourceId: def.id,
+    id: `photobox_single_${def.id}`,
+    name: `${def.name} · 1 Foto`,
+    slotCount: 1,
+    layout: def.category === 'Social Media' ? 'single-social' : 'single-portrait',
+    isSinglePhoto: true
+  }));
+
+  const pictureFramePhotoboxDefs = PIGURA_FRAME_DEFS.map(def => ({
+    ...def,
+    sourceId: def.id,
+    id: `photobox_${def.id}`,
+    slotCount: 1,
+    isSinglePhoto: true,
+    isPictureFrame: true
+  }));
+
+  PHOTOBOX_DEFS = [
+    ...multiPhotoPhotoboxDefs,
+    ...singlePhotoPhotoboxDefs,
+    ...pictureFramePhotoboxDefs
+  ];
+
+  const builtInCache = new Map();
+
+  function generateBasicSlots() {
+    const slotH = Math.floor((FRAME_H - FRAME_PADDING * 2 - FRAME_GAP * (FRAME_SLOTS - 1) - FRAME_FOOTER_H) / FRAME_SLOTS);
+    const slotW = FRAME_W - FRAME_PADDING * 2;
+    const slots = [];
+    for (let i = 0; i < FRAME_SLOTS; i++) {
+      slots.push({ x: FRAME_PADDING, y: FRAME_PADDING + i * (slotH + FRAME_GAP), w: slotW, h: slotH });
+    }
+    return slots;
+  }
+
+  // Built-in decorative templates need bigger margins than Basic
+  // so the frame ornaments are visible and the photo slots do not feel too tight.
+  function generateBuiltInSlots(def = {}) {
+    const category = def.category || '';
+    let sidePad = 76;
+    let topPad = 168;
+    let bottomPad = 236;
+    let gap = 38;
+    let slotCount = FRAME_SLOTS;
+
+    if (category === 'Social Media') {
+      sidePad = 128;
+      topPad = 222;
+      // Social template sebelumnya menyisakan area kosong terlalu besar di bawah slot terakhir.
+      // Dibuat lebih rapat supaya slot foto turun dan preview tidak terasa kosong.
+      bottomPad = 270;
+      gap = 74;
+      slotCount = 3;
+    } else if (category === 'Korean') {
+      sidePad = 78;
+      topPad = 176;
+      bottomPad = 246;
+      gap = 40;
+    } else if (category === 'Film') {
+      sidePad = 84;
+      topPad = 178;
+      bottomPad = 272;
+      gap = 42;
+    } else if (category === 'Elegant') {
+      sidePad = 70;
+      topPad = 162;
+      bottomPad = 232;
+      gap = 36;
+    } else if (category === 'Floral') {
+      sidePad = 80;
+      topPad = 172;
+      bottomPad = 244;
+      gap = 40;
+    } else if (category === 'Seasonal') {
+      sidePad = 74;
+      topPad = 170;
+      bottomPad = 240;
+      gap = 38;
+    } else if (category === 'Gaming') {
+      sidePad = 72;
+      topPad = 166;
+      bottomPad = 236;
+      gap = 36;
+    } else if (category === 'Pattern') {
+      sidePad = 78;
+      topPad = 170;
+      bottomPad = 242;
+      gap = 38;
+    }
+
+    const slotW = FRAME_W - sidePad * 2;
+    const slotH = Math.floor((FRAME_H - topPad - bottomPad - gap * (slotCount - 1)) / slotCount);
+    const slots = [];
+    for (let i = 0; i < slotCount; i++) {
+      slots.push({ x: sidePad, y: topPad + i * (slotH + gap), w: slotW, h: slotH, r: 0 });
+    }
+    return slots;
+  }
+
+  function withAlpha(hex, alpha) {
+    const h = (hex || '#000000').replace('#', '');
+    const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function roundedRectPath(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke, lw = 2) {
+    ctx.beginPath();
+    roundedRectPath(ctx, x, y, w, h, r);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); }
+  }
+
+  // Draw a solid frame while keeping the photo aperture transparent.
+  // This avoids placing a translucent tint over captured photos.
+  function roundRectRing(ctx, outer, inner, fill, stroke, lw = 2) {
+    ctx.save();
+    ctx.beginPath();
+    roundedRectPath(ctx, outer.x, outer.y, outer.w, outer.h, outer.r);
+    roundedRectPath(ctx, inner.x, inner.y, inner.w, inner.h, inner.r);
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fill('evenodd');
+    }
+    if (stroke) {
+      roundRect(ctx, outer.x, outer.y, outer.w, outer.h, outer.r, null, stroke, lw);
+    }
+    ctx.restore();
+  }
+
+  function circle(ctx, x, y, r, color, stroke) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    if (color) { ctx.fillStyle = color; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+
+  function text(ctx, value, x, y, size, color, weight = 900, align = 'center') {
+    ctx.save();
+    ctx.font = `${weight} ${size}px 'Trebuchet MS', 'Segoe UI', Arial, sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(value, x, y);
+    ctx.restore();
+  }
+
+  function line(ctx, x1, y1, x2, y2, color, width = 3) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.stroke();
+  }
+
+  function drawStar(ctx, x, y, r, color, points = 5) {
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const rr = i % 2 === 0 ? r : r * 0.42;
+      const a = -Math.PI / 2 + i * Math.PI / points;
+      const px = x + Math.cos(a) * rr;
+      const py = y + Math.sin(a) * rr;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBow(ctx, x, y, color, lineColor) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = lineColor || color;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(x - 18, y, 20, 12, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x + 18, y, 20, 12, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    circle(ctx, x, y, 8, lineColor || '#fff');
+    ctx.restore();
+  }
+
+  function drawConfetti(ctx, def, count = 80) {
+    const colors = [def.accent, def.accent2, withAlpha(def.ink, .65), '#ffffff'];
+    for (let i = 0; i < count; i++) {
+      const x = (i * 73) % FRAME_W;
+      const y = (i * 137) % FRAME_H;
+      const c = colors[i % colors.length];
+      if ((x > 80 && x < FRAME_W - 80) && (y > 30 && y < FRAME_H - 120)) continue;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((i % 9) * .35);
+      ctx.fillStyle = c;
+      if (i % 3 === 0) ctx.fillRect(-4, -10, 8, 20);
+      else if (i % 3 === 1) circle(ctx, 0, 0, 5, c);
+      else drawStar(ctx, 0, 0, 7, c, 4);
+      ctx.restore();
+    }
+  }
+
+  function drawPatternBg(ctx, def) {
+    if (def.motif === 'stripe' || def.motif === 'rainbow') {
+      const colors = def.motif === 'rainbow' ? ['#f87171','#fbbf24','#34d399','#60a5fa','#c084fc'] : [def.accent, def.accent2];
+      for (let y = -FRAME_H; y < FRAME_H * 2; y += 52) {
+        ctx.save(); ctx.translate(FRAME_W / 2, FRAME_H / 2); ctx.rotate(-0.35); ctx.translate(-FRAME_W / 2, -FRAME_H / 2);
+        ctx.fillStyle = colors[Math.abs(Math.floor(y / 52)) % colors.length];
+        ctx.globalAlpha = .75;
+        ctx.fillRect(-200, y, FRAME_W + 400, 24);
+        ctx.restore();
+      }
+    }
+    if (def.motif === 'polkadot') {
+      for (let y = 40; y < FRAME_H; y += 78) {
+        for (let x = 28; x < FRAME_W; x += 78) {
+          circle(ctx, x + ((Math.floor(y / 78) % 2) * 32), y, 13, withAlpha(def.accent, .55));
+          circle(ctx, x + 18, y + 26, 6, withAlpha(def.accent2, .75));
+        }
+      }
+    }
+    if (def.motif === 'checker') {
+      const s = 42;
+      for (let y = 0; y < FRAME_H; y += s) for (let x = 0; x < FRAME_W; x += s) {
+        ctx.fillStyle = ((x / s + y / s) % 2) ? def.accent : def.accent2;
+        ctx.globalAlpha = .25; ctx.fillRect(x, y, s, s); ctx.globalAlpha = 1;
+      }
+    }
+    if (def.motif === 'gingham') {
+      ctx.globalAlpha = .35;
+      for (let x = 0; x < FRAME_W; x += 52) { ctx.fillStyle = def.accent; ctx.fillRect(x, 0, 26, FRAME_H); }
+      for (let y = 0; y < FRAME_H; y += 52) { ctx.fillStyle = def.accent; ctx.fillRect(0, y, FRAME_W, 26); }
+      ctx.globalAlpha = 1;
+    }
+    if (def.motif === 'grid') {
+      ctx.strokeStyle = withAlpha(def.accent, .45); ctx.lineWidth = 1.5;
+      for (let x = 28; x < FRAME_W; x += 36) line(ctx, x, 0, x, FRAME_H, withAlpha(def.accent, .35), 1);
+      for (let y = 28; y < FRAME_H; y += 36) line(ctx, 0, y, FRAME_W, y, withAlpha(def.accent, .35), 1);
+      line(ctx, 72, 0, 72, FRAME_H, def.accent2, 4);
+    }
+  }
+
+  function drawFilmDecor(ctx, def) {
+    function sprocketBar(x, fill, hole = '#f8fafc') {
+      roundRect(ctx, x, 20, 30, FRAME_H - 40, 10, withAlpha(fill, .22), withAlpha(hole, .18), 1.5);
+      for (let y = 50; y < FRAME_H - 70; y += 34) roundRect(ctx, x + 7, y, 16, 18, 3, withAlpha(hole, .92));
+    }
+    function tinyLabel(x, y, w, txt, fill, color) {
+      roundRect(ctx, x, y, w, 20, 8, withAlpha(fill, .82), withAlpha(color, .18), 1.2);
+      text(ctx, txt, x + w / 2, y + 13, 10, color, 900);
+    }
+    function tapePiece(x, y, w = 42, h = 16, ang = 0, fill = def.accent2) {
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(ang * Math.PI / 180);
+      roundRect(ctx, -w / 2, -h / 2, w, h, 5, withAlpha(fill, .48), withAlpha('#ffffff', .16), 1);
+      ctx.restore();
+    }
+
+    roundRect(ctx, 16, 16, FRAME_W - 32, FRAME_H - 32, 28, null, withAlpha(def.ink, .22), 2);
+
+    if (def.id === 'film_retro_film') {
+      sprocketBar(18, '#0f0f10'); sprocketBar(FRAME_W - 48, '#0f0f10');
+      roundRect(ctx, 56, 30, FRAME_W - 112, 52, 14, withAlpha('#000000', .34), withAlpha(def.accent, .55), 2.5);
+      text(ctx, 'RETRO FILM', FRAME_W / 2, 56, 24, def.accent, 900);
+      for (let i = 0; i < 24; i++) circle(ctx, 66 + (i * 20) % (FRAME_W - 132), 96 + (i * 65) % (FRAME_H - 180), 1.4, withAlpha('#f8fafc', .26));
+      roundRect(ctx, 48, FRAME_H - 112, FRAME_W - 96, 66, 18, withAlpha('#111827', .55), withAlpha(def.accent2, .22), 1.5);
+      text(ctx, 'FRAME 04', FRAME_W - 58, FRAME_H - 62, 16, def.accent2, 900, 'right');
+    } else if (def.id === 'film_kodak_yellow') {
+      for (let y = 28; y < FRAME_H - 28; y += 28) roundRect(ctx, 24, y, 16, 14, 3, withAlpha(def.accent2, .88));
+      for (let y = 42; y < FRAME_H - 42; y += 36) roundRect(ctx, FRAME_W - 40, y, 16, 16, 3, withAlpha(def.accent2, .88));
+      roundRect(ctx, 52, 28, FRAME_W - 104, 46, 12, withAlpha('#fff8', .28), withAlpha(def.accent2, .42), 2);
+      text(ctx, 'KODAK FEEL', FRAME_W / 2, 55, 20, def.ink, 900);
+      tinyLabel(FRAME_W - 170, 39, 116, 'flash snap', def.accent, def.ink);
+      line(ctx, 66, FRAME_H - 96, FRAME_W - 66, FRAME_H - 96, withAlpha(def.accent2, .28), 2);
+      line(ctx, 66, FRAME_H - 70, FRAME_W - 66, FRAME_H - 70, withAlpha(def.accent2, .18), 1.5);
+      for (let i = 0; i < 20; i++) circle(ctx, 60 + (i * 25) % (FRAME_W - 120), 110 + (i * 79) % (FRAME_H - 180), 1.6, withAlpha(def.ink, .18));
+      text(ctx, 'FRAME 04', FRAME_W - 58, FRAME_H - 62, 16, def.ink, 900, 'right');
+    } else if (def.id === 'film_analog_brown') {
+      sprocketBar(18, '#6b4d36', '#fff8'); sprocketBar(FRAME_W - 48, '#6b4d36', '#fff8');
+      for (let i = 0; i < 18; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .18); ctx.lineWidth = 1.5;
+        const y = 70 + i * 90; ctx.moveTo(60, y); ctx.bezierCurveTo(150, y - 40, 340, y + 40, FRAME_W - 70, y - 6); ctx.stroke();
+      }
+      text(ctx, 'analog brown', FRAME_W / 2, 56, 22, def.ink, 900);
+      tinyLabel(64, FRAME_H - 86, 128, 'grain + dust', def.accent2, def.ink);
+      tinyLabel(FRAME_W - 168, 34, 104, '35mm', def.accent, '#fff7ed');
+    } else if (def.id === 'film_vintage_camera') {
+      roundRect(ctx, 48, 26, FRAME_W - 96, 56, 20, withAlpha('#fff7ed', .48), withAlpha(def.accent, .38), 2);
+      roundRect(ctx, FRAME_W / 2 - 42, 36, 84, 34, 12, withAlpha(def.accent, .88), withAlpha(def.ink, .22), 2);
+      circle(ctx, FRAME_W / 2, 53, 14, withAlpha(def.ink, .9));
+      text(ctx, 'camera', FRAME_W - 104, 57, 18, def.ink, 900, 'right');
+      for (const x of [66, FRAME_W - 66]) {
+        for (let y = 120; y < FRAME_H - 150; y += 160) tapePiece(x, y, 48, 18, x < FRAME_W / 2 ? -10 : 10, '#fef3c7');
+      }
+      for (let i = 0; i < 22; i++) circle(ctx, 72 + (i * 21) % (FRAME_W - 144), 104 + (i * 58) % (FRAME_H - 200), 2, withAlpha(def.accent2, .18));
+      roundRect(ctx, 62, FRAME_H - 98, FRAME_W - 124, 48, 14, withAlpha('#ffffff', .22), withAlpha(def.accent, .24), 1.5);
+      text(ctx, 'memory archive', FRAME_W / 2, FRAME_H - 68, 18, def.ink, 900);
+    } else if (def.id === 'film_roll_black') {
+      sprocketBar(18, '#020617'); sprocketBar(FRAME_W - 48, '#020617');
+      for (let i = 0; i < 14; i++) line(ctx, 60, 110 + i * 110, FRAME_W - 60, 90 + i * 110, withAlpha('#ffffff', .06), 1);
+      roundRect(ctx, 54, 30, FRAME_W - 108, 42, 10, withAlpha('#111827', .55), withAlpha(def.accent2, .22), 1.5);
+      text(ctx, 'night memory', FRAME_W / 2, 56, 21, def.ink, 900);
+      roundRect(ctx, 48, FRAME_H - 112, FRAME_W - 96, 68, 18, withAlpha('#0f172a', .72), withAlpha(def.accent2, .18), 1.5);
+      text(ctx, 'FRAME 04', FRAME_W - 56, FRAME_H - 60, 16, def.accent2, 900, 'right');
+    } else if (def.id === 'film_polaroid_cream') {
+      roundRect(ctx, 28, 28, FRAME_W - 56, FRAME_H - 56, 26, null, withAlpha(def.accent, .32), 2);
+      for (let y = 110; y < FRAME_H - 150; y += 310) {
+        tapePiece(92, y, 46, 16, -12, '#fef3c7');
+        tapePiece(FRAME_W - 92, y + 18, 46, 16, 12, '#fef3c7');
+      }
+      roundRect(ctx, 84, 32, FRAME_W - 168, 40, 18, withAlpha('#ffffff', .78), withAlpha(def.accent2, .28), 1.5);
+      text(ctx, 'instant memory', FRAME_W / 2, 56, 18, def.ink, 900);
+      for (let i = 0; i < 12; i++) text(ctx, i % 2 ? '✦' : '•', 58 + (i * 42) % (FRAME_W - 116), FRAME_H - 88 + (i % 2) * 8, 12, withAlpha(def.accent2, .42));
+    } else if (def.id === 'film_dust_grain') {
+      sprocketBar(18, '#1f2937'); sprocketBar(FRAME_W - 48, '#1f2937');
+      for (let i = 0; i < 30; i++) {
+        line(ctx, 58 + (i * 17) % (FRAME_W - 116), 70 + (i * 49) % (FRAME_H - 160), 86 + (i * 17) % (FRAME_W - 116), 54 + (i * 49) % (FRAME_H - 160), withAlpha('#ffffff', .12), 1);
+      }
+      for (let i = 0; i < 80; i++) circle(ctx, 58 + (i * 31) % (FRAME_W - 116), 84 + (i * 71) % (FRAME_H - 190), 1.3, withAlpha(def.accent2, .18));
+      drawHeaderRibbon(ctx, 132, 32, FRAME_W - 264, 38, 'dust + grain', withAlpha('#ffffff', .18), withAlpha(def.accent2, .35), def.ink);
+    } else if (def.id === 'film_cinema_frame') {
+      roundRect(ctx, 36, 28, FRAME_W - 72, 56, 18, withAlpha('#0f172a', .4), withAlpha(def.accent, .42), 2);
+      for (let x = 52; x < FRAME_W - 52; x += 32) {
+        ctx.fillStyle = (Math.floor(x / 32) % 2) ? def.accent : def.accent2;
+        ctx.globalAlpha = .82; ctx.fillRect(x, 40, 20, 14); ctx.fillRect(x, 58, 20, 14); ctx.globalAlpha = 1;
+      }
+      drawHeaderRibbon(ctx, 164, 90, FRAME_W - 328, 32, 'cinema ticket', withAlpha('#111827', .2), withAlpha(def.accent, .42), def.ink);
+      for (let i = 0; i < 22; i++) drawStar(ctx, 56 + (i * 23) % (FRAME_W - 112), 120 + (i * 59) % (FRAME_H - 220), 6 + (i % 2), i % 2 ? def.accent2 : def.accent, 4);
+    } else if (def.id === 'film_disposable_camera') {
+      roundRect(ctx, 46, 24, FRAME_W - 92, 52, 18, withAlpha(def.accent2, .2), withAlpha(def.accent, .48), 2);
+      text(ctx, 'flash ready', FRAME_W / 2, 53, 18, def.ink, 900);
+      circle(ctx, FRAME_W - 92, 51, 16, withAlpha(def.accent, .9));
+      text(ctx, '★', FRAME_W - 92, 53, 12, '#ffffff', 900);
+      for (let y = 122; y < FRAME_H - 132; y += 180) {
+        text(ctx, '← snap', 58, y, 16, def.ink, 900, 'left');
+        text(ctx, 'smile →', FRAME_W - 58, y + 46, 16, def.accent2, 900, 'right');
+      }
+      roundRect(ctx, 64, FRAME_H - 98, FRAME_W - 128, 48, 14, withAlpha('#ffffff', .2), withAlpha(def.accent, .24), 1.5);
+      text(ctx, 'summer cam', FRAME_W / 2, FRAME_H - 68, 17, def.ink, 900);
+    } else if (def.id === 'film_old_memory') {
+      roundRect(ctx, 40, 30, FRAME_W - 80, 44, 14, withAlpha('#ffffff', .32), withAlpha(def.accent, .36), 1.5);
+      text(ctx, 'memory archive', FRAME_W / 2, 55, 17, def.ink, 900);
+      for (let y = 100; y < FRAME_H - 140; y += 140) {
+        line(ctx, 70, y, FRAME_W - 70, y + 10, withAlpha(def.accent, .14), 1.5);
+        if ((y / 140) % 2 === 0) tapePiece(80, y + 22, 42, 16, -8); else tapePiece(FRAME_W - 80, y + 22, 42, 16, 8);
+      }
+      tinyLabel(FRAME_W - 158, 34, 92, '1987', def.accent2, def.ink);
+      tinyLabel(54, FRAME_H - 84, 110, 'vintage', def.accent, '#fff7ed');
+    }
+  }
+
+  function drawKoreanDecor(ctx, def) {
+    // soft dotted background
+    for (let i = 0; i < 96; i++) {
+      const x = 28 + (i * 73) % (FRAME_W - 56);
+      const y = 92 + (i * 137) % (FRAME_H - 190);
+      circle(ctx, x, y, 2 + (i % 2), withAlpha(def.accent, .18));
+    }
+
+    // reusable decorative strips
+    function sideScallop(colorA, colorB) {
+      for (let y = 112; y < FRAME_H - 120; y += 52) {
+        circle(ctx, 24, y, 14, withAlpha(colorA, .34));
+        circle(ctx, FRAME_W - 24, y + 24, 14, withAlpha(colorB, .34));
+      }
+    }
+    function tinySticker(x, y, label, fill) {
+      roundRect(ctx, x - 24, y - 18, 48, 36, 18, withAlpha(fill, .75), withAlpha(def.ink, .18), 2);
+      text(ctx, label, x, y + 1, 18, def.ink, 900);
+    }
+
+    if (def.motif === 'cloud') {
+      sideScallop('#ffffff', def.accent2);
+      for (let y = 144; y < FRAME_H - 150; y += 210) {
+        const left = y % 420 === 144;
+        const x = left ? 42 : FRAME_W - 42;
+        circle(ctx, x - 20, y, 18, withAlpha('#ffffff', .82));
+        circle(ctx, x, y - 10, 25, withAlpha('#ffffff', .86));
+        circle(ctx, x + 24, y, 18, withAlpha('#ffffff', .82));
+        for (let k = 0; k < 3; k++) line(ctx, x - 18 + k * 18, y + 28, x - 24 + k * 18, y + 44, withAlpha(def.accent, .35), 3);
+      }
+      text(ctx, 'soft cloud', FRAME_W / 2 + 40, 56, 20, def.ink, 900);
+    } else if (def.motif === 'diary') {
+      // diary rings + ruled-note feel
+      for (let y = 122; y < FRAME_H - 128; y += 72) {
+        roundRect(ctx, 28, y, 30, 18, 9, null, withAlpha(def.ink, .28), 3);
+        line(ctx, 70, y + 9, FRAME_W - 72, y + 9, withAlpha(def.accent, .16), 2);
+      }
+      tinySticker(FRAME_W - 65, 58, '♡', def.accent2);
+      tinySticker(72, FRAME_H - 58, 'OK', def.accent);
+      text(ctx, 'dear diary', FRAME_W / 2 + 40, 56, 19, def.ink, 900);
+    } else if (def.motif === 'sakura') {
+      for (let y = 106; y < FRAME_H - 110; y += 86) {
+        line(ctx, 20, y - 32, 58, y + 32, withAlpha(def.ink, .18), 2);
+        line(ctx, FRAME_W - 20, y - 20, FRAME_W - 60, y + 38, withAlpha(def.ink, .18), 2);
+        for (let side of [40, FRAME_W - 42]) {
+          for (let k = 0; k < 5; k++) circle(ctx, side + Math.cos(k*1.26)*12, y + Math.sin(k*1.26)*12, 8, withAlpha(def.accent, .72));
+          circle(ctx, side, y, 4, def.accent2);
+        }
+      }
+      text(ctx, 'cherry day', FRAME_W / 2 + 40, 56, 19, def.ink, 900);
+    } else if (def.motif === 'ribbon') {
+      for (let y = 132; y < FRAME_H - 128; y += 184) {
+        drawBow(ctx, 42, y, withAlpha(def.accent, .72), def.ink);
+        drawBow(ctx, FRAME_W - 42, y + 72, withAlpha(def.accent2, .82), def.ink);
+      }
+      roundRect(ctx, 88, 28, FRAME_W - 176, 48, 24, withAlpha('#ffffff', .55), withAlpha(def.accent, .45), 2);
+      text(ctx, 'ribbon club', FRAME_W / 2 + 42, 55, 18, def.ink, 900);
+    } else if (def.motif === 'latte') {
+      for (let y = 130; y < FRAME_H - 130; y += 170) {
+        roundRect(ctx, 24, y, 42, 34, 10, withAlpha(def.accent2, .72), withAlpha(def.accent, .45), 2);
+        circle(ctx, 56, y + 14, 8, null, withAlpha(def.accent, .45));
+        text(ctx, '☕', FRAME_W - 45, y + 13, 24, def.accent);
+        text(ctx, '♡', 45, y + 76, 24, def.accent);
+      }
+      text(ctx, 'latte mood', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
+    } else if (def.motif === 'campus') {
+      for (let y = 120; y < FRAME_H - 130; y += 150) {
+        roundRect(ctx, 22, y, 54, 36, 8, withAlpha(def.accent2, .85), withAlpha(def.ink, .18), 2);
+        text(ctx, 'A+', 49, y + 22, 17, def.ink, 900);
+        drawStar(ctx, FRAME_W - 42, y + 20, 16, def.accent, 5);
+      }
+      line(ctx, 0, 88, FRAME_W, 88, withAlpha(def.accent, .35), 3);
+      line(ctx, 0, FRAME_H - 98, FRAME_W, FRAME_H - 98, withAlpha(def.accent, .35), 3);
+      text(ctx, 'campus day', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
+    } else if (def.motif === 'stamp') {
+      for (let y = 122; y < FRAME_H - 130; y += 150) {
+        roundRect(ctx, 18, y, 64, 42, 8, withAlpha('#ffffff', .25), def.accent, 3);
+        text(ctx, 'LOVE', 50, y + 25, 14, def.accent, 900);
+        roundRect(ctx, FRAME_W - 82, y + 58, 64, 42, 8, withAlpha('#ffffff', .25), def.accent2, 3);
+        text(ctx, 'MEMO', FRAME_W - 50, y + 83, 14, def.ink, 900);
+      }
+      text(ctx, 'heart stamp', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
+    } else {
+      sideScallop(def.accent, def.accent2);
+      for (let y = 112; y < FRAME_H - 120; y += 130) {
+        text(ctx, ['♡','✦','✿','⋆'][Math.floor(y/130)%4], 42, y, 30, def.accent);
+        text(ctx, ['⋆','✿','♡','✦'][Math.floor(y/130)%4], FRAME_W - 42, y + 52, 30, def.accent2);
+      }
+      text(ctx, 'k-style', FRAME_W / 2 + 42, 56, 18, def.ink, 900);
+    }
+
+    drawConfetti(ctx, def, 52);
+  }
+
+  function drawElegantDecor(ctx, def) {
+    function pearlChain(y, color, r = 5, start = 78, end = FRAME_W - 76, step = 28) {
+      for (let x = start; x < end; x += step) circle(ctx, x, y, r, withAlpha('#ffffff', .92), withAlpha(color, .55), 1);
+    }
+    function flourish(x, y, color) {
+      line(ctx, x - 18, y, x + 18, y, withAlpha(color, .68), 1.8);
+      line(ctx, x, y - 18, x, y + 18, withAlpha(color, .68), 1.8);
+      drawStar(ctx, x, y, 9, color, 4);
+    }
+    function decoPanel(margin, stroke, inner = withAlpha(def.accent2, .45)) {
+      roundRect(ctx, margin, margin, FRAME_W - margin * 2, FRAME_H - margin * 2, 28, null, stroke, 3);
+      roundRect(ctx, margin + 16, margin + 16, FRAME_W - (margin + 16) * 2, FRAME_H - (margin + 16) * 2, 24, null, inner, 1.5);
+    }
+    const headerX = FRAME_W / 2 + 42;
+    const topY = 58;
+
+    if (def.id === 'elegant_black_gold') {
+      decoPanel(14, def.accent);
+      for (const [x, y] of [[56, 56], [FRAME_W - 56, 56], [56, FRAME_H - 56], [FRAME_W - 56, FRAME_H - 56]]) flourish(x, y, def.accent);
+      line(ctx, 122, 54, headerX - 56, 54, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, headerX + 56, 54, FRAME_W - 118, 54, withAlpha(def.accent2, .28), 1.5);
+      drawStar(ctx, headerX, 54, 10, def.accent2, 4);
+      text(ctx, 'LUXE NOIR', headerX, topY, 24, def.accent, 900);
+    } else if (def.id === 'elegant_white_gold') {
+      decoPanel(18, withAlpha(def.accent, .55));
+      pearlChain(60, def.accent2);
+      pearlChain(FRAME_H - 60, def.accent2);
+      for (let y = 118; y < FRAME_H - 130; y += 116) {
+        circle(ctx, 40, y, 3, withAlpha(def.accent, .72));
+        circle(ctx, FRAME_W - 40, y + 18, 3, withAlpha(def.accent, .72));
+        line(ctx, 48, y, 72, y, withAlpha(def.accent, .22), 1.5);
+        line(ctx, FRAME_W - 72, y + 18, FRAME_W - 48, y + 18, withAlpha(def.accent, .22), 1.5);
+      }
+      drawHeaderRibbon(ctx, 152, 34, FRAME_W - 304, 40, 'white gold', withAlpha('#ffffff', .74), withAlpha(def.accent2, .28), def.ink);
+    } else if (def.id === 'elegant_rose_gold') {
+      decoPanel(16, withAlpha(def.accent, .58));
+      pearlChain(58, def.accent2, 4);
+      for (const x of [74, FRAME_W - 74]) drawBow(ctx, x, 60, withAlpha(def.accent2, .72), def.ink, .6);
+      for (let y = 126; y < FRAME_H - 126; y += 170) {
+        text(ctx, '♡', 42, y, 18, withAlpha(def.accent2, .78));
+        text(ctx, '♡', FRAME_W - 42, y + 42, 18, withAlpha(def.accent, .66));
+      }
+      drawHeaderRibbon(ctx, 168, 34, FRAME_W - 336, 40, 'rose glow', withAlpha('#ffffff', .62), withAlpha(def.accent2, .26), def.ink);
+    } else if (def.id === 'elegant_silver_pearl') {
+      decoPanel(18, withAlpha(def.accent, .5));
+      for (let i = 0; i < 9; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .44); ctx.lineWidth = 1.4;
+        const y = 96 + i * 150; ctx.moveTo(34, y); ctx.bezierCurveTo(160, y - 60, 330, y + 55, FRAME_W - 38, y - 8); ctx.stroke();
+      }
+      for (const x of [84, FRAME_W - 84]) for (let y = 82; y < FRAME_H - 82; y += 34) circle(ctx, x, y, 4, withAlpha('#ffffff', .94), withAlpha(def.accent, .6), 1);
+      drawHeaderRibbon(ctx, 162, 34, FRAME_W - 324, 40, 'silver pearl', withAlpha('#ffffff', .78), withAlpha(def.accent2, .22), def.ink);
+    } else if (def.id === 'elegant_emerald_luxury') {
+      decoPanel(16, withAlpha(def.accent, .9));
+      for (let y = 80; y < FRAME_H - 80; y += 104) {
+        line(ctx, 28, y, 70, y, withAlpha(def.accent2, .55), 2);
+        line(ctx, FRAME_W - 70, y, FRAME_W - 28, y, withAlpha(def.accent2, .55), 2);
+      }
+      line(ctx, 120, 60, headerX - 48, 60, withAlpha(def.accent2, .5), 2);
+      line(ctx, headerX + 48, 60, FRAME_W - 116, 60, withAlpha(def.accent2, .5), 2);
+      drawStar(ctx, headerX, 60, 12, def.accent, 4);
+      for (let y = 140; y < FRAME_H - 160; y += 200) {
+        roundRect(ctx, 34, y, 26, 42, 8, null, withAlpha(def.accent2, .25), 1.4);
+        roundRect(ctx, FRAME_W - 60, y + 40, 26, 42, 8, null, withAlpha(def.accent2, .25), 1.4);
+      }
+      text(ctx, 'emerald luxe', headerX, topY, 21, def.accent2, 900);
+    } else if (def.id === 'elegant_royal_navy') {
+      decoPanel(16, withAlpha(def.accent, .72));
+      text(ctx, '♛', headerX, 56, 24, def.accent, 900);
+      drawHeaderRibbon(ctx, 170, 76, FRAME_W - 340, 34, 'royal edition', withAlpha('#ffffff', .08), withAlpha(def.accent2, .22), def.ink);
+      for (let i = 0; i < 32; i++) drawStar(ctx, 44 + (i * 41) % (FRAME_W - 88), 128 + (i * 69) % (FRAME_H - 220), 5 + (i % 2), i % 2 ? def.accent : def.accent2, 4);
+      for (let y = 160; y < FRAME_H - 150; y += 210) {
+        text(ctx, '✦', 42, y, 16, def.accent2, 900);
+        text(ctx, '✦', FRAME_W - 42, y + 36, 16, def.accent2, 900);
+      }
+    } else if (def.id === 'elegant_champagne_gold') {
+      decoPanel(18, withAlpha(def.accent, .52));
+      for (let i = 0; i < 56; i++) circle(ctx, 58 + (i * 19) % (FRAME_W - 116), 90 + (i * 53) % (FRAME_H - 180), 3 + (i % 3), withAlpha('#ffffff', .7), withAlpha(def.accent2, .44), 1);
+      drawHeaderRibbon(ctx, 170, 34, FRAME_W - 340, 40, 'champagne', withAlpha('#ffffff', .68), withAlpha(def.accent2, .34), def.ink);
+      line(ctx, 126, FRAME_H - 88, FRAME_W - 126, FRAME_H - 88, withAlpha(def.accent, .2), 1.5);
+    } else if (def.id === 'elegant_luxury_marble') {
+      decoPanel(16, withAlpha(def.accent, .46));
+      for (let i = 0; i < 18; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent2 : def.accent, .34); ctx.lineWidth = 1.5;
+        const y = 74 + i * 92; ctx.moveTo(18, y); ctx.bezierCurveTo(130, y - 50, 270, y + 50, FRAME_W - 20, y - 8); ctx.stroke();
+      }
+      flourish(62, 60, def.accent); flourish(FRAME_W - 62, FRAME_H - 60, def.accent2);
+      drawHeaderRibbon(ctx, 152, 34, FRAME_W - 304, 40, 'marble collection', withAlpha('#ffffff', .72), withAlpha(def.accent2, .24), def.ink);
+    } else if (def.id === 'elegant_midnight_black') {
+      decoPanel(14, withAlpha(def.accent2, .65));
+      for (let i = 0; i < 92; i++) drawStar(ctx, 34 + (i * 37) % (FRAME_W - 68), 42 + (i * 71) % (FRAME_H - 84), 4 + (i % 3), i % 2 ? def.accent : def.accent2, 4);
+      line(ctx, 124, 60, headerX - 46, 60, withAlpha(def.accent, .22), 1.5);
+      line(ctx, headerX + 46, 60, FRAME_W - 124, 60, withAlpha(def.accent, .22), 1.5);
+      text(ctx, '☾ midnight', headerX, topY, 20, def.accent2, 900);
+      text(ctx, '✦', 68, FRAME_H - 52, 18, def.accent, 900);
+      text(ctx, '✦', FRAME_W - 68, FRAME_H - 52, 18, def.accent, 900);
+    } else if (def.id === 'elegant_wedding_elegant') {
+      decoPanel(18, withAlpha(def.accent, .5));
+      drawHeaderRibbon(ctx, 176, 34, FRAME_W - 352, 40, 'with love', withAlpha('#ffffff', .84), withAlpha(def.accent2, .28), def.ink);
+      drawBow(ctx, 86, 56, withAlpha(def.accent2, .76), def.accent, .7);
+      drawBow(ctx, FRAME_W - 86, 56, withAlpha(def.accent2, .76), def.accent, .7);
+      for (let y = 100; y < FRAME_H - 120; y += 120) {
+        text(ctx, '♡', 42, y, 15, withAlpha(def.accent2, .68));
+        text(ctx, '♡', FRAME_W - 42, y + 30, 15, withAlpha(def.accent2, .68));
+      }
+      line(ctx, 130, FRAME_H - 88, FRAME_W - 130, FRAME_H - 88, withAlpha(def.accent, .18), 1.2);
+    }
+  }
+
+  function drawFloralDecor(ctx, def) {
+    function bloom(x, y, petal, center, scale = 1, petals = 6) {
+      for (let k = 0; k < petals; k++) circle(ctx, x + Math.cos(k * (Math.PI * 2 / petals)) * 12 * scale, y + Math.sin(k * (Math.PI * 2 / petals)) * 12 * scale, 7 * scale, withAlpha(petal, .78));
+      circle(ctx, x, y, 5 * scale, withAlpha(center, .92));
+    }
+    function stem(x, y1, y2, color) { line(ctx, x, y1, x, y2, withAlpha(color, .24), 2); }
+    function leaf(x, y, color, scale = 1) {
+      ctx.beginPath(); ctx.fillStyle = withAlpha(color, .42);
+      ctx.ellipse(x, y, 8 * scale, 14 * scale, Math.PI / 5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    if (def.motif === 'sakura') {
+      line(ctx, 26, 86, 180, 34, withAlpha(def.ink, .32), 4);
+      line(ctx, FRAME_W - 26, 116, FRAME_W - 170, 48, withAlpha(def.ink, .24), 3);
+      for (const [x, y, sc] of [[78, 62, .8], [122, 54, .9], [FRAME_W - 106, 80, .8], [FRAME_W - 72, 62, .7]]) bloom(x, y, def.accent, def.accent2, sc, 5);
+      for (let i = 0; i < 36; i++) text(ctx, i % 2 ? '❀' : '✿', 72 + (i * 31) % (FRAME_W - 144), 130 + (i * 73) % (FRAME_H - 220), 12, withAlpha(def.accent2, .45));
+    } else if (def.motif === 'rose') {
+      for (const [x, y] of [[70, 64], [FRAME_W - 70, 64], [70, FRAME_H - 70], [FRAME_W - 70, FRAME_H - 70]]) { bloom(x, y, def.accent, '#ffffff', 1.1, 8); leaf(x - 18, y + 10, def.ink, .9); leaf(x + 18, y - 10, def.ink, .9); }
+      line(ctx, 108, 58, FRAME_W - 108, 58, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, 108, FRAME_H - 58, FRAME_W - 108, FRAME_H - 58, withAlpha(def.accent2, .28), 1.5);
+    } else if (def.motif === 'sunflower') {
+      for (let y = 72; y < FRAME_H - 70; y += 210) { bloom(56, y, def.accent, def.accent2, 1, 10); bloom(FRAME_W - 56, y + 60, def.accent, def.accent2, 1, 10); }
+      line(ctx, 56, 110, 56, FRAME_H - 120, withAlpha(def.ink, .18), 2); line(ctx, FRAME_W - 56, 170, FRAME_W - 56, FRAME_H - 70, withAlpha(def.ink, .18), 2);
+    } else if (def.motif === 'lavender') {
+      for (let y = 110; y < FRAME_H - 120; y += 170) {
+        stem(44, y - 40, y + 42, def.ink); stem(FRAME_W - 44, y - 10, y + 78, def.ink);
+        for (let k = 0; k < 6; k++) { circle(ctx, 44 + (k % 2 ? -7 : 7), y - 28 + k * 12, 5, withAlpha(def.accent, .8)); circle(ctx, FRAME_W - 44 + (k % 2 ? -7 : 7), y + 4 + k * 12, 5, withAlpha(def.accent2, .82)); }
+      }
+    } else if (def.motif === 'daisy') {
+      for (let x = 74; x < FRAME_W - 70; x += 74) bloom(x, 56, '#ffffff', def.accent, .7, 8);
+      for (let x = 82; x < FRAME_W - 78; x += 82) bloom(x, FRAME_H - 56, '#ffffff', def.accent2, .68, 8);
+      for (let y = 118; y < FRAME_H - 130; y += 170) { bloom(42, y, '#ffffff', def.accent, .62, 8); bloom(FRAME_W - 42, y + 48, '#ffffff', def.accent2, .62, 8); }
+    } else if (def.motif === 'peony') {
+      for (const [x, y, sc] of [[72, 68, 1.25], [FRAME_W - 86, 90, 1], [88, FRAME_H - 86, 1], [FRAME_W - 78, FRAME_H - 74, 1.2]]) bloom(x, y, def.accent, def.accent2, sc, 8);
+      for (const [x, y] of [[98, 48], [FRAME_W - 104, 108], [112, FRAME_H - 98], [FRAME_W - 112, FRAME_H - 94]]) { leaf(x - 22, y + 16, def.ink, 1); leaf(x + 20, y - 14, def.ink, 1); }
+    } else if (def.motif === 'leaf') {
+      for (let y = 82; y < FRAME_H - 80; y += 74) { leaf(42, y, def.accent, 1.1); leaf(FRAME_W - 42, y + 36, def.accent2, 1.1); }
+      for (let x = 90; x < FRAME_W - 90; x += 60) { leaf(x, 52, def.accent, .8); leaf(x + 20, FRAME_H - 54, def.accent2, .8); }
+      line(ctx, 32, 120, 32, FRAME_H - 120, withAlpha(def.ink, .12), 1.5); line(ctx, FRAME_W - 32, 120, FRAME_W - 32, FRAME_H - 120, withAlpha(def.ink, .12), 1.5);
+    } else if (def.motif === 'wild') {
+      const palette = [def.accent, def.accent2, '#f9a8d4', '#fde68a'];
+      for (let i = 0; i < 26; i++) bloom(48 + (i * 29) % (FRAME_W - 96), 58 + (i * 97) % (FRAME_H - 116), palette[i % palette.length], palette[(i + 1) % palette.length], .45 + (i % 3) * .15, 6);
+    } else if (def.motif === 'hydrangea') {
+      for (const [x, y] of [[74, 72], [FRAME_W - 74, 72], [74, FRAME_H - 72], [FRAME_W - 74, FRAME_H - 72]]) {
+        for (let i = 0; i < 10; i++) bloom(x + ((i % 5) - 2) * 12, y + (Math.floor(i / 5) - 0.5) * 16, i % 2 ? def.accent : def.accent2, '#ffffff', .45, 4);
+      }
+    } else if (def.motif === 'spring') {
+      for (let x = 80; x < FRAME_W - 76; x += 54) { bloom(x, 54, def.accent, def.accent2, .55, 5); line(ctx, x, 66, x, 82, withAlpha(def.ink, .16), 1); }
+      for (let x = 96; x < FRAME_W - 90; x += 74) { bloom(x, FRAME_H - 54, '#bef264', def.accent, .5, 6); }
+      for (let i = 0; i < 24; i++) text(ctx, '✦', 58 + (i * 34) % (FRAME_W - 116), 94 + (i * 81) % (FRAME_H - 180), 10, withAlpha(def.accent2, .44));
+    }
+    text(ctx, 'bloom', FRAME_W - 52, FRAME_H - 48, 16, def.ink, 900, 'right');
+  }
+
+  function drawSeasonalDecor(ctx, def) {
+    function balloon(x, y, color) { circle(ctx, x, y, 14, withAlpha(color, .82)); line(ctx, x, y + 14, x - 6, y + 36, withAlpha(def.ink, .25), 1.5); }
+    function firework(x, y, color) { for (let i = 0; i < 8; i++) line(ctx, x, y, x + Math.cos(i * Math.PI / 4) * 18, y + Math.sin(i * Math.PI / 4) * 18, withAlpha(color, .75), 2); circle(ctx, x, y, 4, color); }
+    function miniStarScatter(count=42) { for (let i = 0; i < count; i++) drawStar(ctx, 46 + (i * 43) % (FRAME_W - 92), 86 + (i * 89) % (FRAME_H - 170), 5 + (i % 2), i % 2 ? def.accent : def.accent2, 4); }
+
+    if (def.motif === 'birthday') {
+      balloon(58, 64, def.accent); balloon(96, 54, def.accent2); balloon(FRAME_W - 84, 64, '#facc15');
+      for (let i = 0; i < 30; i++) text(ctx, i % 2 ? '✦' : '•', 48 + (i * 29) % (FRAME_W - 96), 102 + (i * 79) % (FRAME_H - 190), 12, withAlpha(i % 3 ? def.accent2 : def.accent, .6));
+      drawHeaderRibbon(ctx, 150, 32, FRAME_W - 300, 42, 'birthday party', withAlpha('#ffffff', .58), withAlpha(def.accent2, .32), def.ink);
+    } else if (def.motif === 'graduation') {
+      drawHeaderRibbon(ctx, 136, 32, FRAME_W - 272, 42, 'graduation day', withAlpha('#ffffff', .6), withAlpha(def.accent2, .26), def.ink);
+      text(ctx, '🎓', 64, 56, 24, def.accent, 900); text(ctx, '🎓', FRAME_W - 64, 56, 24, def.accent2, 900);
+      for (let y = 120; y < FRAME_H - 120; y += 180) { line(ctx, 38, y, 74, y, withAlpha(def.accent2, .32), 2); line(ctx, FRAME_W - 74, y + 30, FRAME_W - 38, y + 30, withAlpha(def.accent2, .32), 2); }
+    } else if (def.motif === 'christmas') {
+      drawHeaderRibbon(ctx, 160, 32, FRAME_W - 320, 42, 'christmas', withAlpha('#ffffff', .18), withAlpha(def.accent2, .28), def.ink);
+      for (let x = 74; x < FRAME_W - 70; x += 70) text(ctx, x % 140 ? '✦' : '●', x, 58, 16, x % 140 ? def.accent2 : def.accent, 900);
+      for (let y = 118; y < FRAME_H - 120; y += 160) { text(ctx, '🎄', 42, y, 18, def.accent2); text(ctx, '❄', FRAME_W - 42, y + 40, 16, def.accent2); }
+      miniStarScatter(36);
+    } else if (def.motif === 'valentine') {
+      drawHeaderRibbon(ctx, 152, 32, FRAME_W - 304, 42, 'valentine', withAlpha('#ffffff', .62), withAlpha(def.accent2, .32), def.ink);
+      for (let i = 0; i < 42; i++) text(ctx, i % 2 ? '♡' : '♥', 48 + (i * 31) % (FRAME_W - 96), 92 + (i * 85) % (FRAME_H - 190), 13, withAlpha(i % 2 ? def.accent2 : def.accent, .54));
+      drawBow(ctx, 78, 56, withAlpha(def.accent2, .72), def.accent, .65); drawBow(ctx, FRAME_W - 78, 56, withAlpha(def.accent2, .72), def.accent, .65);
+    } else if (def.motif === 'halloween') {
+      drawHeaderRibbon(ctx, 148, 32, FRAME_W - 296, 42, 'halloween', withAlpha('#111827', .2), withAlpha(def.accent, .34), def.ink);
+      for (let y = 110; y < FRAME_H - 120; y += 160) { text(ctx, y % 320 ? '☾' : '★', 44, y, 18, def.accent); text(ctx, y % 320 ? '◆' : '✦', FRAME_W - 44, y + 42, 18, def.accent2); }
+      line(ctx, 24, 28, 70, 74, withAlpha(def.accent2, .28), 1.5); line(ctx, FRAME_W - 24, 28, FRAME_W - 70, 74, withAlpha(def.accent2, .28), 1.5);
+      line(ctx, 24, 60, 70, 74, withAlpha(def.accent2, .28), 1.5); line(ctx, FRAME_W - 24, 60, FRAME_W - 70, 74, withAlpha(def.accent2, .28), 1.5);
+      miniStarScatter(24);
+    } else if (def.motif === 'eid') {
+      drawHeaderRibbon(ctx, 142, 32, FRAME_W - 284, 42, 'eid mubarak', withAlpha('#ffffff', .66), withAlpha(def.accent2, .26), def.ink);
+      text(ctx, '☪', 70, 58, 24, def.accent, 900); text(ctx, '☪', FRAME_W - 70, 58, 24, def.accent2, 900);
+      for (let y = 120; y < FRAME_H - 140; y += 180) { roundRect(ctx, 34, y, 18, 32, 5, withAlpha(def.accent2, .3), withAlpha(def.accent, .4), 1); roundRect(ctx, FRAME_W - 52, y + 46, 18, 32, 5, withAlpha(def.accent2, .3), withAlpha(def.accent, .4), 1); }
+      miniStarScatter(34);
+    } else if (def.motif === 'newyear') {
+      drawHeaderRibbon(ctx, 144, 32, FRAME_W - 288, 42, 'new year', withAlpha('#ffffff', .14), withAlpha(def.accent2, .28), def.ink);
+      for (const [x, y, c] of [[74, 58, def.accent], [FRAME_W / 2, 52, def.accent2], [FRAME_W - 74, 58, def.accent]]) firework(x, y, c);
+      for (let i = 0; i < 44; i++) text(ctx, i % 2 ? '✦' : '★', 48 + (i * 23) % (FRAME_W - 96), 96 + (i * 91) % (FRAME_H - 186), 12, withAlpha(i % 2 ? def.accent2 : def.accent, .62));
+    } else if (def.motif === 'summer') {
+      drawHeaderRibbon(ctx, 144, 32, FRAME_W - 288, 42, 'summer trip', withAlpha('#ffffff', .5), withAlpha(def.accent2, .28), def.ink);
+      text(ctx, '☀', 76, 58, 22, def.accent2, 900); text(ctx, '☼', FRAME_W - 76, 58, 20, def.accent, 900);
+      for (let y = FRAME_H - 124; y < FRAME_H - 40; y += 16) ctx.beginPath(), ctx.strokeStyle = withAlpha(def.accent, .25), ctx.lineWidth = 2, ctx.moveTo(44, y), ctx.quadraticCurveTo(FRAME_W / 2, y - 12, FRAME_W - 44, y), ctx.stroke();
+      for (let i = 0; i < 18; i++) text(ctx, i % 2 ? '✦' : '•', 46 + (i * 33) % (FRAME_W - 92), 116 + (i * 88) % (FRAME_H - 220), 10, withAlpha(def.accent2, .52));
+    } else if (def.motif === 'autumn') {
+      drawHeaderRibbon(ctx, 142, 32, FRAME_W - 284, 42, 'autumn leaves', withAlpha('#ffffff', .52), withAlpha(def.accent2, .28), def.ink);
+      for (let i = 0; i < 28; i++) text(ctx, i % 2 ? '✦' : '◆', 54 + (i * 37) % (FRAME_W - 108), 90 + (i * 95) % (FRAME_H - 190), 12, withAlpha(i % 2 ? def.accent : def.accent2, .54));
+      for (let y = 120; y < FRAME_H - 120; y += 180) text(ctx, '🍂', 42, y, 16, def.accent); 
+    } else if (def.motif === 'winter') {
+      drawHeaderRibbon(ctx, 146, 32, FRAME_W - 292, 42, 'winter snow', withAlpha('#ffffff', .62), withAlpha(def.accent2, .28), def.ink);
+      for (let i = 0; i < 42; i++) text(ctx, i % 2 ? '❄' : '✦', 48 + (i * 31) % (FRAME_W - 96), 90 + (i * 81) % (FRAME_H - 190), 12, withAlpha(i % 2 ? def.accent : def.accent2, .58));
+      line(ctx, 34, 64, 82, 112, withAlpha(def.accent2, .18), 1.5); line(ctx, FRAME_W - 34, 64, FRAME_W - 82, 112, withAlpha(def.accent2, .18), 1.5);
+    }
+  }
+
+  function drawGamingDecor(ctx, def) {
+    function sidePixels(c1, c2, size = 20, inset = 18, step = 72) {
+      for (let y = 40; y < FRAME_H - 100; y += step) {
+        ctx.fillStyle = (Math.floor(y / step) % 2) ? c1 : c2;
+        ctx.globalAlpha = .95;
+        ctx.fillRect(inset, y, size, size);
+        ctx.fillRect(FRAME_W - inset - size, y + 20, size, size);
+        ctx.globalAlpha = 1;
+      }
+    }
+    function neonPanel(x, y, w, txt, fill, stroke) {
+      roundRect(ctx, x, y, w, 34, 8, withAlpha(fill, .22), withAlpha(stroke, .65), 2);
+      text(ctx, txt, x + w / 2, y + 21, 12, stroke, 900);
+    }
+    function cornerBracket(x, y, w, h, color) {
+      line(ctx, x, y, x + w, y, color, 2);
+      line(ctx, x, y, x, y + h, color, 2);
+    }
+    function chipRow(y, fillA, fillB) {
+      for (let x = 78; x < FRAME_W - 78; x += 24) {
+        ctx.fillStyle = (Math.floor(x / 24) % 2) ? withAlpha(fillA, .82) : withAlpha(fillB, .82);
+        ctx.fillRect(x, y, 12, 12);
+      }
+    }
+
+    if (def.motif === 'pixel') {
+      sidePixels(def.accent, def.accent2, 18, 18, 64);
+      neonPanel(44, 28, 144, 'HP 80/80', def.accent, def.accent);
+      neonPanel(FRAME_W - 184, 28, 140, 'QUEST ON', def.accent2, def.accent2);
+      chipRow(86, def.accent, def.accent2);
+      for (let y = 112; y < FRAME_H - 110; y += 96) {
+        for (let x = 68; x < FRAME_W - 68; x += 28) {
+          if ((x + y) % 56 === 0) { ctx.fillStyle = withAlpha(def.accent2, .22); ctx.fillRect(x, y, 6, 6); }
+        }
+      }
+      text(ctx, 'PRESS START', FRAME_W - 44, FRAME_H - 48, 16, def.accent, 900, 'right');
+    } else if (def.motif === 'arcade') {
+      for (let y = 0; y < FRAME_H; y += 42) line(ctx, 0, y, FRAME_W, y, withAlpha(def.accent2, .08), 1);
+      for (let x = 0; x < FRAME_W; x += 42) line(ctx, x, 0, x, FRAME_H, withAlpha(def.accent, .04), 1);
+      roundRect(ctx, 22, 18, FRAME_W - 44, 62, 18, withAlpha('#111827', .28), withAlpha(def.accent, .48), 2.5);
+      chipRow(42, def.accent, def.accent2);
+      text(ctx, 'ARCADE MODE', FRAME_W / 2, 61, 22, def.ink, 900);
+      text(ctx, '1UP 9999', 54, FRAME_H - 50, 14, def.accent2, 900, 'left');
+      text(ctx, 'INSERT COIN', FRAME_W - 54, FRAME_H - 50, 14, def.accent, 900, 'right');
+    } else if (def.motif === 'rpg') {
+      roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 24, null, withAlpha(def.accent2, .56), 2.5);
+      neonPanel(44, 28, 146, 'CLASS MAGE', def.accent, def.accent);
+      neonPanel(FRAME_W - 190, 28, 146, 'RANK S', def.accent2, def.accent2);
+      for (let y = 120; y < FRAME_H - 120; y += 174) {
+        text(ctx, '✦', 42, y, 16, def.accent2);
+        text(ctx, '✦', FRAME_W - 42, y + 40, 16, def.accent);
+        roundRect(ctx, 40, y + 16, 54, 18, 6, withAlpha(def.accent, .18), withAlpha(def.accent2, .26), 1);
+        text(ctx, 'MP', 67, y + 29, 10, def.ink, 900);
+        roundRect(ctx, FRAME_W - 94, y + 56, 54, 18, 6, withAlpha(def.accent2, .18), withAlpha(def.accent, .26), 1);
+        text(ctx, 'HP', FRAME_W - 67, y + 69, 10, def.ink, 900);
+      }
+      text(ctx, 'party ready', FRAME_W / 2, FRAME_H - 48, 15, def.accent2, 900);
+    } else if (def.motif === 'cyber') {
+      for (let x = 36; x < FRAME_W - 36; x += 56) line(ctx, x, 18, x, FRAME_H - 18, withAlpha(def.accent, .1), 1);
+      for (let y = 92; y < FRAME_H - 92; y += 52) line(ctx, 18, y, FRAME_W - 18, y, withAlpha(def.accent2, .08), 1);
+      cornerBracket(24, 24, 30, 30, withAlpha(def.accent, .72));
+      cornerBracket(FRAME_W - 54, 24, -30, 30, withAlpha(def.accent2, .72));
+      cornerBracket(24, FRAME_H - 24, 30, -30, withAlpha(def.accent2, .72));
+      cornerBracket(FRAME_W - 24, FRAME_H - 24, -30, -30, withAlpha(def.accent, .72));
+      neonPanel(40, 28, 156, 'SCAN READY', def.accent, def.accent);
+      neonPanel(FRAME_W - 196, 28, 156, 'MODE NEO', def.accent2, def.accent2);
+      for (let i = 0; i < 26; i++) drawStar(ctx, 42 + (i * 47) % (FRAME_W - 84), 102 + (i * 113) % (FRAME_H - 204), 6, i % 2 ? def.accent2 : def.accent, 4);
+    } else if (def.motif === 'fantasy') {
+      roundRect(ctx, 16, 16, FRAME_W - 32, FRAME_H - 32, 28, null, withAlpha(def.accent2, .58), 3);
+      drawHeaderRibbon(ctx, 138, 30, FRAME_W - 276, 42, 'FANTASY WORLD', withAlpha('#ffffff', .18), withAlpha(def.accent2, .34), def.ink);
+      for (let y = 96; y < FRAME_H - 92; y += 120) {
+        line(ctx, 32, y, 66, y - 18, withAlpha(def.accent2, .38), 2);
+        line(ctx, FRAME_W - 32, y, FRAME_W - 66, y - 18, withAlpha(def.accent2, .38), 2);
+        text(ctx, '✦', 52, y - 24, 13, def.accent2);
+        text(ctx, '✦', FRAME_W - 52, y - 10, 13, def.accent2);
+      }
+      circle(ctx, FRAME_W / 2, FRAME_H - 56, 20, withAlpha(def.accent2, .15), withAlpha(def.accent2, .3), 1.5);
+      text(ctx, 'portal', FRAME_W / 2, FRAME_H - 52, 16, def.accent2, 900);
+    } else if (def.motif === 'magic') {
+      roundRect(ctx, 18, 18, FRAME_W - 36, FRAME_H - 36, 28, null, withAlpha(def.accent, .58), 3);
+      circle(ctx, FRAME_W / 2, 54, 20, withAlpha(def.accent2, .18), withAlpha(def.accent2, .62), 2);
+      drawStar(ctx, FRAME_W / 2, 54, 11, def.accent2, 5);
+      for (let y = 110; y < FRAME_H - 120; y += 160) {
+        text(ctx, '✧', 42, y, 16, def.accent);
+        text(ctx, '✧', FRAME_W - 42, y + 40, 16, def.accent2);
+      }
+      roundRect(ctx, 158, 28, FRAME_W - 316, 34, 10, withAlpha(def.accent2, .24), withAlpha(def.accent2, .44), 1.5);
+      text(ctx, 'SPELLBOOK', FRAME_W / 2, 49, 14, def.accent2, 900);
+      text(ctx, 'mana +10', FRAME_W / 2, FRAME_H - 48, 14, def.accent, 900);
+    } else if (def.motif === 'space') {
+      for (let i = 0; i < 92; i++) circle(ctx, 26 + (i * 39) % (FRAME_W - 52), 26 + (i * 67) % (FRAME_H - 52), 1.5, withAlpha('#ffffff', .46));
+      circle(ctx, FRAME_W / 2, 54, 22, withAlpha(def.accent2, .12), withAlpha(def.accent2, .3), 1.5);
+      line(ctx, 92, 54, FRAME_W / 2 - 32, 54, withAlpha(def.accent, .22), 1.5);
+      line(ctx, FRAME_W / 2 + 32, 54, FRAME_W - 92, 54, withAlpha(def.accent, .22), 1.5);
+      text(ctx, 'space map', FRAME_W / 2, 57, 19, def.accent2, 900);
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent : def.accent2, .18); ctx.lineWidth = 1.1;
+        ctx.arc(FRAME_W / 2, FRAME_H / 2, 110 + i * 70, .2, 1.1); ctx.stroke();
+      }
+      sidePixels(def.accent, def.accent2, 14, 22, 86);
+    } else if (def.motif === 'monster') {
+      sidePixels(def.accent, def.accent2, 16, 18, 80);
+      for (const x of [64, FRAME_W - 64]) {
+        for (let y = 120; y < FRAME_H - 120; y += 220) {
+          line(ctx, x - 18, y - 18, x + 12, y + 22, withAlpha(def.accent2, .62), 3);
+          line(ctx, x - 8, y - 22, x + 22, y + 18, withAlpha(def.accent, .48), 2);
+          line(ctx, x - 24, y - 10, x + 6, y + 30, withAlpha(def.accent2, .42), 2);
+        }
+      }
+      neonPanel(142, 28, FRAME_W - 284, 'MONSTER MODE', def.accent, def.accent);
+      text(ctx, 'danger zone', FRAME_W / 2, FRAME_H - 48, 14, def.accent2, 900);
+    } else if (def.motif === 'dungeon') {
+      for (let y = 26; y < FRAME_H - 26; y += 44) {
+        ctx.fillStyle = withAlpha(def.accent, .14); ctx.fillRect(20, y, 28, 24); ctx.fillRect(FRAME_W - 48, y + 10, 28, 24);
+      }
+      drawHeaderRibbon(ctx, 140, 30, FRAME_W - 280, 42, 'DUNGEON RUN', withAlpha('#ffffff', .08), withAlpha(def.accent2, .32), def.ink);
+      text(ctx, 'TORCH', 72, 56, 14, def.accent2, 900); text(ctx, 'KEY', FRAME_W - 72, 56, 14, def.accent, 900);
+      for (let y = 100; y < FRAME_H - 90; y += 130) line(ctx, 48, y, 48, y + 18, withAlpha(def.accent2, .42), 4), line(ctx, FRAME_W - 48, y + 10, FRAME_W - 48, y + 28, withAlpha(def.accent, .42), 4);
+    } else if (def.motif === 'console') {
+      roundRect(ctx, 14, 14, FRAME_W - 28, FRAME_H - 28, 38, null, withAlpha(def.accent, .48), 3);
+      roundRect(ctx, 48, 26, FRAME_W - 96, 52, 18, withAlpha('#ffffff', .6), withAlpha(def.accent2, .26), 1.5);
+      text(ctx, 'RETRO CONSOLE', FRAME_W / 2, 57, 18, def.ink, 900);
+      circle(ctx, 76, FRAME_H - 58, 16, withAlpha(def.accent, .72));
+      circle(ctx, 118, FRAME_H - 58, 16, withAlpha(def.accent2, .72));
+      line(ctx, FRAME_W - 124, FRAME_H - 58, FRAME_W - 72, FRAME_H - 58, withAlpha(def.ink, .35), 6);
+      line(ctx, FRAME_W - 98, FRAME_H - 84, FRAME_W - 98, FRAME_H - 32, withAlpha(def.ink, .35), 6);
+      text(ctx, 'A', 76, FRAME_H - 60, 12, def.ink, 900);
+      text(ctx, 'B', 118, FRAME_H - 60, 12, def.ink, 900);
+    }
+  }
+
+  function drawSocialDecor(ctx, def) {
+    function tinyMetric(x, y, w, label, fill, color, align = 'center') {
+      roundRect(ctx, x, y, w, 22, 11, fill, null, 0);
+      const tx = align === 'left' ? x + 10 : align === 'right' ? x + w - 10 : x + w / 2;
+      text(ctx, label, tx, y + 12, 13, color, 800, align);
+    }
+    function actionBubble(x, y, icon, count, fill, color) {
+      circle(ctx, x, y, 17, fill, null, 0);
+      text(ctx, icon, x, y, 14, color, 900);
+      text(ctx, count, x, y + 24, 9, color, 800);
+    }
+    if (def.motif === 'igfeed') {
+      roundRect(ctx, 24, 20, FRAME_W - 48, 68, 26, withAlpha('#ffffff', .96), withAlpha(def.accent2, .24), 1.5);
+      circle(ctx, 62, 54, 18, withAlpha(def.accent, .14), withAlpha(def.accent, .5), 1.2);
+      text(ctx, '◎', 62, 54, 17, def.accent, 900);
+      text(ctx, 'sabrina.frame', 96, 50, 21, def.ink, 900, 'left');
+      text(ctx, 'pop muse', 96, 68, 13.5, withAlpha(def.ink, .58), 700, 'left');
+      text(ctx, '⋯', FRAME_W - 40, 54, 18, def.ink, 900);
+      text(ctx, 'liked by @luna.velvet and 8.1k others', 40, FRAME_H - 104, 15, withAlpha(def.ink, .7), 700, 'left');
+      tinyMetric(34, FRAME_H - 82, 92, '12.8k likes', withAlpha(def.accent, .12), def.ink);
+      tinyMetric(134, FRAME_H - 82, 92, '326 replies', withAlpha(def.accent2, .22), def.ink);
+      tinyMetric(234, FRAME_H - 82, 82, '59 saves', withAlpha(def.accent, .1), def.ink);
+    } else if (def.motif === 'igstory') {
+      roundRect(ctx, 24, 20, FRAME_W - 48, 76, 30, withAlpha('#000000', .48), withAlpha('#ffffff', .16), 1.2);
+      const colors = ['#f9ce34','#ee2a7b','#6228d7','#f9ce34'];
+      for (let i = 0; i < 4; i++) roundRect(ctx, 40 + i * 130, 30, 112, 5, 3, withAlpha(colors[i], .92));
+      circle(ctx, 62, 62, 18, withAlpha('#ffffff', .08), withAlpha('#ffffff', .72), 1.2);
+      text(ctx, '○', 62, 62, 18, '#ffffff', 900);
+      text(ctx, '@aria.afterglow', 94, 60, 20, '#ffffff', 900, 'left');
+      text(ctx, '2m ago', 94, 76, 13.5, withAlpha('#ffffff', .68), 700, 'left');
+      text(ctx, '✕', FRAME_W - 40, 62, 15, '#ffffff', 900);
+      text(ctx, '1.4k hearts • 88 replies • 21 shares', FRAME_W - 44, FRAME_H - 48, 15, '#ffffff', 900, 'right');
+    } else if (def.motif === 'tiktok') {
+      text(ctx, 'Following', 178, 54, 18, withAlpha('#ffffff', .72), 700);
+      text(ctx, 'For You', 292, 55, 22, '#ffffff', 900);
+      line(ctx, 258, 66, 326, 66, withAlpha('#ffffff', .88), 2);
+      circle(ctx, 62, FRAME_H - 78, 18, withAlpha('#ffffff', .18), withAlpha('#ffffff', .55), 1);
+      text(ctx, '♪', 62, FRAME_H - 78, 16, '#ffffff', 900);
+      text(ctx, '@nova.loop', 94, FRAME_H - 94, 18, '#ffffff', 900, 'left');
+      text(ctx, 'pretty privilege detected ✨', 94, FRAME_H - 72, 14.5, withAlpha('#ffffff', .82), 700, 'left');
+      actionBubble(FRAME_W - 42, 640, '♥', '24.6k', withAlpha(def.accent, .22), '#ffffff');
+      actionBubble(FRAME_W - 42, 748, '💬', '1,203', withAlpha(def.accent2, .24), '#ffffff');
+      actionBubble(FRAME_W - 42, 856, '↗', '314', withAlpha('#ffffff', .12), '#ffffff');
+      actionBubble(FRAME_W - 42, 964, '🔖', '911', withAlpha('#ffffff', .12), '#ffffff');
+    } else if (def.motif === 'youtube') {
+      roundRect(ctx, 22, 20, FRAME_W - 44, 64, 22, withAlpha('#ffffff', .96), withAlpha(def.accent2, .18), 1.2);
+      roundRect(ctx, 42, 37, 54, 30, 15, def.accent);
+      text(ctx, '▶', 69, 52, 16, '#ffffff', 900);
+      text(ctx, 'MIRA VLOG', 136, 54, 23, def.ink, 900, 'left');
+      roundRect(ctx, FRAME_W - 144, 35, 96, 32, 16, def.accent);
+      text(ctx, 'SUBSCRIBE', FRAME_W - 96, 51, 11, '#ffffff', 900);
+      text(ctx, '1.2M views • 2 days ago', 42, FRAME_H - 102, 14.5, withAlpha(def.ink, .72), 700, 'left');
+      tinyMetric(34, FRAME_H - 84, 84, '18k likes', withAlpha(def.accent, .1), def.ink);
+      tinyMetric(126, FRAME_H - 84, 84, '524 chats', withAlpha(def.accent2, .18), def.ink);
+      tinyMetric(218, FRAME_H - 84, 84, 'shared 59', withAlpha(def.accent, .08), def.ink);
+    } else if (def.motif === 'iphone') {
+      text(ctx, '9:41', 58, 50, 18, def.ink, 900, 'left');
+      text(ctx, 'Photos', FRAME_W / 2, 54, 28, def.ink, 900);
+      text(ctx, 'Select', FRAME_W - 48, 50, 15, def.accent, 900, 'right');
+      line(ctx, 26, 82, FRAME_W - 26, 82, withAlpha(def.accent2, .42), 1);
+      text(ctx, 'June 2026', 48, 110, 16.5, withAlpha(def.ink, .66), 700, 'left');
+      line(ctx, 34, FRAME_H - 94, FRAME_W - 34, FRAME_H - 94, withAlpha(def.accent2, .38), 1);
+      tinyMetric(48, FRAME_H - 72, 92, 'favorite', withAlpha(def.accent, .08), def.accent);
+      tinyMetric(154, FRAME_H - 72, 92, 'share', withAlpha(def.accent, .08), def.accent);
+      tinyMetric(260, FRAME_H - 72, 92, 'delete', withAlpha(def.accent, .08), def.accent);
+      tinyMetric(366, FRAME_H - 72, 92, 'more', withAlpha(def.accent, .08), def.accent);
+    } else if (def.motif === 'cameraRoll') {
+      roundRect(ctx, 24, 20, FRAME_W - 48, 66, 22, withAlpha('#ffffff', .06), withAlpha('#ffffff', .18), 1.2);
+      text(ctx, '9:41', 54, 50, 18, '#ffffff', 900, 'left');
+      text(ctx, 'Recents', FRAME_W / 2, 54, 28, '#ffffff', 900);
+      text(ctx, 'Select', FRAME_W - 46, 50, 15, withAlpha('#ffffff', .84), 900, 'right');
+      text(ctx, '247 items', 46, 106, 12, withAlpha('#ffffff', .66), 700, 'left');
+      roundRect(ctx, 54, FRAME_H - 92, FRAME_W - 108, 40, 20, withAlpha('#ffffff', .08), withAlpha('#ffffff', .16), 1);
+      text(ctx, 'fav   share   keep   more', FRAME_W / 2, FRAME_H - 67, 16, '#ffffff', 900);
+    } else if (def.motif === 'music') {
+      roundRect(ctx, 146, 28, FRAME_W - 292, 42, 20, withAlpha(def.accent, .16), withAlpha(def.accent, .36), 1.4);
+      text(ctx, 'Now Playing', FRAME_W / 2, 56, 24, def.ink, 900);
+      roundRect(ctx, 72, FRAME_H - 110, FRAME_W - 144, 28, 14, withAlpha(def.ink, .14));
+      roundRect(ctx, 72, FRAME_H - 110, 240, 28, 14, def.accent);
+      text(ctx, '▶ 00:42 / 02:31', 54, FRAME_H - 130, 14, def.ink, 900, 'left');
+      text(ctx, '12.2k listeners', FRAME_W - 56, FRAME_H - 130, 13, def.accent2, 900, 'right');
+      text(ctx, 'prev   play   next', FRAME_W / 2, FRAME_H - 50, 18, def.ink, 900);
+    } else if (def.motif === 'chat') {
+      roundRect(ctx, 34, 26, 160, 34, 17, withAlpha(def.accent, .24));
+      text(ctx, 'mila popstar', 116, 50, 17, def.ink, 900);
+      roundRect(ctx, 42, 112, 164, 38, 18, withAlpha(def.accent, .24));
+      text(ctx, 'posting this bc i look expensive', 124, 136, 11, def.ink, 700);
+      roundRect(ctx, FRAME_W - 244, FRAME_H - 166, 202, 38, 18, withAlpha(def.accent2, .88));
+      text(ctx, 'send me the pics pls 😭', FRAME_W - 143, FRAME_H - 142, 11, def.ink, 700);
+      text(ctx, 'online', FRAME_W - 52, FRAME_H - 50, 13, withAlpha(def.ink, .62), 900, 'right');
+    } else if (def.motif === 'profile') {
+      roundRect(ctx, 24, 20, FRAME_W - 48, 88, 26, withAlpha('#ffffff', .92), withAlpha(def.accent2, .24), 1.2);
+      circle(ctx, 72, 64, 24, withAlpha(def.accent, .14), withAlpha(def.accent, .52), 1.2);
+      text(ctx, '☺', 72, 65, 18, def.accent, 900);
+      text(ctx, '@selena.snap', 120, 58, 21, def.ink, 900, 'left');
+      text(ctx, 'daily glam archive', 120, 76, 13.5, withAlpha(def.ink, .62), 700, 'left');
+      tinyMetric(280, 42, 84, '321 posts', withAlpha(def.accent, .1), def.ink);
+      tinyMetric(280, 68, 112, '14.2k followers', withAlpha(def.accent2, .18), def.ink);
+      text(ctx, 'highlights • fitcheck • dumps', 46, FRAME_H - 54, 14, withAlpha(def.ink, .76), 700, 'left');
+    } else {
+      roundRect(ctx, 24, 20, FRAME_W - 48, 64, 22, withAlpha('#ffffff', .9), withAlpha(def.accent2, .2), 1.2);
+      text(ctx, 'viral post', FRAME_W / 2, 54, 26, def.ink, 900);
+      text(ctx, 'saved by 8.2k people', 44, FRAME_H - 108, 15, withAlpha(def.ink, .72), 700, 'left');
+      tinyMetric(42, FRAME_H - 86, 86, '48.9k likes', withAlpha(def.accent, .14), def.ink);
+      tinyMetric(136, FRAME_H - 86, 86, '2,141 talks', withAlpha(def.accent2, .18), def.ink);
+      tinyMetric(230, FRAME_H - 86, 72, '631 saves', withAlpha(def.accent, .1), def.ink);
+    }
+  }
+
+
+
+  function drawHeaderRibbon(ctx, x, y, w, h, label, fill, stroke, color) {
+    roundRect(ctx, x, y, w, h, h / 2, fill, stroke, 2);
+    text(ctx, label, x + w / 2, y + h / 2 + 1, Math.max(14, Math.min(22, h * 0.52)), color, 900);
+  }
+
+  function drawNameZone(ctx, def, slots) {
+    const last = slots[slots.length - 1];
+    const zoneTop = last.y + last.h + 34;
+    const zoneBottom = FRAME_H - 36;
+    const zoneH = zoneBottom - zoneTop;
+    const blankTop = zoneTop + 38;
+    const blankBottom = zoneBottom - 48;
+    roundRect(ctx, 54, zoneTop, FRAME_W - 108, zoneH - 14, 26, withAlpha('#ffffff', .15), withAlpha(def.accent, .18), 1.5);
+    line(ctx, 86, blankTop - 14, FRAME_W - 86, blankTop - 14, withAlpha(def.accent, .22), 2);
+    line(ctx, 114, blankBottom, FRAME_W - 114, blankBottom, withAlpha(def.accent2, .3), 2);
+    circle(ctx, 88, blankTop - 14, 4, def.accent);
+    circle(ctx, FRAME_W - 88, blankTop - 14, 4, def.accent2);
+
+    if (def.category === 'Elegant') {
+      const drawDivider = (label, fill, stroke, color) => {
+        roundRect(ctx, FRAME_W / 2 - 92, zoneTop + 8, 184, 26, 13, fill, stroke, 1.4);
+        text(ctx, label, FRAME_W / 2, zoneTop + 21, 11, color, 900);
+      };
+      const flourishDivider = () => {
+        drawStar(ctx, FRAME_W / 2, zoneTop + 22, 10, def.accent, 4);
+        line(ctx, 132, zoneTop + 22, FRAME_W / 2 - 24, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+        line(ctx, FRAME_W / 2 + 24, zoneTop + 22, FRAME_W - 132, zoneTop + 22, withAlpha(def.accent, .28), 1.5);
+      };
+      if (def.id === 'elegant_black_gold') {
+        flourishDivider();
+      } else if (def.id === 'elegant_white_gold') {
+        for (let x = 150; x < FRAME_W - 146; x += 26) circle(ctx, x, zoneTop + 22, 4, withAlpha('#ffffff', .92), withAlpha(def.accent, .55), 1);
+        circle(ctx, FRAME_W / 2, zoneTop + 22, 5, def.accent);
+      } else if (def.id === 'elegant_rose_gold') {
+        drawBow(ctx, FRAME_W / 2 - 78, zoneTop + 22, withAlpha(def.accent2, .8), def.accent, .5);
+        drawBow(ctx, FRAME_W / 2 + 78, zoneTop + 22, withAlpha(def.accent2, .8), def.accent, .5);
+        text(ctx, '♡', FRAME_W / 2, zoneTop + 23, 12, withAlpha(def.accent, .88), 900);
+      } else if (def.id === 'elegant_silver_pearl') {
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath(); ctx.strokeStyle = withAlpha(def.accent2, .44); ctx.lineWidth = 1.1;
+          const yy = zoneTop + 18 + i * 8; ctx.moveTo(132, yy); ctx.bezierCurveTo(210, yy - 8, 300, yy + 8, FRAME_W - 132, yy); ctx.stroke();
+        }
+        circle(ctx, FRAME_W / 2, zoneTop + 22, 4, withAlpha('#ffffff', .94), withAlpha(def.accent, .62), 1);
+      } else if (def.id === 'elegant_emerald_luxury') {
+        line(ctx, 140, zoneTop + 22, FRAME_W / 2 - 30, zoneTop + 22, withAlpha(def.accent2, .42), 2);
+        line(ctx, FRAME_W / 2 + 30, zoneTop + 22, FRAME_W - 140, zoneTop + 22, withAlpha(def.accent2, .42), 2);
+        drawStar(ctx, FRAME_W / 2, zoneTop + 22, 10, def.accent, 4);
+      } else if (def.id === 'elegant_royal_navy') {
+        drawDivider('ROYAL EDIT', withAlpha('#ffffff', .08), withAlpha(def.accent2, .34), def.ink);
+        text(ctx, '♛', FRAME_W / 2, zoneTop + 53, 18, def.accent, 900);
+      } else if (def.id === 'elegant_champagne_gold') {
+        for (let x = 160; x < FRAME_W - 156; x += 24) circle(ctx, x, zoneTop + 20 + ((x/24)%2?2:-2), 3 + (Math.floor(x/24)%2), withAlpha('#ffffff', .72), withAlpha(def.accent2, .44), 1);
+      } else if (def.id === 'elegant_luxury_marble') {
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath(); ctx.strokeStyle = withAlpha(i % 2 ? def.accent2 : def.accent, .22); ctx.lineWidth = 1.4;
+          const yy = zoneTop + 18 + i * 8; ctx.moveTo(130, yy); ctx.bezierCurveTo(220, yy - 12, 270, yy + 12, FRAME_W - 130, yy - 2); ctx.stroke();
+        }
+      } else if (def.id === 'elegant_midnight_black') {
+        text(ctx, '✦', FRAME_W / 2 - 42, zoneTop + 22, 12, def.accent, 900);
+        text(ctx, '☾', FRAME_W / 2, zoneTop + 22, 11, def.accent2, 900);
+        text(ctx, '✦', FRAME_W / 2 + 42, zoneTop + 22, 12, def.accent, 900);
+      } else if (def.id === 'elegant_wedding_elegant') {
+        drawDivider('with love', withAlpha('#ffffff', .74), withAlpha(def.accent2, .22), def.ink);
+        text(ctx, '♡', FRAME_W / 2, zoneTop + 52, 14, withAlpha(def.accent2, .9), 900);
+      } else {
+        flourishDivider();
+      }
+    } else if (def.category === 'Gaming') {
+      roundRect(ctx, FRAME_W / 2 - 76, zoneTop + 8, 152, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
+      text(ctx, 'PLAYER TAG', FRAME_W / 2, zoneTop + 20, 11, def.ink, 900);
+    } else if (def.category === 'Social Media') {
+      const socialQuotes = {
+        igfeed: 'caught being iconic online',
+        igstory: '24h of pure main character energy',
+        tiktok: 'the algorithm has a favorite',
+        youtube: 'vlog now, overthink later',
+        iphone: 'camera roll full of bangers',
+        cameraRoll: 'too cute to stay in recents only',
+        music: 'now playing: main pop girl energy',
+        chat: 'group chat says post it now',
+        profile: 'too photogenic for one account',
+        viral: 'oops this post went viral'
+      };
+      text(ctx, socialQuotes[def.motif] || 'main character post incoming', FRAME_W / 2, zoneTop + 20, 14, withAlpha(def.ink, .82), 800);
+    } else if (def.category === 'Pattern') {
+      for (let x = 128; x < FRAME_W - 116; x += 36) circle(ctx, x, zoneTop + 20, 3, withAlpha(def.accent, .65));
+    } else {
+      text(ctx, '✦', FRAME_W / 2, zoneTop + 20, 14, withAlpha(def.accent2, .92), 900);
+    }
+  }
+
+  function drawReservedZones(ctx, slots, def) {
+    const first = slots[0];
+    const topBottom = first.y - 28;
+    const headerMid = Math.max(58, Math.min(92, topBottom * 0.5));
+
+    if (def.category === 'Korean') {
+      // Korean header/decor is handled by drawKoreanDecor().
+      // Keep this branch empty to avoid duplicate/stacked labels in the thumbnail/output.
+    } else if (def.category === 'Film') {
+      // Film header/decor is handled by drawFilmDecor().
+      // Keep this branch empty to avoid duplicate labels in the thumbnail/output.
+    } else if (def.category === 'Elegant') {
+      // Elegant header/decor is handled by drawElegantDecor().
+      // Keep this branch empty to avoid duplicate/stacked labels in the thumbnail/output.
+    } else if (def.category === 'Floral') {
+      // Floral header/decor is handled by drawFloralDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
+    } else if (def.category === 'Seasonal') {
+      // Seasonal header/decor is handled by drawSeasonalDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
+    } else if (def.category === 'Gaming') {
+      // Gaming header/decor is handled by drawGamingDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
+    } else if (def.category === 'Pattern') {
+      if (def.motif === 'polkadot') {
+        for (let x = 72; x < FRAME_W - 60; x += 38) circle(ctx, x, 56, 6, x % 76 ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .72));
+      } else if (def.motif === 'stripe' || def.motif === 'rainbow') {
+        for (let x = 64; x < FRAME_W - 48; x += 26) line(ctx, x, 32, x + 12, 84, withAlpha((x / 26) % 2 ? def.accent : def.accent2, .6), 4);
+      } else if (def.motif === 'checker') {
+        for (let i = 0; i < 10; i++) {
+          ctx.fillStyle = i % 2 ? withAlpha(def.accent, .72) : withAlpha(def.accent2, .9);
+          ctx.fillRect(88 + i * 24, 42, 18, 18);
+        }
+      } else if (def.motif === 'gingham' || def.motif === 'grid') {
+        drawHeaderRibbon(ctx, 146, 34, FRAME_W - 292, 38, def.name.toLowerCase(), withAlpha('#ffffff', .68), withAlpha(def.accent, .28), def.ink);
+      } else {
+        drawHeaderRibbon(ctx, 156, 34, FRAME_W - 312, 38, def.name.toLowerCase(), withAlpha('#ffffff', .58), withAlpha(def.accent, .28), def.ink);
+      }
+    } else if (def.category === 'Social Media') {
+      // Social Media header/decor is handled by drawSocialDecor().
+      // Keep this branch empty to avoid duplicate/stacked headers and ornaments.
+    }
+
+    drawNameZone(ctx, def, slots);
+  }
+
+  function drawSlotBorders(ctx, slots, def) {
+    function tape(x, y, w=44, h=18, color=def.accent2, angle=0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle * Math.PI / 180);
+      roundRect(ctx, -w/2, -h/2, w, h, 6, withAlpha(color, .45), withAlpha('#ffffff', .18), 1);
+      ctx.restore();
+    }
+    function cornerSpark(x, y, icon='✦', color=def.accent) {
+      text(ctx, icon, x, y, 16, withAlpha(color, .95));
+    }
+    function slotLabel(s, txt, fill, color) {
+      roundRect(ctx, s.x + 12, s.y + 12, Math.min(120, s.w * .4), 28, 14, withAlpha(fill, .82), withAlpha(color, .22), 1.5);
+      text(ctx, txt, s.x + 24, s.y + 30, 12, color, 900, 'left');
+    }
+
+    slots.forEach((s, idx) => {
+      let r = 14;
+      let outerStroke = withAlpha(def.accent, .42);
+      let innerStroke = withAlpha(def.ink, .18);
+      let middleStroke = withAlpha(def.accent, .68);
+      let fill = withAlpha('#ffffff', .18);
+
+      if (def.category === 'Film') {
+        r = 8;
+        outerStroke = withAlpha(def.accent2, .55);
+        middleStroke = withAlpha(def.accent, .86);
+        fill = withAlpha('#000000', .06);
+      } else if (def.category === 'Elegant') {
+        r = 18;
+        outerStroke = withAlpha(def.accent2, .55);
+        middleStroke = withAlpha(def.accent, .78);
+        fill = withAlpha('#ffffff', .14);
+      } else if (def.category === 'Gaming') {
+        r = 10;
+        outerStroke = withAlpha(def.accent2, .5);
+        middleStroke = withAlpha(def.accent, .88);
+      } else if (def.category === 'Social Media') {
+        r = (def.motif === 'igstory' || def.motif === 'iphone' || def.motif === 'cameraRoll') ? 24 : 16;
+        outerStroke = withAlpha(def.accent2, .45);
+        middleStroke = withAlpha(def.accent, .82);
+      }
+
+      roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, r + 10, null, outerStroke, 2.5);
+      roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, r + 2, null, innerStroke, 1.5);
+      roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, r + 6, null, middleStroke, 2);
+
+      const corners = [
+        [s.x - 12, s.y - 12],
+        [s.x + s.w + 12, s.y - 12],
+        [s.x - 12, s.y + s.h + 12],
+        [s.x + s.w + 12, s.y + s.h + 12]
+      ];
+
+      if (def.category === 'Korean') {
+        if (def.motif === 'diary' || def.motif === 'campus') {
+          tape(s.x + 42, s.y - 6, 46, 16, def.accent2, -10);
+          tape(s.x + s.w - 40, s.y - 8, 42, 16, def.accent, 8);
+        } else if (def.motif === 'ribbon') {
+          drawBow(ctx, s.x + s.w - 20, s.y + 18, withAlpha(def.accent, .74), def.ink, .6);
+        } else if (def.motif === 'cloud') {
+          circle(ctx, s.x + 14, s.y + 10, 10, withAlpha('#ffffff', .75));
+          circle(ctx, s.x + 26, s.y + 6, 12, withAlpha('#ffffff', .82));
+          circle(ctx, s.x + 40, s.y + 10, 10, withAlpha('#ffffff', .75));
+        } else if (def.motif === 'stamp') {
+          slotLabel(s, ['LOVE','SNS','CUTIE','BEST'][idx % 4], def.accent2, def.ink);
+        } else {
+          cornerSpark(s.x + 12, s.y + 14, idx % 2 ? '♡' : '✦', idx % 2 ? def.accent2 : def.accent);
+          cornerSpark(s.x + s.w - 14, s.y + s.h - 10, idx % 2 ? '✿' : '⋆', idx % 2 ? def.accent : def.accent2);
+        }
+      } else if (def.category === 'Film') {
+        const filmId = def.id || '';
+        const perforate = (side='both', fill=withAlpha(def.ink, .82), step=22, w=10, h=14) => {
+          for (let y = s.y + 10; y < s.y + s.h - 8; y += step) {
+            if (side === 'left' || side === 'both') roundRect(ctx, s.x - 18, y, w, h, 2, fill);
+            if (side === 'right' || side === 'both') roundRect(ctx, s.x + s.w + 8, y, w, h, 2, fill);
+          }
+        };
+        const captionLine = (label, color = def.ink) => {
+          line(ctx, s.x + 12, s.y + s.h + 10, s.x + s.w - 12, s.y + s.h + 10, withAlpha(color, .22), 1.5);
+          text(ctx, label, s.x + 18, s.y + s.h + 24, 10, withAlpha(color, .85), 900, 'left');
+        };
+        const tapeCorner = (x, y, ang, fill) => tape(x, y, 34, 14, fill, ang);
+        const clapStripe = (x, y, w=44, h=10) => {
+          const step = 12;
+          for (let xx = x; xx < x + w; xx += step) {
+            roundRect(ctx, xx, y, 8, h, 2, ((Math.floor((xx - x)/step) % 2) ? withAlpha('#ffffff', .9) : withAlpha(def.accent, .88)));
+          }
+        };
+
+        if (filmId === 'film_polaroid_cream') {
+          const outerY = s.y - 8;
+          const extraBottom = 34;
+          roundRectRing(
+            ctx,
+            { x: s.x - 8, y: outerY, w: s.w + 16, h: s.h + extraBottom + 10, r: 12 },
+            { x: s.x, y: s.y, w: s.w, h: s.h, r: 8 },
+            withAlpha('#fffdf7', .96),
+            withAlpha(def.accent2, .26),
+            1.2
+          );
+          roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 8, null, withAlpha(def.accent, .35), 1.5);
+          tapeCorner(s.x + 34, s.y - 10, -12, '#fef3c7');
+          tapeCorner(s.x + s.w - 34, s.y - 4, 10, '#fef3c7');
+          text(ctx, `memory ${idx + 1}`, s.x + s.w / 2, s.y + s.h + 22, 11, withAlpha(def.ink, .78), 900);
+        } else if (filmId === 'film_vintage_camera') {
+          roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, 14, null, withAlpha(def.accent, .2), 1.2);
+          roundRect(ctx, s.x - 4, s.y - 4, s.w + 8, s.h + 8, 12, null, withAlpha('#fef3c7', .72), 2);
+          tapeCorner(s.x + 34, s.y + 8, -14, '#fef3c7');
+          tapeCorner(s.x + s.w - 34, s.y + 8, 14, '#fef3c7');
+          tapeCorner(s.x + 34, s.y + s.h - 8, 14, '#fef3c7');
+          tapeCorner(s.x + s.w - 34, s.y + s.h - 8, -14, '#fef3c7');
+          captionLine(`archived shot 0${idx + 1}`, def.accent);
+        } else if (filmId === 'film_cinema_frame') {
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 12, null, withAlpha(def.accent2, .18), 1.2);
+          roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 8, null, withAlpha(def.accent, .9), 2.2);
+          clapStripe(s.x + 8, s.y - 18, 54, 10);
+          clapStripe(s.x + s.w - 62, s.y - 18, 54, 10);
+          text(ctx, `SCENE ${idx + 1}`, s.x + 16, s.y + 18, 10, withAlpha(def.ink, .9), 900, 'left');
+          text(ctx, 'TAKE', s.x + s.w - 18, s.y + 18, 10, withAlpha(def.accent2, .86), 900, 'right');
+        } else if (filmId === 'film_disposable_camera') {
+          roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, 14, null, withAlpha(def.accent, .3), 1.4);
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 12, null, withAlpha(def.accent2, .72), 2);
+          roundRect(ctx, s.x + 12, s.y + 10, 56, 16, 8, withAlpha(def.accent, .86), withAlpha(def.ink, .1), 1);
+          text(ctx, idx % 2 ? 'SMILE' : 'FLASH', s.x + 40, s.y + 18, 9, '#ffffff', 900);
+          roundRect(ctx, s.x + s.w - 68, s.y + s.h - 24, 56, 16, 8, withAlpha(def.accent2, .92), withAlpha(def.ink, .1), 1);
+          text(ctx, 'SNAP', s.x + s.w - 40, s.y + s.h - 16, 9, def.ink, 900);
+        } else if (filmId === 'film_analog_brown') {
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 8, null, withAlpha(def.accent2, .16), 1.2);
+          roundRect(ctx, s.x - 3, s.y - 3, s.w + 6, s.h + 6, 6, null, withAlpha('#fef3c7', .62), 1.8);
+          for (let k = 0; k < 3; k++) line(ctx, s.x + 18, s.y + s.h + 12 + k * 10, s.x + s.w - 18, s.y + s.h + 12 + k * 10, withAlpha(def.accent2, .18), 1);
+          text(ctx, `${idx + 1}. contact print`, s.x + 16, s.y + s.h + 14, 10, withAlpha(def.ink, .74), 900, 'left');
+        } else if (filmId === 'film_old_memory') {
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 10, null, withAlpha(def.accent, .18), 1.1);
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 8, null, withAlpha(def.accent2, .36), 1.5);
+          if (idx % 2 === 0) tapeCorner(s.x + 34, s.y - 8, -10, '#fef3c7');
+          else tapeCorner(s.x + s.w - 34, s.y - 8, 10, '#fef3c7');
+          captionLine(['july archive','old trip','flashback','dear memory'][idx % 4], def.ink);
+        } else if (filmId === 'film_dust_grain') {
+          ctx.save();
+          ctx.setLineDash([8, 7]);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 10, null, withAlpha(def.accent2, .4), 2);
+          ctx.restore();
+          roundRect(ctx, s.x - 1, s.y - 1, s.w + 2, s.h + 2, 6, null, withAlpha(def.accent, .32), 1.2);
+          for (let d = 0; d < 18; d++) circle(ctx, s.x + 8 + (d * 23) % (s.w - 16), s.y + 10 + (d * 31) % (s.h - 20), 1.2, withAlpha('#ffffff', .16));
+          text(ctx, `${String(idx + 1).padStart(2,'0')}`, s.x + s.w - 14, s.y + 18, 12, def.ink, 900, 'right');
+        } else if (filmId === 'film_kodak_yellow') {
+          perforate('left', withAlpha(def.accent2, .92), 24, 10, 14);
+          ctx.save();
+          ctx.setLineDash([6, 5]);
+          roundRect(ctx, s.x - 6, s.y - 6, s.w + 12, s.h + 12, 8, null, withAlpha(def.accent2, .55), 1.8);
+          ctx.restore();
+          roundRect(ctx, s.x + s.w - 52, s.y + 10, 38, 16, 8, withAlpha(def.accent, .9), withAlpha(def.ink, .08), 1);
+          text(ctx, 'K', s.x + s.w - 33, s.y + 18, 10, '#ffffff', 900);
+        } else if (filmId === 'film_roll_black') {
+          perforate('both', withAlpha('#ffffff', .9), 22, 10, 14);
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 6, null, withAlpha(def.accent2, .28), 1.4);
+          text(ctx, `EXP ${idx + 1}`, s.x + 14, s.y + s.h - 12, 10, withAlpha(def.ink, .82), 900, 'left');
+        } else {
+          perforate('both', withAlpha(def.ink, .8), 22, 10, 14);
+          text(ctx, `${String(idx + 1).padStart(2,'0')}`, s.x + s.w - 12, s.y + 20, 12, def.ink, 900, 'right');
+          roundRect(ctx, s.x - 2, s.y - 2, s.w + 4, s.h + 4, 8, null, withAlpha(def.accent2, .24), 1.2);
+        }
+      } else if (def.category === 'Elegant') {
+        [[s.x + 10, s.y + 10],[s.x + s.w - 10, s.y + 10],[s.x + 10, s.y + s.h - 10],[s.x + s.w - 10, s.y + s.h - 10]].forEach(([cx,cy])=>{
+          drawStar(ctx, cx, cy, 8, def.accent, 4);
+        });
+        if (def.motif === 'pearl') {
+          circle(ctx, s.x + 20, s.y + s.h - 18, 5, withAlpha('#ffffff', .85), withAlpha(def.accent2, .6), 1);
+          circle(ctx, s.x + s.w - 20, s.y + 18, 5, withAlpha('#ffffff', .85), withAlpha(def.accent2, .6), 1);
+        }
+      } else if (def.category === 'Floral') {
+        const floralIcon = ({rose:'✿', sunflower:'✺', lavender:'❀', daisy:'✿', peony:'❀', leaf:'❃', wild:'✿', hydrangea:'✾', spring:'❀', sakura:'❀'})[def.motif] || '✿';
+        cornerSpark(s.x + 12, s.y + 14, floralIcon, def.accent);
+        cornerSpark(s.x + s.w - 12, s.y + s.h - 10, floralIcon, def.accent2);
+        line(ctx, s.x + 18, s.y + s.h + 8, s.x + s.w - 18, s.y + s.h + 8, withAlpha(def.accent, .24), 1.5);
+      } else if (def.category === 'Seasonal') {
+        const iconMap = {birthday:'🎈', graduation:'🎓', christmas:'❄', valentine:'♡', halloween:'☾', eid:'☪', newyear:'✦', summer:'☼', autumn:'✦', winter:'❄'};
+        cornerSpark(s.x + 12, s.y + 16, iconMap[def.motif] || '✦', def.accent);
+        slotLabel(s, ['snap 1','snap 2','snap 3','snap 4'][idx], def.accent2, def.ink);
+      } else if (def.category === 'Gaming') {
+        if (def.motif === 'pixel' || def.motif === 'arcade') {
+          for (let px = 0; px < 4; px++) {
+            ctx.fillStyle = px % 2 ? def.accent2 : def.accent;
+            ctx.globalAlpha = .92;
+            ctx.fillRect(s.x - 12 + px * 8, s.y - 12, 7, 7);
+            ctx.fillRect(s.x + s.w - 11 - px * 8, s.y + s.h + 5, 7, 7);
+            ctx.globalAlpha = 1;
+          }
+          slotLabel(s, ['1UP','2UP','3UP','4UP'][idx], def.accent, def.ink);
+        } else if (def.motif === 'rpg' || def.motif === 'fantasy' || def.motif === 'magic') {
+          cornerSpark(s.x + 12, s.y + 14, '✦', def.accent2);
+          cornerSpark(s.x + s.w - 12, s.y + s.h - 10, '✧', def.accent);
+          slotLabel(s, ['quest 1','quest 2','quest 3','quest 4'][idx], def.accent2, def.ink);
+        } else if (def.motif === 'cyber' || def.motif === 'space') {
+          roundRect(ctx, s.x - 10, s.y - 10, s.w + 20, s.h + 20, 14, null, withAlpha(def.accent, .42), 1.4);
+          text(ctx, idx === 0 ? 'SCAN' : idx === 1 ? 'SYNC' : idx === 2 ? 'LOCK' : 'DATA', s.x + s.w - 16, s.y + 18, 10, def.accent2, 800, 'right');
+        } else if (def.motif === 'monster' || def.motif === 'dungeon') {
+          line(ctx, s.x + 12, s.y + 10, s.x + 28, s.y + 28, withAlpha(def.accent2, .7), 2.4);
+          line(ctx, s.x + 22, s.y + 8, s.x + 38, s.y + 26, withAlpha(def.accent, .55), 1.8);
+          slotLabel(s, ['boss 1','boss 2','boss 3','boss 4'][idx], def.accent, def.ink);
+        } else if (def.motif === 'console') {
+          roundRect(ctx, s.x + 10, s.y + s.h - 28, 54, 18, 9, withAlpha(def.accent, .24), withAlpha(def.accent2, .32), 1);
+          text(ctx, ['P1','P2','P3','P4'][idx], s.x + 37, s.y + s.h - 15, 10, def.ink, 900);
+          circle(ctx, s.x + s.w - 20, s.y + 18, 5, def.accent);
+          circle(ctx, s.x + s.w - 34, s.y + 18, 5, def.accent2);
+        } else {
+          slotLabel(s, ['LV.1','LV.2','LV.3','LV.4'][idx], def.accent, def.ink);
+        }
+      } else if (def.category === 'Pattern') {
+        if (def.motif === 'polkadot') {
+          for (let dx of [16, s.w - 16]) {
+            circle(ctx, s.x + dx, s.y + 16, 5, withAlpha(def.accent, .8));
+            circle(ctx, s.x + dx, s.y + s.h - 16, 5, withAlpha(def.accent2, .8));
+          }
+        } else if (def.motif === 'stripe' || def.motif === 'rainbow') {
+          for (let k = 0; k < 5; k++) line(ctx, s.x + 10 + k * 18, s.y - 8, s.x - 4 + k * 18, s.y + 8, withAlpha(k % 2 ? def.accent2 : def.accent, .5), 2);
+        } else if (def.motif === 'checker' || def.motif === 'grid') {
+          for (let k = 0; k < 4; k++) {
+            ctx.fillStyle = k % 2 ? withAlpha(def.accent2, .35) : withAlpha(def.accent, .35);
+            ctx.fillRect(s.x + 8 + k * 10, s.y - 10, 8, 8);
+          }
+        } else if (def.motif === 'gingham') {
+          tape(s.x + s.w - 32, s.y + 14, 38, 16, def.accent, -6);
+        } else if (def.motif === 'heart' || def.motif === 'stars') {
+          cornerSpark(s.x + 14, s.y + 14, def.motif === 'heart' ? '♡' : '★', def.accent);
+          cornerSpark(s.x + s.w - 14, s.y + s.h - 10, def.motif === 'heart' ? '♥' : '✦', def.accent2);
+        }
+      } else if (def.category === 'Social Media') {
+        const socialCounts = [
+          ['1.8k likes', '86 chats', '24 saves'],
+          ['4.9k likes', '302 chats', '87 saves'],
+          ['8.1k likes', '540 chats', '121 saves']
+        ];
+        if (def.motif === 'igstory') {
+          roundRect(ctx, s.x - 8, s.y - 8, s.w + 16, s.h + 16, 24, null, withAlpha('#ffffff', .82), 1.8);
+          roundRect(ctx, s.x + 12, s.y + 12, 72, 8, 4, withAlpha('#ffffff', .78));
+          text(ctx, socialCounts[idx][0], s.x + s.w - 16, s.y + s.h - 16, 12.5, '#ffffff', 800, 'right');
+        } else if (def.motif === 'igfeed' || def.motif === 'profile') {
+          roundRect(ctx, s.x - 8, s.y - 34, s.w + 16, 26, 13, withAlpha('#ffffff', .9), withAlpha(def.accent2, .24), 1);
+          circle(ctx, s.x + 16, s.y - 21, 7, def.accent);
+          line(ctx, s.x + 30, s.y - 21, s.x + 110, s.y - 21, withAlpha(def.ink, .28), 3.2);
+          text(ctx, socialCounts[idx][0], s.x + 12, s.y + s.h + 26, 11.8, withAlpha(def.ink, .76), 800, 'left');
+          text(ctx, socialCounts[idx][1], s.x + s.w - 12, s.y + s.h + 26, 11.8, withAlpha(def.ink, .76), 800, 'right');
+        } else if (def.motif === 'youtube') {
+          roundRect(ctx, s.x + 12, s.y + s.h - 30, 66, 20, 10, def.accent);
+          text(ctx, 'PLAY', s.x + 45, s.y + s.h - 16, 12, '#fff', 900);
+          text(ctx, ['10k views','18k views','31k views'][idx], s.x + s.w - 12, s.y + s.h + 24, 11.6, withAlpha(def.ink, .76), 800, 'right');
+        } else if (def.motif === 'music') {
+          roundRect(ctx, s.x + 12, s.y + s.h - 26, s.w - 24, 9, 5, withAlpha(def.ink, .14));
+          roundRect(ctx, s.x + 12, s.y + s.h - 26, (s.w - 24) * ([.28, .52, .76][idx]), 9, 5, def.accent);
+          text(ctx, ['0:18','0:58','1:42'][idx], s.x + s.w - 12, s.y + 20, 11.6, withAlpha(def.ink, .74), 800, 'right');
+        } else if (def.motif === 'chat') {
+          roundRect(ctx, s.x + s.w - 94, s.y + 10, 78, 20, 10, withAlpha(def.accent, .22), withAlpha(def.accent, .32), 1);
+          text(ctx, idx % 2 ? 'typing...' : 'seen', s.x + s.w - 55, s.y + 24, 10.8, def.ink, 700);
+        } else if (def.motif === 'tiktok') {
+          text(ctx, '♪', s.x + 16, s.y + 20, 18, def.accent);
+          text(ctx, socialCounts[idx][0], s.x + s.w - 12, s.y + s.h - 16, 12.2, '#ffffff', 800, 'right');
+        } else if (def.motif === 'iphone' || def.motif === 'cameraRoll') {
+          text(ctx, ['LIVE','HDR','RAW'][idx], s.x + s.w - 14, s.y + 20, 11.8, def.ink, 800, 'right');
+          text(ctx, ['1 Jun','6 Jun','10 Jun'][idx], s.x + 12, s.y + s.h + 24, 11.6, withAlpha(def.ink, .72), 800, 'left');
+        } else {
+          text(ctx, socialCounts[idx][0], s.x + 12, s.y + s.h + 24, 11.6, withAlpha(def.ink, .76), 800, 'left');
+          text(ctx, socialCounts[idx][1], s.x + s.w - 12, s.y + s.h + 24, 11.6, withAlpha(def.ink, .76), 800, 'right');
+        }
+      } else {
+        corners.forEach(([cx, cy], cidx) => {
+          const icon = ['✦', '♡', '✿', '★'][(idx + cidx) % 4];
+          text(ctx, icon, cx, cy, 13, withAlpha(cidx % 2 ? def.accent2 : def.accent, .95));
+        });
+      }
+
+      if (idx < slots.length - 1) {
+        const gapY = s.y + s.h + (slots[idx + 1].y - (s.y + s.h)) / 2;
+        if (def.category === 'Film') {
+          text(ctx, ['01','02','03'][idx], FRAME_W / 2, gapY + 2, 14, withAlpha(def.ink, .82), 900);
+          line(ctx, 100, gapY, FRAME_W / 2 - 30, gapY, withAlpha(def.accent2, .36), 1.5);
+          line(ctx, FRAME_W / 2 + 30, gapY, FRAME_W - 100, gapY, withAlpha(def.accent2, .36), 1.5);
+        } else if (def.category === 'Gaming') {
+          roundRect(ctx, FRAME_W / 2 - 52, gapY - 12, 104, 24, 8, withAlpha(def.accent, .18), withAlpha(def.accent2, .42), 1.5);
+          const gamingGap = def.motif === 'pixel' || def.motif === 'arcade' ? ['1UP','READY','GO!'][idx]
+            : def.motif === 'rpg' || def.motif === 'fantasy' || def.motif === 'magic' ? ['QUEST','MAGIC','LOOT'][idx]
+            : def.motif === 'cyber' || def.motif === 'space' ? ['SCAN','SYNC','DATA'][idx]
+            : def.motif === 'monster' || def.motif === 'dungeon' ? ['DANGER','BOSS','ITEM'][idx]
+            : ['P1','P2','P3'][idx];
+          text(ctx, gamingGap, FRAME_W / 2, gapY + 1, 12, def.ink, 900);
+        } else if (def.category === 'Social Media') {
+          const socialGap = def.motif === 'youtube' ? ['posted 2d ago','watch next ✨'][idx]
+            : def.motif === 'tiktok' ? ['on your fyp','saved to favorites'][idx]
+            : def.motif === 'music' ? ['now playing','repeat-worthy'][idx]
+            : def.motif === 'iphone' || def.motif === 'cameraRoll' ? ['camera roll','best angle only'][idx]
+            : def.motif === 'chat' ? ['group chat chaos','bestie approved'][idx]
+            : ['soft launch energy','too pretty to scroll past'][idx];
+          roundRect(ctx, FRAME_W / 2 - 98, gapY - 14, 196, 28, 12, withAlpha(def.accent, .1), withAlpha(def.accent2, .28), 1.2);
+          text(ctx, socialGap, FRAME_W / 2, gapY + 1, 14, def.ink, 800);
+        } else {
+          text(ctx, ['✦','♡','★','✿'][idx % 4], FRAME_W / 2, gapY + 1, 20, withAlpha(def.accent2, .92));
+          line(ctx, 110, gapY, FRAME_W / 2 - 26, gapY, withAlpha(def.accent, .24), 1.5);
+          line(ctx, FRAME_W / 2 + 26, gapY, FRAME_W - 110, gapY, withAlpha(def.accent, .24), 1.5);
+        }
+      }
+    });
+  }
+
+  // Render basic frame as PNG using canvas (591x1772)
+  function generateBasicFrameSrc(colorObj) {
+    const W = FRAME_W, H = FRAME_H;
+    const slots = generateBasicSlots();
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = colorObj.bg;
+    ctx.fillRect(0, 0, W, H);
+    slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
+    return { src: c.toDataURL('image/png'), slots, w: W, h: H };
+  }
+
+  function generateBuiltInFrameSrc(def) {
+    if (builtInCache.has(def.id)) return builtInCache.get(def.id);
+    const W = FRAME_W, H = FRAME_H;
+    const slots = generateBuiltInSlots(def);
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Background
+    ctx.fillStyle = def.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Base decorative layer
+    drawPatternBg(ctx, def);
+    if (def.category === 'Korean') drawKoreanDecor(ctx, def);
+    if (def.category === 'Film') drawFilmDecor(ctx, def);
+    if (def.category === 'Elegant') drawElegantDecor(ctx, def);
+    if (def.category === 'Floral') drawFloralDecor(ctx, def);
+    if (def.category === 'Seasonal') drawSeasonalDecor(ctx, def);
+    if (def.category === 'Gaming') drawGamingDecor(ctx, def);
+    if (def.category === 'Pattern') {
+      if (def.motif === 'stars') for (let i=0;i<70;i++) drawStar(ctx, (i*79)%W, (i*151)%H, 8+(i%3)*3, i%2?def.accent:def.accent2, 5);
+      if (def.motif === 'heart') for (let i=0;i<72;i++) text(ctx, i%2?'♡':'♥', (i*67)%W, (i*131)%H, 22, i%2?def.accent:def.accent2);
+      drawConfetti(ctx, def, 28);
+    }
+    if (def.category === 'Social Media') drawSocialDecor(ctx, def);
+    drawReservedZones(ctx, slots, def);
+
+    // Clear photo slots so the captured photos show through.
+    slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
+
+    // Foreground frame layer stays on top of photos.
+    drawSlotBorders(ctx, slots, def);
+    roundRect(ctx, 12, 12, W - 24, H - 24, 30, null, withAlpha(def.accent, .54), 3.5);
+    roundRect(ctx, 26, 26, W - 52, H - 52, 24, null, withAlpha('#ffffff', .28), 1.5);
+
+    const data = { src: c.toDataURL('image/png'), slots, w: W, h: H };
+    builtInCache.set(def.id, data);
+    return data;
+  }
+
+
+  function generatePhotoboxSlots(layout) {
+    const layoutName = String(layout || '');
+    const match = layoutName.match(/(1|4|5|6)/);
+    const slotCount = match ? Number(match[1]) : 4;
+
+    // Layout satu foto: aperture dibuat besar tetapi tetap menyisakan ruang aman
+    // untuk header, footer, dan ornamen frame 4R.
+    if (slotCount === 1 || layoutName.startsWith('single-')) {
+      const singleLayouts = {
+        'single-social':        { x: 104, y: 258, w: 973, h: 1212, r: 0 },
+        'single-portrait':      { x: 142, y: 272, w: 897, h: 1210, r: 0 },
+        'single-frame-classic': { x: 194, y: 310, w: 793, h: 1060, r: 0 },
+        'single-frame-minimal': { x: 168, y: 286, w: 845, h: 1115, r: 0 },
+        'single-frame-gallery': { x: 184, y: 294, w: 813, h: 1085, r: 0 },
+        'single-frame-wide-mat':{ x: 218, y: 332, w: 745, h: 1000, r: 0 },
+        'single-frame-ornate':  { x: 205, y: 320, w: 771, h: 1035, r: 0 },
+        'single-frame-floating':{ x: 178, y: 300, w: 825, h: 1090, r: 0 },
+        'single-frame-polaroid':{ x: 185, y: 285, w: 811, h: 990, r: 0 }
+      };
+      return [{ ...(singleLayouts[layoutName] || singleLayouts['single-portrait']) }];
+    }
+
+    if (slotCount === 5) {
+      return [
+        { x: 92,  y: 270,  w: 997, h: 360, r: 0 },
+        { x: 92,  y: 720,  w: 478, h: 335, r: 0 },
+        { x: 611, y: 720,  w: 478, h: 335, r: 0 },
+        { x: 92,  y: 1145, w: 478, h: 335, r: 0 },
+        { x: 611, y: 1145, w: 478, h: 335, r: 0 }
+      ];
+    }
+
+    if (slotCount === 6) {
+      return [
+        { x: 92,  y: 270,  w: 478, h: 330, r: 0 },
+        { x: 611, y: 270,  w: 478, h: 330, r: 0 },
+        { x: 92,  y: 690,  w: 478, h: 330, r: 0 },
+        { x: 611, y: 690,  w: 478, h: 330, r: 0 },
+        { x: 92,  y: 1110, w: 478, h: 330, r: 0 },
+        { x: 611, y: 1110, w: 478, h: 330, r: 0 }
+      ];
+    }
+
+    return [
+      { x: 92,  y: 285, w: 478, h: 550, r: 0 },
+      { x: 611, y: 285, w: 478, h: 550, r: 0 },
+      { x: 92,  y: 925, w: 478, h: 550, r: 0 },
+      { x: 611, y: 925, w: 478, h: 550, r: 0 }
+    ];
+  }
+
+  function drawPhotoboxPatternBg(ctx, def, W, H) {
+    const motif = def.motif || '';
+
+    if (motif === 'stripe' || motif === 'rainbow') {
+      const colors = motif === 'rainbow'
+        ? ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#c084fc']
+        : [def.accent, def.accent2];
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(-0.22);
+      ctx.translate(-W / 2, -H / 2);
+      for (let y = -H; y < H * 2; y += 78) {
+        ctx.fillStyle = withAlpha(colors[Math.abs(Math.floor(y / 78)) % colors.length], .34);
+        ctx.fillRect(-300, y, W + 600, 34);
+      }
+      ctx.restore();
+    }
+
+    if (motif === 'polkadot') {
+      for (let y = 55; y < H; y += 120) {
+        for (let x = 48; x < W; x += 120) {
+          circle(ctx, x + ((Math.floor(y / 120) % 2) * 48), y, 18, withAlpha(def.accent, .24));
+          circle(ctx, x + 28, y + 38, 8, withAlpha(def.accent2, .38));
+        }
+      }
+    }
+
+    if (motif === 'checker' || motif === 'gingham') {
+      const size = motif === 'checker' ? 94 : 72;
+      for (let y = 0; y < H; y += size) {
+        for (let x = 0; x < W; x += size) {
+          const odd = ((x / size) + (y / size)) % 2;
+          ctx.fillStyle = withAlpha(odd ? def.accent : def.accent2, motif === 'checker' ? .11 : .09);
+          ctx.fillRect(x, y, size, size);
+        }
+      }
+    }
+
+    if (motif === 'grid') {
+      ctx.strokeStyle = withAlpha(def.accent, .16);
+      ctx.lineWidth = 1.5;
+      for (let x = 0; x < W; x += 52) line(ctx, x, 0, x, H, withAlpha(def.accent, .13), 1.2);
+      for (let y = 0; y < H; y += 52) line(ctx, 0, y, W, y, withAlpha(def.accent, .13), 1.2);
+      line(ctx, 118, 0, 118, H, withAlpha(def.accent2, .42), 2.2);
+    }
+
+    if (motif === 'stars' || motif === 'space' || motif === 'newyear') {
+      for (let i = 0; i < 94; i++) {
+        const x = 34 + (i * 149) % (W - 68);
+        const y = 36 + (i * 233) % (H - 72);
+        drawStar(ctx, x, y, 5 + (i % 3) * 2, withAlpha(i % 2 ? def.accent : def.accent2, .42), 4);
+      }
+    }
+
+    if (motif === 'heart' || motif === 'valentine') {
+      for (let i = 0; i < 72; i++) {
+        const x = 40 + (i * 131) % (W - 80);
+        const y = 54 + (i * 197) % (H - 108);
+        text(ctx, i % 2 ? '♡' : '♥', x, y, 19 + (i % 3) * 3, withAlpha(i % 2 ? def.accent : def.accent2, .28));
+      }
+    }
+
+    // Grain/dot halus untuk kategori lain agar latar tidak terasa kosong.
+    if (!['stripe','rainbow','polkadot','checker','gingham','grid','stars','space','newyear','heart','valentine'].includes(motif)) {
+      for (let i = 0; i < 120; i++) {
+        const x = 24 + (i * 173) % (W - 48);
+        const y = 30 + (i * 229) % (H - 60);
+        circle(ctx, x, y, 2 + (i % 3), withAlpha(i % 2 ? def.accent : def.accent2, .12));
+      }
+    }
+  }
+
+  function drawPhotoboxFlower(ctx, x, y, def, scale = 1) {
+    for (let i = 0; i < 7; i++) {
+      const a = i * Math.PI * 2 / 7;
+      circle(
+        ctx,
+        x + Math.cos(a) * 17 * scale,
+        y + Math.sin(a) * 17 * scale,
+        10 * scale,
+        withAlpha(i % 2 ? def.accent : def.accent2, .78)
+      );
+    }
+    circle(ctx, x, y, 8 * scale, withAlpha('#ffffff', .88), withAlpha(def.ink, .18));
+  }
+
+  function photoboxSourceId(def) {
+    return String(def?.sourceId || def?.id || '').replace(/^photobox_/, '');
+  }
+
+  function getPhotostripWording(def) {
+    const id = photoboxSourceId(def);
+    const motif = String(def?.motif || '');
+    const category = String(def?.category || '');
+    const fallbackTitle = String(def?.name || '').replace(/\s+4R$/i, '');
+
+    const korean = {
+      cloud: ['soft cloud', '', 'k-style'],
+      diary: ['dear diary', '', 'k-style'],
+      sakura: ['cherry day', '', 'k-style'],
+      ribbon: ['ribbon club', '', 'k-style'],
+      latte: ['latte mood', '', 'k-style'],
+      campus: ['campus day', '', 'k-style'],
+      stamp: ['heart stamp', '', 'k-style'],
+      clean: ['k-style', '', 'k-style']
+    };
+
+    const film = {
+      film_retro_film: ['RETRO FILM', '35 mm', 'FRAME 04'],
+      film_kodak_yellow: ['KODAK FEEL', '35 mm', 'FRAME 04'],
+      film_analog_brown: ['analog brown', '35 mm', 'memory archive'],
+      film_vintage_camera: ['camera', '35 mm', 'memory archive'],
+      film_roll_black: ['night memory', '35 mm', 'FRAME 04'],
+      film_polaroid_cream: ['instant memory', '35 mm', 'memory archive'],
+      film_dust_grain: ['dust & grain', '35 mm', 'memory archive'],
+      film_cinema_frame: ['cinema frame', '35 mm', 'memory archive'],
+      film_disposable_camera: ['flash ready', '35 mm', 'summer cam'],
+      film_old_memory: ['memory archive', '35 mm', 'memory archive']
+    };
+
+    const seasonal = {
+      birthday: ['birthday party', '', 'make a wish'],
+      graduation: ['graduation day', '', 'you did it'],
+      christmas: ['christmas', '', 'merry & bright'],
+      valentine: ['valentine', '', 'with love'],
+      halloween: ['halloween', '', 'spooky season'],
+      eid: ['eid mubarak', '', 'warm wishes'],
+      newyear: ['new year', '', 'cheers to us'],
+      summer: ['summer trip', '', 'sunny memories'],
+      autumn: ['autumn leaves', '', 'golden days'],
+      winter: ['winter snow', '', 'snowy memories']
+    };
+
+    const gaming = {
+      pixel: ['HP 80/80 · QUEST ON', '', 'PRESS START'],
+      arcade: ['ARCADE MODE', '1UP 9999', 'INSERT COIN'],
+      rpg: ['CLASS MAGE · RANK S', '', 'party ready'],
+      cyber: ['SCAN READY · MODE NEO', '', 'SYSTEM ONLINE'],
+      fantasy: ['FANTASY WORLD', '', 'portal'],
+      magic: ['SPELLBOOK', '', 'mana +10'],
+      space: ['space map', '', 'mission log'],
+      monster: ['MONSTER MODE', '', 'danger zone'],
+      dungeon: ['DUNGEON RUN', 'TORCH · KEY', 'quest complete'],
+      console: ['RETRO CONSOLE', '', 'A · B']
+    };
+
+    const social = {
+      igfeed: ['sabrina.frame', 'pop muse', 'liked by @luna.velvet and 8.1k others'],
+      igstory: ['@aria.afterglow', '2m ago', '1.4k hearts • 88 replies • 21 shares'],
+      tiktok: ['For You', '@nova.loop', 'pretty privilege detected ✨'],
+      youtube: ['MIRA VLOG', '1.2M views • 2 days ago', 'SUBSCRIBE'],
+      iphone: ['Photos', 'June 2026', 'Select'],
+      cameraRoll: ['Recents', '247 items', 'fav   share   keep   more'],
+      music: ['Now Playing', '12.2k listeners', 'prev   play   next'],
+      chat: ['mila popstar', 'online', 'send me the pics pls 😭'],
+      profile: ['@selena.snap', 'daily glam archive', 'highlights • fitcheck • dumps'],
+      viral: ['viral post', 'saved by 8.2k people', 'too pretty to scroll past']
+    };
+
+    let copy = null;
+    if (category === 'Korean') copy = korean[motif];
+    else if (category === 'Film') copy = film[id];
+    else if (category === 'Floral') copy = [fallbackTitle, '', 'bloom'];
+    else if (category === 'Seasonal') copy = seasonal[motif];
+    else if (category === 'Gaming') copy = gaming[motif];
+    else if (category === 'Pattern') copy = [fallbackTitle, '', ''];
+    else if (category === 'Social Media') copy = social[motif];
+
+    const [title, subtitle, footer] = copy || [fallbackTitle, '', ''];
+    return { title, subtitle, footer };
+  }
+
+  function getPhotostripSlotLabels(def, count) {
+    const motif = String(def?.motif || '');
+    const category = String(def?.category || '');
+    const n = Array.from({ length: count }, (_, i) => i + 1);
+
+    if (category === 'Film') return n.map(i => `FRAME ${String(i).padStart(2, '0')}`);
+    if (category === 'Seasonal') return n.map(i => `snap ${i}`);
+    if (category === 'Gaming') {
+      if (motif === 'pixel' || motif === 'arcade') return n.map(i => `${i}UP`);
+      if (motif === 'rpg' || motif === 'fantasy' || motif === 'magic') return n.map(i => `quest ${i}`);
+      if (motif === 'cyber' || motif === 'space') return ['SCAN', 'SYNC', 'LOCK', 'DATA', 'LINK', 'LIVE'].slice(0, count);
+      if (motif === 'monster' || motif === 'dungeon') return n.map(i => `boss ${i}`);
+      if (motif === 'console') return n.map(i => `P${i}`);
+      return n.map(i => `LV.${i}`);
+    }
+    if (category === 'Social Media') {
+      const prefix = motif === 'igstory' ? 'STORY'
+        : motif === 'tiktok' ? 'CLIP'
+        : motif === 'youtube' ? 'TAKE'
+        : motif === 'iphone' ? 'IMG'
+        : motif === 'cameraRoll' ? 'RECENT'
+        : motif === 'music' ? 'TRACK'
+        : motif === 'chat' ? 'CHAT'
+        : motif === 'viral' ? 'VIRAL'
+        : 'POST';
+      return n.map(i => `${prefix} ${String(i).padStart(2, '0')}`);
+    }
+    return n.map(i => String(i).padStart(2, '0'));
+  }
+
+  function drawPhotoboxDecor(ctx, def, W, H, slots) {
+    const category = def.category || '';
+    const motif = def.motif || '';
+    const copy = getPhotostripWording(def);
+    const headerY = 126;
+
+    // Wording mengambil copy yang dipakai pada built-in Photostrip.
+    // Kategori Pigura dibuat seperti frame pajangan, sehingga tidak memakai header besar.
+    if (category !== 'Pigura') {
+      roundRect(ctx, W / 2 - 330, 54, 660, 136, 44, withAlpha('#ffffff', .18), withAlpha(def.accent, .30), 2);
+      text(ctx, copy.title, W / 2, copy.subtitle ? headerY - 14 : headerY + 2, 42, def.ink, 950);
+      if (copy.subtitle) text(ctx, copy.subtitle, W / 2, headerY + 34, 18, withAlpha(def.ink, .64), 850);
+    }
+
+    if (category === 'Korean') {
+      for (let y = 250; y < H - 220; y += 150) {
+        circle(ctx, 42, y, 15, withAlpha(def.accent, .32));
+        circle(ctx, W - 42, y + 55, 15, withAlpha(def.accent2, .36));
+      }
+
+      if (motif === 'cloud') {
+        for (const [x, y] of [[108, 205], [W - 112, 205], [108, H - 160], [W - 112, H - 160]]) {
+          circle(ctx, x - 23, y, 19, withAlpha('#ffffff', .78));
+          circle(ctx, x, y - 12, 28, withAlpha('#ffffff', .84));
+          circle(ctx, x + 27, y, 20, withAlpha('#ffffff', .78));
+        }
+      } else if (motif === 'ribbon') {
+        drawBow(ctx, 105, 202, withAlpha(def.accent, .78), def.ink);
+        drawBow(ctx, W - 105, 202, withAlpha(def.accent2, .82), def.ink);
+        drawBow(ctx, 110, H - 158, withAlpha(def.accent2, .75), def.ink);
+        drawBow(ctx, W - 110, H - 158, withAlpha(def.accent, .72), def.ink);
+      } else {
+        text(ctx, '♡', 102, 210, 42, def.accent);
+        text(ctx, '✦', W - 102, 210, 42, def.accent2);
+        text(ctx, '✿', 102, H - 158, 38, def.accent2);
+        text(ctx, '♡', W - 102, H - 158, 42, def.accent);
+      }
+    }
+
+    if (category === 'Film') {
+      for (let y = 40; y < H - 40; y += 72) {
+        roundRect(ctx, 22, y, 28, 42, 7, withAlpha(def.accent2, .64), null);
+        roundRect(ctx, W - 50, y, 28, 42, 7, withAlpha(def.accent2, .64), null);
+      }
+      const frameSequence = Array.from({ length: slots.length }, (_, i) => String(i + 1).padStart(2, '0')).join(' · ');
+      text(ctx, '35 mm', 86, 218, 18, def.ink, 900, 'left');
+      text(ctx, `FRAME ${frameSequence}`, W - 86, 218, 18, def.ink, 900, 'right');
+      line(ctx, 110, H - 168, W - 110, H - 168, withAlpha(def.accent, .42), 2);
+    }
+
+    if (category === 'Floral') {
+      const flowers = [
+        [76, 78, 1.05], [W - 76, 78, .92],
+        [76, H - 82, .92], [W - 76, H - 82, 1.05]
+      ];
+      flowers.forEach(([x, y, scale]) => drawPhotoboxFlower(ctx, x, y, def, scale));
+      for (let y = 260; y < H - 230; y += 170) {
+        ctx.save();
+        ctx.fillStyle = withAlpha(def.ink, .20);
+        ctx.beginPath(); ctx.ellipse(44, y, 10, 22, .55, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(W - 44, y + 70, 10, 22, -.55, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    if (category === 'Seasonal') {
+      const iconMap = {
+        birthday:'🎂', graduation:'★', christmas:'✦', valentine:'♡',
+        halloween:'☾', eid:'✦', newyear:'★', summer:'☀', autumn:'❖', winter:'❄'
+      };
+      const icon = iconMap[motif] || '✦';
+      text(ctx, icon, 92, 205, 44, def.accent);
+      text(ctx, icon, W - 92, 205, 44, def.accent2);
+      text(ctx, icon, 92, H - 150, 40, def.accent2);
+      text(ctx, icon, W - 92, H - 150, 40, def.accent);
+      for (let i = 0; i < 54; i++) {
+        const x = 50 + (i * 173) % (W - 100);
+        const y = 220 + (i * 251) % (H - 460);
+        if (slots.some(slot => x > slot.x - 24 && x < slot.x + slot.w + 24 && y > slot.y - 24 && y < slot.y + slot.h + 24)) continue;
+        if (i % 3 === 0) drawStar(ctx, x, y, 7 + (i % 3), withAlpha(def.accent, .66), 4);
+        else circle(ctx, x, y, 5 + (i % 4), withAlpha(def.accent2, .58));
+      }
+    }
+
+    if (category === 'Gaming') {
+      ctx.save();
+      ctx.strokeStyle = withAlpha(def.accent, .13);
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 56) line(ctx, x, 0, x, H, withAlpha(def.accent, .10), 1);
+      for (let y = 0; y < H; y += 56) line(ctx, 0, y, W, y, withAlpha(def.accent2, .08), 1);
+      ctx.restore();
+      for (const [x, y, sx, sy] of [[54,54,1,1],[W-54,54,-1,1],[54,H-54,1,-1],[W-54,H-54,-1,-1]]) {
+        line(ctx, x, y, x + sx * 62, y, def.accent, 5);
+        line(ctx, x, y, x, y + sy * 62, def.accent2, 5);
+      }
+    }
+
+    if (category === 'Social Media') {
+      circle(ctx, 110, 132, 35, withAlpha(def.accent, .78), withAlpha('#ffffff', .72));
+      text(ctx, 'L', 110, 133, 24, '#ffffff', 950);
+      roundRect(ctx, W - 220, 104, 128, 46, 23, withAlpha(def.accent, .14), withAlpha(def.accent, .48), 1.5);
+      text(ctx, motif === 'youtube' ? 'SUBSCRIBE' : 'FOLLOW', W - 156, 128, 15, def.ink, 900);
+
+      // Social Media memakai satu action card dua baris.
+      // Footer/caption Photostrip ditempatkan di dalam card, bukan menggantung di bawahnya.
+      const socialCardX = 92;
+      const socialCardY = H - 235;
+      const socialCardW = W - 184;
+      const socialCardH = 112;
+      const socialTopY = socialCardY + 34;
+
+      // Caption dipusatkan secara presisi di area bawah action card.
+      // Area atas tetap dipakai untuk ikon dan teks status.
+      const socialDividerOffset = 57;
+      const socialDividerY = socialCardY + socialDividerOffset;
+      const socialCaptionAreaTop = socialDividerY;
+      const socialCaptionAreaH = socialCardH - socialDividerOffset;
+      const socialFootY = socialCaptionAreaTop + (socialCaptionAreaH / 2);
+
+      roundRect(ctx, socialCardX, socialCardY, socialCardW, socialCardH, 28,
+        withAlpha('#ffffff', .13), withAlpha(def.accent2, .32), 1.5);
+
+      text(ctx, '♡     ◇     ✈', socialCardX + 58, socialTopY, 28, def.ink, 900, 'left');
+      text(ctx, motif === 'music' ? 'now playing' : 'saved to camera roll',
+        socialCardX + socialCardW - 34, socialTopY, 17, withAlpha(def.ink, .64), 850, 'right');
+
+      line(ctx,
+        socialCardX + 30, socialDividerY,
+        socialCardX + socialCardW - 30, socialDividerY,
+        withAlpha(def.accent2, .20), 1.2);
+
+      if (copy.footer) {
+        text(ctx, copy.footer, W / 2, socialFootY, 22, def.ink, 900);
+      }
+    }
+
+    if (category === 'Pigura') {
+      // Nuansa dinding/galeri agar hasil terasa seperti foto yang benar-benar dipajang.
+      const wall = ctx.createLinearGradient(0, 0, 0, H);
+      wall.addColorStop(0, withAlpha('#ffffff', .34));
+      wall.addColorStop(.52, withAlpha(def.bg, .08));
+      wall.addColorStop(1, withAlpha(def.ink, .07));
+      ctx.fillStyle = wall;
+      ctx.fillRect(0, 0, W, H);
+
+      for (let y = 110; y < H; y += 118) {
+        line(ctx, 0, y, W, y, withAlpha(def.ink, .035), 1);
+      }
+
+      const slot = slots[0];
+      ctx.save();
+      ctx.shadowColor = withAlpha('#000000', .24);
+      ctx.shadowBlur = 42;
+      ctx.shadowOffsetY = 22;
+      roundRect(ctx, slot.x - 92, slot.y - 92, slot.w + 184, slot.h + 184, 26, withAlpha('#000000', .08), null);
+      ctx.restore();
+
+      if (def.frameStyle === 'botanical') {
+        for (const [x, y, flip] of [[92, 245, 1], [W - 92, H - 245, -1]]) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.scale(flip, 1);
+          for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = withAlpha(def.accent, .42 - i * .035);
+            ctx.beginPath();
+            ctx.ellipse(i * 18, i * 24, 12, 28, -.55, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      if (def.frameStyle === 'ornate' || def.frameStyle === 'gold') {
+        text(ctx, '❦', 90, 180, 42, def.accent2, 900);
+        text(ctx, '❦', W - 90, 180, 42, def.accent2, 900);
+        text(ctx, '❦', 90, H - 140, 42, def.accent2, 900);
+        text(ctx, '❦', W - 90, H - 140, 42, def.accent2, 900);
+      }
+
+      const plaqueText = def.frameStyle === 'museum' ? 'PRIVATE COLLECTION'
+        : def.frameStyle === 'polaroid' ? 'OUR FAVORITE MOMENT'
+        : 'MEMORY FRAME';
+      roundRect(ctx, W / 2 - 190, H - 170, 380, 62, 18,
+        withAlpha('#ffffff', .45), withAlpha(def.accent, .34), 1.5);
+      text(ctx, plaqueText, W / 2, H - 138, 17, def.ink, 900);
+    }
+
+    if (category === 'Pattern') {
+      roundRect(ctx, 66, 66, W - 132, H - 132, 42, null, withAlpha(def.accent, .34), 3);
+      roundRect(ctx, 86, 86, W - 172, H - 172, 34, null, withAlpha(def.accent2, .24), 1.5);
+    }
+
+    // Social Media sudah menaruh footer di dalam action card.
+    // Kategori lain tetap memakai footer bawah seperti sebelumnya.
+    if (copy.footer && !['Social Media', 'Pigura'].includes(category)) {
+      text(ctx, copy.footer, W / 2, H - 102, 23, def.ink, 900);
+    }
+  }
+
+  function drawPhotoboxSlotBorders(ctx, slots, def) {
+    const labels = getPhotostripSlotLabels(def, slots.length);
+
+    slots.forEach((slot, idx) => {
+      if (def.category === 'Pigura' || def.isPictureFrame) {
+        const style = def.frameStyle || 'classic';
+        const outerPad = style === 'ornate' ? 86 : style === 'minimal' ? 56 : 72;
+        const matPad = style === 'white' ? 54 : 36;
+        const outerRadius = style === 'ornate' ? 24 : 18;
+
+        ctx.save();
+        ctx.shadowColor = withAlpha('#000000', .30);
+        ctx.shadowBlur = 34;
+        ctx.shadowOffsetY = 18;
+        roundRect(ctx,
+          slot.x - outerPad, slot.y - outerPad,
+          slot.w + outerPad * 2, slot.h + outerPad * 2,
+          outerRadius, def.accent, withAlpha(def.ink, .56), 4);
+        ctx.restore();
+
+        roundRect(ctx,
+          slot.x - outerPad + 12, slot.y - outerPad + 12,
+          slot.w + (outerPad - 12) * 2, slot.h + (outerPad - 12) * 2,
+          Math.max(8, outerRadius - 4), null, withAlpha(def.accent2, .80), 8);
+        roundRect(ctx,
+          slot.x - outerPad + 28, slot.y - outerPad + 28,
+          slot.w + (outerPad - 28) * 2, slot.h + (outerPad - 28) * 2,
+          Math.max(6, outerRadius - 8), null, withAlpha(def.ink, .25), 3);
+
+        roundRect(ctx,
+          slot.x - matPad, slot.y - matPad,
+          slot.w + matPad * 2, slot.h + matPad * 2,
+          12, style === 'museum' ? '#f5f5f4' : withAlpha('#ffffff', .96), withAlpha(def.ink, .18), 2);
+
+        ctx.clearRect(slot.x, slot.y, slot.w, slot.h);
+        roundRect(ctx, slot.x - 2, slot.y - 2, slot.w + 4, slot.h + 4, 4, null, withAlpha(def.ink, .62), 4);
+        roundRect(ctx, slot.x + 5, slot.y + 5, slot.w - 10, slot.h - 10, 2, null, withAlpha('#ffffff', .36), 2);
+
+        if (style === 'ornate') {
+          const corners = [
+            [slot.x - outerPad + 26, slot.y - outerPad + 28],
+            [slot.x + slot.w + outerPad - 26, slot.y - outerPad + 28],
+            [slot.x - outerPad + 26, slot.y + slot.h + outerPad - 28],
+            [slot.x + slot.w + outerPad - 26, slot.y + slot.h + outerPad - 28]
+          ];
+          corners.forEach(([x, y]) => {
+            circle(ctx, x, y, 17, def.accent2, withAlpha(def.ink, .45));
+            drawStar(ctx, x, y, 10, withAlpha('#ffffff', .72), 6);
+          });
+        }
+        return;
+      }
+
+      const isSingle = slots.length === 1;
+      const outerPad = isSingle ? 18 : 12;
+      roundRect(ctx, slot.x - outerPad, slot.y - outerPad, slot.w + outerPad * 2, slot.h + outerPad * 2,
+        isSingle ? 36 : 30, null, withAlpha(def.accent, .76), isSingle ? 7 : 5);
+      roundRect(ctx, slot.x - 3, slot.y - 3, slot.w + 6, slot.h + 6,
+        isSingle ? 26 : 22, null, withAlpha('#ffffff', .90), isSingle ? 4 : 3);
+
+      const label = labels[idx] || String(idx + 1).padStart(2, '0');
+      const labelWidth = Math.max(96, Math.min(176, 38 + label.length * 10));
+      const labelY = slot.y - 32;
+      roundRect(ctx, slot.x + 12, labelY - 13, labelWidth, 27, 13,
+        withAlpha(def.bg, .94), withAlpha(def.accent2, .40), 1.2);
+      text(ctx, label, slot.x + 12 + labelWidth / 2, labelY + 1, 13, def.ink, 900);
+    });
+  }
+
+  function generatePhotoboxFrameSrc(def, previewOnly = false) {
+    const previewScale = previewOnly ? 0.24 : 1;
+    const cacheKey = `photobox_v6_single_photo_picture_frame_${previewOnly ? 'preview' : 'full'}_${def.id}_${def.layout}`;
+    if (builtInCache.has(cacheKey)) return builtInCache.get(cacheKey);
+
+    const W = PHOTOBOX_W;
+    const H = PHOTOBOX_H;
+    const slots = generatePhotoboxSlots(def.layout);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(W * previewScale));
+    c.height = Math.max(1, Math.round(H * previewScale));
+
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.scale(previewScale, previewScale);
+
+    ctx.fillStyle = def.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    drawPhotoboxPatternBg(ctx, def, W, H);
+    drawPhotoboxDecor(ctx, def, W, H, slots);
+
+    // Area foto harus transparan, seperti built-in Photostrip.
+    slots.forEach(s => ctx.clearRect(s.x, s.y, s.w, s.h));
+
+    // Bingkai foreground tetap berada di atas foto.
+    drawPhotoboxSlotBorders(ctx, slots, def);
+    roundRect(ctx, 18, 18, W - 36, H - 36, 46, null, withAlpha(def.accent, .52), 4);
+    roundRect(ctx, 38, 38, W - 76, H - 76, 38, null, withAlpha('#ffffff', .25), 1.5);
+
+    const data = {
+      src: c.toDataURL('image/png'),
+      slots,
+      w: W,
+      h: H
+    };
+    builtInCache.set(cacheKey, data);
+    return data;
+  }
+
+  function getAllPhotoboxTemplates() {
+    return PHOTOBOX_DEFS.map(def => {
+      // Grid hanya memakai preview ringan. PNG 1181×1772 baru dibuat ketika template dipilih.
+      const data = generatePhotoboxFrameSrc(def, true);
+      return {
+        id: `__photobox_${def.sourceId || def.id}__`,
+        name: def.name,
+        category: def.category || PHOTOBOX_CATEGORY,
+        product_type: 'photobox',
+        isBuiltIn: true,
+        isBuiltInPhotobox: true,
+        isPhotobox: true,
+        isSinglePhoto: data.slots.length === 1,
+        isPictureFrame: !!def.isPictureFrame,
+        frameStyle: def.frameStyle || '',
+        photoboxDef: def,
+        slotCount: data.slots.length,
+        src: data.src,
+        slots: data.slots,
+        w: data.w,
+        h: data.h
+      };
+    });
+  }
+
+  // Generate semua basic template (1 per warna)
+  function getAllBasicTemplates() {
+    return FRAME_COLORS.map((colorObj, i) => {
+      const data = generateBasicFrameSrc(colorObj);
+      return {
+        id: `__basic_${i}__`,
+        name: `Basic ${colorObj.label}`,
+        category: '__basic__',
+        isBasic: true,
+        isBuiltIn: true,
+        src: data.src,
+        slots: data.slots,
+        frameColor: colorObj,
+        w: data.w,
+        h: data.h
+      };
+    });
+  }
+
+  function getAllBuiltInTemplates() {
+    if (isPhotoboxMode) return getAllPhotoboxTemplates();
+    return BUILTIN_FRAME_DEFS
+      .filter((def) => !HIDDEN_CATEGORIES.includes(def.category))
+      .map((def) => {
+      const data = generateBuiltInFrameSrc(def);
+      return {
+        id: `__builtin_${def.id}__`,
+        name: def.name,
+        category: def.category,
+        isBuiltIn: true,
+        src: data.src,
+        slots: data.slots,
+        w: data.w,
+        h: data.h
+      };
+    });
+  }
+
+  // Legacy: getBasicTemplate pakai warna yang dipilih
+  function getBasicTemplate() {
+    const data = generateBasicFrameSrc(selectedFrameColor);
+    return {
+      id: '__basic__',
+      name: 'Frame Basic',
+      category: '__basic__',
+      isBasic: true,
+      isBuiltIn: true,
+      src: data.src,
+      slots: data.slots,
+      frameColor: selectedFrameColor,
+      w: data.w,
+      h: data.h
+    };
+  }
+
+  // ─── Supabase config ───
+
+  // ─── State ───
+  let selectedTemplate = null;
+  let currentCat = 'all';
+  let _dbTemplates = [];
+
+  function normalizeTemplateSlotAngle(slot) {
+    const raw = Number(slot?.r ?? slot?.rotate ?? slot?.rotation ?? 0) || 0;
+    return { ...slot, r: Math.round(((raw % 360) + 360) % 360) };
+  }
+
+  function isTemplateTextElement(item) {
+    return !!item && (item.type === 'text' || item.kind === 'text');
+  }
+
+  function normalizeTemplateTextElement(item) {
+    const allowedFonts = ['Segoe UI', 'Arial', 'Georgia', 'Trebuchet MS', 'Courier New', 'Impact'];
+    return {
+      type: 'text',
+      text: String(item?.text || item?.value || 'PHOTOBOOTH').slice(0, 80),
+      x: Number(item?.x) || 0,
+      y: Number(item?.y) || 0,
+      w: Math.max(40, Number(item?.w) || 240),
+      h: Math.max(24, Number(item?.h) || 60),
+      r: normalizeTemplateSlotAngle(item).r,
+      font: allowedFonts.includes(item?.font) ? item.font : 'Segoe UI',
+      color: /^#[0-9a-f]{6}$/i.test(item?.color || '') ? item.color.toUpperCase() : '#1D3557',
+      font_size: Math.max(10, Number(item?.font_size || item?.fontSize) || Math.round((Number(item?.h) || 60) * 0.58)),
+      weight: 900
+    };
+  }
+
+  function getDeletedTemplateIds() {
+    try { return JSON.parse(localStorage.getItem('pb_deleted_template_ids') || '[]').map(String); }
+    catch(e) { return []; }
+  }
+
+  function getAuthenticatedUserId() {
+    const session = Auth.getSession();
+    const token = session?.access_token || session?.session?.access_token || '';
+
+    // Ambil subject dari JWT yang juga dikirim ke Supabase.
+    // Jangan memakai sb_user_id sebagai batas kepemilikan karena localStorage bisa diubah.
+    if (token && token !== SUPABASE_ANON) {
+      try {
+        const raw = token.split('.')[1] || '';
+        const normalized = raw.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+        const payload = JSON.parse(atob(padded));
+        if (payload?.sub) return String(payload.sub);
+      } catch (e) {
+        console.warn('[template] JWT tidak dapat dibaca:', e);
+      }
+    }
+
+    return session?.user?.id
+      || session?.session?.user?.id
+      || null;
+  }
+
+  async function loadTemplatesFromSupabase() {
+    try {
+      const token = Auth.getToken();
+      const userId = getAuthenticatedUserId();
+
+      if (!userId || !token || token === SUPABASE_ANON) {
+        throw new Error('Sesi pengguna tidak valid. Silakan login ulang.');
+      }
+
+      const query = new URLSearchParams({
+        user_id: `eq.${userId}`,
+        select: '*',
+        order: 'created_at.desc'
+      });
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?${query.toString()}`, {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${token}`
+        },
+        cache: 'no-store'
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      const deletedIds = getDeletedTemplateIds();
+
+      // Pertahanan kedua: tetap buang record milik user lain walaupun policy
+      // super-admin di database mengizinkan membaca seluruh tabel.
+      _dbTemplates = data
+        .filter(t => String(t.user_id || '') === userId)
+        .filter(t => !deletedIds.includes(String(t.id)))
+        .map(t => {
+          let parsedSlots = [];
+          try { parsedSlots = Array.isArray(t.slots) ? t.slots : JSON.parse(t.slots || '[]'); }
+          catch(e) { parsedSlots = []; }
+          return {
+            ...t,
+            product_type: t.product_type || (isPhotoboxCategory(t.category) ? 'photobox' : 'photostrip'),
+            photo_layer: t.photo_layer === 'front' ? 'front' : 'behind',
+            slots: parsedSlots.filter(item => !isTemplateTextElement(item)).map(normalizeTemplateSlotAngle),
+            text_elements: parsedSlots.filter(isTemplateTextElement).map(normalizeTemplateTextElement)
+          };
+        });
+      console.log('[template] loaded', _dbTemplates.length, 'templates from Supabase');
+    } catch(e) {
+      console.error('[template] Load error:', e);
+      _dbTemplates = [];
+    }
+  }
+
+  function getSavedTemplates() {
+    return _dbTemplates;
+  }
+
+  // Template bawaan bersifat global: tersedia untuk semua user tanpa record database.
+  // Template upload tetap dibatasi oleh user_id melalui loadTemplatesFromSupabase().
+  function getGlobalBuiltInTemplates() {
+    if (isEventMode) return [];
+
+    const builtIns = getAllBuiltInTemplates();
+    return isPhotoboxMode
+      ? builtIns
+      : [...getAllBasicTemplates(), ...builtIns];
+  }
+
+  function getNonEventTemplates() {
+    return [...getGlobalBuiltInTemplates(), ...getSavedTemplates()];
+  }
+
+  function eventProductMatches(t) {
+    if (!isEventMode) return true;
+    return eventProductType === 'photobox' ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t);
+  }
+
+  function getEventSelectedTemplates() {
+    if (!isEventMode) return [];
+    return _dbTemplates
+      .filter(t => eventTemplateIds.has(String(t.id)))
+      .filter(eventProductMatches)
+      .filter(t => !HIDDEN_CATEGORIES.includes(t.category));
+  }
+
+  async function loadEventTemplateSelection() {
+    if (!isEventMode || !eventId) return;
+
+    try {
+      const token = Auth.getToken();
+      const url = `${SUPABASE_URL}/rest/v1/lux_events?id=eq.${encodeURIComponent(eventId)}&select=id,name,template_ids&limit=1`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${token}`
+        },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error(await res.text());
+
+      const rows = await res.json();
+      const ev = rows?.[0];
+      if (!ev) return;
+
+      const ids = Array.isArray(ev.template_ids) ? ev.template_ids.map(String) : [];
+      eventTemplateIds.clear();
+      ids.forEach(id => eventTemplateIds.add(id));
+
+      eventStorageSet('activeEventId', String(ev.id || eventId));
+      eventStorageSet('activeEventTemplateIds', JSON.stringify(ids));
+      if (ev.name) eventStorageSet('activeEventName', ev.name);
+    } catch (e) {
+      // Tetap gunakan data session/local storage bila request database gagal.
+      console.warn('[template] Gagal refresh pilihan template event:', e);
+    }
+  }
+
+  function getCategories() {
+    if (isEventMode) {
+      // Hanya kategori yang benar-benar dimiliki template terpilih pada event
+      // dan sesuai jenis produk yang sedang dipilih.
+      return [...new Set(
+        getEventSelectedTemplates()
+          .map(t => String(t.category || '').trim())
+          .filter(Boolean)
+      )];
+    }
+
+    if (isPhotoboxMode) {
+      return [...new Set(
+        getNonEventTemplates()
+          .filter(t => isPhotoboxTemplate(t))
+          .map(t => String(t.category || '').trim())
+          .filter(c => c && c !== '__basic__' && !HIDDEN_CATEGORIES.includes(c))
+      )];
+    }
+
+    // Mode template biasa: gabungkan kategori template global dan template milik user.
+    // Basic tetap tampil pada tab Semua, tetapi tidak dibuat sebagai tab kategori teknis.
+    return [...new Set(
+      getNonEventTemplates()
+        .filter(t => !isPhotoboxTemplate(t))
+        .map(t => String(t.category || '').trim())
+        .filter(c => c && c !== '__basic__' && !HIDDEN_CATEGORIES.includes(c))
+    )];
+  }
+
+  // ─── Render category tabs ───
+  function renderCatTabs() {
+    const cats = getCategories();
+    const el = document.getElementById('catTabs');
+
+    if (isEventMode && currentCat !== 'all' && !cats.includes(currentCat)) {
+      currentCat = 'all';
+    }
+
+    el.replaceChildren();
+
+    const addTab = (label, value) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `cat-tab ${currentCat === value ? 'active' : ''}`;
+      button.textContent = label;
+      button.addEventListener('click', () => filterCat(value));
+      el.appendChild(button);
+    };
+
+    addTab('Semua', 'all');
+
+    cats.forEach(c => addTab(c, c));
+
+    // Tidak menampilkan bar kategori kosong pada event tanpa template valid.
+    el.style.display = isEventMode && cats.length === 0 ? 'none' : '';
+  }
+
+  function filterCat(cat) {
+    currentCat = HIDDEN_CATEGORIES.includes(cat) ? 'all' : cat;
+    renderCatTabs();
+    renderTemplates();
+  }
+
+  // ─── Render color swatches for basic frame ───
+  function renderColorSwatches() {
+    const el = document.getElementById('colorSwatches');
+    el.innerHTML = FRAME_COLORS.map((c, i) =>
+      `<div class="color-swatch ${selectedFrameColor === c ? 'active' : ''}"
+            style="background:${c.bg}; border-color:${c===selectedFrameColor?'white':'transparent'}"
+            title="${c.label}"
+            onclick="pickFrameColor(${i})"></div>`
+    ).join('');
+  }
+
+  function pickFrameColor(idx) {
+    selectedFrameColor = FRAME_COLORS[idx];
+    renderColorSwatches();
+    // Regenerate and re-select if basic is currently selected
+    if (selectedTemplate && selectedTemplate.isBasic) {
+      const newBasic = getBasicTemplate();
+      selectedTemplate = newBasic;
+      localStorage.setItem('templateSrc', newBasic.src);
+      localStorage.setItem('templateSlots', JSON.stringify(newBasic.slots));
+      localStorage.setItem('templateTextElements', '[]');
+      localStorage.setItem('templateW', newBasic.w);
+      localStorage.setItem('templateH', newBasic.h);
+      localStorage.setItem('templatePhotoLayer', 'behind');
+    }
+    renderTemplates();
+  }
+
+  function customTemplateThumbURL(tmpl) {
+    const src = String(tmpl?.src || '');
+    if (tmpl?.isBasic || tmpl?.isBuiltIn || src.startsWith('data:')) return src;
+    return /\.png(?:\?.*)?$/i.test(src)
+      ? src.replace(/\.png(?=\?|$)/i, '_thumb.jpg')
+      : src;
+  }
+
+  function useOriginalTemplateImage(img) {
+    if (!img || img.dataset.fallbackUsed === '1') return;
+    img.dataset.fallbackUsed = '1';
+    const original = decodeURIComponent(img.dataset.original || '');
+    if (original) img.src = original;
+  }
+
+  // ─── Render templates ───
+  function renderTemplates() {
+    const grid = document.getElementById('templateGrid');
+    const saved = isEventMode
+      ? getEventSelectedTemplates()
+      : getNonEventTemplates()
+          .filter(t => !HIDDEN_CATEGORIES.includes(t.category))
+          .filter(t => isPhotoboxMode ? isPhotoboxTemplate(t) : !isPhotoboxTemplate(t));
+    let templates = [];
+    if (HIDDEN_CATEGORIES.includes(currentCat) || currentCat === '__basic__') {
+      currentCat = 'all';
+    }
+
+    if (currentCat === 'all') {
+      templates = [...saved];
+    } else {
+      templates = saved.filter(t => t.category === currentCat);
+    }
+
+    // Sembunyikan color picker permanen
+    document.getElementById('frameColorPicker').classList.remove('show');
+
+    if (templates.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;color:#a0a0b0;padding:48px 24px;">
+          <h3 style="color:white;margin-bottom:8px">Belum ada template di kategori ini</h3>
+          <p>${isEventMode
+            ? (eventTemplateIds.size === 0
+                ? 'Event ini belum memiliki template terpilih. Edit event lalu pilih minimal satu template.'
+                : ('Tidak ada template terpilih yang cocok untuk ' + (eventProductType === 'photobox' ? 'Photobox 4R' : 'Photostrip') + (currentCat !== 'all' ? ' pada kategori ' + currentCat : '') + '.'))
+            : (isPhotoboxMode
+                ? 'Tidak ada template Photobox yang cocok pada kategori tersebut.'
+                : 'Tidak ada template yang cocok pada kategori tersebut.')}</p>
+        </div>`;
+      selectedTemplate = null;
+      document.getElementById('infoBox').style.display = 'none';
+      document.getElementById('btnLanjut').classList.remove('aktif');
+      return;
+    }
+
+    grid.innerHTML = '';
+    templates.forEach((tmpl, index) => {
+      const card = document.createElement('div');
+      card.className = 'template-card';
+      const slotLen = Array.isArray(tmpl.slots) && tmpl.slots.length ? tmpl.slots.length : (tmpl.category === 'Social Media' ? 3 : 0);
+      const textLen = Array.isArray(tmpl.text_elements) ? tmpl.text_elements.length : 0;
+      const basicBadge = (tmpl.isBasic || tmpl.isBuiltIn) ? '<span class="basic-badge">Built-in</span>' : '';
+      const layoutBadge = slotLen === 1
+        ? `<span class="layout-badge ${tmpl.isPictureFrame || tmpl.category === 'Pigura' ? 'pigura' : ''}">${tmpl.isPictureFrame || tmpl.category === 'Pigura' ? '🖼 Pigura' : '1 Foto'}</span>`
+        : '';
+      card.innerHTML = `
+        ${basicBadge}
+        ${layoutBadge}
+        <span class="selected-badge">✓ Dipilih</span>
+        <img src="${customTemplateThumbURL(tmpl)}"
+             data-original="${encodeURIComponent(tmpl.src)}"
+             onerror="useOriginalTemplateImage(this)"
+             loading="lazy" decoding="async" fetchpriority="low"
+             alt="${tmpl.name}"
+             style="aspect-ratio:${tmpl.w || 591} / ${tmpl.h || 1772};object-fit:cover;">
+        <div class="template-name">
+          ${tmpl.name}<br>
+          <span style="color:#555;font-size:10px">${slotLen} foto${textLen ? ` · ${textLen} teks` : ''}</span>
+        </div>
+      `;
+      card.onclick = () => selectTemplate(tmpl, card);
+      grid.appendChild(card);
+    });
+
+    // Auto-select first
+    setTimeout(() => {
+      const firstCard = document.querySelector('.template-card');
+      if (firstCard && templates[0]) selectTemplate(templates[0], firstCard);
+    }, 0);
+  }
+
+  function selectTemplate(tmpl, card) {
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedTemplate = tmpl;
+    // Sembunyikan color picker
+    document.getElementById('frameColorPicker').classList.remove('show');
+
+    // Langsung pakai template yang dipilih (sudah include warna)
+    const t = tmpl;
+    selectedTemplate = t;
+
+    // Preview Photobox dibuat kecil agar katalog desain tetap ringan.
+    // Saat dipilih, simpan frame full-resolution 1181×1772 untuk result/print.
+    const templateSrcForCapture = t.isBuiltInPhotobox && t.photoboxDef
+      ? generatePhotoboxFrameSrc(t.photoboxDef, false).src
+      : t.src;
+
+    localStorage.setItem('templateSrc', templateSrcForCapture);
+    localStorage.setItem('templateSlots', JSON.stringify(t.slots || []));
+    localStorage.setItem('templateTextElements', JSON.stringify(t.text_elements || []));
+    localStorage.setItem('templateName', t.name || 'Template');
+    localStorage.setItem('templateId', t.id || '');
+    localStorage.setItem('templateCategory', t.category || '');
+    localStorage.setItem('slotCount', (t.slots || []).length || (t.category === 'Social Media' ? 3 : 0));
+    localStorage.setItem('templateW', t.w || 591);
+    localStorage.setItem('templateH', t.h || 1772);
+    localStorage.setItem('templateIsBasic', t.isBasic ? '1' : '0');
+    localStorage.setItem('templatePhotoLayer', t.photo_layer === 'front' ? 'front' : 'behind');
+    localStorage.setItem('templateProduct', isPhotoboxTemplate(t) ? 'photobox' : 'photostrip');
+    if (t.isBasic && t.frameColor) localStorage.setItem('basicFrameColor', JSON.stringify(t.frameColor));
+    else localStorage.removeItem('basicFrameColor');
+
+    document.getElementById('slotCount').textContent = (t.slots || []).length || (t.category === 'Social Media' ? 3 : 0);
+    document.getElementById('infoBox').style.display = 'block';
+    document.getElementById('btnLanjut').classList.add('aktif');
+  }
+
+  async function lanjut() {
+    try {
+      await window.LUX_REQUIRE_AUTH('template_start_requires_login');
+    } catch (error) {
+      console.error('[LUX AUTH] Alur foto diblokir:', error);
+      return;
+    }
+
+    if (!selectedTemplate) { alert('Pilih template dulu.'); return; }
+    const slots = selectedTemplate.slots || [];
+    if (slots.length === 0) { alert('Template ini belum punya slot foto.'); return; }
+
+    if (isEventMode) {
+      const selectedType = isPhotoboxTemplate(selectedTemplate) ? 'photobox' : 'photostrip';
+      eventStorageSet('activeEventProductType', selectedType);
+      if (selectedType === 'photobox') localStorage.setItem('captureFlow', 'photobox');
+      else localStorage.removeItem('captureFlow');
+    } else if (isPhotoboxMode) localStorage.setItem('captureFlow', 'photobox');
+    else localStorage.removeItem('captureFlow');
+    localStorage.removeItem('ganciConfig');
+    localStorage.removeItem('vintageMode');
+    localStorage.removeItem('vintageTheme');
+    localStorage.removeItem('photos');
+    localStorage.removeItem('filteredPhotos');
+    localStorage.removeItem('livePhotos');
+    localStorage.removeItem('finalPhoto');
+    // Alur "Upload Foto": template dipilih dulu, foto diambil dari perangkat/galeri (bukan kamera).
+    if (!isEventMode && localStorage.getItem('captureSource') === 'upload') {
+      window.location.href = '/upload-photo';
+      return;
+    }
+    window.location.href = '/camera';
+  }
+
+  function kembali() { window.location.href = '/app'; }
+
+  function bukaAdmin() {
+    window.location.href = '/admin';
+  }
+
+  function tutupModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+  function cekPassword() { bukaAdmin(); }
+
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalOverlay')) tutupModal();
+  });
+
+  if (isEventMode) {
+    document.title = 'Pilih Template Event - LUX Photobooth';
+    const h2 = document.querySelector('h2');
+    const sub = document.querySelector('.sub');
+    const eventName = eventStorageGet('activeEventName') || 'Event';
+    if (h2) h2.textContent = 'Pilih Template Event';
+    if (sub) sub.textContent = eventName + ' · ' + (eventProductType === 'photobox' ? 'Photobox 4R' : 'Photostrip') + ' · hanya template yang dipilih di event yang tampil';
+    const btn = document.getElementById('btnLanjut');
+    if (btn) btn.textContent = 'Mulai Foto Event →';
+  } else if (isPhotoboxMode) {
+    document.title = 'Pilih Template Photobox 4R - LUX Photobooth';
+    const h2 = document.querySelector('h2');
+    const sub = document.querySelector('.sub');
+    if (h2) h2.textContent = 'Pilih Template Photobox 4R';
+    if (sub) sub.textContent = 'Pilih layout multi-foto, 1 foto, atau gaya pigura dalam ukuran 10×15 / 4R';
+    const btn = document.getElementById('btnLanjut');
+    if (btn) btn.textContent = 'Mulai Photobox →';
+  } else {
+    const sub = document.querySelector('.sub');
+    if (sub) sub.textContent = 'Template bawaan tersedia untuk semua akun; template upload hanya tampil untuk pemiliknya';
+  }
+
+  // Mode Upload Foto: teks tombol disesuaikan, template tetap sama.
+  if (!isEventMode && localStorage.getItem('captureSource') === 'upload') {
+    const btnUp = document.getElementById('btnLanjut');
+    if (btnUp) btnUp.textContent = 'Lanjut Upload Foto →';
+    const subUp = document.querySelector('.sub');
+    if (subUp) subUp.textContent = 'Pilih template, lalu upload foto dari perangkat atau galeri aplikasi';
+  }
+
+  // Init: load dari Supabase dulu
+  (async () => {
+    const grid = document.getElementById('templateGrid');
+    if (grid) grid.innerHTML = '<div style="color:#a0a0b0;text-align:center;padding:32px;width:100%">⏳ Memuat template...</div>';
+    await Promise.all([
+      loadTemplatesFromSupabase(),
+      loadEventTemplateSelection()
+    ]);
+    renderCatTabs();
+    renderColorSwatches();
+    renderTemplates();
+  })();

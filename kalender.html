@@ -140,6 +140,20 @@
     #cameraVideo { width:100%; max-height:68vh; object-fit:cover; border-radius:16px; transform:scaleX(-1); background:#000; }
     .camera-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
     .hidden-file { display:none; }
+
+    /* Mobile: preview menempel di bawah header, panel edit di-scroll di bawahnya */
+    .page { align-items:start; }
+    @media (max-width:940px) {
+      .page { display:flex; flex-direction:column; gap:12px; padding-top:0; }
+      .page .hero { order:-2; margin-top:12px; }
+      .page .preview-card { position:sticky!important; top:70px; z-index:25; order:-1; background:var(--bg); padding:8px 16px 6px; margin:0 -16px; box-shadow:0 8px 14px -10px rgba(29,53,87,.35); }
+      .preview-card > .card { padding:8px; border-radius:16px; }
+      .preview-card .card-title, .preview-card .preview-meta { display:none; }
+      .preview-card .preview-shell { min-height:0; padding:6px; border-radius:12px; }
+      .preview-card #calendarCanvas { width:auto; max-width:100%; height:auto; max-height:30vh; }
+      .preview-card .preview-actions { grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
+      .preview-card .preview-actions button { padding:8px 4px; font-size:11px; }
+    }
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>

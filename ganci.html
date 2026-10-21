@@ -241,6 +241,17 @@
       .preview-canvas-wrap { min-height: 220px; }
     }
 
+
+    /* Mobile: preview menempel di bawah header, panel edit di-scroll di bawahnya */
+    @media (max-width: 820px) {
+      .page-wrap { display:flex; flex-direction:column; gap:12px; padding-top:0; }
+      .page-wrap .hero-desc { order:-2; margin-top:12px; }
+      .preview-panel { display:contents; max-height:none; overflow:visible; }
+      .page-wrap .preview-card { position:sticky; top:70px; z-index:25; order:-1; margin:0 -16px; padding:8px 16px 6px; border-radius:0 0 16px 16px; border-top:none; box-shadow:0 8px 14px -10px rgba(29,53,87,.35); }
+      .preview-card .card-title, .preview-card .preview-info { display:none; }
+      .preview-card .preview-canvas-wrap { min-height:0; padding:6px; border-radius:12px; }
+      .preview-card #previewCanvas { width:auto; max-width:100%; height:auto; max-height:34vh; }
+    }
   </style>
   <script src="/config.js"></script>
   <script src="/auth.js"></script>

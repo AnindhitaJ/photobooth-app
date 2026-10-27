@@ -1,0 +1,9 @@
+[
+  {
+    "AllowedOrigins": ["https://www.lux-photo.web.id", "https://lux-photo.web.id"],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]

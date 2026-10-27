@@ -1,8 +1,8 @@
 /**
  * Cross-origin media helper for gallery/download flows.
  *
- * R2 files are exposed through the same-origin /media/* Vercel rewrite so
- * browser fetch/download/share does not depend on bucket CORS configuration.
+ * R2 files are fetched directly from the R2 custom domain (no Vercel in the path).
+ * The R2 bucket must allow CORS GET for the app origin.
  * Supabase public-storage URLs use the existing server-side media proxy.
  */
 (() => {
@@ -48,10 +48,10 @@
     const host = url.hostname.toLowerCase();
     const r2Host = configuredR2Host();
 
-    // Same-origin external rewrite declared in vercel.json.
+    // File R2 diambil LANGSUNG dari domain R2/Cloudflare (egress gratis, tidak lewat Vercel).
+    // Butuh CORS GET pada bucket R2 agar fetch()/canvas bisa membaca file.
     if (r2Host && host === r2Host) {
-      const cleanPath = url.pathname.replace(/^\/+/, '');
-      return `/media/${cleanPath}${url.search}${url.hash}`;
+      return url.href;
     }
 
     // Existing server-side proxy validates the host and image MIME type.
@@ -66,13 +66,15 @@
 
   function inferMimeType(blob, sourceURL) {
     const current = String(blob?.type || '').split(';')[0].trim().toLowerCase();
-    if (current.startsWith('image/')) return current;
+    if (current.startsWith('image/') || current.startsWith('video/')) return current;
 
     const pathname = parseURL(sourceURL)?.pathname.toLowerCase() || '';
     if (pathname.endsWith('.png')) return 'image/png';
     if (pathname.endsWith('.webp')) return 'image/webp';
     if (pathname.endsWith('.gif')) return 'image/gif';
     if (pathname.endsWith('.avif')) return 'image/avif';
+    if (pathname.endsWith('.webm')) return 'video/webm';
+    if (pathname.endsWith('.mp4')) return 'video/mp4';
     return 'image/jpeg';
   }
 
@@ -122,6 +124,7 @@
         const response = await fetch(toBrowserURL(sourceURL), {
           method: 'GET',
           signal: controller.signal,
+          mode: 'cors',
           credentials: 'same-origin',
           cache: options.cache || 'default',
           headers: { Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8' }

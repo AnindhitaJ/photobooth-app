@@ -154,23 +154,49 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const userId = Auth.getUserId() || 'anon';
     const requestedSessionId = Number(options.sessionId);
     const ts = Number.isFinite(requestedSessionId) && requestedSessionId > 0 ? Math.trunc(requestedSessionId) : Date.now();
-    const path = `results/${userId}_${ts}_${filename}`;
+    let path = `results/${userId}_${ts}_${filename}`;
+    let publicURL = '';
 
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    // Jalur utama: presigned URL → PUT langsung browser → R2 (tidak lewat Vercel).
+    try {
+      const token = Auth.getToken();
+      if (!token || userId === 'anon') throw new Error('Tidak ada session login');
+      const presignRes = await fetch('/api/result-upload-url', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, ts, filename, contentType: blob.type || 'image/jpeg', size: blob.size })
+      });
+      const presign = await presignRes.json().catch(() => ({}));
+      if (!presignRes.ok || !presign?.uploadUrl) throw new Error(presign?.error || `Presign gagal (${presignRes.status})`);
+
+      const putRes = await fetch(presign.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': presign.contentType || blob.type || 'image/jpeg', 'Cache-Control': presign.cacheControl },
+        body: blob
+      });
+      if (!putRes.ok) throw new Error(`PUT ke R2 gagal (HTTP ${putRes.status})`);
+      path = presign.key;
+      publicURL = presign.publicUrl;
+    } catch (directErr) {
+      // Cadangan: jalur lama lewat Vercel (/api/upload). Masih dibatasi ±3 MB oleh body limit Vercel.
+      console.warn('Upload langsung ke R2 gagal, pakai /api/upload:', directErr);
+      const buffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binary);
+      const res = await fetch('/api/upload', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({fileName:path, contentType:blob.type || 'image/jpeg', data:base64})
+      });
+      if (!res.ok) throw new Error('R2 upload gagal');
+      const json = await res.json();
+      publicURL = json.url;
     }
-    const base64 = btoa(binary);
-    const res = await fetch('/api/upload', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({fileName:path, contentType:blob.type || 'image/jpeg', data:base64})
-    });
-    if (!res.ok) throw new Error('R2 upload gagal');
-    const json = await res.json();
 
     // Final strip wajib memiliki metadata photo_sessions agar muncul di Galeri.
     // Error tidak lagi ditelan diam-diam. Jika metadata gagal, save dianggap gagal.
@@ -180,7 +206,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
       await saveGallerySessionMetadata(path, ts);
     }
 
-    return json.url;
+    return publicURL;
   }
 
   async function loadResultConsentSettings() {
@@ -302,22 +328,32 @@ async function uploadToSupabase(blob, filename, options = {}) {
     photos.forEach(url => params.append('p', url));
     if (finalGifURL) params.set('gif', finalGifURL);
     if (extra.gif) params.set('gif', extra.gif);
+    if (finalLiveURL) params.set('video', finalLiveURL);
     return downloadBaseURL + '?' + params.toString();
   }
 
-  async function uploadDownloadManifest({ photo, photos = [], gif = '' }) {
-    const manifest = {
-      version: 1,
-      type: isPhotoboxMode ? 'photobox' : 'photostrip',
-      ownerId: Auth.getUserId() || '',
-      eventId: eventStorageGet('eventMode') === '1' ? activeEventId() : '',
-      photo,
-      photos: photos.filter(Boolean),
-      gif: gif || '',
-      createdAt: new Date().toISOString()
+  // Manifest ditulis berurutan (antrian) supaya GIF/video yang selesai belakangan
+  // tidak saling menimpa. gif/video yang tidak diberikan diambil dari state terbaru.
+  let manifestChain = Promise.resolve();
+  function uploadDownloadManifest({ photo, photos = [], gif, video } = {}) {
+    const run = async () => {
+      const manifest = {
+        version: 1,
+        type: isPhotoboxMode ? 'photobox' : 'photostrip',
+        ownerId: Auth.getUserId() || '',
+        eventId: eventStorageGet('eventMode') === '1' ? activeEventId() : '',
+        photo,
+        photos: photos.filter(Boolean),
+        gif: (gif !== undefined ? gif : finalGifURL) || '',
+        video: (video !== undefined ? video : finalLiveURL) || '',
+        createdAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      return await uploadToSupabase(blob, 'download-manifest.json', { sessionId: cloudSessionId });
     };
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-    return await uploadToSupabase(blob, 'download-manifest.json', { sessionId: cloudSessionId });
+    const p = manifestChain.catch(() => {}).then(run);
+    manifestChain = p;
+    return p;
   }
 
   // ─── State ───
@@ -752,6 +788,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   let cloudUploadPromise = null;
   let cloudSessionId = 0;
   let finalGifURL     = '';
+  let finalLiveURL    = '';  // URL live strip di R2 (masuk manifest → tombol Download Video)
   let finalManifestURL = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
@@ -909,6 +946,17 @@ async function uploadToSupabase(blob, filename, options = {}) {
       // data:, blob:, dan URL lokal tidak dapat/tidak perlu melewati proxy.
       if (!isCrossOriginHttp || !parsedUrl || parsedUrl.protocol !== 'https:') {
         throw directError;
+      }
+
+      // File di R2 TIDAK boleh diproxy lewat Vercel (memakan transfer data Vercel).
+      // Kalau gagal di sini, perbaiki CORS bucket R2 — jangan lewat proxy.
+      try {
+        const r2Host = new URL(window.LUX_CONFIG?.R2_PUBLIC_URL || '').hostname.toLowerCase();
+        if (r2Host && parsedUrl.hostname.toLowerCase() === r2Host) {
+          throw new Error('Gambar dari R2 gagal dimuat untuk canvas. Periksa CORS (GET) pada bucket/domain R2.');
+        }
+      } catch (r2Err) {
+        if (r2Err && /R2/.test(r2Err.message)) throw r2Err;
       }
 
       const proxySrc = `/api/media-proxy?src=${encodeURIComponent(parsedUrl.href)}`;
@@ -1684,6 +1732,31 @@ async function uploadToSupabase(blob, filename, options = {}) {
     liveMP4URL = null;
     liveStripBlob = null;
     liveUploaded = false;
+    finalLiveURL = '';
+  }
+
+  // Tulis ulang manifest (key sama) supaya download.html menampilkan tombol "Download Video".
+  // QR memakai ?m=<url manifest> yang tidak berubah, jadi QR yang sudah ditampilkan tetap valid.
+  async function refreshManifestWithLive() {
+    if (!finalPublicURL || !finalLiveURL) return;
+    const before = buildDownloadPageURL();
+    try {
+      finalManifestURL = await uploadDownloadManifest({
+        photo: finalPublicURL,
+        photos: finalIndividualURLs
+      });
+    } catch (e) {
+      console.warn('Update manifest video gagal:', e);
+      return;
+    }
+    const after = buildDownloadPageURL();
+    if (after !== before) {
+      const qrBox = document.getElementById('qrcodeModal');
+      if (qrBox) {
+        qrBox.innerHTML = '';
+        new QRCode(qrBox, { text: after, width: 260, height: 260, colorDark: '#1D3557', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      }
+    }
   }
 
   // ─── Auto Generate Live Strip (background) ───
@@ -1699,14 +1772,18 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
       // Upload setelah foto strip utama selesai diupload (butuh cloudSessionId yang sama).
       if (!finalPublicURL && cloudUploadPromise) { try { await cloudUploadPromise; } catch (e) {} }
-      // Batas 3 MB: upload lewat /api/upload (base64 di JSON) kena limit body Vercel 4,5 MB.
-      if (finalPublicURL && !liveUploaded && liveStripBlob && liveStripBlob.size <= 3 * 1024 * 1024) {
+      // Upload langsung ke R2 (presigned) tidak kena limit body Vercel; 15 MB sekadar pengaman.
+      if (finalPublicURL && !liveUploaded && liveStripBlob && liveStripBlob.size <= 15 * 1024 * 1024) {
         const gen = liveGeneration;
         const blob = liveStripBlob;
         try {
-          await uploadToSupabase(blob, `live.${liveStripExt}`, { sessionId: cloudSessionId });
-          if (gen === liveGeneration) liveUploaded = true;
-          console.log('[auto] Live strip uploaded');
+          const liveURL = await uploadToSupabase(blob, `live.${liveStripExt}`, { sessionId: cloudSessionId });
+          if (gen === liveGeneration) {
+            liveUploaded = true;
+            finalLiveURL = liveURL;
+            console.log('[auto] Live strip uploaded');
+            await refreshManifestWithLive();
+          }
         } catch (e) { console.warn('Auto live upload gagal:', e); }
       }
     } catch (e) {

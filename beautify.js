@@ -24,8 +24,10 @@
     const flipX = options.flipX === true ? -1 : 1;
     const flipY = options.flipY === true ? -1 : 1;
 
-    const iw = img.naturalWidth || img.width;
-    const ih = img.naturalHeight || img.height;
+    // Mendukung <video> (videoWidth/videoHeight) selain <img>/<canvas>.
+    const iw = img.videoWidth || img.naturalWidth || img.width;
+    const ih = img.videoHeight || img.naturalHeight || img.height;
+    if (!iw || !ih) return;
     const scale = Math.max(w / iw, h / ih) * zoom;
     const dw = iw * scale;
     const dh = ih * scale;

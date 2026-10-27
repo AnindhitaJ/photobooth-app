@@ -512,6 +512,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
   function markResultEdited() {
     resultEditRevision += 1;
     resultEditDirty = true;
+    invalidateLiveStrip(); // live strip harus dirender ulang dengan posisi/zoom terbaru
     persistPhotoTransforms();
     const save = document.getElementById('editorSaveBtn');
     const status = document.getElementById('editorSyncStatus');
@@ -730,6 +731,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
       }
       resultEditDirty = false;
       if (status) status.textContent = 'Perubahan tersimpan. QR sudah memakai hasil terbaru.';
+      autoGenerateLive(); // render ulang live strip sesuai edit & upload
     } catch (e) {
       console.error('Simpan hasil/Galeri gagal:', e);
       if (save) save.disabled = false;
@@ -753,6 +755,12 @@ async function uploadToSupabase(blob, filename, options = {}) {
   let finalManifestURL = '';
   let gifDataURL     = null;
   let liveMP4URL     = null; // object URL for live fotostrip video
+  let liveStripBlob  = null;  // blob hasil render live strip (mengikuti template)
+  let liveStripExt   = 'webm';
+  let liveBuildPromise = null;
+  let liveBuildGen   = 0;
+  let liveGeneration = 0;     // naik setiap foto diedit → live strip lama dibuang
+  let liveProgressCb = () => {};
 
   let selectedPrintMode = 1;
   let selectedShareMode = 1;
@@ -1051,7 +1059,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
       // 4. Live photo/video bila tersedia
       if (liveMP4URL) {
-        queue.push({ href: liveMP4URL, filename: `lux-fotostrip-live-${stamp}.webm` });
+        queue.push({ href: liveMP4URL, filename: `lux-fotostrip-live-${stamp}.${liveStripExt}` });
       }
 
       for (const item of queue) {
@@ -1089,7 +1097,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     return "Arial, sans-serif";
   }
 
-  function drawTemplateTextElements() {
+  function drawTemplateTextElements(ctx) {
     templateTextElements.forEach(element => {
       const text = String(element.text || '').trim();
       if (!text) return;
@@ -1114,6 +1122,180 @@ async function uploadToSupabase(blob, filename, options = {}) {
     });
   }
 
+  // ─── Layer dasar komposit: background + template + foto/video tiap slot ───
+  // `sources[i]` boleh <img>, <canvas>, atau <video>, sehingga hasil foto strip
+  // dan live strip memakai satu jalur render yang sama (slot, rotasi, zoom, flip).
+  function drawBaseComposite(c, templateImage, sources, opts = {}) {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, tmplW, tmplH);
+
+    if (templateImage && templatePhotoLayer === 'front') {
+      c.drawImage(templateImage, 0, 0, tmplW, tmplH);
+    }
+
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      const photo = sources[i];
+      if (!photo) continue;
+      const angle = ((Number(slot.r ?? slot.rotate ?? slot.rotation ?? 0) || 0) * Math.PI) / 180;
+      const transform = photoTransforms[i] || { zoom: 1, offsetX: 0, offsetY: 0, rotation: 0, flipX: false };
+      // Video live direkam dari stream mentah (tidak mirror), sedangkan foto sudah di-mirror saat capture.
+      const isVideo = typeof HTMLVideoElement !== 'undefined' && photo instanceof HTMLVideoElement;
+      const flipX = isVideo && opts.mirrorVideo !== false ? !transform.flipX : transform.flipX;
+
+      c.save();
+      c.translate(slot.x + slot.w / 2, slot.y + slot.h / 2);
+      c.rotate(angle);
+      c.beginPath();
+      c.rect(-slot.w / 2, -slot.h / 2, slot.w, slot.h);
+      c.clip();
+      Beautify.drawCover(c, photo, -slot.w / 2, -slot.h / 2, slot.w, slot.h, {
+        zoom: transform.zoom,
+        offsetX: transform.offsetX,
+        offsetY: transform.offsetY,
+        rotate: transform.rotation,
+        flipX,
+        beautify: 'off',
+        filter: vintageFilter || undefined
+      });
+      c.restore();
+    }
+
+    if (templateImage && templatePhotoLayer === 'behind') {
+      c.drawImage(templateImage, 0, 0, tmplW, tmplH);
+    }
+  }
+
+  // ─── Layer atas: teks template, watermark nama booth, watermark akun Free ───
+  // `sampler(x, y)` (opsional) mengembalikan [r,g,b] untuk menentukan warna teks footer.
+  // Pada live strip layer ini digambar sekali ke canvas transparan lalu ditempel tiap frame.
+  function drawOverlayLayers(ctx, canvas, sampler) {
+    const sample = sampler || ((x, y) => ctx.getImageData(x, y, 1, 1).data);
+    // Teks yang ditambahkan dari Template Manager selalu berada di atas komposit final.
+    drawTemplateTextElements(ctx);
+
+    // Fallback lama: nama booth otomatis di footer hanya dipakai bila template belum punya teks custom.
+    if (templateTextElements.length === 0 && slots.length > 0 && Auth.showWatermark()) {
+      try {
+        const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
+        const gapH = tmplH - bottomOfLastSlot;
+
+        if (gapH > 16) {
+          // Sample warna background di area footer (tengah-bawah template)
+          const sampleX = Math.floor(tmplW / 2);
+          const sampleY = Math.floor(bottomOfLastSlot + gapH / 2);
+          const px = sample(sampleX, sampleY);
+          const r = px[0], g = px[1], b = px[2];
+
+          // Hitung luminance
+          const lum = 0.299*r + 0.587*g + 0.114*b;
+
+          // Kalau background gelap → teks putih; terang → teks hitam
+          // Tapi jangan terlalu terang/gelap → pilih warna mid-contrast
+          let textR, textG, textB;
+          if (lum < 128) {
+            // Background gelap → teks putih agak warm
+            textR = 255; textG = 248; textB = 240;
+          } else {
+            // Background terang → teks navy gelap
+            textR = 29; textG = 53; textB = 87;
+          }
+
+          // Font size: proporsional dengan gap, min 18px max 52px
+          const baseFontSize = Math.max(18, Math.min(52, Math.floor(gapH * 0.38)));
+          const centerY  = bottomOfLastSlot + gapH / 2;
+
+          function getWatermarkColumns() {
+            const usableSlots = (slots || []).filter(s => Number.isFinite(Number(s.x)) && Number.isFinite(Number(s.w)) && Number(s.w) > 0);
+            if (usableSlots.length < 2) return [{ x: tmplW / 2, maxW: tmplW * 0.86 }];
+
+            const centers = usableSlots
+              .map(s => Number(s.x) + Number(s.w) / 2)
+              .sort((a, b) => a - b);
+
+            const left = centers.filter(x => x < tmplW * 0.46);
+            const right = centers.filter(x => x > tmplW * 0.54);
+
+            // Kalau template 10×15 berisi 2 strip/2 kolom, watermark nama harus tampil di masing-masing kolom.
+            if (left.length && right.length) {
+              const leftMin = Math.min(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) < tmplW * 0.46).map(s => Number(s.x)));
+              const leftMax = Math.max(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) < tmplW * 0.46).map(s => Number(s.x) + Number(s.w)));
+              const rightMin = Math.min(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) > tmplW * 0.54).map(s => Number(s.x)));
+              const rightMax = Math.max(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) > tmplW * 0.54).map(s => Number(s.x) + Number(s.w)));
+
+              return [
+                { x: (leftMin + leftMax) / 2, maxW: Math.max(80, (leftMax - leftMin) * 1.05) },
+                { x: (rightMin + rightMax) / 2, maxW: Math.max(80, (rightMax - rightMin) * 1.05) }
+              ];
+            }
+
+            return [{ x: tmplW / 2, maxW: tmplW * 0.86 }];
+          }
+
+          ctx.save();
+          ctx.globalAlpha = 0.70;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.letterSpacing = '3px';
+          ctx.fillStyle = `rgb(${textR},${textG},${textB})`;
+          // Pakai nama booth dari profil, kalau watermark enabled
+          if (Auth.showWatermark()) {
+            const boothName = Auth.getBoothName().toUpperCase();
+            const columns = getWatermarkColumns();
+
+            columns.forEach(col => {
+              let fontSize = baseFontSize;
+              ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+              while (ctx.measureText(boothName).width > col.maxW && fontSize > 14) {
+                fontSize -= 2;
+                ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+              }
+              ctx.fillText(boothName, col.x, centerY);
+            });
+          }
+          ctx.restore();
+        }
+      } catch(e) {
+        console.warn('Watermark teks gagal:', e);
+      }
+    }
+
+    // ── Watermark tiled diagonal untuk akun Free ──
+    if (Auth.needsProWatermark()) {
+      const w = canvas.width, h = canvas.height;
+      ctx.save();
+
+      // Tiled diagonal text
+      const fontSize = Math.max(22, Math.floor(w * 0.055));
+      ctx.font = `800 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const text    = 'PROPERTI OF LUX PHOTOBOOTH';
+      const angle   = -Math.PI / 6; // -30 derajat
+      const spacing = fontSize * 4;
+
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate(angle);
+
+      const diagLen = Math.sqrt(w * w + h * h);
+      const cols = Math.ceil(diagLen / (ctx.measureText(text).width + spacing)) + 2;
+      const rows = Math.ceil(diagLen / spacing) + 2;
+
+      for (let r = -rows; r <= rows; r++) {
+        for (let c = -cols; c <= cols; c++) {
+          const x = c * (ctx.measureText(text).width + spacing * 1.5);
+          const y = r * spacing;
+          ctx.fillText(text, x, y);
+        }
+      }
+      ctx.restore();
+
+
+    }
+  }
+
   // ─── Generate composite image ───
   async function generateResult(previewOnly = false) {
     try {
@@ -1129,167 +1311,15 @@ async function uploadToSupabase(blob, filename, options = {}) {
         livePhotosReady = true;
       }
 
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, tmplW, tmplH);
-
       const templateImage = templateSrc ? await loadResultImage(templateSrc) : null;
-      if (templateImage && templatePhotoLayer === 'front') {
-        ctx.drawImage(templateImage, 0, 0, tmplW, tmplH);
-      }
-
+      const photoImages = [];
       for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i];
-        const src  = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
-        if (!src) continue;
-        const photo = await loadResultImage(src);
-        const angle = ((Number(slot.r ?? slot.rotate ?? slot.rotation ?? 0) || 0) * Math.PI) / 180;
-        const transform = photoTransforms[i] || { zoom: 1, offsetX: 0, offsetY: 0, rotation: 0, flipX: false };
-
-        ctx.save();
-        ctx.translate(slot.x + slot.w / 2, slot.y + slot.h / 2);
-        ctx.rotate(angle);
-        ctx.beginPath();
-        ctx.rect(-slot.w / 2, -slot.h / 2, slot.w, slot.h);
-        ctx.clip();
-        Beautify.drawCover(ctx, photo, -slot.w / 2, -slot.h / 2, slot.w, slot.h, {
-          zoom: transform.zoom,
-          offsetX: transform.offsetX,
-          offsetY: transform.offsetY,
-          rotate: transform.rotation,
-          flipX: transform.flipX,
-          beautify: 'off',
-          filter: vintageFilter || undefined
-        });
-        ctx.restore();
+        const src = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
+        photoImages[i] = src ? await loadResultImage(src) : null;
       }
 
-      if (templateImage && templatePhotoLayer === 'behind') {
-        ctx.drawImage(templateImage, 0, 0, tmplW, tmplH);
-      }
-
-      // Teks yang ditambahkan dari Template Manager selalu berada di atas komposit final.
-      drawTemplateTextElements();
-
-      // Fallback lama: nama booth otomatis di footer hanya dipakai bila template belum punya teks custom.
-      if (templateTextElements.length === 0 && slots.length > 0 && Auth.showWatermark()) {
-        try {
-          const bottomOfLastSlot = Math.max(...slots.map(s => s.y + s.h));
-          const gapH = tmplH - bottomOfLastSlot;
-
-          if (gapH > 16) {
-            // Sample warna background di area footer (tengah-bawah template)
-            const sampleX = Math.floor(tmplW / 2);
-            const sampleY = Math.floor(bottomOfLastSlot + gapH / 2);
-            const px = ctx.getImageData(sampleX, sampleY, 1, 1).data;
-            const r = px[0], g = px[1], b = px[2];
-
-            // Hitung luminance
-            const lum = 0.299*r + 0.587*g + 0.114*b;
-
-            // Kalau background gelap → teks putih; terang → teks hitam
-            // Tapi jangan terlalu terang/gelap → pilih warna mid-contrast
-            let textR, textG, textB;
-            if (lum < 128) {
-              // Background gelap → teks putih agak warm
-              textR = 255; textG = 248; textB = 240;
-            } else {
-              // Background terang → teks navy gelap
-              textR = 29; textG = 53; textB = 87;
-            }
-
-            // Font size: proporsional dengan gap, min 18px max 52px
-            const baseFontSize = Math.max(18, Math.min(52, Math.floor(gapH * 0.38)));
-            const centerY  = bottomOfLastSlot + gapH / 2;
-
-            function getWatermarkColumns() {
-              const usableSlots = (slots || []).filter(s => Number.isFinite(Number(s.x)) && Number.isFinite(Number(s.w)) && Number(s.w) > 0);
-              if (usableSlots.length < 2) return [{ x: tmplW / 2, maxW: tmplW * 0.86 }];
-
-              const centers = usableSlots
-                .map(s => Number(s.x) + Number(s.w) / 2)
-                .sort((a, b) => a - b);
-
-              const left = centers.filter(x => x < tmplW * 0.46);
-              const right = centers.filter(x => x > tmplW * 0.54);
-
-              // Kalau template 10×15 berisi 2 strip/2 kolom, watermark nama harus tampil di masing-masing kolom.
-              if (left.length && right.length) {
-                const leftMin = Math.min(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) < tmplW * 0.46).map(s => Number(s.x)));
-                const leftMax = Math.max(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) < tmplW * 0.46).map(s => Number(s.x) + Number(s.w)));
-                const rightMin = Math.min(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) > tmplW * 0.54).map(s => Number(s.x)));
-                const rightMax = Math.max(...usableSlots.filter(s => (Number(s.x) + Number(s.w) / 2) > tmplW * 0.54).map(s => Number(s.x) + Number(s.w)));
-
-                return [
-                  { x: (leftMin + leftMax) / 2, maxW: Math.max(80, (leftMax - leftMin) * 1.05) },
-                  { x: (rightMin + rightMax) / 2, maxW: Math.max(80, (rightMax - rightMin) * 1.05) }
-                ];
-              }
-
-              return [{ x: tmplW / 2, maxW: tmplW * 0.86 }];
-            }
-
-            ctx.save();
-            ctx.globalAlpha = 0.70;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.letterSpacing = '3px';
-            ctx.fillStyle = `rgb(${textR},${textG},${textB})`;
-            // Pakai nama booth dari profil, kalau watermark enabled
-            if (Auth.showWatermark()) {
-              const boothName = Auth.getBoothName().toUpperCase();
-              const columns = getWatermarkColumns();
-
-              columns.forEach(col => {
-                let fontSize = baseFontSize;
-                ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
-                while (ctx.measureText(boothName).width > col.maxW && fontSize > 14) {
-                  fontSize -= 2;
-                  ctx.font = `900 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
-                }
-                ctx.fillText(boothName, col.x, centerY);
-              });
-            }
-            ctx.restore();
-          }
-        } catch(e) {
-          console.warn('Watermark teks gagal:', e);
-        }
-      }
-
-      // ── Watermark tiled diagonal untuk akun Free ──
-      if (Auth.needsProWatermark()) {
-        const w = canvas.width, h = canvas.height;
-        ctx.save();
-
-        // Tiled diagonal text
-        const fontSize = Math.max(22, Math.floor(w * 0.055));
-        ctx.font = `800 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        const text    = 'PROPERTI OF LUX PHOTOBOOTH';
-        const angle   = -Math.PI / 6; // -30 derajat
-        const spacing = fontSize * 4;
-
-        ctx.translate(w / 2, h / 2);
-        ctx.rotate(angle);
-
-        const diagLen = Math.sqrt(w * w + h * h);
-        const cols = Math.ceil(diagLen / (ctx.measureText(text).width + spacing)) + 2;
-        const rows = Math.ceil(diagLen / spacing) + 2;
-
-        for (let r = -rows; r <= rows; r++) {
-          for (let c = -cols; c <= cols; c++) {
-            const x = c * (ctx.measureText(text).width + spacing * 1.5);
-            const y = r * spacing;
-            ctx.fillText(text, x, y);
-          }
-        }
-        ctx.restore();
-
-
-      }
+      drawBaseComposite(ctx, templateImage, photoImages);
+      drawOverlayLayers(ctx, canvas);
 
       finalDataURL = canvas.toDataURL('image/jpeg', 0.97);
 
@@ -1508,71 +1538,178 @@ async function uploadToSupabase(blob, filename, options = {}) {
     }
   }
 
-  // ─── Auto Generate Live Photo ───
-  async function autoGenerateLive() {
-    if (liveMP4URL) return; // sudah ada
-    const validLives = livePhotos.filter(Boolean);
-    if (!validLives.length) return; // tidak ada live photo
-    try {
-      // Panggil downloadLive tapi tanpa trigger download
-      const btn = document.getElementById('btnLive');
-      if (btn) { btn.disabled = true; }
+  // ─── Live Fotostrip (mengikuti template) ───
+  // Video live tiap slot ditaruh di slot template yang dipilih (posisi, ukuran, rotasi,
+  // zoom/offset/flip hasil editor), lalu frame/template, teks, dan watermark ditumpuk di atas
+  // persis seperti foto strip. Semua slot bergerak bersamaan dalam satu video.
+  const LIVE_STRIP_MS = 3000;
+  const LIVE_STRIP_FPS = 24;
+  const LIVE_STRIP_MAX_SIDE = 1920;
 
-      const videoEls = await Promise.all(livePhotos.map((src, i) => {
-        return new Promise(res => {
-          if (!src) { res(null); return; }
-          const v = document.createElement('video');
-          v.src = src; v.muted = true; v.playsInline = true;
-          v.onloadedmetadata = () => res(v);
-          v.onerror = () => res(null);
-        });
-      }));
+  function pickLiveMime() {
+    return ['video/webm;codecs=vp8', 'video/webm', 'video/mp4']
+      .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || '';
+  }
 
-      const validVids = videoEls.filter(Boolean);
-      if (!validVids.length) return;
+  function loadLiveVideo(src) {
+    return new Promise(resolve => {
+      if (!src) { resolve(null); return; }
+      const v = document.createElement('video');
+      let done = false;
+      const finish = ok => { if (done) return; done = true; clearTimeout(t); resolve(ok ? v : null); };
+      const t = setTimeout(() => finish(false), 8000);
+      v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+      v.onloadeddata = () => finish(true);
+      v.onerror = () => finish(false);
+      v.src = src;
+      v.load();
+    });
+  }
 
-      const canvas = document.createElement('canvas');
-      const W = validVids[0].videoWidth || 960;
-      const H = validVids[0].videoHeight || 720;
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext('2d');
+  async function buildLiveStripBlob() {
+    if (!window.MediaRecorder) throw new Error('Browser tidak mendukung perekaman video.');
+    const mime = pickLiveMime();
+    if (!mime) throw new Error('Format video tidak didukung browser ini.');
+    liveStripExt = mime.includes('mp4') ? 'mp4' : 'webm';
+    if (!slots.length) throw new Error('Template tidak punya slot foto.');
 
-      const stream = canvas.captureStream(30);
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
-      const chunks = [];
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    liveProgressCb(5, 'Memuat template & video...');
+    const templateImage = templateSrc ? await loadResultImage(templateSrc) : null;
 
-      recorder.start(100);
-      for (const vid of validVids) {
-        await new Promise(res => {
-          vid.currentTime = 0;
-          vid.play();
-          vid.ontimeupdate = () => {
-            ctx.drawImage(vid, 0, 0, W, H);
-            if (vid.ended || vid.currentTime >= vid.duration) { vid.pause(); res(); }
-          };
-          vid.onended = () => { vid.pause(); res(); };
-          setTimeout(res, 5000); // max 5 detik per video
-        });
-      }
-      recorder.stop();
+    // Foto diam dipakai sebagai cadangan kalau video slot tertentu tidak ada/rusak.
+    const stills = [];
+    for (let i = 0; i < slots.length; i++) {
+      const src = filteredPhotos[i] || filteredPhotos[filteredPhotos.length - 1];
+      try { stills[i] = src ? await loadResultImage(src) : null; } catch (e) { stills[i] = null; }
+    }
+    const videos = await Promise.all(slots.map((_, i) => loadLiveVideo(livePhotos[i])));
+    if (!videos.some(Boolean)) throw new Error('Video live tidak bisa dimuat.');
 
-      await new Promise(res => { recorder.onstop = res; });
-      const blob = new Blob(chunks, { type: 'video/webm' });
+    // Ukuran output = ukuran template (dibatasi agar encoder tidak berat), harus genap.
+    const k = Math.min(1, LIVE_STRIP_MAX_SIDE / Math.max(tmplW, tmplH));
+    const W = Math.max(2, Math.round(tmplW * k / 2) * 2);
+    const H = Math.max(2, Math.round(tmplH * k / 2) * 2);
+    const kx = W / tmplW, ky = H / tmplH;
+
+    const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+
+    // Layer atas (teks/watermark) digambar sekali ke canvas transparan.
+    // Warna teks footer disampling dari komposit foto diam supaya sama dengan hasil foto strip.
+    const still = mk(), stillCtx = still.getContext('2d', { willReadFrequently: true });
+    stillCtx.save(); stillCtx.scale(kx, ky);
+    drawBaseComposite(stillCtx, templateImage, stills, { mirrorVideo: false });
+    stillCtx.restore();
+
+    const overlay = mk(), overlayCtx = overlay.getContext('2d');
+    overlayCtx.save(); overlayCtx.scale(kx, ky);
+    drawOverlayLayers(overlayCtx, { width: tmplW, height: tmplH }, (x, y) => {
+      try { return stillCtx.getImageData(Math.floor(x * kx), Math.floor(y * ky), 1, 1).data; }
+      catch (e) { return [255, 255, 255]; }
+    });
+    overlayCtx.restore();
+
+    const out = mk(), outCtx = out.getContext('2d');
+    outCtx.imageSmoothingEnabled = true;
+    outCtx.imageSmoothingQuality = 'high';
+
+    function drawFrame() {
+      const sources = slots.map((_, i) => {
+        const v = videos[i];
+        if (v) {
+          if (v.paused || v.ended) { try { v.currentTime = 0; } catch (e) {} v.play().catch(() => {}); }
+          if (v.readyState >= 2 && v.videoWidth) return v;
+        }
+        return stills[i];
+      });
+      outCtx.setTransform(1, 0, 0, 1, 0, 0);
+      outCtx.save();
+      outCtx.scale(kx, ky);
+      drawBaseComposite(outCtx, templateImage, sources);
+      outCtx.restore();
+      outCtx.drawImage(overlay, 0, 0);
+    }
+
+    await Promise.all(videos.map(v => v ? v.play().catch(() => {}) : null));
+    drawFrame(); // frame pertama sebelum recorder mulai
+
+    const stream = out.captureStream(LIVE_STRIP_FPS);
+    const recorder = new MediaRecorder(stream, {
+      mimeType: mime,
+      videoBitsPerSecond: Math.round(Math.min(6e6, Math.max(2e6, W * H * 3)))
+    });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    const stopped = new Promise(resolve => { recorder.onstop = resolve; });
+
+    recorder.start(100);
+    liveProgressCb(30, 'Merekam live strip...');
+    const startTime = performance.now();
+    await new Promise(resolve => {
+      // setInterval (bukan rAF) supaya tetap jalan walau tab sempat tidak aktif.
+      const timer = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        drawFrame();
+        liveProgressCb(30 + Math.round(Math.min(1, elapsed / LIVE_STRIP_MS) * 60), 'Merekam live strip...');
+        if (elapsed >= LIVE_STRIP_MS) { clearInterval(timer); resolve(); }
+      }, 1000 / LIVE_STRIP_FPS);
+    });
+
+    recorder.stop();
+    await stopped;
+    videos.forEach(v => { if (v) { v.pause(); v.removeAttribute('src'); v.load(); } });
+    stream.getTracks().forEach(t => t.stop());
+
+    liveProgressCb(95, 'Menyelesaikan...');
+    return new Blob(chunks, { type: mime.split(';')[0] });
+  }
+
+  function ensureLiveStrip() {
+    if (liveStripBlob) return Promise.resolve(liveStripBlob);
+    if (liveBuildPromise && liveBuildGen === liveGeneration) return liveBuildPromise;
+    const gen = liveGeneration;
+    liveBuildGen = gen;
+    const p = buildLiveStripBlob().then(blob => {
+      if (gen !== liveGeneration) return ensureLiveStrip(); // foto diedit saat render → ulangi
+      liveStripBlob = blob;
       liveMP4URL = URL.createObjectURL(blob);
+      return blob;
+    }).finally(() => { if (liveBuildPromise === p) liveBuildPromise = null; });
+    liveBuildPromise = p;
+    return p;
+  }
 
+  function invalidateLiveStrip() {
+    liveGeneration += 1;
+    if (liveMP4URL) { try { URL.revokeObjectURL(liveMP4URL); } catch (e) {} }
+    liveMP4URL = null;
+    liveStripBlob = null;
+    liveUploaded = false;
+  }
+
+  // ─── Auto Generate Live Strip (background) ───
+  async function autoGenerateLive() {
+    if (!livePhotos.some(Boolean)) return; // tidak ada live photo
+    const btn = document.getElementById('btnLive');
+    try {
+      if (btn && !liveStripBlob) btn.disabled = true;
+      liveProgressCb = () => {};
+      await ensureLiveStrip();
       if (btn) btn.disabled = false;
-      console.log('[auto] Live photo generated');
+      console.log('[auto] Live strip generated');
 
-      // Upload ke Supabase kalau belum
-      if (finalPublicURL && !liveUploaded) {
+      // Upload setelah foto strip utama selesai diupload (butuh cloudSessionId yang sama).
+      if (!finalPublicURL && cloudUploadPromise) { try { await cloudUploadPromise; } catch (e) {} }
+      if (finalPublicURL && !liveUploaded && liveStripBlob) {
+        const gen = liveGeneration;
+        const blob = liveStripBlob;
         try {
-          await uploadToSupabase(blob, 'live.webm', { sessionId: cloudSessionId });
-          liveUploaded = true;
-          console.log('[auto] Live photo uploaded');
-        } catch(e) { console.warn('Auto live upload gagal:', e); }
+          await uploadToSupabase(blob, `live.${liveStripExt}`, { sessionId: cloudSessionId });
+          if (gen === liveGeneration) liveUploaded = true;
+          console.log('[auto] Live strip uploaded');
+        } catch (e) { console.warn('Auto live upload gagal:', e); }
       }
-    } catch(e) {
+    } catch (e) {
+      if (btn) btn.disabled = false;
       console.warn('[auto] Live generation gagal:', e);
     }
   }
@@ -1637,153 +1774,47 @@ async function uploadToSupabase(blob, filename, options = {}) {
     showStatus('Download foto dimulai ✓');
   }
 
-  // ─── Live Fotostrip Video ───
-  // Buat 1 video: semua slot live video tampil sekaligus dalam layout strip
+  // ─── Download Live Fotostrip ───
   async function downloadLive(skipConsent = false) {
     if (!skipConsent) return ensureResultConsent(() => downloadLive(true));
     const btn = document.getElementById('btnLive');
-    if (liveMP4URL) {
-      triggerDownload(liveMP4URL, `lux-fotostrip-live-${Date.now()}.webm`);
-      showStatus('Download live fotostrip ✓');
-      return;
-    }
+    const label = btn ? btn.querySelector('.btn-label') : null;
+    const hint = document.getElementById('liveHint');
 
-    const validLives = livePhotos.filter(Boolean);
-    if (!validLives.length) {
+    if (!livePhotos.some(Boolean)) {
       showStatus('Tidak ada live video', '#e94560');
       return;
     }
 
-    btn.disabled = true;
-    btn.querySelector('.btn-label').textContent = 'Membuat fotostrip video...';
-    setProgress('live', 5);
-    document.getElementById('liveHint').textContent = 'Memuat video...';
-
-    try {
-      // Load semua video element
-      const videoEls = await Promise.all(livePhotos.map((src, i) => {
-        return new Promise((resolve) => {
-          if (!src) { resolve(null); return; }
-          const v = document.createElement('video');
-          v.src = src;
-          v.muted = true;
-          v.loop = true;
-          v.playsInline = true;
-          v.onloadeddata = () => resolve(v);
-          v.onerror = () => resolve(null);
-          v.load();
-        });
-      }));
-
-      setProgress('live', 20);
-      document.getElementById('liveHint').textContent = 'Menyusun strip...';
-
-      // Layout: strip vertikal, semua slot stack dari atas ke bawah
-      // Setiap slot: lebar penuh, tinggi proporsional
-      const STRIP_W = 320;
-      const slotH   = Math.round(STRIP_W * 3 / 4); // 4:3 per slot
-      const STRIP_H = slotH * slots.length;
-
-      const offscreen = document.createElement('canvas');
-      offscreen.width  = STRIP_W;
-      offscreen.height = STRIP_H;
-      const offCtx = offscreen.getContext('2d');
-
-      // Start all videos
-      const playPromises = videoEls.map(v => v ? v.play().catch(() => {}) : Promise.resolve());
-      await Promise.all(playPromises);
-      setProgress('live', 40);
-
-      // Record the composite canvas
-      const stream = offscreen.captureStream(24);
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
-        ? 'video/webm;codecs=vp8' : 'video/webm';
-      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2000000 });
-      const chunks = [];
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-
-      recorder.start(100);
-      setProgress('live', 50);
-      document.getElementById('liveHint').textContent = 'Merekam...';
-
-      // Draw loop for ~3 seconds
-      const DURATION = 3000;
-      const startTime = performance.now();
-
-      await new Promise(resolve => {
-        function drawFrame() {
-          const elapsed = performance.now() - startTime;
-          const progress = Math.min(elapsed / DURATION, 1);
-          setProgress('live', 50 + Math.round(progress * 40));
-
-          offCtx.fillStyle = '#000';
-          offCtx.fillRect(0, 0, STRIP_W, STRIP_H);
-
-          videoEls.forEach((v, i) => {
-            const y = i * slotH;
-            if (v && v.readyState >= 2) {
-              // Cover fit
-              const vw = v.videoWidth || STRIP_W;
-              const vh = v.videoHeight || slotH;
-              const scale = Math.max(STRIP_W / vw, slotH / vh);
-              const sw = STRIP_W / scale, sh = slotH / scale;
-              const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
-              offCtx.drawImage(v, sx, sy, sw, sh, 0, y, STRIP_W, slotH);
-            } else if (filteredPhotos[i]) {
-              // Fallback: draw still photo
-              const img = new Image();
-              img.src = filteredPhotos[i];
-              offCtx.drawImage(img, 0, y, STRIP_W, slotH);
-            }
-
-            // Slot border
-            offCtx.strokeStyle = 'rgba(255,255,255,0.15)';
-            offCtx.lineWidth = 1;
-            offCtx.strokeRect(0, y, STRIP_W, slotH);
-
-            // Slot number
-            offCtx.fillStyle = 'rgba(255,255,255,0.5)';
-            offCtx.font = 'bold 12px sans-serif';
-            offCtx.fillText(`${i+1}`, 8, y + 18);
-          });
-
-          if (elapsed < DURATION) {
-            requestAnimationFrame(drawFrame);
-          } else {
-            resolve();
-          }
-        }
-        requestAnimationFrame(drawFrame);
-      });
-
-      recorder.stop();
-      setProgress('live', 95);
-
-      // Wait for recorder to finish
-      await new Promise(resolve => { recorder.onstop = resolve; });
-
-      const blob = new Blob(chunks, { type: mimeType });
-      liveMP4URL = URL.createObjectURL(blob);
-
-      // Pause all videos
-      videoEls.forEach(v => v && v.pause());
-
+    if (!liveStripBlob) {
+      if (btn) btn.disabled = true;
+      if (label) label.textContent = 'Membuat fotostrip video...';
+      setProgress('live', 5);
+      liveProgressCb = (pct, msg) => { setProgress('live', pct); if (hint && msg) hint.textContent = msg; };
+      try {
+        await ensureLiveStrip();
+      } catch (e) {
+        console.error('Live video error:', e);
+        setProgress('live', null);
+        if (hint) hint.textContent = 'Gagal: ' + e.message;
+        if (btn) btn.disabled = false;
+        if (label) label.textContent = 'Download Live Fotostrip';
+        showStatus('Gagal buat live video: ' + e.message, '#e94560');
+        return;
+      } finally {
+        liveProgressCb = () => {};
+      }
       setProgress('live', null);
-      document.getElementById('liveHint').textContent = '';
-      btn.disabled = false;
-      btn.querySelector('.btn-label').textContent = 'Download Live Fotostrip';
-
-      triggerDownload(liveMP4URL, `lux-fotostrip-live-${Date.now()}.webm`);
-      showStatus('Live fotostrip berhasil ✓');
-
-    } catch(e) {
-      console.error('Live video error:', e);
-      setProgress('live', null);
-      document.getElementById('liveHint').textContent = 'Gagal: ' + e.message;
-      btn.disabled = false;
-      btn.querySelector('.btn-label').textContent = 'Download Live Fotostrip';
-      showStatus('Gagal buat live video: ' + e.message, '#e94560');
+      if (hint) hint.textContent = '';
+      if (btn) btn.disabled = false;
+      if (label) label.textContent = 'Download Live Fotostrip';
     }
+
+    triggerDownload(liveMP4URL, `lux-fotostrip-live-${Date.now()}.${liveStripExt}`);
+    showStatus('Download live fotostrip ✓');
+
+    // Kalau hasil baru (setelah edit) belum terupload, kirim juga ke cloud.
+    autoGenerateLive();
   }
 
   // ─── GIF (pure canvas, no external encoder) ───

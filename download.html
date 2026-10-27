@@ -537,7 +537,8 @@
         }
         if (videoURL) {
           const videoBtn = document.getElementById('btnVideo');
-          if (videoBtn) videoBtn.classList.add('visible');
+          // btnVideo punya inline style display:none, jadi class 'visible' saja tidak cukup.
+          if (videoBtn) { videoBtn.classList.add('visible'); videoBtn.style.display = 'flex'; }
         }
         if (autoDownload && !autoDownloadStarted) {
           autoDownloadStarted = true;

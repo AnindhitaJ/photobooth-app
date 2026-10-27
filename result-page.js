@@ -1635,7 +1635,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const stream = out.captureStream(LIVE_STRIP_FPS);
     const recorder = new MediaRecorder(stream, {
       mimeType: mime,
-      videoBitsPerSecond: Math.round(Math.min(10e6, Math.max(4e6, W * H * 6)))
+      videoBitsPerSecond: Math.round(Math.min(6e6, Math.max(3e6, W * H * 4))) // maks ±2,3 MB/3 dtk agar base64-nya < limit body Vercel (4,5 MB)
     });
     const chunks = [];
     recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
@@ -1699,7 +1699,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
       // Upload setelah foto strip utama selesai diupload (butuh cloudSessionId yang sama).
       if (!finalPublicURL && cloudUploadPromise) { try { await cloudUploadPromise; } catch (e) {} }
-      if (finalPublicURL && !liveUploaded && liveStripBlob) {
+      // Batas 3 MB: upload lewat /api/upload (base64 di JSON) kena limit body Vercel 4,5 MB.
+      if (finalPublicURL && !liveUploaded && liveStripBlob && liveStripBlob.size <= 3 * 1024 * 1024) {
         const gen = liveGeneration;
         const blob = liveStripBlob;
         try {

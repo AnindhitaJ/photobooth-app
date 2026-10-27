@@ -696,7 +696,7 @@
       .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e) { return false; } }) || '';
     if (!mime) return;
     try {
-      mediaRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 900000 });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4000000 });
       mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: mime });

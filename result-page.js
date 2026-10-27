@@ -1635,7 +1635,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const stream = out.captureStream(LIVE_STRIP_FPS);
     const recorder = new MediaRecorder(stream, {
       mimeType: mime,
-      videoBitsPerSecond: Math.round(Math.min(6e6, Math.max(2e6, W * H * 3)))
+      videoBitsPerSecond: Math.round(Math.min(10e6, Math.max(4e6, W * H * 6)))
     });
     const chunks = [];
     recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };

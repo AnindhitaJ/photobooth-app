@@ -1,5 +1,6 @@
+// Proxy hanya untuk file lama di Supabase Storage. R2 sengaja TIDAK diizinkan
+// agar tidak ada transfer data R2 yang lewat Vercel.
 const DEFAULT_ALLOWED_MEDIA_HOSTS = [
-  'media.lux-photo.web.id',
   'eguiubpsijwjwxaxvkhi.supabase.co'
 ];
 
@@ -23,7 +24,7 @@ function normalizeHost(value) {
 function allowedHosts() {
   const hosts = new Set(DEFAULT_ALLOWED_MEDIA_HOSTS);
 
-  [process.env.R2_PUBLIC_URL, process.env.SUPABASE_URL]
+  [process.env.SUPABASE_URL]
     .map(normalizeHost)
     .filter(Boolean)
     .forEach(host => hosts.add(host));

@@ -311,15 +311,27 @@ async function uploadToSupabase(blob, filename, options = {}) {
     if (pendingResultAction) pendingResultAction();
   }
 
+  // Domain halaman download: pakai origin saat ini (staging/preview ikut jalan),
+  // kecuali localhost karena QR harus bisa dibuka dari HP tamu.
+  function getDownloadBaseURL() {
+    const host = location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+    return (isLocal ? 'https://www.lux-photo.web.id' : location.origin) + '/download.html';
+  }
+
+  // extra.operator = true -> tambahkan from=operator supaya download.html menampilkan
+  // tombol kembali. JANGAN dipakai untuk URL QR/share milik tamu.
   function buildDownloadPageURL(extra = {}) {
     const ownerId = Auth.getUserId() || '';
-    const downloadBaseURL = 'https://www.lux-photo.web.id/download.html';
+    const downloadBaseURL = getDownloadBaseURL();
 
     if (extra.manifest || finalManifestURL) {
-      return downloadBaseURL + '?' + new URLSearchParams({
+      const q = new URLSearchParams({
         m: extra.manifest || finalManifestURL,
         owner: ownerId
-      }).toString();
+      });
+      if (extra.operator) q.set('from', 'operator');
+      return downloadBaseURL + '?' + q.toString();
     }
 
     // Fallback lama kalau upload manifest gagal.
@@ -329,6 +341,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     if (finalGifURL) params.set('gif', finalGifURL);
     if (extra.gif) params.set('gif', extra.gif);
     if (finalLiveURL) params.set('video', finalLiveURL);
+    if (extra.operator) params.set('from', 'operator');
     return downloadBaseURL + '?' + params.toString();
   }
 
@@ -1844,8 +1857,11 @@ async function uploadToSupabase(blob, filename, options = {}) {
   function downloadJpg(skipConsent = false) {
     if (!skipConsent) return ensureResultConsent(() => downloadJpg(true));
     if (!finalDataURL) return;
-    if (!resultEditDirty && (finalPublicURL || finalManifestURL)) {
-      window.location.href = buildDownloadPageURL();
+    // iOS/iPadOS sulit menyimpan file dari data URL, jadi tetap diarahkan ke
+    // download.html (dengan from=operator agar ada tombol kembali ke Beranda).
+    // Perangkat lain (operator di PC/Android) langsung download tanpa pindah halaman.
+    if (isIOSDevice() && !resultEditDirty && (finalPublicURL || finalManifestURL)) {
+      window.location.href = buildDownloadPageURL({ operator: true });
       return;
     }
     triggerDownload(finalDataURL, `lux-photobooth-${Date.now()}.jpg`);

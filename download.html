@@ -125,6 +125,9 @@
       border-top: 2px solid var(--border);
     }
 
+    .operator-nav { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+    .operator-nav a.btn { text-decoration:none; color:var(--text); }
+
     /* ── Buttons ── */
     .btn-group { display: flex; flex-direction: column; gap: 10px; }
     .btn {
@@ -219,6 +222,18 @@
 </div>
 
 <div class="main">
+
+  <!-- Tombol kembali: hanya tampil untuk operator/admin (bukan tamu QR) -->
+  <div class="operator-nav" id="operatorNav" style="display:none">
+    <a class="btn btn-outline" href="/app" id="btnHomeOperator">
+      <span class="btn-icon">🏠</span>
+      <div class="btn-info"><div class="btn-info-title">Kembali ke Beranda</div></div>
+    </a>
+    <a class="btn btn-outline" href="/gallery" id="btnGalleryOperator">
+      <span class="btn-icon">🗂️</span>
+      <div class="btn-info"><div class="btn-info-title">Buka Galeri</div></div>
+    </a>
+  </div>
 
   <div class="status-card" id="statusCard">
     <div class="spinner" id="spinner"></div>
@@ -324,6 +339,20 @@
   let autoDownloadStarted = false;
   let ownerId  = params.get('owner') || '';
   let eventId  = params.get('event') || '';
+
+  // Operator = sudah login di perangkat ini DAN pemilik sesi foto ini (atau dikirim
+  // dari result.html lewat from=operator). Tamu QR tidak pernah melihat tombol ini.
+  (function showOperatorNav() {
+    try {
+      const localUser = localStorage.getItem('sb_user_id') || '';
+      const hasSession = !!localStorage.getItem('sb_session');
+      const isOwner = !!localUser && !!ownerId && localUser === ownerId;
+      const fromOperator = params.get('from') === 'operator' && hasSession;
+      if (!(isOwner || fromOperator)) return;
+      document.getElementById('operatorNav').style.display = 'flex';
+      if (eventId) document.getElementById('btnHomeOperator').href = '/event-run';
+    } catch (_) {}
+  })();
   let individualURLs = [
     ...params.getAll('p'),
     ...(params.get('photos') ? params.get('photos').split('|') : [])

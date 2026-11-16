@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.45-upload-all';
+const CACHE_NAME = 'lux-photobooth-v1.46-sharper-gif';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

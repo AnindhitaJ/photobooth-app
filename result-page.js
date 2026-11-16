@@ -22,8 +22,10 @@
   
   // Kompresi khusus upload R2 agar tidak terkena batas payload Vercel.
   // File download/cetak tetap memakai resolusi asli.
-  async function optimizeImageForR2(blob, maxWidth = 1200, maxHeight = 1800, quality = 0.88) {
+  async function optimizeImageForR2(blob, maxWidth = 1200, maxHeight = 3600, quality = 0.88) {
     if (!blob || !(blob.type || '').startsWith('image/')) return blob;
+    // GIF animasi jangan dire-encode ke JPEG (hanya 1 frame yang tersisa, animasi hilang).
+    if (blob.type === 'image/gif') return blob;
 
     try {
       const img = await createImageBitmap(blob);
@@ -1561,7 +1563,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     if (gifBlob) return; // sudah ada
     if (filteredPhotos.length < 2) return; // butuh minimal 2 foto
     try {
-      gifBlob = await makeGif();
+      gifBlob = await makeGifSafe();
       console.log('[auto] GIF generated, size:', gifBlob.size);
       // Update tombol GIF
       const btnGif = document.getElementById('btnGif');
@@ -1932,7 +1934,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
     document.getElementById('gifHint').textContent = 'Mengolah foto...';
 
     try {
-      gifBlob = await makeGif();
+      gifBlob = await makeGifSafe();
       setProgress('gif', null);
       document.getElementById('gifHint').textContent = '';
       btn.disabled = false;
@@ -1951,9 +1953,9 @@ async function uploadToSupabase(blob, filename, options = {}) {
 
   // Pure JS GIF encoder — tidak butuh library eksternal
   // ─── GIF generation — Median-Cut quantizer + Floyd-Steinberg dithering ───
-  async function makeGif() {
-    const GIF_W = 480;
-    const GIF_H = 360;
+  // Default 640x480 (sebelumnya 480x360). Kalau hasil terlalu besar, pemanggil
+  // otomatis mencoba lagi dengan ukuran lama lewat makeGifSafe().
+  async function makeGif(GIF_W = 640, GIF_H = 480) {
     const DELAY = 80; // 800ms per frame
 
     const images = await Promise.all(filteredPhotos.map(src => loadImage(src).catch(() => null)));
@@ -1996,11 +1998,22 @@ async function uploadToSupabase(blob, filename, options = {}) {
     return new Blob([gifData], { type: 'image/gif' });
   }
 
+  // Batas aman ukuran GIF supaya storage R2 gratisan tidak cepat penuh.
+  const GIF_MAX_BYTES = 1.5 * 1024 * 1024;
+  async function makeGifSafe() {
+    let blob = await makeGif(640, 480);
+    if (blob.size > GIF_MAX_BYTES) {
+      console.warn('[gif] terlalu besar (' + blob.size + ' B), fallback 480x360');
+      blob = await makeGif(480, 360);
+    }
+    return blob;
+  }
+
   // ─── Median-Cut Color Quantizer ───
   function medianCut(frames, maxColors) {
     // Sample pixels from all frames
     const pixels = [];
-    const step = Math.max(1, Math.floor(frames[0].data.length / 4 / 3000));
+    const step = Math.max(1, Math.floor(frames[0].data.length / 4 / 12000));
     frames.forEach(f => {
       const d = f.data;
       for (let i = 0; i < d.length; i += 4 * step) {
@@ -2825,7 +2838,7 @@ async function uploadToSupabase(blob, filename, options = {}) {
       btn.querySelector('.btn-label').textContent = 'Membuat GIF...';
       if (!gifBlob && filteredPhotos.length >= 2) {
         try {
-          gifBlob = await makeGif();
+          gifBlob = await makeGifSafe();
         } catch(e) { /* skip gif jika gagal */ }
       }
       if (gifBlob) folder.file('animated.gif', gifBlob);

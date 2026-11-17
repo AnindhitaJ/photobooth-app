@@ -1004,6 +1004,11 @@ async function uploadToSupabase(blob, filename, options = {}) {
     return new Blob([u8], { type: mime });
   }
 
+  // Foto satuan untuk link QR. Turunkan ke 1600x1200 / 0.88 kalau storage R2 mulai mepet.
+  const INDIVIDUAL_MAX_W = 1920;
+  const INDIVIDUAL_MAX_H = 1440;
+  const INDIVIDUAL_QUALITY = 0.90;
+
   async function resizeDataURLForCloud(dataURL, options = {}) {
     if (!dataURL) return dataURL;
     const maxW = Math.max(1, Number(options.maxW) || 1280);
@@ -1013,6 +1018,8 @@ async function uploadToSupabase(blob, filename, options = {}) {
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
     const scale = Math.min(1, maxW / iw, maxH / ih);
+    // Sudah cukup kecil: pakai apa adanya, jangan re-encode JPEG lagi (mengurangi artefak/blok).
+    if (scale === 1) return dataURL;
     const w = Math.max(1, Math.round(iw * scale));
     const h = Math.max(1, Math.round(ih * scale));
     const c = document.createElement('canvas');
@@ -1485,11 +1492,11 @@ async function uploadToSupabase(blob, filename, options = {}) {
             if (!src) return;
             try {
               const cloudSrc = await resizeDataURLForCloud(src, {
-                maxW: 1280,
-                maxH: 960,
-                quality: 0.86
+                maxW: INDIVIDUAL_MAX_W,
+                maxH: INDIVIDUAL_MAX_H,
+                quality: INDIVIDUAL_QUALITY
               });
-              const watermarkedSrc = await maybeWatermarkDataURL(cloudSrc, 'image/jpeg', 0.88);
+              const watermarkedSrc = await maybeWatermarkDataURL(cloudSrc, 'image/jpeg', INDIVIDUAL_QUALITY);
               const blob = dataURLtoBlob(watermarkedSrc);
               const url  = await uploadToSupabase(blob, `foto-${i+1}.jpg`, { sessionId: cloudSessionId });
               individualURLs[i] = url;

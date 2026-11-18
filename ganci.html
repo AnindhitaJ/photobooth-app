@@ -378,6 +378,23 @@
         </div>
       </div>
 
+      <!-- Sisi Belakang -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">🔄 Sisi Belakang Ganci</div>
+        <div class="toggle-group" id="sisiGroup">
+          <button class="toggle-btn active" data-value="logo" onclick="setSisi(this)">
+            <span class="icon">🏷️</span> Foto + Logo
+          </button>
+          <button class="toggle-btn" data-value="foto" onclick="setSisi(this)">
+            <span class="icon">📷</span> Foto + Foto
+          </button>
+          <button class="toggle-btn" data-value="single" onclick="setSisi(this)">
+            <span class="icon">1️⃣</span> Foto saja
+          </button>
+        </div>
+        <div class="flow-note" id="sisiNote" style="margin-top:10px;margin-bottom:0;"></div>
+      </div>
+
 
 
       <!-- Mulai Kamera Ganci -->
@@ -400,7 +417,7 @@
 
       <div class="card print-card" id="printCard">
         <div class="card-title">🖨️ Preview Hasil Cetak</div>
-        <div class="flow-note">Layout akhir akan otomatis menyusun panel foto + panel logo sesuai jumlah ganci dan ukuran kertas yang dipilih.</div>
+        <div class="flow-note">Layout akhir akan otomatis menyusun panel sesuai jumlah ganci dan pilihan sisi belakang dan ukuran kertas yang dipilih.</div>
         <button class="btn-start-ganci" id="btnGenerateLayout" onclick="generateGanciLayout()">Generate Layout Cetak</button>
         <div class="layout-actions">
           <button class="btn-secondary" id="btnDownloadLayout" onclick="downloadLayout()" disabled>⬇️ Download JPG</button>
@@ -505,6 +522,7 @@
       ganciW: 55,
       ganciH: 55,
       jumlah: 6,
+      sisiBelakang: 'logo',
       beautify: 'off',
     };
 
@@ -536,6 +554,22 @@
     };
 
     // ── Setters ──
+    function sisiDescription() {
+      const n = Math.max(1, parseInt(state.jumlah) || 1);
+      if (state.sisiBelakang === 'foto') return `${n} ganci = ${n * 2} panel (${n * 2} foto, depan & belakang sama).`;
+      if (state.sisiBelakang === 'single') return `${n} ganci = ${n} panel (foto saja, tanpa sisi belakang).`;
+      return `${n} ganci = ${n * 2} panel (${n} foto + ${n} logo).`;
+    }
+    function updateSisiNote() {
+      const el = document.getElementById('sisiNote');
+      if (el) el.textContent = sisiDescription();
+    }
+    function setSisi(btn) {
+      document.querySelectorAll('#sisiGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.sisiBelakang = btn.dataset.value;
+      updatePreview();
+    }
     function setBentuk(btn) {
       document.querySelectorAll('#bentukGroup .toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -728,6 +762,7 @@
       state.customW = Math.max(50, parseInt(document.getElementById('customW').value) || 150);
       state.customH = Math.max(50, parseInt(document.getElementById('customH').value) || 200);
       state.ukuranKertas = document.getElementById('ukuranKertas').value;
+      updateSisiNote();
 
       const canvas = document.getElementById('previewCanvas');
       const ctx = canvas.getContext('2d');
@@ -782,6 +817,7 @@
         <div class="info-chip">Frame: <span>${frameLabel}</span></div>
         <div class="info-chip">Kertas: <span>${state.ukuranKertas === 'Custom' ? state.customW + '×' + state.customH + ' mm' : state.ukuranKertas}</span></div>
         <div class="info-chip">Jumlah: <span>${state.jumlah} set</span></div>
+        <div class="info-chip">Belakang: <span>${({logo:'Logo',foto:'Foto',single:'Tanpa'})[state.sisiBelakang] || 'Logo'}</span></div>
         <div class="info-chip">Output: <span>JPG siap print</span></div>
       `;
     }
@@ -799,6 +835,7 @@
         ganciW: state.ganciW,
         ganciH: state.ganciH,
         jumlah: state.jumlah,
+        sisiBelakang: state.sisiBelakang || 'logo',
         beautify: state.beautify,
         updatedAt: new Date().toISOString()
       };
@@ -1077,6 +1114,10 @@
       if (cfg.ganciW) document.getElementById('ganciW').value = cfg.ganciW;
       if (cfg.ganciH) document.getElementById('ganciH').value = cfg.ganciH;
       if (cfg.jumlah) document.getElementById('jumlahGanci').value = cfg.jumlah;
+      if (cfg.sisiBelakang) {
+        state.sisiBelakang = cfg.sisiBelakang;
+        document.querySelectorAll('#sisiGroup .toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.value === cfg.sisiBelakang));
+      }
       setUkuranKertas(document.getElementById('ukuranKertas').value);
       updatePreview();
     }
@@ -1097,7 +1138,7 @@
       document.getElementById('pageInfo').textContent = `Halaman ${currentLayoutPage + 1} / ${generatedLayout.pages.length}`;
       document.getElementById('btnPrevPage').disabled = currentLayoutPage === 0;
       document.getElementById('btnNextPage').disabled = currentLayoutPage === generatedLayout.pages.length - 1;
-      document.getElementById('layoutStatus').textContent = `${generatedLayout.paper.label} • ${generatedLayout.quantity} set • ukuran total ${generatedLayout.panelWmm}×${generatedLayout.panelHmm} mm incl. frame${state.bentuk === 'persegi' ? ' • sudut ' + state.cornerStyle : ''} • kapasitas ${generatedLayout.capacity} set/halaman • ${generatedLayout.pageCount} halaman • 300 DPI`;
+      document.getElementById('layoutStatus').textContent = `${generatedLayout.paper.label} • ${generatedLayout.quantity} set (${generatedLayout.panelCount} panel, ${({logo:'foto+logo',foto:'foto+foto',single:'foto saja'})[generatedLayout.backMode] || ''}) • ukuran total ${generatedLayout.panelWmm}×${generatedLayout.panelHmm} mm incl. frame${state.bentuk === 'persegi' ? ' • sudut ' + state.cornerStyle : ''} • kapasitas ${generatedLayout.capacity} set/halaman • ${generatedLayout.pageCount} halaman • 300 DPI`;
     }
 
     window.changeLayoutPage = function(delta) {

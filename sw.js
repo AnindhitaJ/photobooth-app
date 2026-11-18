@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lux-photobooth-v1.47-sharper-photos';
+const CACHE_NAME = 'lux-photobooth-v1.48-ganci-sisi';
 const NAVIGATION_TIMEOUT_MS = 8000;
 
 const CORE_ASSETS = [

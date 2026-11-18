@@ -168,7 +168,10 @@
     const betweenPairMM = 3;
     const gapMM = 3;
     const marginMM = 2;
-    const pairWmm = panelWmm * 2 + betweenPairMM;
+    // Mode sisi belakang: 'logo' (foto + logo), 'foto' (foto + foto), 'single' (foto saja)
+    const backMode = ['logo', 'foto', 'single'].includes(ganciState.config?.sisiBelakang) ? ganciState.config.sisiBelakang : 'logo';
+    const panelsPerSet = backMode === 'single' ? 1 : 2;
+    const pairWmm = panelWmm * panelsPerSet + (panelsPerSet - 1) * betweenPairMM;
 
     const cols = Math.max(1, Math.floor((paper.w - marginMM * 2 + gapMM) / (pairWmm + gapMM)));
     const rows = Math.max(1, Math.floor((paper.h - marginMM * 2 + gapMM) / (panelHmm + gapMM)));
@@ -176,8 +179,9 @@
     const pageCount = Math.ceil(qty / capacity);
 
     const photoImg = await loadImage(ganciState.photo);
-    const logoImg = await resolveLogoImage(options?.logoUrl || '/logo.png');
-    const theme = buildLogoTheme(logoImg);
+    // Logo hanya dimuat kalau memang dipakai.
+    const logoImg = backMode === 'logo' ? await resolveLogoImage(options?.logoUrl || '/logo.png') : null;
+    const theme = logoImg ? buildLogoTheme(logoImg) : null;
 
     const pageWpx = mmToPx(paper.w, dpi);
     const pageHpx = mmToPx(paper.h, dpi);
@@ -191,7 +195,7 @@
     const panelHpx = mmToPx(panelHmm, dpi);
     const scaledBetweenPairPx = betweenPairPx;
     const scaledGapPx = gapPx;
-    const pairWpx = panelWpx * 2 + scaledBetweenPairPx;
+    const pairWpx = panelWpx * panelsPerSet + (panelsPerSet - 1) * scaledBetweenPairPx;
 
     const usedW = cols * pairWpx + Math.max(0, cols - 1) * scaledGapPx;
     const usedH = rows * panelHpx + Math.max(0, rows - 1) * scaledGapPx;
@@ -201,7 +205,7 @@
     const startY = marginPx;
 
     const cornerStyle = ganciState.cornerStyle || ganciState.config?.cornerStyle || 'rounded';
-    const logoPanelCvs = createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme, cornerStyle);
+    const logoPanelCvs = logoImg ? createLogoPanelCanvas(logoImg, panelWpx, panelHpx, ganciState.bentuk || 'persegi', theme, cornerStyle) : null;
 
     const pages = [];
     for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
@@ -229,14 +233,16 @@
             photo: photoImg,
             hook: false
           });
-          window.GanciFrames.drawFrame(ctx, {
-            x: x + panelWpx + scaledBetweenPairPx, y, w: panelWpx, h: panelHpx,
-            bentuk: ganciState.bentuk || 'persegi',
-            cornerStyle,
-            frame: ganciState.frame || 'polos',
-            photo: logoPanelCvs,
-            hook: false
-          });
+          if (backMode !== 'single') {
+            window.GanciFrames.drawFrame(ctx, {
+              x: x + panelWpx + scaledBetweenPairPx, y, w: panelWpx, h: panelHpx,
+              bentuk: ganciState.bentuk || 'persegi',
+              cornerStyle,
+              frame: ganciState.frame || 'polos',
+              photo: backMode === 'foto' ? photoImg : logoPanelCvs,
+              hook: false
+            });
+          }
           drawn++;
         }
       }
@@ -254,6 +260,8 @@
       pageCount,
       paper,
       quantity: qty,
+      backMode,
+      panelCount: qty * panelsPerSet,
       cols,
       rows,
       panelWmm,
